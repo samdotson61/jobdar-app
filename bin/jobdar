@@ -10,7 +10,6 @@ import { parseFlags, resolveLang, readVersion } from '../lib/cli.mjs'
 
 // Commands not yet built map to the phase that delivers them (honest stubs).
 const PLANNED = {
-  init: 'Phase 6 (setup wizard)',
   eval: 'Phase 1 / Phase 8 (inference backend)',
   pipeline: 'Phase 6 / Phase 8',
   pdf: 'a later phase (tailored PDF export)',
@@ -52,6 +51,11 @@ async function main() {
   }
 
   switch (command) {
+    case 'init': {
+      const { runInit } = await import('../lib/commands/init.mjs')
+      await runInit(rest)
+      return 0
+    }
     case 'scan': {
       const { runScan } = await import('../scan.mjs')
       await runScan(rest)

@@ -17,6 +17,7 @@ import { resolveState, stateLabel, allStates } from './lib/states.mjs'
 import { classifyTitle, levelDecision, filterByLevel } from './lib/levels.mjs'
 import { regionStateSet, locationMatches, filterByLocation } from './lib/regions.mjs'
 import { selectEmployers, toPortals } from './lib/seed.mjs'
+import { parseResumeText } from './lib/resume.mjs'
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url))
 const tests = []
@@ -287,6 +288,17 @@ test('seed: region selection returns that region and swaps cleanly (gate)', () =
   assert.ok(sw.includes('Carvana') && sw.includes('Axon'))
   assert.equal(mw.some((c) => sw.includes(c)), false) // disjoint -> toggle swaps employers
   assert.ok(toPortals(selectEmployers({ regions: ['midwest'] })).every((p) => p.company && p.careers_url))
+})
+
+test('resume: parseResumeText pulls name/email/metro and invents nothing', () => {
+  const r = parseResumeText('Sam Dotson\nsam.dotson@example.com\nIndianapolis, IN\nSkills: JS, SQL')
+  assert.equal(r.name, 'Sam Dotson')
+  assert.equal(r.email, 'sam.dotson@example.com')
+  assert.equal(r.location, 'Indianapolis, IN')
+  const empty = parseResumeText('')
+  assert.equal(empty.name, '')
+  assert.equal(empty.email, '')
+  assert.equal(empty.location, '')
 })
 
 test('modes: every base mode has a Spanish parity file', () => {

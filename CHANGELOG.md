@@ -6,6 +6,28 @@ All notable changes to Jobdar are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.7.0] — 2026-06-05
+
+Phase 6 — effortless install & onboarding. Completes the MVP cut line.
+
+### Added
+- **`jobdar init`** — a bilingual interactive setup wizard (`lib/commands/init.mjs` + a zero-dep
+  prompt helper that buffers piped input so it's scriptable). Asks language / metro / region / level /
+  tuning / inference, then writes `profile.yml` AND materializes `portals.yml` from the region seed
+  catalog — no YAML editing. Non-interactive `--defaults`/`--yes` + flag overrides (`--region`,
+  `--levels`, `--name`, …) for installers and the agent layer.
+- **Zero-config first scan:** after `init`, `jobdar scan` works immediately (seeded portals;
+  Playwright/PDF stay optional).
+- **One-command install:** `install.sh` (macOS/Linux), `install.ps1` (Windows), and a `.devcontainer/`.
+- **Résumé bootstrap** (`lib/resume.mjs`): a pasted/text résumé → `data/cv.md` + prefilled name/metro
+  (never invents); PDF/DOCX deferred to the agent layer.
+- **Onboard mode** (`modes/onboard.md`, EN + ES) — conversational guided first run.
+- **Getting Started** docs (EN + ES) + a troubleshooting page under `docs/`.
+
+### Verified
+- The wizard ran end-to-end via scripted input in **both languages** → wrote a valid profile and 5
+  seeded Midwest portals, and `jobdar scan` worked immediately. No YAML editing on the non-dev path.
+
 ## [0.6.0] — 2026-06-05
 
 Phase 5 — region toggle (Midwest default) + region-aware employer seeds + geo location filtering.

@@ -1,0 +1,11 @@
+{
+  "name": "Jobdar",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:20",
+  "postCreateCommand": "npm install --no-audit --no-fund && node doctor.mjs",
+  "postAttachCommand": "echo 'Run: node bin/jobdar init'",
+  "customizations": {
+    "vscode": {
+      "extensions": ["redhat.vscode-yaml"]
+    }
+  }
+}

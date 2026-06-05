@@ -48,6 +48,7 @@ datos personales**. Eso protege tu privacidad y limita nuestra responsabilidad.
 ```bash
 jobdar init           # asistente de configuración bilingüe (región, nivel, perfil)
 jobdar scan           # escanea portales en busca de nuevos puestos (sin modelo)
+jobdar seed --region midwest --write   # agrega empleadores reales de tu región
 jobdar eval <url>     # evalúa un puesto frente a tu currículum
 jobdar pipeline       # escanear -> evaluar -> registrar, de principio a fin
 jobdar pdf [empresa]  # CV / carta de presentación adaptados para ATS
@@ -58,6 +59,9 @@ jobdar doctor         # revisa tu configuración
 Instala con `npm i -g jobdar` (o usa `npx jobdar` sin instalar). Dentro de una CLI de IA como
 Claude Code, las mismas acciones están disponibles como el comando de barra `/jobdar scan`,
 `/jobdar eval`, etc.
+
+¿Nuevo/a por aquí? La **[guía Empezar](docs/getting-started.es.md)** es la ruta de 5 minutos desde la
+instalación hasta tu primer escaneo — `jobdar init` te guía en inglés o español, sin editar YAML.
 
 ## Para quién es Jobdar
 

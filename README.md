@@ -43,6 +43,7 @@ That protects your privacy and limits our liability.
 ```bash
 jobdar init           # bilingual setup wizard (region, level, profile)
 jobdar scan           # scan portals for new roles (no model needed)
+jobdar seed --region midwest --write   # add real employers for your region
 jobdar eval <url>     # evaluate a role against your résumé
 jobdar pipeline       # scan -> evaluate -> track, end to end
 jobdar pdf [company]  # tailored ATS CV / cover letter
@@ -52,6 +53,9 @@ jobdar doctor         # check your setup
 
 Install with `npm i -g jobdar` (or run `npx jobdar` with no install). Inside an AI CLI like Claude Code,
 the same actions are available as the slash command `/jobdar scan`, `/jobdar eval`, and so on.
+
+New here? The **[Getting Started guide](docs/getting-started.md)** is the 5-minute path from install to
+your first scan — `jobdar init` walks you through it in English or Spanish, no YAML editing.
 
 ## Who Jobdar is for
 

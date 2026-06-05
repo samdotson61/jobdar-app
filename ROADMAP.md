@@ -7,12 +7,12 @@
 > fit against your résumé, **tailors** an ATS-friendly CV/cover letter, and **tracks** every application —
 > with your data kept **local**, processed by a **private on-device model by default** or your own cloud API.
 >
-> **Status:** Phases 0–5 **complete** (`0.6.0`) — foundation + branding, the bilingual core, both
-> marquee scanners (Workday + iCIMS, verified live), the level toggle + no-degree tuning, and the
-> **region toggle + Midwest employer seeds + geo location filter** (verified live across all three
-> providers: 78 Midwest roles kept, 87 out-of-region filtered). Next on the MVP cut line: **Phase 6 — effortless install & the
-> setup wizard**. See [CHANGELOG.md](CHANGELOG.md).
-> **Date:** 2026-06-05 (Phases 0–5 built 2026-06-05)
+> **Status:** Phases 0–6 **complete** (`0.7.0`) — the **MVP cut line is done**. Foundation + branding,
+> bilingual core, both marquee scanners (Workday + iCIMS, live-verified), level + no-degree tuning,
+> region toggle + Midwest seeds + geo filter, and the **bilingual setup wizard** (`jobdar init`, with
+> a zero-config first scan). Next: **Phase 7 — quality, dashboard, polish, 1.0**; then Phase 8
+> (on-device model) and Phase 9 (web app). See [CHANGELOG.md](CHANGELOG.md).
+> **Date:** 2026-06-05 (Phases 0–6 built 2026-06-05)
 
 ---
 

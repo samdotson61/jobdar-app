@@ -43,6 +43,7 @@ Deterministic work needs no model; only **evaluation/tailoring** does.
 | apply | `modes/apply.md` | Tailored cover letter + application answers |
 | outreach | `modes/outreach.md` | Recruiter & networking messages |
 | pipeline | `modes/pipeline.md` | Scan → evaluate → track, end to end |
+| onboard | `modes/onboard.md` | Guided bilingual first-run setup |
 
 Each base mode has a full Spanish peer in `modes/es/`.
 
