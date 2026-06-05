@@ -19,6 +19,10 @@ import { regionStateSet, locationMatches, filterByLocation } from './lib/regions
 import { selectEmployers, toPortals } from './lib/seed.mjs'
 import { parseResumeText } from './lib/resume.mjs'
 import { renderDashboard } from './lib/commands/dashboard.mjs'
+import { renderTui } from './lib/commands/tui.mjs'
+import { scoreJob, scoreLocation, scoreSeniority, scoreSalary, band } from './lib/scoring.mjs'
+import { mergeScored, serializePipeline } from './lib/evaluations.mjs'
+import { cvToHtml, matchedKeywords } from './lib/cv_render.mjs'
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url))
 const tests = []
@@ -310,12 +314,84 @@ test('security: http guard enforces HTTPS, no credentials, and the host allowlis
   assert.throws(() => assertAllowedUrl('https://evil.example.org/x', { hostAllowlist: allow })) // off-allowlist
 })
 
-test('dashboard: renders bilingual HTML with active config + empty tracker', () => {
+test('dashboard: renders bilingual HTML with active config + portal list', () => {
   const profile = { target_regions: ['midwest'], target_levels: ['entry'] }
-  const en = renderDashboard(getT('en'), { profile, portals: [1, 2], rows: [], lang: 'en' })
-  assert.ok(en.includes('Jobdar dashboard') && en.includes('Midwest') && en.includes('Portals configured: 2'))
+  const portals = [{ company: 'Enova', careers_url: 'https://job-boards.greenhouse.io/enova' }]
+  const en = renderDashboard(getT('en'), { profile, portals, rows: [], lang: 'en' })
+  assert.ok(en.includes('Jobdar dashboard') && en.includes('Midwest') && en.includes('Enova') && en.includes('greenhouse'))
   const es = renderDashboard(getT('es'), { profile, portals: [], rows: [], lang: 'es' })
   assert.ok(es.includes('Panel de Jobdar') && es.includes('Medio Oeste'))
+})
+
+test('tui: renders the scored pipeline color-coded, with band counts and a band filter', () => {
+  const profile = { target_regions: ['midwest'], target_levels: ['entry', 'mid'] }
+  const rows = [
+    { company: 'Enova', role: 'Data Analyst I', location: 'Chicago, IL', composite: '4.7', band: 'apply' },
+    { company: 'Acme', role: 'Marketing Analyst', location: 'Austin, TX', composite: '3.6', band: 'research' },
+    { company: 'Globex', role: 'Software Engineer', location: 'Bengaluru', composite: '1.9', band: 'dont' },
+  ]
+  const out = renderTui(getT('en'), { profile, rows, lang: 'en', sort: 'score', filter: 'all', height: 24 })
+  assert.ok(out.includes('Jobdar dashboard') && out.includes('Data Analyst I') && out.includes('4.7'))
+  assert.ok(out.includes('Apply 1') && out.includes('Research 1')) // band counts
+  const applied = renderTui(getT('en'), { profile, rows, lang: 'en', filter: 'apply', height: 24 })
+  assert.ok(applied.includes('Data Analyst I') && !applied.includes('Marketing Analyst')) // filter works
+})
+
+test('scoring: bands map the composite to Apply / Research / Dont', () => {
+  assert.equal(band(4.2), 'apply')
+  assert.equal(band(3.7), 'research')
+  assert.equal(band(3.0), 'dont')
+})
+
+test('scoring: location, seniority, and salary dimensions', () => {
+  const p = { target_regions: ['midwest'] }
+  assert.equal(scoreLocation('Chicago, IL', p), 5)
+  assert.equal(scoreLocation('Remote, USA', p), 4)
+  assert.equal(scoreLocation('Tempe, AZ', p), 1.5)
+  assert.equal(scoreLocation('Bengaluru, India', p), 0)
+  assert.equal(scoreSeniority('Analyst I', { target_levels: ['entry'] }), 5)
+  assert.ok(scoreSeniority('Senior Engineer', { target_levels: ['entry'] }) < 3)
+  assert.equal(scoreSeniority('Engineer II', { target_levels: ['entry', 'mid'] }), 5)
+  assert.equal(scoreSalary(0, { target_salary: 100000 }), 3.0) // unknown → neutral
+  assert.equal(scoreSalary(100000, { target_salary: 100000 }), 5)
+  assert.equal(scoreSalary(70000, { target_salary: 100000 }), 2.5)
+})
+
+test('scoring: scoreJob yields a 0–5 composite + band; better fit scores higher', () => {
+  const profile = { target_regions: ['midwest'], target_levels: ['entry', 'mid'], target_salary: 0, score_weights: { resume: 0.4, seniority: 0.25, location: 0.2, salary: 0.15 } }
+  const strong = scoreJob({ title: 'Data Analyst I', location: 'Chicago, IL' }, profile, 'data analyst sql python projects')
+  const weak = scoreJob({ title: 'Senior Principal Engineer', location: 'Bengaluru, India' }, profile, 'data analyst sql')
+  assert.ok(strong.composite >= 0 && strong.composite <= 5)
+  assert.ok(['apply', 'research', 'dont'].includes(strong.band))
+  assert.ok(weak.composite < strong.composite)
+  assert.equal(strong.estimate, true) // résumé score is a proxy until a model eval
+})
+
+test('pipeline: mergeScored dedupes by URL and preserves a non-default status', () => {
+  const existing = [{ url: 'u1', company: 'A', role: 'R', status: 'applied', composite: '3.0', band: 'dont' }]
+  const scored = [
+    { url: 'u1', company: 'A', title: 'R', location: 'Chicago, IL', scores: { resume: 5, location: 5, salary: 3, seniority: 5, composite: 4.6, band: 'apply' } },
+    { url: 'u2', company: 'B', title: 'R2', location: 'Detroit, MI', scores: { resume: 4, location: 5, salary: 3, seniority: 4, composite: 4.0, band: 'apply' } },
+  ]
+  const merged = mergeScored(existing, scored, '2026-06-05')
+  assert.equal(merged.length, 2) // u1 updated in place, u2 added
+  const u1 = merged.find((r) => r.url === 'u1')
+  assert.equal(u1.status, 'applied') // existing status preserved
+  assert.equal(u1.composite, 4.6) // re-scored
+  assert.ok(serializePipeline(merged).startsWith('company\trole\turl'))
+})
+
+test('résumé: cvToHtml renders ATS HTML (name, sections, bullets) + role tailoring flag', () => {
+  const md = '# Jane Doe\nDeveloper · jane@x.com\n## Experience\n### Data Analyst\n- Built **SQL** dashboards\n## Skills\n- Python, SQL'
+  const html = cvToHtml(md, { role: 'Data Analyst', company: 'Enova', matched: ['sql', 'python'] })
+  assert.ok(html.includes('<h1>Jane Doe</h1>') && html.includes('<h2>Experience</h2>'))
+  assert.ok(html.includes('<li>Built <strong>SQL</strong> dashboards</li>'))
+  assert.ok(html.includes('Tailored for') && html.includes('Enova') && html.includes('Relevant: sql, python'))
+  assert.ok(html.includes('@page') && !html.includes('<table')) // ATS-safe: print CSS, no tables
+})
+
+test('résumé: matchedKeywords finds role terms present in the cv', () => {
+  assert.deepEqual(matchedKeywords('Data Analyst SQL', 'experienced data analyst with sql and python').sort(), ['analyst', 'data', 'sql'])
 })
 
 test('modes: every base mode has a Spanish parity file', () => {

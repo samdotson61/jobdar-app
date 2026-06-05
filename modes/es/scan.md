@@ -26,6 +26,8 @@ razonas sobre los resultados normalizados.
 - Ayuda a la persona a añadir empleadores — `jobdar seed --region <r> --write` los materializa
   desde `data/seed/employers.yml` en `config/portals.yml`, o puede editarlo a mano.
 - Tras un escaneo, pasa los puestos prometedores al modo **eval** para puntuarlos.
+- Indica a la persona el panel para una vista rápida — `jobdar tui` (terminal) o
+  `jobdar dashboard` (web · http://localhost:4319).
 - El filtrado por **nivel** (`lib/levels.mjs`) y **región/ubicación** (`lib/regions.mjs`) es
   determinista: los puestos fuera de `target_levels` o `target_regions` se pre-filtran (remoto en
   EE. UU. siempre se permite); los títulos/ubicaciones ambiguos pasan a la rúbrica.

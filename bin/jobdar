@@ -12,11 +12,10 @@ import { parseFlags, resolveLang, readVersion } from '../lib/cli.mjs'
 const PLANNED = {
   eval: 'Phase 8 — use `/jobdar eval` in your AI CLI today',
   pipeline: 'Phase 8 — use `/jobdar pipeline` in your AI CLI today',
-  pdf: 'a later phase (tailored PDF export)',
   update: 'npm publish (Phase 7.5) — for now: git pull && npm install',
 }
 
-const COMMAND_ORDER = ['init', 'scan', 'seed', 'eval', 'pipeline', 'pdf', 'tracker', 'dashboard', 'doctor', 'update']
+const COMMAND_ORDER = ['init', 'scan', 'seed', 'eval', 'pipeline', 'pdf', 'tracker', 'dashboard', 'tui', 'doctor', 'update']
 
 function printHelp(t) {
   console.log(`jobdar — ${t('cli.tagline')}\n`)
@@ -65,6 +64,11 @@ async function main() {
       await runSeed(rest)
       return 0
     }
+    case 'pdf': {
+      const { runPdf } = await import('../lib/commands/pdf.mjs')
+      await runPdf(rest)
+      return 0
+    }
     case 'doctor': {
       const { runDoctor } = await import('../doctor.mjs')
       const { failures } = await runDoctor(rest)
@@ -78,6 +82,11 @@ async function main() {
     case 'dashboard': {
       const { runDashboard } = await import('../lib/commands/dashboard.mjs')
       await runDashboard(rest)
+      return 0
+    }
+    case 'tui': {
+      const { runTui } = await import('../lib/commands/tui.mjs')
+      await runTui(rest)
       return 0
     }
     default: {

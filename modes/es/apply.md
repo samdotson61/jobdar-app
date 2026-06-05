@@ -41,3 +41,7 @@ de la oferta en los materiales que se envían (indica cuál).
 ```
 
 Entrega el borrador para que la persona lo revise y lo envíe. Nunca postules en su nombre.
+
+> **Render del currículum:** tras adaptar el CV a la oferta (reordena y destaca la experiencia *real*
+> de la persona) y guardarlo en `data/cv.md`, ejecuta `jobdar pdf [empresa]` para generar un HTML/PDF
+> compatible con ATS en `output/`.

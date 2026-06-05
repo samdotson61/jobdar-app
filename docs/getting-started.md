@@ -45,6 +45,15 @@ node bin/jobdar eval <job-url>
 Inside an AI CLI (like Claude Code), the same actions are slash commands: `/jobdar scan`,
 `/jobdar eval`, and a guided `/jobdar` onboarding.
 
+## 5. Build a tailored résumé
+
+```bash
+node bin/jobdar pdf Enova    # tailors your résumé to that role → output/*.html
+```
+Add your résumé first with `jobdar init --resume <file>`. You get an ATS-friendly HTML résumé in
+`output/`; install Playwright (`npm i playwright`) for an automatic PDF, or open the HTML and
+Print → Save as PDF.
+
 ## Your data stays local
 
 Your résumé and history live on your machine. Jobdar's scanner only reads **public** job listings — it

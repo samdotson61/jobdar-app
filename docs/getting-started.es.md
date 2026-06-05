@@ -45,6 +45,15 @@ node bin/jobdar eval <url-del-puesto>
 Dentro de una CLI de IA (como Claude Code), las mismas acciones son comandos de barra: `/jobdar scan`,
 `/jobdar eval` y un onboarding guiado `/jobdar`.
 
+## 5. Crea un currículum adaptado
+
+```bash
+node bin/jobdar pdf Enova    # adapta tu currículum a ese puesto → output/*.html
+```
+Primero agrega tu currículum con `jobdar init --resume <archivo>`. Obtienes un currículum HTML
+compatible con ATS en `output/`; instala Playwright (`npm i playwright`) para un PDF automático, o
+abre el HTML e Imprime → Guardar como PDF.
+
 ## Tus datos se quedan en local
 
 Tu currículum y tu historial viven en tu máquina. El escáner de Jobdar solo lee ofertas de empleo

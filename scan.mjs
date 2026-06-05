@@ -5,12 +5,14 @@
 // Run directly:  node scan.mjs [--dry-run] [--lang en|es]
 // Or via the CLI: jobdar scan [--dry-run]
 
-import { loadProfile, loadPortals } from './lib/config.mjs'
+import { loadProfile, loadPortals, loadCv } from './lib/config.mjs'
 import { getT } from './lib/i18n.mjs'
 import { parseFlags, resolveLang, isDirectRun } from './lib/cli.mjs'
 import { resolveProvider } from './providers/_contract.mjs'
 import { filterByLevel } from './lib/levels.mjs'
 import { filterByLocation } from './lib/regions.mjs'
+import { scoreJob } from './lib/scoring.mjs'
+import { upsertScored } from './lib/evaluations.mjs'
 import { color, symbol, heading } from './lib/ui.mjs'
 
 const regionLabel = (t, regions) => (regions || []).map((r) => t(`regions.${r}`)).join(', ') || t('common.none')
@@ -61,6 +63,7 @@ export async function runScan(argv = []) {
       }
     }
     console.log('\n' + color.dim(t('scan.dry_note')))
+    console.log(color.dim(t('dashboard.access')))
     return { portals: portals.length, jobs: 0, dryRun: true }
   }
 
@@ -69,6 +72,7 @@ export async function runScan(argv = []) {
   let total = 0
   let excludedLevel = 0
   let excludedRegion = 0
+  const allKept = []
   for (const { portal, hit } of resolved) {
     if (!hit) {
       console.log(`  ${symbol.warn()} ${t('scan.error_for', { company: portal.company, error: t('scan.no_provider') })}`)
@@ -78,6 +82,7 @@ export async function runScan(argv = []) {
       const jobs = await hit.provider.fetch(hit.match, ctx)
       const lvl = filterByLevel(jobs, levels)
       const loc = filterByLocation(lvl.kept, regions, { userMetro: profile.location })
+      for (const j of loc.kept) allKept.push(j)
       total += loc.kept.length
       excludedLevel += lvl.excluded
       excludedRegion += loc.excluded
@@ -88,7 +93,20 @@ export async function runScan(argv = []) {
   }
   if (excludedLevel > 0) console.log(color.dim(t('scan.level_note', { count: excludedLevel })))
   if (excludedRegion > 0) console.log(color.dim(t('scan.region_note', { count: excludedRegion })))
+
+  // Score the kept roles and persist the scored pipeline (career-ops-style: scan → score).
+  if (allKept.length) {
+    const cv = loadCv()
+    const date = new Date().toISOString().slice(0, 10)
+    const scored = allKept.map((j) => ({ ...j, scores: scoreJob(j, profile, cv) }))
+    upsertScored(scored, date)
+    const counts = { apply: 0, research: 0, dont: 0 }
+    for (const s of scored) counts[s.scores.band]++
+    console.log('\n' + t('scan.scored', { total: scored.length, apply: counts.apply, research: counts.research, dont: counts.dont }))
+  }
+
   console.log('\n' + t('scan.total_found', { count: total, portals: resolved.length }))
+  console.log(color.dim(t('dashboard.access')))
   return { portals: portals.length, jobs: total }
 }
 

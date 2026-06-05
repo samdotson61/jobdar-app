@@ -24,6 +24,8 @@ and reason over the normalized results.
 - Help the user add employers — `jobdar seed --region <r> --write` materializes them from
   `data/seed/employers.yml` into `config/portals.yml`, or they can edit it by hand.
 - After a scan, hand promising roles to the **eval** mode for scoring.
+- Point the user to the dashboard for an at-a-glance view — `jobdar tui` (terminal) or
+  `jobdar dashboard` (web · http://localhost:4319).
 - Title filtering by **level** (`lib/levels.mjs`) and **region/location** (`lib/regions.mjs`) is
   deterministic: roles outside the user's `target_levels` or `target_regions` are pre-filtered out
   (remote-US always allowed); ambiguous titles/locations pass through to the rubric.

@@ -47,9 +47,10 @@ jobdar scan           # scan portals for new roles (no model needed)
 jobdar seed --region midwest --write   # add real employers for your region
 jobdar eval <url>     # evaluate a role against your résumé
 jobdar pipeline       # scan -> evaluate -> track, end to end
-jobdar pdf [company]  # tailored ATS CV / cover letter
+jobdar pdf [company]  # tailored ATS résumé → output/ (HTML, +PDF with Playwright)
 jobdar tracker        # view your applications
 jobdar dashboard      # localhost web view of your pipeline
+jobdar tui            # interactive terminal dashboard
 jobdar doctor         # check your setup
 ```
 
@@ -72,6 +73,7 @@ your first scan — `jobdar init` walks you through it in English or Spanish, no
 
 - **American English + Spanish**, full parity (English primary) — across CLI and web app.
 - **Scanner for US enterprise** — Workday + iCIMS first, plus Greenhouse/Lever/Ashby.
+- **Scored pipeline** — every scanned role gets a 0–5 fit score (résumé · location · salary · seniority) and an **Apply / Research / Don't** band, explorable in `jobdar tui`.
 - **Region toggle** — Midwest by default; switch to Northeast/Southeast/Southwest/West/nationwide and the seeds, location filters, and search adapt.
 - **Level toggle** — entry by default; mid first-class; senior opt-in (ranks normally when chosen).
 - **A dedicated no-degree path** — surfaces skills-based, apprenticeship, and "or equivalent experience" roles.

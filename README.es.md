@@ -52,9 +52,10 @@ jobdar scan           # escanea portales en busca de nuevos puestos (sin modelo)
 jobdar seed --region midwest --write   # agrega empleadores reales de tu región
 jobdar eval <url>     # evalúa un puesto frente a tu currículum
 jobdar pipeline       # escanear -> evaluar -> registrar, de principio a fin
-jobdar pdf [empresa]  # CV / carta de presentación adaptados para ATS
+jobdar pdf [empresa]  # currículum adaptado para ATS → output/ (HTML, +PDF con Playwright)
 jobdar tracker        # consulta tus postulaciones
 jobdar dashboard      # panel web local de tu flujo
+jobdar tui            # panel interactivo en la terminal
 jobdar doctor         # revisa tu configuración
 ```
 
@@ -78,6 +79,7 @@ nivel intermedio, o activa senior (que entonces se clasifica con normalidad, sin
 
 - **Inglés estadounidense + español**, paridad completa (inglés primario) — en la CLI y la app web.
 - **Escáner para grandes empresas de EE. UU.** — Workday + iCIMS primero, más Greenhouse/Lever/Ashby.
+- **Flujo puntuado** — cada puesto escaneado recibe una puntuación de ajuste de 0–5 (currículum · ubicación · salario · seniority) y una banda **Postular / Investigar / Descartar**, explorable en `jobdar tui`.
 - **Ajuste de región** — Medio Oeste por defecto; cambia a Noreste/Sureste/Suroeste/Oeste/todo el
   país y las semillas, los filtros de ubicación y la búsqueda se adaptan.
 - **Ajuste de nivel** — inicial por defecto; intermedio de primera clase; senior opcional (se

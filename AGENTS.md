@@ -32,6 +32,10 @@ Deterministic work needs no model; only **evaluation/tailoring** does.
 - Read `config/profile.yml` for language, region(s), level(s), and tuning profile.
 - For any user-facing string, prefer the i18n tables in `config/i18n/` over inventing copy.
 - Match the user's language (`language:`, or the JD's language) in everything you generate.
+- **Always surface the dashboard.** Whenever you run Jobdar or report results, point the user to it
+  for easy access: `jobdar tui` (terminal) or `jobdar dashboard` (web · http://localhost:4319).
+- **Build résumés via `jobdar pdf`.** After tailoring `data/cv.md` to a role (the `apply` mode),
+  `jobdar pdf [company]` renders an ATS-friendly HTML/PDF résumé into `output/`.
 
 ## Modes
 

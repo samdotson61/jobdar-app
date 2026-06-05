@@ -13,9 +13,10 @@ cli:
     seed: "Materializa portales desde el catálogo de empleadores por región"
     eval: "Evalúa un puesto frente a tu currículum — puntuación de ajuste + informe"
     pipeline: "Ejecuta escanear, evaluar y registrar de principio a fin"
-    pdf: "Genera un CV / carta de presentación adaptados para ATS"
+    pdf: "Genera un currículum ATS → output/ (HTML/PDF)"
     tracker: "Consulta y actualiza tu registro de solicitudes"
-    dashboard: "Abre el panel del flujo de trabajo"
+    dashboard: "Abre el panel del flujo de trabajo (web)"
+    tui: "Panel interactivo en la terminal"
     doctor: "Verifica que tu configuración esté lista"
     update: "Actualiza Jobdar a la última versión"
   opt_help: "Muestra la ayuda"
@@ -40,6 +41,7 @@ scan:
   total_found: "{count} puesto(s) encontrado(s) en {portals} portal(es)."
   level_note: "{count} puesto(s) fuera de tu(s) nivel(es) fueron filtrados"
   region_note: "{count} puesto(s) fuera de tu(s) región(es) fueron filtrados"
+  scored: "Puntuados {total} → {apply} Postular · {research} Investigar · {dont} Descartar"
 
 doctor:
   title: "Diagnóstico de Jobdar"
@@ -94,6 +96,7 @@ init:
   q_language: "Idioma / Language:"
   q_name: "Tu nombre:"
   q_location: "Tu área metropolitana (p. ej. Indianapolis, IN):"
+  q_salary: "Salario anual deseado en USD (o en blanco para omitir):"
   q_region: "¿En qué región debe enfocarse Jobdar?"
   q_levels: "¿Qué nivel de puestos?"
   lvl_entry: "Solo nivel inicial (predeterminado)"
@@ -126,6 +129,32 @@ dashboard:
   serving: "Panel disponible en {url} — ábrelo en tu navegador."
   stop: "Pulsa Ctrl-C para detener."
   footer: "Tus datos se quedan en local. Jobdar solo lee ofertas de empleo públicas."
+  access: "Abre tu panel — `jobdar tui` (terminal) o `jobdar dashboard` (web · http://localhost:4319)"
+
+tui:
+  keys: "s ordenar · 1/2/3 banda · 0 todas · c empresa · r actualizar · q salir"
+  empty: "Aún no hay puestos puntuados — ejecuta `jobdar scan` para construir tu flujo."
+  col_score: "Puntuación"
+  col_band: "Banda"
+  col_role: "Puesto"
+  col_company: "Empresa"
+  col_location: "Ubicación"
+  by_score: "puntuación"
+  by_company: "empresa"
+  by_band: "banda"
+  sorted: "ordenado por {mode}"
+
+bands:
+  apply: "Postular"
+  research: "Investigar"
+  dont: "Descartar"
+
+pdf:
+  title: "Crear currículum"
+  no_cv: "Aún no hay currículum. Agrega uno con `jobdar init --resume <archivo>` (o pégalo con el modo onboard)."
+  html_written: "Se escribió {file}"
+  pdf_written: "Se escribió {file}"
+  no_playwright: "HTML creado. Para un PDF automático ejecuta `npm i playwright`, o abre el HTML e Imprime → Guardar como PDF."
 
 common:
   none: "ninguno"

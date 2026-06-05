@@ -6,6 +6,54 @@ All notable changes to Jobdar are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.3.0] — 2026-06-05
+
+Résumé build (career-ops "Customize" stage) — completes the pipeline shape: **scan → score → build**.
+
+### Added
+- **`jobdar pdf [company]`** — renders your `cv.md` into a clean, **ATS-friendly HTML résumé** (single
+  column, standard fonts, semantic headings, no tables/images) under `output/`, tailored/flagged to a
+  pipeline role (`--company` / `--url` / positional). Renders to **PDF when Playwright is installed**
+  (lazy-imported, opt-in — the heavy dep stays optional); otherwise writes the HTML to print yourself.
+- `lib/cv_render.mjs` (zero-dependency markdown → ATS-HTML + role keyword matching). Deep content
+  tailoring stays the model's job (the `apply` mode); this stage renders it. `jobdar pdf` is no longer
+  a stub.
+
+## [1.2.0] — 2026-06-05
+
+Scan → **score** pipeline (career-ops method): scanned roles are scored 0.0–5.0 and surfaced in the TUI.
+
+### Added
+- **Scoring engine** (`lib/scoring.mjs`): a 0.0–5.0 weighted composite from four dimensions — résumé,
+  location, salary, seniority — mapped to **Apply (≥4.0) / Research (3.5–3.9) / Don't (<3.5)** bands,
+  used as a filter. Location/seniority/salary are deterministic; the résumé dimension is a keyword
+  *estimate* (flagged) until a model eval replaces it. Weights are editable in `profile.yml`.
+- **Salary** in `jobdar init` + `profile.yml` (`target_salary`, `score_weights`).
+- **Scored pipeline store** (`lib/evaluations.mjs` → `data/pipeline.tsv`): one row per job (url · 4
+  sub-scores · composite · band · status), deduped by URL, status preserved on re-scan.
+- `jobdar scan` now scores every kept role and writes the pipeline, reporting Apply/Research/Don't counts.
+- `jobdar tui` now surfaces the scored pipeline: color-coded by band, sort (score / company / band) and
+  filters (1/2/3 band · 0 all · c company), with band counts.
+
+### Notes
+- Without a `cv.md` and a `target_salary`, those two dimensions read neutral (3.0), so roles cap around
+  3.9 (Research) — add them (or run a model eval) to surface Apply-tier roles.
+
+## [1.1.0] — 2026-06-05
+
+### Added
+- **`jobdar tui`** — an interactive, zero-dependency terminal dashboard: region/level/language, a
+  scrollable application tracker, and the configured portals. Keys: `r` refresh, `q` quit, ↑/↓ scroll.
+- The **web dashboard** now lists each portal (company · provider · clickable career link), shows a
+  name pill, and auto-refreshes.
+- The dashboard link is surfaced everywhere — after `init`/`scan` and in the agent layer (AGENTS.md +
+  scan mode): `jobdar tui` or `jobdar dashboard` (http://localhost:4319).
+
+### Fixed
+- `jobdar init` no longer skips prompts at a real terminal (stray type-ahead was consumed by the next
+  question, blanking the name). Selecting "My own API key" now prompts for the key and stores it in a
+  **gitignored** `data/credentials.env` — never in the tracked `profile.yml`.
+
 ## [1.0.0] — 2026-06-05
 
 Phase 7 — quality, dashboard, and the 1.0 CLI. **First stable release of the Jobdar CLI.**

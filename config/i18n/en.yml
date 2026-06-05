@@ -13,9 +13,10 @@ cli:
     seed: "Materialize portals from the region employer catalog"
     eval: "Evaluate a role against your résumé — fit score + report"
     pipeline: "Run scan, evaluate, and track end to end"
-    pdf: "Generate a tailored ATS CV / cover letter"
+    pdf: "Render a tailored ATS résumé → output/ (HTML/PDF)"
     tracker: "View and update your application tracker"
-    dashboard: "Launch the pipeline dashboard"
+    dashboard: "Launch the pipeline dashboard (web)"
+    tui: "Interactive terminal dashboard"
     doctor: "Check that your setup is ready"
     update: "Update Jobdar to the latest version"
   opt_help: "Show help"
@@ -40,6 +41,7 @@ scan:
   total_found: "{count} role(s) found across {portals} portal(s)."
   level_note: "{count} role(s) outside your level(s) were filtered out"
   region_note: "{count} role(s) outside your region(s) were filtered out"
+  scored: "Scored {total} → {apply} Apply · {research} Research · {dont} Don't"
 
 doctor:
   title: "Jobdar doctor"
@@ -94,6 +96,7 @@ init:
   q_language: "Language / Idioma:"
   q_name: "Your name:"
   q_location: "Your metro (e.g. Indianapolis, IN):"
+  q_salary: "Target annual salary in USD (or blank to skip):"
   q_region: "Which region should Jobdar focus on?"
   q_levels: "Which level of roles?"
   lvl_entry: "Entry-level only (default)"
@@ -126,6 +129,32 @@ dashboard:
   serving: "Dashboard running at {url} — open it in your browser."
   stop: "Press Ctrl-C to stop."
   footer: "Your data stays local. Jobdar reads only public job listings."
+  access: "Open your dashboard — `jobdar tui` (terminal) or `jobdar dashboard` (web · http://localhost:4319)"
+
+tui:
+  keys: "s sort · 1/2/3 band · 0 all · c company · r refresh · q quit"
+  empty: "No scored roles yet — run `jobdar scan` to build your pipeline."
+  col_score: "Score"
+  col_band: "Band"
+  col_role: "Role"
+  col_company: "Company"
+  col_location: "Location"
+  by_score: "score"
+  by_company: "company"
+  by_band: "band"
+  sorted: "sorted by {mode}"
+
+bands:
+  apply: "Apply"
+  research: "Research"
+  dont: "Don't"
+
+pdf:
+  title: "Build résumé"
+  no_cv: "No résumé yet. Add one with `jobdar init --resume <file>` (or paste it via the onboard mode)."
+  html_written: "Wrote {file}"
+  pdf_written: "Wrote {file}"
+  no_playwright: "HTML written. For an automatic PDF run `npm i playwright`, or open the HTML and Print → Save as PDF."
 
 common:
   none: "none"
