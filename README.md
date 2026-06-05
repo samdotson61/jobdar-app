@@ -9,7 +9,9 @@ Jobdar scans company career pages (with first-class support for **Workday** and 
 dominate US enterprise employers), evaluates each role against your résumé, tailors an ATS-friendly CV and
 cover letter, and tracks every application.
 
-> **Status:** Planning. See **[ROADMAP.md](ROADMAP.md)** for the full Phase-and-Step build plan.
+> **Status:** Phase 0 (foundation & branding) **complete** — the CLI installs, passes `doctor`, and
+> runs a dry-run scan. See **[ROADMAP.md](ROADMAP.md)** for the full Phase-and-Step build plan and
+> **[CHANGELOG.md](CHANGELOG.md)** for what's shipped.
 
 ## Your data stays local
 

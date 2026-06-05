@@ -1,0 +1,55 @@
+{
+  "name": "jobdar",
+  "version": "0.1.0",
+  "description": "Bilingual (American English / Español) US job-search command center for new grads and people breaking into the workforce — region- and level-adaptable, privacy-first.",
+  "type": "module",
+  "bin": {
+    "jobdar": "bin/jobdar"
+  },
+  "files": [
+    "bin/",
+    "lib/",
+    "providers/",
+    "modes/",
+    "config/",
+    "templates/",
+    "commands/",
+    "scan.mjs",
+    "doctor.mjs",
+    "AGENTS.md",
+    "CLAUDE.md"
+  ],
+  "scripts": {
+    "doctor": "node doctor.mjs",
+    "scan": "node scan.mjs",
+    "test": "node test-all.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "js-yaml": "^4.1.0"
+  },
+  "keywords": [
+    "jobs",
+    "job-search",
+    "ats",
+    "workday",
+    "icims",
+    "greenhouse",
+    "bilingual",
+    "cli",
+    "new-grad",
+    "entry-level"
+  ],
+  "license": "Apache-2.0",
+  "author": "Sam Dotson",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/getjobdar/jobdar.git"
+  },
+  "homepage": "https://github.com/getjobdar/jobdar#readme",
+  "bugs": {
+    "url": "https://github.com/getjobdar/jobdar/issues"
+  }
+}

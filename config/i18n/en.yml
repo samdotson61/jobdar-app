@@ -1,0 +1,82 @@
+# Jobdar — American English display strings (canonical).
+# Every user-facing literal lives here, never hardcoded in code (Phase 1.3).
+# config/i18n/es.yml must mirror this key set exactly (enforced by test-all.mjs).
+
+cli:
+  tagline: "Bilingual US job-search command center — built for new grads and first-time job-seekers."
+  usage: "Usage: jobdar <command> [options]"
+  commands_header: "Commands"
+  options_header: "Options"
+  command_desc:
+    init: "Interactive setup wizard (region, level, profile, language)"
+    scan: "Scan configured career portals for new roles (no model needed)"
+    eval: "Evaluate a role against your résumé — fit score + report"
+    pipeline: "Run scan, evaluate, and track end to end"
+    pdf: "Generate a tailored ATS CV / cover letter"
+    tracker: "View and update your application tracker"
+    dashboard: "Launch the pipeline dashboard"
+    doctor: "Check that your setup is ready"
+    update: "Update Jobdar to the latest version"
+  opt_help: "Show help"
+  opt_version: "Show version"
+  opt_lang: "Language for this run (en | es)"
+  more_help: "Run `jobdar <command> --help` for details on a command."
+  planned: "`jobdar {command}` isn't built yet — it's planned for {phase}."
+  unknown: "Unknown command: {command}. Run `jobdar --help` to see what's available."
+
+scan:
+  title: "Jobdar scan"
+  dry_run_title: "Jobdar scan — dry run"
+  ctx: "Region: {region}  ·  Level(s): {levels}  ·  Language: {language}"
+  portals_count: "Portals configured: {count}"
+  none: "No portals configured yet. Add entries to config/portals.yml, or run `jobdar init`."
+  would_scan: "would scan"
+  no_provider: "no matching provider (check careers_url)"
+  dry_note: "Dry run — no network requests were made."
+  scanning: "Scanning {count} portal(s)…"
+  found_for: "{company}: {count} role(s)"
+  error_for: "{company}: {error}"
+  total_found: "{count} role(s) found across {portals} portal(s)."
+
+doctor:
+  title: "Jobdar doctor"
+  node_ok: "Node.js {version}"
+  node_old: "Node.js {version} — Jobdar needs >= {min}"
+  deps_ok: "Dependencies installed"
+  deps_missing: "Dependencies missing — run `npm install`"
+  config_ok: "Config found (profile.yml + portals.yml)"
+  config_missing: "{file} not found — run `jobdar init` to create it"
+  i18n_ok: "Language tables present: {langs}"
+  i18n_missing: "Language table missing: {lang}"
+  providers_ok: "Scanner providers loaded: {providers}"
+  pdf_optional: "PDF export not set up (optional — only needed for `jobdar pdf`)"
+  playwright_optional: "Playwright not installed (optional — only some JS-heavy iCIMS sites need it)"
+  summary_ok: "All good — you're ready to scan."
+  summary_warn: "{count} optional item(s) not set up. You can still scan, evaluate, and track."
+  summary_fail: "{count} problem(s) found. Fix the items marked with an x above, then re-run `jobdar doctor`."
+
+tracker:
+  title: "Application tracker"
+  empty: "No applications tracked yet. Run `jobdar pipeline`, or add entries once tracking lands (Phase 6)."
+  count: "{count} application(s) tracked"
+  col_company: "Company"
+  col_role: "Role"
+  col_state: "State"
+  col_updated: "Updated"
+
+regions:
+  midwest: "Midwest"
+  northeast: "Northeast"
+  southeast: "Southeast"
+  southwest: "Southwest"
+  west: "West"
+  nationwide: "Nationwide"
+  custom: "Custom"
+
+levels:
+  entry: "entry"
+  mid: "mid"
+  senior: "senior"
+
+common:
+  none: "none"

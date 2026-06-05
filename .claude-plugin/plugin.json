@@ -1,0 +1,12 @@
+{
+  "name": "jobdar",
+  "version": "0.1.0",
+  "description": "Bilingual US job-search command center — scan, evaluate, tailor, and track jobs for new grads and people entering the workforce.",
+  "author": {
+    "name": "Sam Dotson"
+  },
+  "homepage": "https://github.com/getjobdar/jobdar",
+  "license": "Apache-2.0",
+  "keywords": ["jobs", "job-search", "bilingual", "ats", "workday", "icims", "new-grad"],
+  "commands": ["./commands/jobdar.md"]
+}

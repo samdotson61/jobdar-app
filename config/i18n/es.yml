@@ -1,0 +1,82 @@
+# Jobdar — cadenas en español (paridad completa con en.yml).
+# Todo texto visible para el usuario vive aquí, nunca incrustado en el código.
+# El conjunto de claves debe coincidir exactamente con en.yml (lo verifica test-all.mjs).
+
+cli:
+  tagline: "Centro de búsqueda de empleo bilingüe — para recién graduados y quienes buscan su primer trabajo."
+  usage: "Uso: jobdar <comando> [opciones]"
+  commands_header: "Comandos"
+  options_header: "Opciones"
+  command_desc:
+    init: "Asistente de configuración interactivo (región, nivel, perfil, idioma)"
+    scan: "Escanea los portales de empleo configurados (no requiere modelo)"
+    eval: "Evalúa un puesto frente a tu currículum — puntuación de ajuste + informe"
+    pipeline: "Ejecuta escanear, evaluar y registrar de principio a fin"
+    pdf: "Genera un CV / carta de presentación adaptados para ATS"
+    tracker: "Consulta y actualiza tu registro de solicitudes"
+    dashboard: "Abre el panel del flujo de trabajo"
+    doctor: "Verifica que tu configuración esté lista"
+    update: "Actualiza Jobdar a la última versión"
+  opt_help: "Muestra la ayuda"
+  opt_version: "Muestra la versión"
+  opt_lang: "Idioma para esta ejecución (en | es)"
+  more_help: "Ejecuta `jobdar <comando> --help` para ver los detalles de un comando."
+  planned: "`jobdar {command}` aún no está disponible — está planificado para {phase}."
+  unknown: "Comando desconocido: {command}. Ejecuta `jobdar --help` para ver las opciones."
+
+scan:
+  title: "Escaneo de Jobdar"
+  dry_run_title: "Escaneo de Jobdar — simulación"
+  ctx: "Región: {region}  ·  Nivel(es): {levels}  ·  Idioma: {language}"
+  portals_count: "Portales configurados: {count}"
+  none: "Aún no hay portales configurados. Agrega entradas en config/portals.yml o ejecuta `jobdar init`."
+  would_scan: "se escanearía"
+  no_provider: "sin proveedor compatible (revisa careers_url)"
+  dry_note: "Simulación — no se hicieron solicitudes de red."
+  scanning: "Escaneando {count} portal(es)…"
+  found_for: "{company}: {count} puesto(s)"
+  error_for: "{company}: {error}"
+  total_found: "{count} puesto(s) encontrado(s) en {portals} portal(es)."
+
+doctor:
+  title: "Diagnóstico de Jobdar"
+  node_ok: "Node.js {version}"
+  node_old: "Node.js {version} — Jobdar requiere >= {min}"
+  deps_ok: "Dependencias instaladas"
+  deps_missing: "Faltan dependencias — ejecuta `npm install`"
+  config_ok: "Configuración encontrada (profile.yml + portals.yml)"
+  config_missing: "No se encontró {file} — ejecuta `jobdar init` para crearlo"
+  i18n_ok: "Tablas de idioma presentes: {langs}"
+  i18n_missing: "Falta la tabla de idioma: {lang}"
+  providers_ok: "Proveedores del escáner cargados: {providers}"
+  pdf_optional: "Exportación a PDF no configurada (opcional — solo para `jobdar pdf`)"
+  playwright_optional: "Playwright no instalado (opcional — solo algunos sitios iCIMS con mucho JS lo necesitan)"
+  summary_ok: "Todo en orden — listo para escanear."
+  summary_warn: "{count} elemento(s) opcional(es) sin configurar. Puedes escanear, evaluar y registrar igualmente."
+  summary_fail: "{count} problema(s) encontrado(s). Corrige los elementos marcados con una x arriba y vuelve a ejecutar `jobdar doctor`."
+
+tracker:
+  title: "Registro de solicitudes"
+  empty: "Aún no hay solicitudes registradas. Ejecuta `jobdar pipeline` o agrega entradas cuando el registro esté disponible (Fase 6)."
+  count: "{count} solicitud(es) registrada(s)"
+  col_company: "Empresa"
+  col_role: "Puesto"
+  col_state: "Estado"
+  col_updated: "Actualizado"
+
+regions:
+  midwest: "Medio Oeste"
+  northeast: "Noreste"
+  southeast: "Sureste"
+  southwest: "Suroeste"
+  west: "Oeste"
+  nationwide: "Todo el país"
+  custom: "Personalizado"
+
+levels:
+  entry: "inicial"
+  mid: "intermedio"
+  senior: "senior"
+
+common:
+  none: "ninguno"

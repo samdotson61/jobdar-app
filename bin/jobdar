@@ -1,0 +1,86 @@
+#!/usr/bin/env node
+// Jobdar — CLI entrypoint & subcommand router.
+// Deterministic commands (scan, doctor, tracker) run with no model. Model-backed
+// commands (eval, pipeline's eval step, pdf tailoring) use the configured
+// inference backend — your API key now, the on-device model in Phase 8.
+
+import { loadProfile } from '../lib/config.mjs'
+import { getT } from '../lib/i18n.mjs'
+import { parseFlags, resolveLang, readVersion } from '../lib/cli.mjs'
+
+// Commands not yet built map to the phase that delivers them (honest stubs).
+const PLANNED = {
+  init: 'Phase 6 (setup wizard)',
+  eval: 'Phase 1 / Phase 8 (inference backend)',
+  pipeline: 'Phase 6 / Phase 8',
+  pdf: 'a later phase (tailored PDF export)',
+  dashboard: 'Phase 7 (dashboard)',
+  update: 'Phase 7 (release tooling)',
+}
+
+const COMMAND_ORDER = ['init', 'scan', 'eval', 'pipeline', 'pdf', 'tracker', 'dashboard', 'doctor', 'update']
+
+function printHelp(t) {
+  console.log(`jobdar — ${t('cli.tagline')}\n`)
+  console.log(t('cli.usage') + '\n')
+  console.log(t('cli.commands_header'))
+  for (const cmd of COMMAND_ORDER) console.log(`  ${cmd.padEnd(11)} ${t(`cli.command_desc.${cmd}`)}`)
+  console.log('\n' + t('cli.options_header'))
+  console.log(`  --help, -h     ${t('cli.opt_help')}`)
+  console.log(`  --version      ${t('cli.opt_version')}`)
+  console.log(`  --lang <en|es> ${t('cli.opt_lang')}`)
+  console.log('\n' + t('cli.more_help'))
+}
+
+async function main() {
+  const argv = process.argv.slice(2)
+  const command = argv[0] && !argv[0].startsWith('-') ? argv[0] : null
+  const rest = command ? argv.slice(1) : argv
+  const { flags } = parseFlags(argv)
+
+  const profile = loadProfile()
+  const lang = resolveLang(flags, profile)
+  const t = getT(lang)
+
+  if (flags.version || flags.v) {
+    console.log(readVersion())
+    return 0
+  }
+  if (command === null || command === 'help' || flags.help || flags.h) {
+    printHelp(t)
+    return 0
+  }
+
+  switch (command) {
+    case 'scan': {
+      const { runScan } = await import('../scan.mjs')
+      await runScan(rest)
+      return 0
+    }
+    case 'doctor': {
+      const { runDoctor } = await import('../doctor.mjs')
+      const { failures } = await runDoctor(rest)
+      return failures > 0 ? 1 : 0
+    }
+    case 'tracker': {
+      const { runTracker } = await import('../lib/tracker.mjs')
+      await runTracker(rest)
+      return 0
+    }
+    default: {
+      if (PLANNED[command]) {
+        console.log(t('cli.planned', { command, phase: PLANNED[command] }))
+        return 0
+      }
+      console.error(t('cli.unknown', { command }))
+      return 1
+    }
+  }
+}
+
+main()
+  .then((code) => process.exit(code || 0))
+  .catch((err) => {
+    console.error(err && err.stack ? err.stack : String(err))
+    process.exit(1)
+  })

@@ -7,8 +7,10 @@
 > fit against your résumé, **tailors** an ATS-friendly CV/cover letter, and **tracks** every application —
 > with your data kept **local**, processed by a **private on-device model by default** or your own cloud API.
 >
-> **Status:** Planning. This document is the build plan; no code has been written yet.
-> **Date:** 2026-06-05
+> **Status:** Phase 0 (Foundation & branding) **complete** — installs, passes `doctor`, runs a
+> dry-run scan, Apache-2.0 licensed, bilingual EN/ES wired. Building toward the MVP cut line next
+> (Phase 1 → Phase 2 Workday). See [CHANGELOG.md](CHANGELOG.md) for what shipped in `0.1.0`.
+> **Date:** 2026-06-05 (Phase 0 built 2026-06-05)
 
 ---
 

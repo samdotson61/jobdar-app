@@ -1,0 +1,17 @@
+# Canonical application states. IDs are English and stable; labels are localized.
+# Spanish aliases are accepted on input (Phase 1.4). Used by the tracker.
+states:
+  - id: scanned
+    label: { en: "Scanned", es: "Escaneado" }
+  - id: evaluated
+    label: { en: "Evaluated", es: "Evaluado" }
+  - id: applied
+    label: { en: "Applied", es: "Postulado" }
+  - id: interviewing
+    label: { en: "Interviewing", es: "Entrevistando" }
+  - id: offer
+    label: { en: "Offer", es: "Oferta" }
+  - id: rejected
+    label: { en: "Rejected", es: "Rechazado" }
+  - id: archived
+    label: { en: "Archived", es: "Archivado" }

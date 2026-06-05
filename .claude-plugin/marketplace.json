@@ -1,0 +1,14 @@
+{
+  "name": "jobdar",
+  "owner": {
+    "name": "Sam Dotson",
+    "url": "https://github.com/getjobdar"
+  },
+  "plugins": [
+    {
+      "name": "jobdar",
+      "source": "./",
+      "description": "Bilingual US job-search command center for new grads and people entering the workforce (Midwest-default, entry-default, privacy-first)."
+    }
+  ]
+}

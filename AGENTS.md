@@ -1,0 +1,44 @@
+# Jobdar — Agent Guide
+
+Jobdar is a bilingual (American English / Español) US job-search command center for
+**new grads and people breaking into the workforce** (including those without a degree).
+It **scans** company career pages, **evaluates** roles against the user's résumé,
+**tailors** an ATS-friendly CV/cover letter, and **tracks** applications — with the user's
+data kept **local**.
+
+This file orients an AI CLI agent (Claude Code, Gemini CLI, …). Humans: see `README.md`.
+
+## Two layers
+
+1. **Deterministic Node.js layer (zero model).** `scan.mjs` + `providers/*.mjs`,
+   `doctor.mjs`, the tracker, and config under `config/`. These never call a model and
+   touch only **public** job data. Run them directly (`node scan.mjs`) or via `jobdar <cmd>`.
+2. **AI brain (this layer).** Markdown prompts in `modes/` that you, the agent, read to
+   evaluate roles, tailor résumés, and prep outreach. `modes/_shared.md` holds the shared
+   rubric; each `modes/<mode>.md` is one task.
+
+Deterministic work needs no model; only **evaluation/tailoring** does.
+
+## Scope (locked)
+
+- **Languages:** American English (canonical) + Spanish (full peer). No other locales.
+- **Region:** US, **Midwest by default**; toggle via `target_regions` in `config/profile.yml`.
+- **Level:** **entry by default**; `mid` first-class; `senior` opt-in (ranks on merit when
+  chosen). Only roles *above* the user's highest selected level are de-prioritized.
+- **Privacy:** the résumé stays local; the scanner only fetches public listings.
+
+## How to drive it
+
+- Read `config/profile.yml` for language, region(s), level(s), and tuning profile.
+- For any user-facing string, prefer the i18n tables in `config/i18n/` over inventing copy.
+- Match the user's language (`language:`, or the JD's language) in everything you generate.
+
+## Modes
+
+| Mode | File | Purpose |
+|---|---|---|
+| shared | `modes/_shared.md` | Shared rubric + scoring (fleshed out in Phase 1.1) |
+| scan | `modes/scan.md` | How scanning + portals work |
+| eval | `modes/eval.md` | Evaluate one role against the résumé |
+
+> Status: Phase 0 scaffold. The brain prompts are skeletons; Phase 1 authors them in full.

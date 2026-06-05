@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+
+# Jobdar runtime data & outputs — never commit personal data
+data/
+output/
+reports/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# Local environment
+.env
+.env.local
