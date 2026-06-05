@@ -17,4 +17,4 @@ Guidance:
   (entry default; senior opt-in ranks on merit), and tuning profile.
 - Keep the user's résumé local; use only public job data.
 
-> Phase 0 scaffold — the brain modes are skeletons until Phase 1.
+> Phases 0–7 complete (Jobdar CLI 1.3.1) — the `modes/` brain is fully authored (EN + ES).

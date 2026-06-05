@@ -13,9 +13,12 @@ Jobdar escanea las páginas de empleo de las empresas (con soporte de primera cl
 puesto frente a tu currículum, adapta un CV y una carta de presentación compatibles con ATS, y
 registra cada postulación.
 
-> **Estado:** Fase 0 (cimientos y marca) **completa** — la CLI se instala, pasa `doctor` y
-> ejecuta un escaneo de prueba. Consulta **[ROADMAP.md](ROADMAP.md)** para el plan completo por
-> fases y pasos, y **[CHANGELOG.md](CHANGELOG.md)** para lo ya entregado.
+> **Estado:** Fases 0–7 **completas** — **Jobdar CLI `1.3.1`**: núcleo bilingüe, escáneres Workday /
+> iCIMS / Greenhouse verificados en vivo, selectores de nivel y región, el asistente `jobdar init` y una
+> tubería **escanear → puntuar → construir** (puntuación de ajuste 0–5 → Postular / Investigar / Descartar)
+> en un `jobdar tui` con colores, más un currículum ATS adaptado (`jobdar pdf`). Pendiente para 1.0:
+> publicar en npm + marketplace, y luego una beta cerrada. Consulta **[ROADMAP.md](ROADMAP.md)** para el
+> plan completo y **[CHANGELOG.md](CHANGELOG.md)** para lo ya entregado.
 
 ## Tus datos se quedan en local
 

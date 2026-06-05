@@ -51,5 +51,6 @@ Deterministic work needs no model; only **evaluation/tailoring** does.
 
 Each base mode has a full Spanish peer in `modes/es/`.
 
-> Status: Phase 1 authored the brain (EN canonical + full Spanish parity). Level archetypes
-> (Phase 4) and region tuning (Phase 5) refine the rubric later.
+> Status: Phases 0–7 complete — Jobdar CLI 1.3.1. The brain is authored EN-canonical with full
+> Spanish parity; level archetypes (Phase 4) and region tuning (Phase 5) are wired into the rubric.
+> Next up: pluggable on-device inference (Phase 8) and the web app (Phase 9). See `CHANGELOG.md`.

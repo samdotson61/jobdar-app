@@ -3,4 +3,5 @@
 Reserved for Jobdar agent **skills** (portable, CLI-agnostic task bundles) referenced by the
 plugin manifest. Populated as modes graduate into packaged skills.
 
-> Phase 0 scaffold (see `ROADMAP.md`, Step 0.3).
+> Phases 0–7 complete (Jobdar CLI 1.3.1); skills stay scaffolded — modes graduate into packaged skills
+> over time. See `ROADMAP.md`, Step 0.3.

@@ -6,6 +6,14 @@ All notable changes to Jobdar are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.3.1] — 2026-06-05
+
+### Fixed
+- Stale **"Status:" banners** at the tops of `README.md`, `README.es.md`, `AGENTS.md`, `CLAUDE.md`,
+  `commands/jobdar.md`, and `.agents/skills/README.md` still read "Phase 0 scaffold" / "Phase 1" — they
+  now reflect **Phases 0–7 complete (1.3.x)**. Notably, `commands/jobdar.md` no longer claims the `modes/`
+  brain is "skeletons until Phase 1"; it's fully authored (EN + ES). Docs-only — no code change.
+
 ## [1.3.0] — 2026-06-05
 
 Résumé build (career-ops "Customize" stage) — completes the pipeline shape: **scan → score → build**.

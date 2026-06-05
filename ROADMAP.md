@@ -7,7 +7,7 @@
 > fit against your résumé, **tailors** an ATS-friendly CV/cover letter, and **tracks** every application —
 > with your data kept **local**, processed by a **private on-device model by default** or your own cloud API.
 >
-> **Status:** Phases 0–7 **complete** — **Jobdar CLI `1.3.0`**. Bilingual core; live-verified Workday +
+> **Status:** Phases 0–7 **complete** — **Jobdar CLI `1.3.1`**. Bilingual core; live-verified Workday +
 > iCIMS + Greenhouse scanners; level + no-degree tuning; region toggle + Midwest seeds + geo filter;
 > the `jobdar init` wizard; a **scan→score pipeline** (0–5 fit scoring → Apply/Research/Don't) surfaced in a
 > scored `jobdar tui`, a tailored ATS résumé build (`jobdar pdf`), + localhost `jobdar dashboard`; a security + legal/privacy pass (zero

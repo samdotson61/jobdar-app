@@ -11,9 +11,12 @@ Jobdar scans company career pages (with first-class support for **Workday** and 
 dominate US enterprise employers), evaluates each role against your résumé, tailors an ATS-friendly CV and
 cover letter, and tracks every application.
 
-> **Status:** Phase 0 (foundation & branding) **complete** — the CLI installs, passes `doctor`, and
-> runs a dry-run scan. See **[ROADMAP.md](ROADMAP.md)** for the full Phase-and-Step build plan and
-> **[CHANGELOG.md](CHANGELOG.md)** for what's shipped.
+> **Status:** Phases 0–7 **complete** — **Jobdar CLI `1.3.1`**: bilingual core, live-verified Workday /
+> iCIMS / Greenhouse scanners, level + region toggles, the `jobdar init` wizard, and a **scan → score →
+> build** pipeline (0–5 fit scoring → Apply / Research / Don't) surfaced in a scored `jobdar tui` plus a
+> tailored ATS résumé (`jobdar pdf`). Remaining for the 1.0 ship: npm publish + marketplace, then a closed
+> beta. See **[ROADMAP.md](ROADMAP.md)** for the full build plan and **[CHANGELOG.md](CHANGELOG.md)** for
+> what's shipped.
 
 ## Your data stays local
 
