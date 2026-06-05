@@ -7,10 +7,11 @@
 > fit against your résumé, **tailors** an ATS-friendly CV/cover letter, and **tracks** every application —
 > with your data kept **local**, processed by a **private on-device model by default** or your own cloud API.
 >
-> **Status:** Phase 0 (Foundation & branding) **complete** — installs, passes `doctor`, runs a
-> dry-run scan, Apache-2.0 licensed, bilingual EN/ES wired. Building toward the MVP cut line next
-> (Phase 1 → Phase 2 Workday). See [CHANGELOG.md](CHANGELOG.md) for what shipped in `0.1.0`.
-> **Date:** 2026-06-05 (Phase 0 built 2026-06-05)
+> **Status:** Phases 0–1 **complete** (`0.2.0`) — foundation + branding, and the
+> American-English-first bilingual core: the full EN/ES agent brain, canonical state IDs with
+> Spanish aliases, and a bilingual README. Next on the MVP cut line: **Phase 2 — Workday provider**.
+> See [CHANGELOG.md](CHANGELOG.md).
+> **Date:** 2026-06-05 (Phases 0–1 built 2026-06-05)
 
 ---
 

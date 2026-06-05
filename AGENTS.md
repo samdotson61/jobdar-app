@@ -37,8 +37,14 @@ Deterministic work needs no model; only **evaluation/tailoring** does.
 
 | Mode | File | Purpose |
 |---|---|---|
-| shared | `modes/_shared.md` | Shared rubric + scoring (fleshed out in Phase 1.1) |
-| scan | `modes/scan.md` | How scanning + portals work |
-| eval | `modes/eval.md` | Evaluate one role against the résumé |
+| shared | `modes/_shared.md` | Shared rubric, scoring bands, and the rules that never bend |
+| scan | `modes/scan.md` | How scanning + portals work (deterministic) |
+| eval | `modes/eval.md` | Evaluate one role against the résumé → fit report |
+| apply | `modes/apply.md` | Tailored cover letter + application answers |
+| outreach | `modes/outreach.md` | Recruiter & networking messages |
+| pipeline | `modes/pipeline.md` | Scan → evaluate → track, end to end |
 
-> Status: Phase 0 scaffold. The brain prompts are skeletons; Phase 1 authors them in full.
+Each base mode has a full Spanish peer in `modes/es/`.
+
+> Status: Phase 1 authored the brain (EN canonical + full Spanish parity). Level archetypes
+> (Phase 4) and region tuning (Phase 5) refine the rubric later.

@@ -1,13 +1,18 @@
 // Jobdar — test runner (zero dependencies). Run with `npm test`.
-// Covers the Phase 0 foundation: i18n parity + interpolation, shipped defaults,
-// and the provider registry / Greenhouse detect(). Phases 2+ add provider tests.
+// Covers the foundation + bilingual core: i18n parity & interpolation, shipped defaults,
+// the provider registry / Greenhouse detect(), EN<->ES modes parity, and state aliases.
 
 import { strict as assert } from 'node:assert'
+import { readdirSync, existsSync } from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { getStrings, listKeys, getT } from './lib/i18n.mjs'
 import { PROFILE_DEFAULTS, SUPPORTED_LANGUAGES } from './lib/config.mjs'
 import { resolveProvider, providerIds } from './providers/_contract.mjs'
 import greenhouse from './providers/greenhouse.mjs'
+import { resolveState, stateLabel, allStates } from './lib/states.mjs'
 
+const ROOT = path.dirname(fileURLToPath(import.meta.url))
 const tests = []
 const test = (name, fn) => tests.push({ name, fn })
 
@@ -50,6 +55,31 @@ test('registry: resolveProvider routes Greenhouse URLs and rejects unknowns', ()
 
 test('registry: greenhouse is registered', () => {
   assert.ok(providerIds().includes('greenhouse'))
+})
+
+test('modes: every base mode has a Spanish parity file', () => {
+  const modesDir = path.join(ROOT, 'modes')
+  const base = readdirSync(modesDir).filter((f) => f.endsWith('.md'))
+  assert.ok(base.length >= 6, `expected the base modes, found ${base.length}`)
+  const missing = base.filter((f) => !existsSync(path.join(modesDir, 'es', f)))
+  assert.deepEqual(missing, [], `Spanish modes missing: ${missing.join(', ')}`)
+})
+
+test('states: Spanish + variant aliases resolve to canonical English IDs', () => {
+  assert.equal(resolveState('postulado'), 'applied')
+  assert.equal(resolveState('Applied'), 'applied')
+  assert.equal(resolveState('aplicar'), 'applied')
+  assert.equal(resolveState('entrevistando'), 'interviewing')
+  assert.equal(resolveState('rechazado'), 'rejected')
+  assert.equal(resolveState('evaluated'), 'evaluated')
+  assert.equal(resolveState('garbage-not-a-state'), null)
+})
+
+test('states: labels are localized; IDs are stable lowercase English', () => {
+  assert.equal(stateLabel('applied', 'en'), 'Applied')
+  assert.equal(stateLabel('applied', 'es'), 'Postulado')
+  assert.equal(stateLabel('unknown', 'es'), 'unknown')
+  assert.ok(allStates().every((s) => s.id === s.id.toLowerCase()))
 })
 
 let passed = 0

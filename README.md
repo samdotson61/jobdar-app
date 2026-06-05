@@ -1,5 +1,7 @@
 # Jobdar
 
+**🇺🇸 English** · [🇲🇽 Español](README.es.md)
+
 A bilingual (American English / Español) US job-search command center for **new grads and people breaking
 into the workforce** — including those **without a college degree**. **Region-adaptable** (Midwest by
 default; toggle to South, Southwest, Northeast, West, or nationwide) and **entry-level by default** (toggle

@@ -1,17 +1,25 @@
 # Canonical application states. IDs are English and stable; labels are localized.
-# Spanish aliases are accepted on input (Phase 1.4). Used by the tracker.
+# Spanish (and common variant) aliases are accepted on input — see lib/states.mjs.
+# The tracker stores canonical IDs and displays localized labels (Phase 1.4).
 states:
   - id: scanned
     label: { en: "Scanned", es: "Escaneado" }
+    aliases: [scan, escanear, new, nuevo]
   - id: evaluated
     label: { en: "Evaluated", es: "Evaluado" }
+    aliases: [eval, evaluar, scored]
   - id: applied
     label: { en: "Applied", es: "Postulado" }
+    aliases: [apply, postular, aplicar, aplicado]
   - id: interviewing
     label: { en: "Interviewing", es: "Entrevistando" }
+    aliases: [interview, entrevista, entrevistar]
   - id: offer
     label: { en: "Offer", es: "Oferta" }
+    aliases: [offered, "oferta recibida"]
   - id: rejected
     label: { en: "Rejected", es: "Rechazado" }
+    aliases: [reject, rechazo, rechazar, declined]
   - id: archived
     label: { en: "Archived", es: "Archivado" }
+    aliases: [archive, archivar, closed, cerrado]
