@@ -21,8 +21,9 @@ and reason over the normalized results.
   calls** — use it to check configuration.
 
 ## Your role as the agent
-- Help the user add real employers to `config/portals.yml` (the region wizard arrives in Phase 5).
+- Help the user add employers — `jobdar seed --region <r> --write` materializes them from
+  `data/seed/employers.yml` into `config/portals.yml`, or they can edit it by hand.
 - After a scan, hand promising roles to the **eval** mode for scoring.
-- Title filtering by **level** is deterministic (`lib/levels.mjs`, Phase 4): roles outside the user's
-  `target_levels` are pre-filtered out; ambiguous titles pass through to the rubric. Region/location
-  filtering arrives in Phase 5.
+- Title filtering by **level** (`lib/levels.mjs`) and **region/location** (`lib/regions.mjs`) is
+  deterministic: roles outside the user's `target_levels` or `target_regions` are pre-filtered out
+  (remote-US always allowed); ambiguous titles/locations pass through to the rubric.

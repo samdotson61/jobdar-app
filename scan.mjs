@@ -10,6 +10,7 @@ import { getT } from './lib/i18n.mjs'
 import { parseFlags, resolveLang, isDirectRun } from './lib/cli.mjs'
 import { resolveProvider } from './providers/_contract.mjs'
 import { filterByLevel } from './lib/levels.mjs'
+import { filterByLocation } from './lib/regions.mjs'
 import { color, symbol, heading } from './lib/ui.mjs'
 
 const regionLabel = (t, regions) => (regions || []).map((r) => t(`regions.${r}`)).join(', ') || t('common.none')
@@ -25,12 +26,15 @@ export async function runScan(argv = []) {
   const levels = flags.levels
     ? String(flags.levels).split(',').map((s) => s.trim()).filter(Boolean)
     : profile.target_levels
+  const regions = flags.regions
+    ? String(flags.regions).split(',').map((s) => s.trim()).filter(Boolean)
+    : profile.target_regions
 
   heading(dryRun ? t('scan.dry_run_title') : t('scan.title'))
   console.log(
     color.dim(
       t('scan.ctx', {
-        region: regionLabel(t, profile.target_regions),
+        region: regionLabel(t, regions),
         levels: levelLabel(t, levels),
         language: lang,
       })
@@ -63,7 +67,8 @@ export async function runScan(argv = []) {
   // Live scan.
   console.log(t('scan.scanning', { count: resolved.length }))
   let total = 0
-  let totalExcluded = 0
+  let excludedLevel = 0
+  let excludedRegion = 0
   for (const { portal, hit } of resolved) {
     if (!hit) {
       console.log(`  ${symbol.warn()} ${t('scan.error_for', { company: portal.company, error: t('scan.no_provider') })}`)
@@ -71,15 +76,18 @@ export async function runScan(argv = []) {
     }
     try {
       const jobs = await hit.provider.fetch(hit.match, ctx)
-      const { kept, excluded } = filterByLevel(jobs, levels)
-      total += kept.length
-      totalExcluded += excluded
-      console.log(`  ${symbol.ok()} ${t('scan.found_for', { company: portal.company, count: kept.length })}`)
+      const lvl = filterByLevel(jobs, levels)
+      const loc = filterByLocation(lvl.kept, regions, { userMetro: profile.location })
+      total += loc.kept.length
+      excludedLevel += lvl.excluded
+      excludedRegion += loc.excluded
+      console.log(`  ${symbol.ok()} ${t('scan.found_for', { company: portal.company, count: loc.kept.length })}`)
     } catch (err) {
       console.log(`  ${symbol.fail()} ${t('scan.error_for', { company: portal.company, error: err.message })}`)
     }
   }
-  if (totalExcluded > 0) console.log(color.dim(t('scan.level_note', { count: totalExcluded })))
+  if (excludedLevel > 0) console.log(color.dim(t('scan.level_note', { count: excludedLevel })))
+  if (excludedRegion > 0) console.log(color.dim(t('scan.region_note', { count: excludedRegion })))
   console.log('\n' + t('scan.total_found', { count: total, portals: resolved.length }))
   return { portals: portals.length, jobs: total }
 }

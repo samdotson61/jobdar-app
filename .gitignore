@@ -1,8 +1,9 @@
 # Dependencies
 node_modules/
 
-# Jobdar runtime data & outputs — never commit personal data
-data/
+# Jobdar runtime data & outputs — never commit personal data (but DO ship the seed catalog)
+data/*
+!data/seed/
 output/
 reports/
 

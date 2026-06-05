@@ -23,9 +23,9 @@ razonas sobre los resultados normalizados.
   red** — úsalo para revisar la configuración.
 
 ## Tu papel como agente
-- Ayuda a la persona a añadir empleadores reales a `config/portals.yml` (el asistente de región
-  llega en la Fase 5).
+- Ayuda a la persona a añadir empleadores — `jobdar seed --region <r> --write` los materializa
+  desde `data/seed/employers.yml` en `config/portals.yml`, o puede editarlo a mano.
 - Tras un escaneo, pasa los puestos prometedores al modo **eval** para puntuarlos.
-- El filtrado por título según **nivel** es determinista (`lib/levels.mjs`, Fase 4): los puestos
-  fuera de los `target_levels` se pre-filtran; los títulos ambiguos pasan a la rúbrica. El filtrado
-  por región/ubicación llega en la Fase 5.
+- El filtrado por **nivel** (`lib/levels.mjs`) y **región/ubicación** (`lib/regions.mjs`) es
+  determinista: los puestos fuera de `target_levels` o `target_regions` se pre-filtran (remoto en
+  EE. UU. siempre se permite); los títulos/ubicaciones ambiguos pasan a la rúbrica.

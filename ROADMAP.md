@@ -7,11 +7,12 @@
 > fit against your résumé, **tailors** an ATS-friendly CV/cover letter, and **tracks** every application —
 > with your data kept **local**, processed by a **private on-device model by default** or your own cloud API.
 >
-> **Status:** Phases 0–4 **complete** (`0.5.0`) — foundation + branding, the bilingual core, both
-> marquee scanners (Workday + iCIMS, verified live), and the **level toggle + no-degree tuning** (a
-> deterministic title pre-filter + a level/archetype/no-degree/comp rubric). Next on the MVP cut
-> line: **Phase 5 — region toggle (Midwest seeds)**, then Phase 6 wizard. See [CHANGELOG.md](CHANGELOG.md).
-> **Date:** 2026-06-05 (Phases 0–4 built 2026-06-05)
+> **Status:** Phases 0–5 **complete** (`0.6.0`) — foundation + branding, the bilingual core, both
+> marquee scanners (Workday + iCIMS, verified live), the level toggle + no-degree tuning, and the
+> **region toggle + Midwest employer seeds + geo location filter** (verified live across all three
+> providers: 78 Midwest roles kept, 87 out-of-region filtered). Next on the MVP cut line: **Phase 6 — effortless install & the
+> setup wizard**. See [CHANGELOG.md](CHANGELOG.md).
+> **Date:** 2026-06-05 (Phases 0–5 built 2026-06-05)
 
 ---
 

@@ -18,7 +18,7 @@ const PLANNED = {
   update: 'Phase 7 (release tooling)',
 }
 
-const COMMAND_ORDER = ['init', 'scan', 'eval', 'pipeline', 'pdf', 'tracker', 'dashboard', 'doctor', 'update']
+const COMMAND_ORDER = ['init', 'scan', 'seed', 'eval', 'pipeline', 'pdf', 'tracker', 'dashboard', 'doctor', 'update']
 
 function printHelp(t) {
   console.log(`jobdar — ${t('cli.tagline')}\n`)
@@ -55,6 +55,11 @@ async function main() {
     case 'scan': {
       const { runScan } = await import('../scan.mjs')
       await runScan(rest)
+      return 0
+    }
+    case 'seed': {
+      const { runSeed } = await import('../lib/commands/seed.mjs')
+      await runSeed(rest)
       return 0
     }
     case 'doctor': {

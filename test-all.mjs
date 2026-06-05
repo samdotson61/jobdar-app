@@ -15,6 +15,8 @@ import icims, { HOST_ALLOWLIST as ICIMS_HOSTS, parseJobPostingsFromHtml } from '
 import { assertAllowedUrl } from './lib/http.mjs'
 import { resolveState, stateLabel, allStates } from './lib/states.mjs'
 import { classifyTitle, levelDecision, filterByLevel } from './lib/levels.mjs'
+import { regionStateSet, locationMatches, filterByLocation } from './lib/regions.mjs'
+import { selectEmployers, toPortals } from './lib/seed.mjs'
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url))
 const tests = []
@@ -172,6 +174,13 @@ test('icims: parses real-world server-rendered job cards (h3 title, ?in_iframe s
   assert.equal(jobs[1].url, 'https://careers-primehealthcare.icims.com/jobs/265889/student-extern/job') // relative resolved
 })
 
+test('icims: extracts the US-{ST}-{City} job location from a card (so region filtering works)', () => {
+  const card = `<li class="iCIMS_JobCardItem"><div class="col-xs-12"><span class="sr-only field-label">Job Location</span><span>US-OH-Columbus</span></div><div class="col-xs-12 title"><a href="/jobs/9/nurse/job"><h3>Nurse</h3></a></div></li>`
+  const jobs = parseJobPostingsFromHtml(card, 'https://careers-x.icims.com', 'X')
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].location, 'Columbus, OH')
+})
+
 test('icims: registered; HTML pagination dedupes and stops on an empty page', async () => {
   assert.ok(providerIds().includes('icims'))
   const realFetch = globalThis.fetch
@@ -225,6 +234,59 @@ test('levels: filterByLevel keeps in-band jobs and annotates them', () => {
   assert.equal(excluded, 1) // Senior Manager filtered
   assert.equal(kept.length, 2)
   assert.ok(kept.every((j) => 'level' in j && 'flagged' in j))
+})
+
+test('regions: regionStateSet maps presets; nationwide is ALL', () => {
+  const mw = regionStateSet(['midwest'])
+  assert.ok(mw.has('OH') && mw.has('IL') && !mw.has('AZ'))
+  assert.equal(regionStateSet(['nationwide']), 'ALL')
+})
+
+test('regions: location filter keeps in-region + remote-US, drops out-of-region + offshore', () => {
+  assert.equal(locationMatches('Tempe, AZ', ['southwest']), true) // gate: Phoenix user gets AZ
+  assert.equal(locationMatches('Tempe, AZ', ['midwest']), false)
+  assert.equal(locationMatches('Columbus, OH', ['midwest']), true) // gate: Columbus user gets OH
+  assert.equal(locationMatches('Columbus, OH', ['southwest']), false)
+  assert.equal(locationMatches('Phoenix, Arizona, United States', ['southwest']), true) // full state name
+  assert.equal(locationMatches('Bengaluru, India', ['midwest']), false) // offshore blocked
+  assert.equal(locationMatches('Remote, USA', ['midwest']), true) // remote-US allowed anywhere
+})
+
+test('regions: nationwide keeps US + remote, drops offshore-only', () => {
+  assert.equal(locationMatches('Detroit, MI', ['nationwide']), true)
+  assert.equal(locationMatches('Austin, TX', ['nationwide']), true)
+  assert.equal(locationMatches('Bengaluru, India', ['nationwide']), false)
+})
+
+test('regions: filterByLocation counts kept/excluded', () => {
+  const jobs = [{ location: 'Chicago, IL' }, { location: 'Bengaluru, India' }, { location: 'Remote, USA' }]
+  const { kept, excluded } = filterByLocation(jobs, ['midwest'])
+  assert.equal(kept.length, 2)
+  assert.equal(excluded, 1)
+})
+
+test('regions: handles each provider format (Workday country-first, Greenhouse metro, iCIMS US-ST-City)', () => {
+  // Workday "country, state, city"
+  assert.equal(locationMatches('US, Texas, Austin', ['southwest']), true)
+  assert.equal(locationMatches('US, California, Santa Clara', ['west']), true)
+  assert.equal(locationMatches('US, California, Santa Clara', ['midwest']), false)
+  // Greenhouse: a bare metro resolves to its region; offshore is blocked
+  assert.equal(locationMatches('Chicago', ['midwest']), true)
+  assert.equal(locationMatches('Chicago', ['southwest']), false)
+  assert.equal(locationMatches('Brno, Czechia', ['nationwide']), false)
+  // iCIMS "US-{ST}-{City}"
+  assert.equal(locationMatches('US-NJ-Denville', ['northeast']), true)
+  assert.equal(locationMatches('US-NJ-Denville', ['midwest']), false)
+  assert.equal(locationMatches('US-OH-Columbus', ['midwest']), true)
+})
+
+test('seed: region selection returns that region and swaps cleanly (gate)', () => {
+  const mw = selectEmployers({ regions: ['midwest'] }).map((e) => e.company)
+  const sw = selectEmployers({ regions: ['southwest'] }).map((e) => e.company)
+  assert.ok(mw.includes('Enova') && mw.includes('Jamf'))
+  assert.ok(sw.includes('Carvana') && sw.includes('Axon'))
+  assert.equal(mw.some((c) => sw.includes(c)), false) // disjoint -> toggle swaps employers
+  assert.ok(toPortals(selectEmployers({ regions: ['midwest'] })).every((p) => p.company && p.careers_url))
 })
 
 test('modes: every base mode has a Spanish parity file', () => {

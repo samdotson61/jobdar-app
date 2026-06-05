@@ -6,6 +6,38 @@ All notable changes to Jobdar are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.6.0] — 2026-06-05
+
+Phase 5 — region toggle (Midwest default) + region-aware employer seeds + geo location filtering.
+
+### Added
+- `lib/regions.mjs`: US region taxonomy (midwest default; northeast, southeast, southwest, west,
+  nationwide, custom) → states + metros, and a deterministic **location filter** that keeps roles in
+  the selected region(s) plus remote-US and drops out-of-region / offshore roles (coarse; ambiguous
+  locations pass through). `scan` applies it; `scan --regions southwest` overrides per run.
+- `data/seed/employers.yml`: a region-tagged employer catalog, **Midwest seeded first** (Enova,
+  project44, Hudl, StockX, Jamf — Chicago / Lincoln / Detroit / Minneapolis) plus a partial Southwest
+  set — all live-verified to return public postings.
+- `jobdar seed [--region <r>] [--metro <m>] [--write]` (`lib/seed.mjs` + `lib/commands/seed.mjs`):
+  previews or materializes matching employers into `config/portals.yml` — no hand-editing.
+- Region + seed tests covering the gate (Phoenix→AZ, Columbus→OH, offshore blocked, remote-US kept,
+  nationwide, midwest↔southwest swap).
+
+### Verified
+- Live: `seed --region midwest --write` → scanning the five real Greenhouse boards kept 78 Midwest +
+  remote-US roles and filtered out 87 out-of-region/offshore roles. Toggling to `southwest` swaps to
+  Carvana / Axon / Self Financial.
+- The location filter was checked against **every provider's** real format (Greenhouse, Workday, iCIMS).
+
+### Fixed
+- Cross-provider location parsing so region filtering works regardless of which ATS a role came from:
+  Workday country-first ("US, Texas, Austin"), Greenhouse bare metros ("Chicago" → IL) plus a broader
+  offshore list (e.g. Czechia), and iCIMS `US-{ST}-{City}` — previously empty, so iCIMS roles bypassed
+  the region filter; now 50/50 live iCIMS rows resolve a location.
+
+### Changed
+- `.gitignore` now ships `data/seed/` while still ignoring runtime `data/`.
+
 ## [0.5.0] — 2026-06-05
 
 Phase 4 — level toggle (entry default, mid first-class, senior opt-in) + no-degree tuning.

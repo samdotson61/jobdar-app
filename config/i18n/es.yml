@@ -10,6 +10,7 @@ cli:
   command_desc:
     init: "Asistente de configuración interactivo (región, nivel, perfil, idioma)"
     scan: "Escanea los portales de empleo configurados (no requiere modelo)"
+    seed: "Materializa portales desde el catálogo de empleadores por región"
     eval: "Evalúa un puesto frente a tu currículum — puntuación de ajuste + informe"
     pipeline: "Ejecuta escanear, evaluar y registrar de principio a fin"
     pdf: "Genera un CV / carta de presentación adaptados para ATS"
@@ -38,6 +39,7 @@ scan:
   error_for: "{company}: {error}"
   total_found: "{count} puesto(s) encontrado(s) en {portals} portal(es)."
   level_note: "{count} puesto(s) fuera de tu(s) nivel(es) fueron filtrados"
+  region_note: "{count} puesto(s) fuera de tu(s) región(es) fueron filtrados"
 
 doctor:
   title: "Diagnóstico de Jobdar"
@@ -78,6 +80,13 @@ levels:
   entry: "inicial"
   mid: "intermedio"
   senior: "senior"
+
+seed:
+  title: "Empleadores semilla por región"
+  matched: "{count} empleador(es) para: {regions}"
+  none: "Aún no hay empleadores semilla para esa selección."
+  written: "Se escribieron {count} empleador(es) en {file}"
+  hint: "Vuelve a ejecutar con --write para guardarlos en config/portals.yml"
 
 common:
   none: "ninguno"

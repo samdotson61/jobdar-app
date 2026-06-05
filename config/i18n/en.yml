@@ -10,6 +10,7 @@ cli:
   command_desc:
     init: "Interactive setup wizard (region, level, profile, language)"
     scan: "Scan configured career portals for new roles (no model needed)"
+    seed: "Materialize portals from the region employer catalog"
     eval: "Evaluate a role against your résumé — fit score + report"
     pipeline: "Run scan, evaluate, and track end to end"
     pdf: "Generate a tailored ATS CV / cover letter"
@@ -38,6 +39,7 @@ scan:
   error_for: "{company}: {error}"
   total_found: "{count} role(s) found across {portals} portal(s)."
   level_note: "{count} role(s) outside your level(s) were filtered out"
+  region_note: "{count} role(s) outside your region(s) were filtered out"
 
 doctor:
   title: "Jobdar doctor"
@@ -78,6 +80,13 @@ levels:
   entry: "entry"
   mid: "mid"
   senior: "senior"
+
+seed:
+  title: "Region employer seeds"
+  matched: "{count} employer(s) for: {regions}"
+  none: "No seeded employers for that selection yet."
+  written: "Wrote {count} employer(s) to {file}"
+  hint: "Re-run with --write to save these to config/portals.yml"
 
 common:
   none: "none"

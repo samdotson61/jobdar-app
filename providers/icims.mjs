@@ -58,10 +58,13 @@ function titleFrom(innerHtml) {
   return stripTags(innerHtml.replace(/<span[^>]*sr-only[^>]*>[\s\S]*?<\/span>/gi, ''))
 }
 
-// Best-effort "City, ST" within a job card.
+// Location from a job card: iCIMS usually renders "Job Location" as US-{ST}-{City}; some tenants
+// show a plain "City, ST". Return a form lib/regions.mjs parseLocation() understands.
 function locationFrom(block) {
-  const m = block.match(/>\s*([A-Z][A-Za-z.\-' ]+,\s*[A-Z]{2})\b/)
-  return m ? m[1].trim() : ''
+  const us = block.match(/\bUS-([A-Z]{2})-([\w .'\-]+?)\s*<\//)
+  if (us) return `${us[2].trim()}, ${us[1]}`
+  const cs = block.match(/>\s*([A-Z][A-Za-z.\-' ]+,\s*[A-Z]{2})\b/)
+  return cs ? cs[1].trim() : ''
 }
 
 function rowFromAnchor(anchorMatch, block, company) {

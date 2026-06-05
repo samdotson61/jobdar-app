@@ -1,0 +1,48 @@
+# Jobdar — region-aware employer catalog (Phase 5). Seeded Midwest-first; other regions fill in
+# over time. Each entry: company, careers_url (provider auto-detected), region, metro, sector.
+# `jobdar seed --region <r> [--write]` materializes matching entries into config/portals.yml.
+# All entries below were live-verified to return public postings (2026-06-05).
+employers:
+  # --- Midwest (default) ---
+  - company: "Enova"
+    careers_url: "https://job-boards.greenhouse.io/enova"
+    region: midwest
+    metro: "Chicago, IL"
+    sector: fintech
+  - company: "project44"
+    careers_url: "https://job-boards.greenhouse.io/project44"
+    region: midwest
+    metro: "Chicago, IL"
+    sector: logistics
+  - company: "Hudl"
+    careers_url: "https://job-boards.greenhouse.io/hudl"
+    region: midwest
+    metro: "Lincoln, NE"
+    sector: sports-tech
+  - company: "StockX"
+    careers_url: "https://job-boards.greenhouse.io/stockx"
+    region: midwest
+    metro: "Detroit, MI"
+    sector: ecommerce
+  - company: "Jamf"
+    careers_url: "https://job-boards.greenhouse.io/jamf"
+    region: midwest
+    metro: "Minneapolis, MN"
+    sector: software
+
+  # --- Southwest (partial; expands over time) ---
+  - company: "Carvana"
+    careers_url: "https://job-boards.greenhouse.io/carvana"
+    region: southwest
+    metro: "Tempe, AZ"
+    sector: ecommerce
+  - company: "Axon"
+    careers_url: "https://job-boards.greenhouse.io/axon"
+    region: southwest
+    metro: "Scottsdale, AZ"
+    sector: public-safety
+  - company: "Self Financial"
+    careers_url: "https://job-boards.greenhouse.io/selffinancial"
+    region: southwest
+    metro: "Austin, TX"
+    sector: fintech
