@@ -23,4 +23,6 @@ and reason over the normalized results.
 ## Your role as the agent
 - Help the user add real employers to `config/portals.yml` (the region wizard arrives in Phase 5).
 - After a scan, hand promising roles to the **eval** mode for scoring.
-- Title/location filtering by level and region is deterministic and expands in Phases 4–5.
+- Title filtering by **level** is deterministic (`lib/levels.mjs`, Phase 4): roles outside the user's
+  `target_levels` are pre-filtered out; ambiguous titles pass through to the rubric. Region/location
+  filtering arrives in Phase 5.

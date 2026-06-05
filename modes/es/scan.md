@@ -26,5 +26,6 @@ razonas sobre los resultados normalizados.
 - Ayuda a la persona a añadir empleadores reales a `config/portals.yml` (el asistente de región
   llega en la Fase 5).
 - Tras un escaneo, pasa los puestos prometedores al modo **eval** para puntuarlos.
-- El filtrado por título/ubicación según nivel y región es determinista y se amplía en las
-  Fases 4–5.
+- El filtrado por título según **nivel** es determinista (`lib/levels.mjs`, Fase 4): los puestos
+  fuera de los `target_levels` se pre-filtran; los títulos ambiguos pasan a la rúbrica. El filtrado
+  por región/ubicación llega en la Fase 5.

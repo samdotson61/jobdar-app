@@ -37,6 +37,7 @@ scan:
   found_for: "{company}: {count} puesto(s)"
   error_for: "{company}: {error}"
   total_found: "{count} puesto(s) encontrado(s) en {portals} portal(es)."
+  level_note: "{count} puesto(s) fuera de tu(s) nivel(es) fueron filtrados"
 
 doctor:
   title: "Diagnóstico de Jobdar"

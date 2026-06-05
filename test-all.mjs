@@ -14,6 +14,7 @@ import workday, { HOST_ALLOWLIST as WORKDAY_HOSTS, parseWorkdayUrl } from './pro
 import icims, { HOST_ALLOWLIST as ICIMS_HOSTS, parseJobPostingsFromHtml } from './providers/icims.mjs'
 import { assertAllowedUrl } from './lib/http.mjs'
 import { resolveState, stateLabel, allStates } from './lib/states.mjs'
+import { classifyTitle, levelDecision, filterByLevel } from './lib/levels.mjs'
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url))
 const tests = []
@@ -99,7 +100,7 @@ test('workday: POST pagination accumulates across pages and normalizes postings'
     const jobs = await workday.fetch(match)
     assert.equal(jobs.length, 25) // 20 + 5, stopped at total
     assert.equal(jobs[0].title, 'Role 0')
-    assert.equal(jobs[0].url, 'https://acme.wd5.myworkdayjobs.com/job/r0') // absolute URL from externalPath
+    assert.equal(jobs[0].url, 'https://acme.wd5.myworkdayjobs.com/External/job/r0') // {base}/{site}{externalPath}
     assert.equal(jobs[0].location, 'Indianapolis, IN')
     assert.equal(jobs[0].company, 'Acme')
   } finally {
@@ -120,6 +121,19 @@ const ICIMS_DOM_HTML = `<div class="iCIMS_JobsTable">
 <a class="iCIMS_Anchor" href="/jobs/2001/staff-accountant/job"><span>Staff Accountant</span></a>
 <a class="iCIMS_Anchor" href="https://careers-acmemfg.icims.com/jobs/2002/warehouse-associate/job">Warehouse Associate</a>
 </div>`
+
+// Real-world iCIMS markup (modeled on a live hospital tenant): server-rendered job cards, title
+// in an <h3> inside the anchor, sr-only labels, and an ?in_iframe=1 query after /job.
+const ICIMS_CARD_HTML = `<ul class="container-fluid iCIMS_JobsTable">
+<li class="iCIMS_JobCardItem"><div class="row">
+<div class="col-xs-6 header left"><span class="sr-only field-label">Facility</span><span> Monroe Hospital</span></div>
+<div class="col-xs-6 header right"><span class="sr-only field-label">Location</span><span>Indianapolis, IN</span></div>
+<div class="col-xs-12 title"><a href="https://careers-primehealthcare.icims.com/jobs/265891/lvn-lpn/job?in_iframe=1" class="iCIMS_Anchor" title="265891 - LVN/LPN"><span class="sr-only field-label">Title</span><h3 >LVN/LPN</h3></a></div>
+</div></li>
+<li class="iCIMS_JobCardItem"><div class="row">
+<div class="col-xs-12 title"><a href="/jobs/265889/student-extern/job?in_iframe=1" class="iCIMS_Anchor"><span class="sr-only field-label">Title</span><h3>Student Extern</h3></a></div>
+</div></li>
+</ul>`
 
 test('icims: detect parses *.icims.com host; rejects non-iCIMS', () => {
   const m = icims.detect({ company: 'Acme Health', careers_url: 'https://careers-acmehealth.icims.com/jobs/search' })
@@ -148,6 +162,16 @@ test('icims: DOM fallback parses job-row anchors when no JSON-LD is present', ()
   assert.equal(jobs[0].url, 'https://careers-acmemfg.icims.com/jobs/2001/staff-accountant/job')
 })
 
+test('icims: parses real-world server-rendered job cards (h3 title, ?in_iframe stripped, location)', () => {
+  const jobs = parseJobPostingsFromHtml(ICIMS_CARD_HTML, 'https://careers-primehealthcare.icims.com', 'Prime Healthcare')
+  assert.equal(jobs.length, 2)
+  assert.equal(jobs[0].title, 'LVN/LPN') // <h3> used; the sr-only "Title" label is dropped
+  assert.equal(jobs[0].location, 'Indianapolis, IN') // best-effort City, ST from the card
+  assert.equal(jobs[0].url, 'https://careers-primehealthcare.icims.com/jobs/265891/lvn-lpn/job') // query stripped
+  assert.equal(jobs[1].title, 'Student Extern')
+  assert.equal(jobs[1].url, 'https://careers-primehealthcare.icims.com/jobs/265889/student-extern/job') // relative resolved
+})
+
 test('icims: registered; HTML pagination dedupes and stops on an empty page', async () => {
   assert.ok(providerIds().includes('icims'))
   const realFetch = globalThis.fetch
@@ -162,6 +186,45 @@ test('icims: registered; HTML pagination dedupes and stops on an empty page', as
   } finally {
     globalThis.fetch = realFetch
   }
+})
+
+test('levels: classifyTitle reads seniority signals (senior > mid > entry)', () => {
+  assert.equal(classifyTitle('Senior Engineer'), 'senior')
+  assert.equal(classifyTitle('Staff Data Scientist'), 'senior')
+  assert.equal(classifyTitle('Engineer II'), 'mid')
+  assert.equal(classifyTitle('Data Specialist'), 'mid')
+  assert.equal(classifyTitle('Analyst I'), 'entry')
+  assert.equal(classifyTitle('Associate Software Engineer'), 'entry')
+  assert.equal(classifyTitle('Maintenance Technician'), 'unclear')
+  assert.equal(classifyTitle('Software Engineer'), 'unclear')
+})
+
+test('levels: entry default excludes Senior, surfaces Analyst I, passes ambiguous', () => {
+  assert.equal(levelDecision('Senior Engineer', ['entry']).include, false) // gate: excluded
+  assert.equal(levelDecision('Analyst I', ['entry']).include, true) // gate: surfaces
+  assert.equal(levelDecision('Maintenance Technician', ['entry']).include, true) // ambiguous -> rubric
+})
+
+test('levels: adding mid admits Engineer II; senior opt-in ranks on merit (no penalty)', () => {
+  assert.equal(levelDecision('Engineer II', ['entry']).include, false) // mid is above entry
+  assert.equal(levelDecision('Engineer II', ['entry', 'mid']).include, true) // gate: admitted
+  const s = levelDecision('Senior Engineer', ['entry', 'mid', 'senior'])
+  assert.equal(s.include, true)
+  assert.equal(s.flagged, false) // selected level -> merit, no penalty
+})
+
+test('levels: only roles above the highest selected level are out-of-band', () => {
+  assert.equal(levelDecision('Senior Engineer', ['entry', 'mid']).reason, 'above-target')
+  assert.equal(levelDecision('Senior Engineer', ['senior']).reason, 'on-target')
+})
+
+test('levels: filterByLevel keeps in-band jobs and annotates them', () => {
+  const jobs = [{ title: 'Analyst I' }, { title: 'Senior Manager' }, { title: 'Data Engineer' }]
+  const { kept, excluded, total } = filterByLevel(jobs, ['entry'])
+  assert.equal(total, 3)
+  assert.equal(excluded, 1) // Senior Manager filtered
+  assert.equal(kept.length, 2)
+  assert.ok(kept.every((j) => 'level' in j && 'flagged' in j))
 })
 
 test('modes: every base mode has a Spanish parity file', () => {

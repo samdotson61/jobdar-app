@@ -42,7 +42,10 @@ Recomendación: {una línea}
 {en objetivo — o "se lee por encima de tu nivel objetivo; marcado, no oculto"}
 
 ## Requisito de título
-{ninguno / suave ("o experiencia equivalente") / absoluto — y cómo abordarlo}
+degree_required: {yes | no | unclear}
+{si es yes: ¿barrera absoluta o suave ("o experiencia equivalente")? Para quienes no tienen título,
+di qué cerraría la brecha. Los puestos con barrera de título siguen visibles (marcados) cuando
+include_degree_required_roles está activado.}
 
 ## Siguiente paso
 {postular, adaptar un CV (`jobdar pdf`) o seguir adelante — una acción concreta}

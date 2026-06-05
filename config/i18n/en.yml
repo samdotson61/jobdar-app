@@ -37,6 +37,7 @@ scan:
   found_for: "{company}: {count} role(s)"
   error_for: "{company}: {error}"
   total_found: "{count} role(s) found across {portals} portal(s)."
+  level_note: "{count} role(s) outside your level(s) were filtered out"
 
 doctor:
   title: "Jobdar doctor"

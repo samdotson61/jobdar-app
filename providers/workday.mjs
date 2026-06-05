@@ -45,24 +45,28 @@ export function parseWorkdayUrl(careersUrl) {
   return { tenant, shard, site }
 }
 
-export function normalize(posting, base, company) {
+export function normalize(posting, base, site, company) {
   const externalPath = posting.externalPath || ''
+  const sep = externalPath.startsWith('/') ? '' : '/'
+  // The public Workday URL is {base}/{site}{externalPath} — the site segment is required, or the
+  // link 404s. (Verified live: omitting /{site} 404s; including it returns 200.)
+  const url = externalPath ? `${base}/${site}${sep}${externalPath}` : `${base}/${site}`
   return {
     title: posting.title || '',
-    url: externalPath ? new URL(externalPath, base).toString() : base,
+    url,
     company,
     location: posting.locationsText || '',
     postedOn: posting.postedOn || null,
   }
 }
 
-async function fetchSite(match, site) {
+async function fetchSite(match, site, maxPages = MAX_PAGES) {
   const base = `https://${match.tenant}.${match.shard}.myworkdayjobs.com`
   const endpoint = `${base}/wday/cxs/${match.tenant}/${site}/jobs`
   const out = []
   let offset = 0
   let total = Infinity
-  for (let page = 0; page < MAX_PAGES; page++) {
+  for (let page = 0; page < maxPages; page++) {
     const data = await postJson(
       endpoint,
       { appliedFacets: {}, limit: PAGE_LIMIT, offset, searchText: '' },
@@ -70,7 +74,7 @@ async function fetchSite(match, site) {
     )
     const postings = Array.isArray(data && data.jobPostings) ? data.jobPostings : []
     if (typeof data?.total === 'number') total = data.total
-    for (const p of postings) out.push(normalize(p, base, match.company))
+    for (const p of postings) out.push(normalize(p, base, site, match.company))
     offset += PAGE_LIMIT
     if (postings.length === 0 || offset >= total) break
     await sleep(PAGE_DELAY_MS)
@@ -96,13 +100,14 @@ const workday = {
 
   // If the portal names a `site`, trust it. Otherwise probe common site names and use the
   // first that returns postings (a wrong name 404s or returns empty, costing one request).
-  async fetch(match) {
+  async fetch(match, ctx = {}) {
+    const maxPages = ctx.maxPages || MAX_PAGES
     const sites = match.site ? [match.site] : COMMON_SITES
     let firstOk = null
     let lastErr
     for (const site of sites) {
       try {
-        const jobs = await fetchSite(match, site)
+        const jobs = await fetchSite(match, site, maxPages)
         if (match.site || jobs.length > 0) return jobs
         if (!firstOk) firstOk = jobs
       } catch (err) {

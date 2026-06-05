@@ -6,6 +6,31 @@ All notable changes to Jobdar are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.5.0] — 2026-06-05
+
+Phase 4 — level toggle (entry default, mid first-class, senior opt-in) + no-degree tuning.
+
+### Added
+- `lib/levels.mjs`: a coarse, deterministic **title pre-filter** derived from `target_levels`.
+  Classifies a title (entry / mid / senior / unclear), drops clear out-of-band titles, and passes
+  ambiguous titles through to the rubric. `scan` now filters by level and reports what it dropped;
+  `scan --levels entry,mid` overrides per run.
+- Rubric (modes/_shared.md, EN + ES): level-fit ranking (selected levels rank on merit; only
+  above-target leakage is flagged, never hidden), **level archetypes & strategy** (entry/mid/senior,
+  incl. skilled-trades/apprentice for no-degree & career-changers), **candidate tuning profiles**
+  (new_grad / early_career / no_degree / career_changer), the **no-degree variant** (degree as a soft
+  signal; surface "or equivalent experience"; never hide degree-gated roles), and **compensation**
+  tuned per level + regional cost of living.
+- Eval report now emits `degree_required: yes | no | unclear`; `include_degree_required_roles`
+  (default on) keeps degree-gated roles visible (flagged).
+- Level tests covering the gate: entry excludes "Senior Engineer" and surfaces "Analyst I",
+  `[entry,mid]` admits "Engineer II", `senior` ranks on merit, only above-top is out-of-band.
+
+### Fixed
+- **Workday job URLs** were missing the required `/{site}` segment and returned 404. They now build
+  `{base}/{site}{externalPath}`. Caught by full live testing and verified against real tenants
+  (Intel, Cadence, NVIDIA). `fetch()` also gained an optional `maxPages` bound.
+
 ## [0.4.0] — 2026-06-05
 
 Phase 3 — iCIMS provider. Covers the second big US enterprise ATS (health systems, insurers,
@@ -13,18 +38,24 @@ manufacturers). iCIMS has no public JSON API, so the default path parses public 
 
 ### Added
 - `providers/icims.mjs` (`{ id, detect, fetch }`): detects `*.icims.com`, fetches the public
-  `/jobs/search` HTML and parses **JobPosting JSON-LD first** (reliable), with a best-effort DOM
-  job-row fallback; paginates via `pr`, dedupes by URL, resolves relative URLs, decodes entities.
+  `/jobs/search` HTML and parses **JobPosting JSON-LD first**, with a DOM job-card fallback that
+  parses real iCIMS `iCIMS_JobCardItem` rows (h3 title, query-stripped URLs); paginates via `pr`,
+  dedupes by URL, resolves relative URLs, decodes entities.
   SSRF-guarded (`*.icims.com`, HTTPS) and politely paced.
 - Opt-in **Playwright** render path for JS-rendered iCIMS widgets (`jobdar scan --playwright` or
   `JOBDAR_PLAYWRIGHT=1`), sequential and lazy-imported so the default install stays light.
 - Documented (off-by-default) OAuth2 Job Portal API stub for users with employer credentials.
 - `lib/html.mjs` (JSON-LD extraction, entity decode, tag strip) + iCIMS fixture tests.
 
+### Verified
+- Live against three real iCIMS hospital tenants (Covenant Health, Prime Healthcare, Northside
+  Hospital): 20–50 postings each parsed, normalized, and deduped from server-rendered HTML.
+
 ### Notes
-- iCIMS is best-effort by nature; coverage varies per employer. JSON-LD tenants work zero-token;
-  JS-rendered tenants need `--playwright`. The parser is fixture-verified — validate live against
-  a specific employer. (Workday remains live-verified.)
+- iCIMS is best-effort by nature; coverage varies per employer. In practice the iframe search
+  pages are server-rendered HTML (the DOM job-card path handles them, zero-token); JSON-LD tends
+  to live on detail pages. Truly JS-rendered tenants need `--playwright` (implemented, not yet
+  live-exercised). Location is best-effort and often absent in iCIMS search rows.
 
 ## [0.3.0] — 2026-06-05
 
@@ -41,7 +72,8 @@ zero-token, through the public Workday CXS API.
   a documented Workday portal format in `config/portals.yml` (`provider: workday`, `site:`).
 
 ### Verified
-- Live smoke test against a real public Workday tenant returns correctly normalized postings.
+- Live smoke test against a real public Workday tenant (NVIDIA) returned postings. (A job-URL bug —
+  the missing `/{site}` segment — was later caught and fixed via fuller live testing; see Unreleased.)
 
 ## [0.2.0] — 2026-06-05
 

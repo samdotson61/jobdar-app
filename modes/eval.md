@@ -39,7 +39,9 @@ Recommendation: {one line}
 {on-target — or "reads above your target level; flagged, not hidden"}
 
 ## Degree requirement
-{none / soft ("or equivalent experience") / hard — and how to approach it}
+degree_required: {yes | no | unclear}
+{if yes: hard gate or soft ("or equivalent experience")? For no-degree candidates, say what would
+close the gap. Degree-gated roles stay visible (flagged) when include_degree_required_roles is on.}
 
 ## Next step
 {apply, tailor a CV (`jobdar pdf`), or move on — one concrete action}

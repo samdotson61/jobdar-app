@@ -44,14 +44,44 @@ function jobFromJsonLd(node, company) {
   }
 }
 
-// Best-effort DOM fallback: iCIMS job rows are anchors to /jobs/{id}/{slug}/job.
+// Best-effort DOM fallback for iCIMS search HTML (no JSON-LD). Modern iCIMS renders job cards
+// server-side as <li class="iCIMS_JobCardItem"> with the title in an <h3> inside the job-link
+// anchor (href ends /jobs/{id}/{slug}/job, often with an ?in_iframe=1 query); older markup is a
+// flat list of those anchors. Handle both.
+const JOB_ANCHOR = /<a\b[^>]*href=["']([^"']*\/jobs\/\d+\/[^"']*)["'][^>]*>([\s\S]*?)<\/a>/i
+
+const cleanUrl = (href) => String(href || '').split('?')[0].split('#')[0]
+
+function titleFrom(innerHtml) {
+  const h = innerHtml.match(/<h\d[^>]*>([\s\S]*?)<\/h\d>/i)
+  if (h) return stripTags(h[1])
+  return stripTags(innerHtml.replace(/<span[^>]*sr-only[^>]*>[\s\S]*?<\/span>/gi, ''))
+}
+
+// Best-effort "City, ST" within a job card.
+function locationFrom(block) {
+  const m = block.match(/>\s*([A-Z][A-Za-z.\-' ]+,\s*[A-Z]{2})\b/)
+  return m ? m[1].trim() : ''
+}
+
+function rowFromAnchor(anchorMatch, block, company) {
+  if (!anchorMatch || !anchorMatch[1]) return null
+  const title = titleFrom(anchorMatch[2] || '')
+  if (!title) return null
+  return { title, url: cleanUrl(anchorMatch[1]), company, location: block ? locationFrom(block) : '', postedOn: null }
+}
+
 function parseDomRows(html, company) {
+  const cards = html.match(/<li[^>]*iCIMS_JobCardItem[^>]*>[\s\S]*?<\/li>/gi)
+  if (cards && cards.length) {
+    return cards.map((block) => rowFromAnchor(block.match(JOB_ANCHOR), block, company)).filter(Boolean)
+  }
   const out = []
-  const re = /<a[^>]+href=["']([^"']*\/jobs\/\d+\/[^"']+\/job)["'][^>]*>([\s\S]*?)<\/a>/gi
+  const re = new RegExp(JOB_ANCHOR.source, 'gi')
   let m
   while ((m = re.exec(html))) {
-    const title = stripTags(m[2])
-    if (title) out.push({ title, url: m[1], company, location: '', postedOn: null })
+    const row = rowFromAnchor(m, null, company)
+    if (row) out.push(row)
   }
   return out
 }
