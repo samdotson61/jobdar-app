@@ -32,7 +32,9 @@ export async function runScan(argv = []) {
     )
   )
 
-  const portals = loadPortals()
+  let portals = loadPortals()
+  const companyFilter = typeof flags.company === 'string' ? flags.company.toLowerCase() : null
+  if (companyFilter) portals = portals.filter((p) => (p.company || '').toLowerCase().includes(companyFilter))
   console.log(t('scan.portals_count', { count: portals.length }))
   if (portals.length === 0) {
     console.log(color.yellow(t('scan.none')))

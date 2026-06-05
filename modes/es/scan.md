@@ -16,8 +16,9 @@ razonas sobre los resultados normalizados.
 - Cada proveedor exporta `{ id, detect, fetch }`. `detect()` no usa red; `fetch()` devuelve
   `{ title, url, company, location, postedOn }` normalizado por HTTPS con una lista blanca de
   hosts.
-- Proveedores: **Greenhouse** (referencia incluida). **Workday** (Fase 2) e **iCIMS** (Fase 3)
-  son los ATS empresariales destacados; Lever/Ashby después.
+- Proveedores: **Greenhouse** (referencia) y **Workday** (incluido — la mayoría de las grandes
+  empresas de EE. UU.; usa `provider: workday` y opcionalmente `site:` en un portal). **iCIMS**
+  (Fase 3) es el siguiente; Lever/Ashby después.
 - `jobdar scan --dry-run` resuelve un proveedor por portal e imprime un resumen **sin llamadas de
   red** — úsalo para revisar la configuración.
 

@@ -6,6 +6,23 @@ All notable changes to Jobdar are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-06-05
+
+Phase 2 — Workday provider. Jobdar can now scan the single most common US enterprise ATS,
+zero-token, through the public Workday CXS API.
+
+### Added
+- `providers/workday.mjs` (`{ id, detect, fetch }`): detects `*.wd{N}.myworkdayjobs.com`, parses
+  tenant/shard/site (explicit `site:` wins, else probes common names), POST-paginates
+  `/wday/cxs/{tenant}/{site}/jobs`, and normalizes postings to the shared Job shape with absolute
+  URLs. SSRF-guarded (HTTPS, host allowlist, `redirect:'error'`) and politely paced between pages.
+- `scan --company <name>` filter to scan a single configured employer.
+- Workday fixture tests (detect, SSRF host-allowlist rejection, POST pagination + normalize) and
+  a documented Workday portal format in `config/portals.yml` (`provider: workday`, `site:`).
+
+### Verified
+- Live smoke test against a real public Workday tenant returns correctly normalized postings.
+
 ## [0.2.0] — 2026-06-05
 
 Phase 1 — American-English-first bilingual core. English is canonical; Spanish is a full,

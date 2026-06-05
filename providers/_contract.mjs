@@ -16,10 +16,11 @@
 // detect() must be cheap and side-effect-free (no network). fetch() does the I/O
 // and must touch only public job data via lib/http.mjs (HTTPS + host allowlist).
 
+import workday from './workday.mjs'
 import greenhouse from './greenhouse.mjs'
 
-// Register providers here as they land: Workday (Phase 2), iCIMS (Phase 3), …
-const REGISTRY = [greenhouse]
+// Register providers here as they land. iCIMS is Phase 3; Lever/Ashby follow.
+const REGISTRY = [workday, greenhouse]
 
 export function allProviders() {
   return REGISTRY.slice()

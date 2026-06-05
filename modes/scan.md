@@ -14,8 +14,9 @@ and reason over the normalized results.
 - Portals live in `config/portals.yml`: `company`, `careers_url`, optional `provider` / `site`.
 - Each provider exports `{ id, detect, fetch }`. `detect()` is network-free; `fetch()` returns
   normalized `{ title, url, company, location, postedOn }` over HTTPS with a host allowlist.
-- Providers: **Greenhouse** (shipped reference). **Workday** (Phase 2) and **iCIMS** (Phase 3)
-  are the marquee enterprise ATSs; Lever/Ashby follow.
+- Providers: **Greenhouse** (reference) and **Workday** (shipped — most US enterprise employers;
+  set `provider: workday` and optionally `site:` in a portal). **iCIMS** (Phase 3) is next;
+  Lever/Ashby follow.
 - `jobdar scan --dry-run` resolves a provider per portal and prints a summary with **no network
   calls** — use it to check configuration.
 

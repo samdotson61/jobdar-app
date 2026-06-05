@@ -10,6 +10,8 @@ import { getStrings, listKeys, getT } from './lib/i18n.mjs'
 import { PROFILE_DEFAULTS, SUPPORTED_LANGUAGES } from './lib/config.mjs'
 import { resolveProvider, providerIds } from './providers/_contract.mjs'
 import greenhouse from './providers/greenhouse.mjs'
+import workday, { HOST_ALLOWLIST as WORKDAY_HOSTS, parseWorkdayUrl } from './providers/workday.mjs'
+import { assertAllowedUrl } from './lib/http.mjs'
 import { resolveState, stateLabel, allStates } from './lib/states.mjs'
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url))
@@ -53,8 +55,55 @@ test('registry: resolveProvider routes Greenhouse URLs and rejects unknowns', ()
   assert.equal(resolveProvider({ company: 'X', careers_url: 'https://unknown.example/jobs' }), null)
 })
 
-test('registry: greenhouse is registered', () => {
+test('registry: greenhouse and workday are registered', () => {
   assert.ok(providerIds().includes('greenhouse'))
+  assert.ok(providerIds().includes('workday'))
+})
+
+test('workday: detect parses tenant/shard/site; explicit site wins; rejects non-Workday', () => {
+  const m = workday.detect({ company: 'Acme', careers_url: 'https://acme.wd5.myworkdayjobs.com/en-US/External' })
+  assert.equal(m.tenant, 'acme')
+  assert.equal(m.shard, 'wd5')
+  assert.equal(m.site, 'External') // locale segment "en-US" ignored
+  assert.equal(parseWorkdayUrl('https://beta.wd101.myworkdayjobs.com').shard, 'wd101') // any shard
+  const explicit = workday.detect({ company: 'B', careers_url: 'https://beta.wd1.myworkdayjobs.com', site: 'careers' })
+  assert.equal(explicit.site, 'careers')
+  assert.equal(workday.detect({ careers_url: 'https://boards.greenhouse.io/acme' }), null)
+})
+
+test('workday: SSRF guard allows Workday hosts, rejects others and non-HTTPS', () => {
+  assert.ok(assertAllowedUrl('https://acme.wd5.myworkdayjobs.com/wday/cxs/acme/External/jobs', { hostAllowlist: WORKDAY_HOSTS }))
+  assert.throws(() => assertAllowedUrl('https://evil.example.com/wday/cxs/x/y/jobs', { hostAllowlist: WORKDAY_HOSTS }))
+  assert.throws(() => assertAllowedUrl('http://acme.wd5.myworkdayjobs.com/x', { hostAllowlist: WORKDAY_HOSTS }))
+})
+
+test('workday: POST pagination accumulates across pages and normalizes postings', async () => {
+  const realFetch = globalThis.fetch
+  const mkPage = (start, n, total) => ({
+    total,
+    jobPostings: Array.from({ length: n }, (_, i) => ({
+      title: `Role ${start + i}`,
+      externalPath: `/job/r${start + i}`,
+      locationsText: 'Indianapolis, IN',
+      postedOn: 'Posted Today',
+    })),
+  })
+  const pages = { 0: mkPage(0, 20, 25), 20: mkPage(20, 5, 25) }
+  globalThis.fetch = async (url, opts) => {
+    const offset = JSON.parse(opts.body).offset
+    return { ok: true, status: 200, json: async () => pages[offset] || { total: 25, jobPostings: [] } }
+  }
+  try {
+    const match = workday.detect({ company: 'Acme', careers_url: 'https://acme.wd5.myworkdayjobs.com/en-US/External' })
+    const jobs = await workday.fetch(match)
+    assert.equal(jobs.length, 25) // 20 + 5, stopped at total
+    assert.equal(jobs[0].title, 'Role 0')
+    assert.equal(jobs[0].url, 'https://acme.wd5.myworkdayjobs.com/job/r0') // absolute URL from externalPath
+    assert.equal(jobs[0].location, 'Indianapolis, IN')
+    assert.equal(jobs[0].company, 'Acme')
+  } finally {
+    globalThis.fetch = realFetch
+  }
 })
 
 test('modes: every base mode has a Spanish parity file', () => {
