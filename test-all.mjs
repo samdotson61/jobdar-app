@@ -18,6 +18,7 @@ import { classifyTitle, levelDecision, filterByLevel } from './lib/levels.mjs'
 import { regionStateSet, locationMatches, filterByLocation } from './lib/regions.mjs'
 import { selectEmployers, toPortals } from './lib/seed.mjs'
 import { parseResumeText } from './lib/resume.mjs'
+import { renderDashboard } from './lib/commands/dashboard.mjs'
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url))
 const tests = []
@@ -299,6 +300,22 @@ test('resume: parseResumeText pulls name/email/metro and invents nothing', () =>
   assert.equal(empty.name, '')
   assert.equal(empty.email, '')
   assert.equal(empty.location, '')
+})
+
+test('security: http guard enforces HTTPS, no credentials, and the host allowlist', () => {
+  const allow = [/^api\.example\.com$/]
+  assert.ok(assertAllowedUrl('https://api.example.com/x', { hostAllowlist: allow }))
+  assert.throws(() => assertAllowedUrl('http://api.example.com/x', { hostAllowlist: allow })) // non-HTTPS
+  assert.throws(() => assertAllowedUrl('https://user:pass@api.example.com/x', { hostAllowlist: allow })) // credentials
+  assert.throws(() => assertAllowedUrl('https://evil.example.org/x', { hostAllowlist: allow })) // off-allowlist
+})
+
+test('dashboard: renders bilingual HTML with active config + empty tracker', () => {
+  const profile = { target_regions: ['midwest'], target_levels: ['entry'] }
+  const en = renderDashboard(getT('en'), { profile, portals: [1, 2], rows: [], lang: 'en' })
+  assert.ok(en.includes('Jobdar dashboard') && en.includes('Midwest') && en.includes('Portals configured: 2'))
+  const es = renderDashboard(getT('es'), { profile, portals: [], rows: [], lang: 'es' })
+  assert.ok(es.includes('Panel de Jobdar') && es.includes('Medio Oeste'))
 })
 
 test('modes: every base mode has a Spanish parity file', () => {

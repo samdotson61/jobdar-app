@@ -6,6 +6,40 @@ All notable changes to Jobdar are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.0.0] — 2026-06-05
+
+Phase 7 — quality, dashboard, and the 1.0 CLI. **First stable release of the Jobdar CLI.**
+
+### Added
+- **`jobdar dashboard`** — a zero-dependency localhost web view (bilingual) of your pipeline: active
+  region + level(s) + language, the application tracker, and configured portals. Read-only; never
+  phones home.
+- **Security policy** (`SECURITY.md`) and a **legal / privacy / responsible-use** page (`docs/legal.md`).
+- Security + dashboard tests; CI runs `doctor` + tests + a dry-run scan.
+
+### Security
+- Reviewed every provider: per-host SSRF allowlists (Greenhouse / Workday / iCIMS), HTTPS-only,
+  `redirect:'error'`, no embedded credentials, per-request timeouts, polite sequential pacing.
+  **Zero telemetry** — the only outbound requests are to the public job boards you configure.
+
+### Release notes (EN)
+Jobdar 1.0 is a bilingual (English / Español) US job-search CLI for new grads and people entering the
+workforce — including no-degree paths. It scans Workday, iCIMS, and Greenhouse employers (live-verified),
+filters by your level and region (Midwest by default), tracks applications, and onboards you in minutes
+with `jobdar init`. Your résumé stays on your machine.
+
+### Notas de la versión (ES)
+Jobdar 1.0 es una CLI bilingüe (inglés / español) de búsqueda de empleo en EE. UU. para recién
+graduados y personas que se incorporan al mundo laboral — incluida la vía sin título. Escanea
+empleadores de Workday, iCIMS y Greenhouse (verificados en vivo), filtra por tu nivel y región (Medio
+Oeste por defecto), registra solicitudes y te configura en minutos con `jobdar init`. Tu currículum se
+queda en tu máquina.
+
+### Pending (external)
+- npm publish + Claude Code marketplace submission (needs the org from Step 0.2).
+- Closed beta (Phase 7.6) with a new grad, a no-degree candidate, a career-changer, and a
+  Spanish-preferring user.
+
 ## [0.7.0] — 2026-06-05
 
 Phase 6 — effortless install & onboarding. Completes the MVP cut line.

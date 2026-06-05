@@ -29,7 +29,8 @@ web). El modelo que hace el trabajo es **intercambiable**:
 - **Nube confidencial** — una opción posterior para calidad de nube que el operador no puede leer.
 
 El escáner solo toca ofertas de empleo **públicas** — nunca tu currículum — así que **no alojamos
-datos personales**. Eso protege tu privacidad y limita nuestra responsabilidad.
+datos personales**. Eso protege tu privacidad y limita nuestra responsabilidad. Consulta
+**[SECURITY.md](SECURITY.md)** y **[Legal y uso responsable](docs/legal.md)** para conocer todo el enfoque.
 
 ## Dos superficies, un mismo motor
 
@@ -53,6 +54,7 @@ jobdar eval <url>     # evalúa un puesto frente a tu currículum
 jobdar pipeline       # escanear -> evaluar -> registrar, de principio a fin
 jobdar pdf [empresa]  # CV / carta de presentación adaptados para ATS
 jobdar tracker        # consulta tus postulaciones
+jobdar dashboard      # panel web local de tu flujo
 jobdar doctor         # revisa tu configuración
 ```
 

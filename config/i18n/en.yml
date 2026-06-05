@@ -113,5 +113,16 @@ init:
   resume_saved: "Saved your résumé to {file} and prefilled your profile."
   resume_manual: "{file} looks like a {kind} — open it in your AI CLI (the onboard mode reads it) to build cv.md."
 
+dashboard:
+  title: "Jobdar dashboard"
+  region: "Region"
+  level: "Level(s)"
+  language: "Language"
+  tracker: "Application tracker"
+  portals: "Portals"
+  serving: "Dashboard running at {url} — open it in your browser."
+  stop: "Press Ctrl-C to stop."
+  footer: "Your data stays local. Jobdar reads only public job listings."
+
 common:
   none: "none"

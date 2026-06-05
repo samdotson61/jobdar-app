@@ -10,11 +10,10 @@ import { parseFlags, resolveLang, readVersion } from '../lib/cli.mjs'
 
 // Commands not yet built map to the phase that delivers them (honest stubs).
 const PLANNED = {
-  eval: 'Phase 1 / Phase 8 (inference backend)',
-  pipeline: 'Phase 6 / Phase 8',
+  eval: 'Phase 8 — use `/jobdar eval` in your AI CLI today',
+  pipeline: 'Phase 8 — use `/jobdar pipeline` in your AI CLI today',
   pdf: 'a later phase (tailored PDF export)',
-  dashboard: 'Phase 7 (dashboard)',
-  update: 'Phase 7 (release tooling)',
+  update: 'npm publish (Phase 7.5) — for now: git pull && npm install',
 }
 
 const COMMAND_ORDER = ['init', 'scan', 'seed', 'eval', 'pipeline', 'pdf', 'tracker', 'dashboard', 'doctor', 'update']
@@ -74,6 +73,11 @@ async function main() {
     case 'tracker': {
       const { runTracker } = await import('../lib/tracker.mjs')
       await runTracker(rest)
+      return 0
+    }
+    case 'dashboard': {
+      const { runDashboard } = await import('../lib/commands/dashboard.mjs')
+      await runDashboard(rest)
       return 0
     }
     default: {

@@ -7,12 +7,13 @@
 > fit against your résumé, **tailors** an ATS-friendly CV/cover letter, and **tracks** every application —
 > with your data kept **local**, processed by a **private on-device model by default** or your own cloud API.
 >
-> **Status:** Phases 0–6 **complete** (`0.7.0`) — the **MVP cut line is done**. Foundation + branding,
-> bilingual core, both marquee scanners (Workday + iCIMS, live-verified), level + no-degree tuning,
-> region toggle + Midwest seeds + geo filter, and the **bilingual setup wizard** (`jobdar init`, with
-> a zero-config first scan). Next: **Phase 7 — quality, dashboard, polish, 1.0**; then Phase 8
-> (on-device model) and Phase 9 (web app). See [CHANGELOG.md](CHANGELOG.md).
-> **Date:** 2026-06-05 (Phases 0–6 built 2026-06-05)
+> **Status:** Phases 0–7 **complete** — **Jobdar CLI `1.0.0`**. Bilingual core; live-verified Workday +
+> iCIMS + Greenhouse scanners; level + no-degree tuning; region toggle + Midwest seeds + geo filter;
+> the `jobdar init` wizard; a localhost `jobdar dashboard`; a security + legal/privacy pass (zero
+> telemetry, SSRF-guarded). Remaining for 1.0 ship: **npm publish + marketplace** (needs the org from
+> Step 0.2) and the **closed beta** (7.6). Then Phase 8 (on-device model) and Phase 9 (web app).
+> See [CHANGELOG.md](CHANGELOG.md).
+> **Date:** 2026-06-05 (Phases 0–7 built 2026-06-05)
 
 ---
 

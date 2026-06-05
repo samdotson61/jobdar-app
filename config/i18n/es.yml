@@ -113,5 +113,16 @@ init:
   resume_saved: "Se guardó tu currículum en {file} y se prellenó tu perfil."
   resume_manual: "{file} parece un {kind} — ábrelo en tu CLI de IA (el modo onboard lo lee) para crear cv.md."
 
+dashboard:
+  title: "Panel de Jobdar"
+  region: "Región"
+  level: "Nivel(es)"
+  language: "Idioma"
+  tracker: "Registro de solicitudes"
+  portals: "Portales"
+  serving: "Panel disponible en {url} — ábrelo en tu navegador."
+  stop: "Pulsa Ctrl-C para detener."
+  footer: "Tus datos se quedan en local. Jobdar solo lee ofertas de empleo públicas."
+
 common:
   none: "ninguno"

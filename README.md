@@ -26,7 +26,8 @@ the thinking is **swappable**:
 - **Confidential-cloud** — a later option for cloud quality the operator can't read.
 
 The scanner only ever touches **public** job listings — never your résumé — so **we host no personal data**.
-That protects your privacy and limits our liability.
+That protects your privacy and limits our liability. See **[SECURITY.md](SECURITY.md)** and
+**[Legal & responsible use](docs/legal.md)** for the full posture (zero telemetry, SSRF-guarded scanners).
 
 ## Two surfaces, one engine
 
@@ -48,6 +49,7 @@ jobdar eval <url>     # evaluate a role against your résumé
 jobdar pipeline       # scan -> evaluate -> track, end to end
 jobdar pdf [company]  # tailored ATS CV / cover letter
 jobdar tracker        # view your applications
+jobdar dashboard      # localhost web view of your pipeline
 jobdar doctor         # check your setup
 ```
 
