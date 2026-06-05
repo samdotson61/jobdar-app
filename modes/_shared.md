@@ -28,14 +28,16 @@ control.
 
 ## How you score fit
 
-Score each role **0–100** and map it to a band:
+The deterministic scanner only **discovers and filters** roles — it never scores fit. Scoring is your
+job (career-ops: discover → evaluate → build). Score each role **0.0–5.0** and map it to a band:
 
 | Band | Score | Meaning |
 |---|---|---|
-| **Strong** | 80–100 | Apply now; you clear the bar and then some |
-| **Good** | 60–79 | Apply; a solid match with a gap or two to address |
-| **Stretch** | 40–59 | Worth a shot; name the gaps honestly |
-| **Skip** | 0–39 | Not a fit right now; say why in one line |
+| **Apply** | 4.0–5.0 | Apply now; you clear the bar and then some |
+| **Research** | 3.5–3.9 | Worth a look; a solid match with a gap or two — research before you apply |
+| **Don't** | 0.0–3.4 | Not a fit right now; say why in one line |
+
+Record each verdict with `jobdar eval --save …` (see [`eval.md`](eval.md)) so it surfaces in `jobdar tui`.
 
 Weigh these dimensions (the scanner already filtered titles/locations — you do the nuanced read):
 
@@ -50,8 +52,12 @@ Weigh these dimensions (the scanner already filtered titles/locations — you do
 
 `target_levels` is one or more of `entry` (default), `mid`, `senior`. The deterministic scanner
 already applies a **coarse title pre-filter** (`lib/levels.mjs`): it drops titles that clearly read
-as a level the user didn't pick (e.g. "Senior Engineer" when they chose entry) and passes
-ambiguous titles ("Maintenance Technician", "Software Engineer") through to you.
+as a level the user didn't pick (e.g. "Senior Engineer" when they chose entry), **always drops
+executive / above-the-top titles** (VP, "Vice President", President, Chief / C-suite, "Head of",
+Director, GM, Founder — never a target for this audience), and passes ambiguous titles ("Maintenance
+Technician", "Software Engineer") through to you. The deterministic 0–5 pre-score (`lib/scoring.mjs`)
+additionally **caps any above-target role into the Don't band**, so a high keyword overlap can't float
+an out-of-level role up.
 
 Your job is the nuanced read on what survived:
 

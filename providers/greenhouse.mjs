@@ -1,10 +1,13 @@
 // Jobdar — Greenhouse provider (reference implementation).
 // Greenhouse exposes a clean, unauthenticated public board API:
-//   https://boards-api.greenhouse.io/v1/boards/{token}/jobs?content=true
-// This is the { id, detect, fetch } shape that Workday (Phase 2) and the other
-// providers mirror. detect() is network-free; fetch() touches only public data.
+//   list:   https://boards-api.greenhouse.io/v1/boards/{token}/jobs
+//   detail: https://boards-api.greenhouse.io/v1/boards/{token}/jobs/{id}   (full JD in `content`)
+// This is the { id, detect, fetch, fetchJob } shape Workday and iCIMS mirror. detect() is
+// network-free; fetch() lists roles (discovery — title/url/location, no JD); fetchJob() pulls one
+// role's full JD for the model's `eval` (career-ops: scan discovers, the model scores).
 
 import { fetchJson } from '../lib/http.mjs'
+import { stripTags, decodeEntities } from '../lib/html.mjs'
 
 const API_HOST_ALLOWLIST = [/^boards-api\.greenhouse\.io$/]
 
@@ -29,6 +32,21 @@ function parseToken(careersUrl) {
   return null
 }
 
+// Pull { token, id } from a Greenhouse job URL (any of the host forms above, path …/jobs/{id}).
+export function parseJobUrl(jobUrl) {
+  if (!jobUrl) return null
+  let u
+  try {
+    u = new URL(jobUrl)
+  } catch {
+    return null
+  }
+  const token = parseToken(jobUrl)
+  const m = u.pathname.match(/\/jobs\/(\d+)/)
+  if (!token || !m) return null
+  return { token, id: m[1] }
+}
+
 const greenhouse = {
   id: 'greenhouse',
 
@@ -39,8 +57,10 @@ const greenhouse = {
     return { token, company: portal.company || token }
   },
 
+  // Discovery: list roles (title/url/company/location). No JD here — that's fetchJob's job, so a
+  // bulk scan stays light and uniform with Workday/iCIMS (whose listings also omit the JD).
   async fetch(match) {
-    const url = `https://boards-api.greenhouse.io/v1/boards/${encodeURIComponent(match.token)}/jobs?content=true`
+    const url = `https://boards-api.greenhouse.io/v1/boards/${encodeURIComponent(match.token)}/jobs`
     const data = await fetchJson(url, { hostAllowlist: API_HOST_ALLOWLIST })
     const jobs = Array.isArray(data && data.jobs) ? data.jobs : []
     return jobs.map((j) => ({
@@ -50,6 +70,20 @@ const greenhouse = {
       location: (j.location && j.location.name) || '',
       postedOn: j.updated_at || j.first_published || null,
     }))
+  },
+
+  // Eval-time: fetch ONE role's full JD via the detail API. Greenhouse encodes `content` as
+  // entity-escaped HTML, so decode entities first, then strip tags. Returns { title, location, description }.
+  async fetchJob(jobUrl) {
+    const parsed = parseJobUrl(jobUrl)
+    if (!parsed) return null
+    const url = `https://boards-api.greenhouse.io/v1/boards/${encodeURIComponent(parsed.token)}/jobs/${encodeURIComponent(parsed.id)}`
+    const data = await fetchJson(url, { hostAllowlist: API_HOST_ALLOWLIST })
+    return {
+      title: (data && data.title) || '',
+      location: (data && data.location && data.location.name) || '',
+      description: data && data.content ? stripTags(decodeEntities(data.content)) : '',
+    }
   },
 }
 

@@ -10,7 +10,6 @@ import { parseFlags, resolveLang, readVersion } from '../lib/cli.mjs'
 
 // Commands not yet built map to the phase that delivers them (honest stubs).
 const PLANNED = {
-  eval: 'Phase 8 — use `/jobdar eval` in your AI CLI today',
   pipeline: 'Phase 8 — use `/jobdar pipeline` in your AI CLI today',
   update: 'npm publish (Phase 7.5) — for now: git pull && npm install',
 }
@@ -57,6 +56,11 @@ async function main() {
     case 'scan': {
       const { runScan } = await import('../scan.mjs')
       await runScan(rest)
+      return 0
+    }
+    case 'eval': {
+      const { runEval } = await import('../lib/commands/eval.mjs')
+      await runEval(rest)
       return 0
     }
     case 'seed': {

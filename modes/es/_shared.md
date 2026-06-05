@@ -29,14 +29,16 @@ postulas de forma automática y siempre dejas el control en manos del ser humano
 
 ## Cómo puntúas la compatibilidad
 
-Puntúa cada puesto de **0 a 100** y asígnalo a una banda:
+El escáner determinista solo **descubre y filtra** puestos — nunca puntúa la compatibilidad. Puntuar es
+tu trabajo (career-ops: descubrir → evaluar → construir). Puntúa cada puesto de **0.0 a 5.0** y asígnalo a una banda:
 
 | Banda | Puntuación | Significado |
 |---|---|---|
-| **Fuerte** | 80–100 | Postula ya; superas el listón con margen |
-| **Buena** | 60–79 | Postula; buena coincidencia con una o dos brechas que trabajar |
-| **A intentar** | 40–59 | Vale la pena; nombra las brechas con honestidad |
-| **Omitir** | 0–39 | Por ahora no encaja; di por qué en una línea |
+| **Postular** | 4.0–5.0 | Postula ya; superas el listón con margen |
+| **Investigar** | 3.5–3.9 | Vale la pena; buena coincidencia con una o dos brechas — investiga antes de postular |
+| **Descartar** | 0.0–3.4 | Por ahora no encaja; di por qué en una línea |
+
+Registra cada veredicto con `jobdar eval --save …` (ver [`eval.md`](eval.md)) para que aparezca en `jobdar tui`.
 
 Pondera estas dimensiones (el escáner ya filtró títulos y ubicaciones — tú haces la lectura con matices):
 

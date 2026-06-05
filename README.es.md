@@ -13,10 +13,11 @@ Jobdar escanea las páginas de empleo de las empresas (con soporte de primera cl
 puesto frente a tu currículum, adapta un CV y una carta de presentación compatibles con ATS, y
 registra cada postulación.
 
-> **Estado:** Fases 0–7 **completas** — **Jobdar CLI `1.3.1`**: núcleo bilingüe, escáneres Workday /
+> **Estado:** Fases 0–7 **completas** — **Jobdar CLI `1.6.0`**: núcleo bilingüe, escáneres Workday /
 > iCIMS / Greenhouse verificados en vivo, selectores de nivel y región, el asistente `jobdar init` y una
-> tubería **escanear → puntuar → construir** (puntuación de ajuste 0–5 → Postular / Investigar / Descartar)
-> en un `jobdar tui` con colores, más un currículum ATS adaptado (`jobdar pdf`). Pendiente para 1.0:
+> tubería **descubrir → evaluar → construir** — `scan` encuentra y filtra puestos (nunca los puntúa), el
+> modelo (`jobdar eval`) puntúa la compatibilidad (0–5 → Postular / Investigar / Descartar) y la registra,
+> visible en `jobdar tui`; más un currículum ATS adaptado (`jobdar pdf`). Pendiente para 1.0:
 > publicar en npm + marketplace, y luego una beta cerrada. Consulta **[ROADMAP.md](ROADMAP.md)** para el
 > plan completo y **[CHANGELOG.md](CHANGELOG.md)** para lo ya entregado.
 
@@ -82,7 +83,7 @@ nivel intermedio, o activa senior (que entonces se clasifica con normalidad, sin
 
 - **Inglés estadounidense + español**, paridad completa (inglés primario) — en la CLI y la app web.
 - **Escáner para grandes empresas de EE. UU.** — Workday + iCIMS primero, más Greenhouse/Lever/Ashby.
-- **Flujo puntuado** — cada puesto escaneado recibe una puntuación de ajuste de 0–5 (currículum · ubicación · salario · seniority) y una banda **Postular / Investigar / Descartar**, explorable en `jobdar tui`.
+- **Flujo descubrir → evaluar** — `scan` encuentra y filtra puestos pero **nunca los puntúa**; el modelo (`jobdar eval`) puntúa la compatibilidad **0–5** con tu currículum y registra una banda **Postular / Investigar / Descartar**. `jobdar tui` muestra los puestos descubiertos como *pendiente eval* hasta que el modelo los puntúa.
 - **Ajuste de región** — Medio Oeste por defecto; cambia a Noreste/Sureste/Suroeste/Oeste/todo el
   país y las semillas, los filtros de ubicación y la búsqueda se adaptan.
 - **Ajuste de nivel** — inicial por defecto; intermedio de primera clase; senior opcional (se

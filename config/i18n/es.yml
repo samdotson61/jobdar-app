@@ -41,7 +41,7 @@ scan:
   total_found: "{count} puesto(s) encontrado(s) en {portals} portal(es)."
   level_note: "{count} puesto(s) fuera de tu(s) nivel(es) fueron filtrados"
   region_note: "{count} puesto(s) fuera de tu(s) región(es) fueron filtrados"
-  scored: "Puntuados {total} → {apply} Postular · {research} Investigar · {dont} Descartar"
+  eval_hint: "Puestos descubiertos guardados en tu flujo. El escaneo solo encuentra puestos — ejecuta `jobdar eval <url>` para puntuar la compatibilidad (puntúa el modelo, no el escáner)."
 
 doctor:
   title: "Diagnóstico de Jobdar"
@@ -132,8 +132,10 @@ dashboard:
   access: "Abre tu panel — `jobdar tui` (terminal) o `jobdar dashboard` (web · http://localhost:4319)"
 
 tui:
-  keys: "s ordenar · 1/2/3 banda · 0 todas · c empresa · r actualizar · q salir"
-  empty: "Aún no hay puestos puntuados — ejecuta `jobdar scan` para construir tu flujo."
+  keys: "s ordenar · 1/2/3 banda · p pendiente · 0 todas · c empresa · r actualizar · q salir"
+  empty: "Aún no hay puestos — ejecuta `jobdar scan` para descubrir puestos y luego `jobdar eval <url>` para puntuarlos."
+  none_match: "Ningún puesto coincide con este filtro."
+  pending: "pendiente"
   col_score: "Puntuación"
   col_band: "Banda"
   col_role: "Puesto"
@@ -148,6 +150,16 @@ bands:
   apply: "Postular"
   research: "Investigar"
   dont: "Descartar"
+
+eval:
+  title: "Evaluar un puesto"
+  jd_for: "Descripción del puesto — {role} (obtenida para ti; puntúala frente a tu currículum):"
+  jd_none: "No se pudo obtener la descripción automáticamente — abre {url} para leerla y luego puntúa."
+  jd_error: "No se pudo obtener la descripción ({error}) — abre la URL para leerla y luego puntúa."
+  model_needed: "La evaluación la hace el modelo — ejecuta `/jobdar eval <url>` en tu CLI de IA. Lee modes/eval.md, puntúa la compatibilidad con tu currículum y registra el veredicto."
+  save_hint: "Se guarda con: jobdar eval --save --url <url> --score <0.0–5.0> --band <apply|research|dont> --company \"…\" --role \"…\" --note \"…\""
+  save_usage: "Uso: jobdar eval --save --url <url> --score <0.0–5.0> [--band apply|research|dont] [--company …] [--role …] [--note …]"
+  saved: "Guardado: compatibilidad {score} ({band}) — {role}"
 
 pdf:
   title: "Crear currículum"

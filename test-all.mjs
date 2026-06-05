@@ -9,8 +9,8 @@ import { fileURLToPath } from 'node:url'
 import { getStrings, listKeys, getT } from './lib/i18n.mjs'
 import { PROFILE_DEFAULTS, SUPPORTED_LANGUAGES } from './lib/config.mjs'
 import { resolveProvider, providerIds } from './providers/_contract.mjs'
-import greenhouse from './providers/greenhouse.mjs'
-import workday, { HOST_ALLOWLIST as WORKDAY_HOSTS, parseWorkdayUrl } from './providers/workday.mjs'
+import greenhouse, { parseJobUrl as parseGhJobUrl } from './providers/greenhouse.mjs'
+import workday, { HOST_ALLOWLIST as WORKDAY_HOSTS, parseWorkdayUrl, parseWorkdayJobUrl } from './providers/workday.mjs'
 import icims, { HOST_ALLOWLIST as ICIMS_HOSTS, parseJobPostingsFromHtml } from './providers/icims.mjs'
 import { assertAllowedUrl } from './lib/http.mjs'
 import { resolveState, stateLabel, allStates } from './lib/states.mjs'
@@ -20,8 +20,7 @@ import { selectEmployers, toPortals } from './lib/seed.mjs'
 import { parseResumeText } from './lib/resume.mjs'
 import { renderDashboard } from './lib/commands/dashboard.mjs'
 import { renderTui } from './lib/commands/tui.mjs'
-import { scoreJob, scoreLocation, scoreSeniority, scoreSalary, band } from './lib/scoring.mjs'
-import { mergeScored, serializePipeline } from './lib/evaluations.mjs'
+import { mergeScanned, recordEval, serializePipeline, band, isEvaluated } from './lib/evaluations.mjs'
 import { cvToHtml, matchedKeywords } from './lib/cv_render.mjs'
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url))
@@ -203,13 +202,19 @@ test('icims: registered; HTML pagination dedupes and stops on an empty page', as
   }
 })
 
-test('levels: classifyTitle reads seniority signals (senior > mid > entry)', () => {
+test('levels: classifyTitle reads seniority signals (exec > senior > mid > entry)', () => {
+  assert.equal(classifyTitle('Vice President, Product'), 'exec') // spelled-out — the title that scored 4.1
+  assert.equal(classifyTitle('VP of Engineering'), 'exec')
+  assert.equal(classifyTitle('Director of Product'), 'exec')
+  assert.equal(classifyTitle('Head of Data'), 'exec')
+  assert.equal(classifyTitle('Chief Product Officer'), 'exec')
   assert.equal(classifyTitle('Senior Engineer'), 'senior')
   assert.equal(classifyTitle('Staff Data Scientist'), 'senior')
   assert.equal(classifyTitle('Engineer II'), 'mid')
   assert.equal(classifyTitle('Data Specialist'), 'mid')
   assert.equal(classifyTitle('Analyst I'), 'entry')
   assert.equal(classifyTitle('Associate Software Engineer'), 'entry')
+  assert.equal(classifyTitle('Product Manager'), 'unclear') // a target role — must NOT read as exec/senior
   assert.equal(classifyTitle('Maintenance Technician'), 'unclear')
   assert.equal(classifyTitle('Software Engineer'), 'unclear')
 })
@@ -231,6 +236,15 @@ test('levels: adding mid admits Engineer II; senior opt-in ranks on merit (no pe
 test('levels: only roles above the highest selected level are out-of-band', () => {
   assert.equal(levelDecision('Senior Engineer', ['entry', 'mid']).reason, 'above-target')
   assert.equal(levelDecision('Senior Engineer', ['senior']).reason, 'on-target')
+})
+
+test('levels: executive titles are always above-target and filtered out', () => {
+  assert.equal(levelDecision('Vice President, Product', ['entry', 'mid']).include, false)
+  assert.equal(levelDecision('Director of Product', ['entry', 'mid']).include, false)
+  assert.equal(levelDecision('Head of Growth', ['senior']).include, false) // even a senior target won't admit exec
+  const { kept, excluded } = filterByLevel([{ title: 'Vice President, Product' }, { title: 'Product Manager' }], ['entry', 'mid'])
+  assert.equal(excluded, 1) // the VP is dropped…
+  assert.equal(kept[0].title, 'Product Manager') // …the attainable role passes
 })
 
 test('levels: filterByLevel keeps in-band jobs and annotates them', () => {
@@ -314,6 +328,24 @@ test('security: http guard enforces HTTPS, no credentials, and the host allowlis
   assert.throws(() => assertAllowedUrl('https://evil.example.org/x', { hostAllowlist: allow })) // off-allowlist
 })
 
+test('providers: greenhouse, workday, icims share the contract (detect + fetch + fetchJob)', () => {
+  for (const p of [greenhouse, workday, icims]) {
+    assert.equal(typeof p.detect, 'function')
+    assert.equal(typeof p.fetch, 'function') // discovery (uniform shape, no JD)
+    assert.equal(typeof p.fetchJob, 'function') // eval-time JD fetch — parity across all three
+  }
+})
+
+test('providers: job-URL parsing for the eval-time JD fetch', () => {
+  assert.deepEqual(parseGhJobUrl('https://job-boards.greenhouse.io/enova/jobs/7977401'), { token: 'enova', id: '7977401' })
+  const w = parseWorkdayJobUrl('https://nvidia.wd5.myworkdayjobs.com/External/job/US-CA/Engineer_JR123')
+  assert.equal(w.tenant, 'nvidia')
+  assert.equal(w.shard, 'wd5')
+  assert.equal(w.site, 'External')
+  assert.equal(w.externalPath, '/job/US-CA/Engineer_JR123')
+  assert.equal(parseGhJobUrl('https://job-boards.greenhouse.io/enova'), null) // careers URL, no job id
+})
+
 test('dashboard: renders bilingual HTML with active config + portal list', () => {
   const profile = { target_regions: ['midwest'], target_levels: ['entry'] }
   const portals = [{ company: 'Enova', careers_url: 'https://job-boards.greenhouse.io/enova' }]
@@ -323,62 +355,67 @@ test('dashboard: renders bilingual HTML with active config + portal list', () =>
   assert.ok(es.includes('Panel de Jobdar') && es.includes('Medio Oeste'))
 })
 
-test('tui: renders the scored pipeline color-coded, with band counts and a band filter', () => {
+test('tui: evaluated roles show score + band; scanned roles read "pending eval"', () => {
   const profile = { target_regions: ['midwest'], target_levels: ['entry', 'mid'] }
   const rows = [
-    { company: 'Enova', role: 'Data Analyst I', location: 'Chicago, IL', composite: '4.7', band: 'apply' },
-    { company: 'Acme', role: 'Marketing Analyst', location: 'Austin, TX', composite: '3.6', band: 'research' },
-    { company: 'Globex', role: 'Software Engineer', location: 'Bengaluru', composite: '1.9', band: 'dont' },
+    { company: 'Enova', role: 'Data Analyst I', location: 'Chicago, IL', score: '4.7', band: 'apply', status: 'evaluated' },
+    { company: 'Acme', role: 'Marketing Analyst', location: 'Austin, TX', score: '3.6', band: 'research', status: 'evaluated' },
+    { company: 'Globex', role: 'Software Engineer', location: 'Remote, USA', score: '', band: '', status: 'scanned' },
   ]
   const out = renderTui(getT('en'), { profile, rows, lang: 'en', sort: 'score', filter: 'all', height: 24 })
-  assert.ok(out.includes('Jobdar dashboard') && out.includes('Data Analyst I') && out.includes('4.7'))
-  assert.ok(out.includes('Apply 1') && out.includes('Research 1')) // band counts
+  assert.ok(out.includes('Data Analyst I') && out.includes('4.7')) // evaluated shows its model score
+  assert.ok(out.includes('Apply 1') && out.includes('Research 1') && out.includes('1 pending')) // counts incl pending
+  assert.ok(out.includes('Software Engineer') && out.includes('pending')) // scanned role reads pending, not a score
+  const pendingOnly = renderTui(getT('en'), { profile, rows, lang: 'en', filter: 'pending', height: 24 })
+  assert.ok(pendingOnly.includes('Software Engineer') && !pendingOnly.includes('Data Analyst I')) // pending filter
   const applied = renderTui(getT('en'), { profile, rows, lang: 'en', filter: 'apply', height: 24 })
-  assert.ok(applied.includes('Data Analyst I') && !applied.includes('Marketing Analyst')) // filter works
+  assert.ok(applied.includes('Data Analyst I') && !applied.includes('Marketing Analyst')) // band filter
 })
 
-test('scoring: bands map the composite to Apply / Research / Dont', () => {
+test('pipeline: band maps a 0–5 model score to Apply / Research / Dont (empty → no band)', () => {
   assert.equal(band(4.2), 'apply')
   assert.equal(band(3.7), 'research')
   assert.equal(band(3.0), 'dont')
+  assert.equal(band(''), '') // no score yet → no band (not "dont")
 })
 
-test('scoring: location, seniority, and salary dimensions', () => {
-  const p = { target_regions: ['midwest'] }
-  assert.equal(scoreLocation('Chicago, IL', p), 5)
-  assert.equal(scoreLocation('Remote, USA', p), 4)
-  assert.equal(scoreLocation('Tempe, AZ', p), 1.5)
-  assert.equal(scoreLocation('Bengaluru, India', p), 0)
-  assert.equal(scoreSeniority('Analyst I', { target_levels: ['entry'] }), 5)
-  assert.ok(scoreSeniority('Senior Engineer', { target_levels: ['entry'] }) < 3)
-  assert.equal(scoreSeniority('Engineer II', { target_levels: ['entry', 'mid'] }), 5)
-  assert.equal(scoreSalary(0, { target_salary: 100000 }), 3.0) // unknown → neutral
-  assert.equal(scoreSalary(100000, { target_salary: 100000 }), 5)
-  assert.equal(scoreSalary(70000, { target_salary: 100000 }), 2.5)
-})
-
-test('scoring: scoreJob yields a 0–5 composite + band; better fit scores higher', () => {
-  const profile = { target_regions: ['midwest'], target_levels: ['entry', 'mid'], target_salary: 0, score_weights: { resume: 0.4, seniority: 0.25, location: 0.2, salary: 0.15 } }
-  const strong = scoreJob({ title: 'Data Analyst I', location: 'Chicago, IL' }, profile, 'data analyst sql python projects')
-  const weak = scoreJob({ title: 'Senior Principal Engineer', location: 'Bengaluru, India' }, profile, 'data analyst sql')
-  assert.ok(strong.composite >= 0 && strong.composite <= 5)
-  assert.ok(['apply', 'research', 'dont'].includes(strong.band))
-  assert.ok(weak.composite < strong.composite)
-  assert.equal(strong.estimate, true) // résumé score is a proxy until a model eval
-})
-
-test('pipeline: mergeScored dedupes by URL and preserves a non-default status', () => {
-  const existing = [{ url: 'u1', company: 'A', role: 'R', status: 'applied', composite: '3.0', band: 'dont' }]
-  const scored = [
-    { url: 'u1', company: 'A', title: 'R', location: 'Chicago, IL', scores: { resume: 5, location: 5, salary: 3, seniority: 5, composite: 4.6, band: 'apply' } },
-    { url: 'u2', company: 'B', title: 'R2', location: 'Detroit, MI', scores: { resume: 4, location: 5, salary: 3, seniority: 4, composite: 4.0, band: 'apply' } },
+test('pipeline: scan writes DISCOVERED roles (status scanned, no score) — the tool does not score', () => {
+  const discovered = [
+    { company: 'Enova', title: 'Product Manager', url: 'u1', location: 'Chicago, IL' },
+    { company: 'Hudl', title: 'Data Analyst', url: 'u2', location: 'Lincoln, NE' },
   ]
-  const merged = mergeScored(existing, scored, '2026-06-05')
-  assert.equal(merged.length, 2) // u1 updated in place, u2 added
-  const u1 = merged.find((r) => r.url === 'u1')
-  assert.equal(u1.status, 'applied') // existing status preserved
-  assert.equal(u1.composite, 4.6) // re-scored
-  assert.ok(serializePipeline(merged).startsWith('company\trole\turl'))
+  const rows = mergeScanned([], discovered, '2026-06-05')
+  assert.equal(rows.length, 2)
+  assert.equal(rows[0].status, 'scanned')
+  assert.equal(rows[0].role, 'Product Manager')
+  assert.equal(rows[0].score, '') // no score comes from scanning
+  assert.equal(rows[0].band, '')
+  assert.ok(!isEvaluated(rows[0]))
+  assert.ok(serializePipeline(rows).startsWith('company\trole\turl'))
+})
+
+test('pipeline: eval records the model verdict (score + band), re-scan never clobbers it', () => {
+  let rows = mergeScanned([], [{ company: 'Enova', title: 'Product Manager', url: 'u1', location: 'Chicago, IL' }], '2026-06-05')
+  rows = recordEval(rows, { url: 'u1', score: 4.3, recommendation: 'strong PM fit' }, '2026-06-06')
+  const u1 = rows.find((r) => r.url === 'u1')
+  assert.equal(u1.status, 'evaluated')
+  assert.equal(u1.score, 4.3)
+  assert.equal(u1.band, 'apply') // derived from the score
+  assert.equal(u1.recommendation, 'strong PM fit')
+  assert.equal(u1.company, 'Enova') // discovery fields preserved
+  assert.ok(isEvaluated(u1))
+  // a later scan that re-discovers u1 must NOT wipe the model's verdict
+  const after = mergeScanned(rows, [{ company: 'Enova', title: 'Product Manager', url: 'u1', location: 'Chicago, IL' }], '2026-06-07')
+  const again = after.find((r) => r.url === 'u1')
+  assert.equal(again.status, 'evaluated')
+  assert.equal(again.score, 4.3)
+})
+
+test('pipeline: eval can score a URL that was never scanned (creates the row)', () => {
+  const rows = recordEval([], { url: 'u9', company: 'X', role: 'PM', score: 3.6 }, '2026-06-06')
+  assert.equal(rows.length, 1)
+  assert.equal(rows[0].band, 'research')
+  assert.equal(rows[0].status, 'evaluated')
 })
 
 test('résumé: cvToHtml renders ATS HTML (name, sections, bullets) + role tailoring flag', () => {

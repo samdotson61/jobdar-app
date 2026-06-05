@@ -209,6 +209,31 @@ const icims = {
     if (ctx.render) return fetchViaPlaywright(match)
     return jobs
   },
+
+  // Eval-time: fetch ONE role's JD from its detail page (JSON-LD JobPosting.description). iCIMS search
+  // cards omit the JD, so this reads the role page. Returns { title, location, description } ('' if none).
+  async fetchJob(jobUrl) {
+    let u
+    try {
+      u = new URL(jobUrl)
+    } catch {
+      return null
+    }
+    if (!/\.icims\.com$/i.test(u.hostname)) return null
+    // The JSON-LD JobPosting (with the full description) is served in the iframe view, not the plain
+    // detail page — verified live. Request that variant so the JD comes through.
+    u.searchParams.set('in_iframe', '1')
+    const html = await fetchText(u.toString(), { hostAllowlist: HOST_ALLOWLIST })
+    const post = extractJsonLd(html).find((n) => n && n['@type'] === 'JobPosting')
+    if (!post) return { title: '', location: '', description: '' }
+    const loc = Array.isArray(post.jobLocation) ? post.jobLocation[0] : post.jobLocation
+    const addr = (loc && loc.address) || {}
+    return {
+      title: decodeEntities(post.title || ''),
+      location: [addr.addressLocality, addr.addressRegion].filter(Boolean).join(', '),
+      description: post.description ? stripTags(decodeEntities(post.description)) : '',
+    }
+  },
 }
 
 export default icims

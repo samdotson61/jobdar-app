@@ -7,10 +7,11 @@
 > fit against your résumé, **tailors** an ATS-friendly CV/cover letter, and **tracks** every application —
 > with your data kept **local**, processed by a **private on-device model by default** or your own cloud API.
 >
-> **Status:** Phases 0–7 **complete** — **Jobdar CLI `1.3.1`**. Bilingual core; live-verified Workday +
+> **Status:** Phases 0–7 **complete** — **Jobdar CLI `1.6.0`**. Bilingual core; live-verified Workday +
 > iCIMS + Greenhouse scanners; level + no-degree tuning; region toggle + Midwest seeds + geo filter;
-> the `jobdar init` wizard; a **scan→score pipeline** (0–5 fit scoring → Apply/Research/Don't) surfaced in a
-> scored `jobdar tui`, a tailored ATS résumé build (`jobdar pdf`), + localhost `jobdar dashboard`; a security + legal/privacy pass (zero
+> the `jobdar init` wizard; a **discover→evaluate→build pipeline** — `scan` finds + filters roles (it never
+> scores), the model's `jobdar eval` scores fit (0–5 → Apply/Research/Don't) and records it, surfaced in
+> `jobdar tui`; a tailored ATS résumé build (`jobdar pdf`) + localhost `jobdar dashboard`; a security + legal/privacy pass (zero
 > telemetry, SSRF-guarded). Remaining for 1.0 ship: **npm publish + marketplace** (needs the org from
 > Step 0.2) and the **closed beta** (7.6). Then Phase 8 (on-device model) and Phase 9 (web app).
 > See [CHANGELOG.md](CHANGELOG.md).

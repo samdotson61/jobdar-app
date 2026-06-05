@@ -5,14 +5,13 @@
 // Run directly:  node scan.mjs [--dry-run] [--lang en|es]
 // Or via the CLI: jobdar scan [--dry-run]
 
-import { loadProfile, loadPortals, loadCv } from './lib/config.mjs'
+import { loadProfile, loadPortals } from './lib/config.mjs'
 import { getT } from './lib/i18n.mjs'
 import { parseFlags, resolveLang, isDirectRun } from './lib/cli.mjs'
 import { resolveProvider } from './providers/_contract.mjs'
 import { filterByLevel } from './lib/levels.mjs'
 import { filterByLocation } from './lib/regions.mjs'
-import { scoreJob } from './lib/scoring.mjs'
-import { upsertScored } from './lib/evaluations.mjs'
+import { upsertScanned } from './lib/evaluations.mjs'
 import { color, symbol, heading } from './lib/ui.mjs'
 
 const regionLabel = (t, regions) => (regions || []).map((r) => t(`regions.${r}`)).join(', ') || t('common.none')
@@ -94,15 +93,13 @@ export async function runScan(argv = []) {
   if (excludedLevel > 0) console.log(color.dim(t('scan.level_note', { count: excludedLevel })))
   if (excludedRegion > 0) console.log(color.dim(t('scan.region_note', { count: excludedRegion })))
 
-  // Score the kept roles and persist the scored pipeline (career-ops-style: scan → score).
+  // Persist DISCOVERED roles to the pipeline. Scan only finds + filters roles — it does NOT score fit;
+  // that's the model's job in `eval` (career-ops: discover → evaluate → build). Re-scans never clobber a
+  // role the model already evaluated.
   if (allKept.length) {
-    const cv = loadCv()
     const date = new Date().toISOString().slice(0, 10)
-    const scored = allKept.map((j) => ({ ...j, scores: scoreJob(j, profile, cv) }))
-    upsertScored(scored, date)
-    const counts = { apply: 0, research: 0, dont: 0 }
-    for (const s of scored) counts[s.scores.band]++
-    console.log('\n' + t('scan.scored', { total: scored.length, apply: counts.apply, research: counts.research, dont: counts.dont }))
+    upsertScanned(allKept, date)
+    console.log('\n' + t('scan.eval_hint'))
   }
 
   console.log('\n' + t('scan.total_found', { count: total, portals: resolved.length }))

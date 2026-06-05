@@ -6,6 +6,97 @@ All notable changes to Jobdar are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.6.0] — 2026-06-05
+
+Provider parity: Greenhouse, Workday, and iCIMS now share one contract — uniform discovery + an
+eval-time JD fetch — so evaluation works the same regardless of which ATS a role came from.
+
+### Added
+- **`fetchJob(url)` on every provider** — pulls one role's full job description for the model's `eval`:
+  Greenhouse via the board detail API, Workday via the CXS `…/job{externalPath}` detail endpoint, iCIMS
+  via the role page's JSON-LD (in the `?in_iframe=1` view, where the JobPosting actually lives). A new
+  `fetchJobDescription(url)` registry helper routes any job URL to the right provider.
+- **`jobdar eval <url>` now fetches the JD for you** and prints it, so the model can score it without its
+  own fetch tool (and the API / on-device backends in Phase 8 get the JD uniformly). Verified live:
+  Greenhouse ~5.5k, Workday (Salesforce) ~7.5k, iCIMS (Covenant Health) ~4.1k chars.
+
+### Changed
+- **Discovery is now uniform across all three providers** — `fetch()` returns the same lightweight shape
+  (`title · url · company · location · postedOn`, no JD). Greenhouse no longer pulls full descriptions in
+  its bulk list (dropped `?content=true`), so scans are lighter; the JD is fetched per-role at eval time.
+- `decodeEntities` now also handles `&nbsp;`, so stripped JD text reads cleanly.
+
+### Notes
+- iCIMS JD coverage is best-effort (JSON-LD in the iframe view); JS-only tenants still need `--playwright`.
+  Workday and Greenhouse JDs come straight from their JSON endpoints.
+
+## [1.5.0] — 2026-06-05
+
+Scan-vs-score split (career-ops architecture): the deterministic tool only **discovers** roles — the
+**model** scores them. No score appears anywhere until an actual `eval` has run.
+
+### Changed
+- **`scan` no longer scores.** It discovers + filters roles (by level — including the executive drop — and
+  region) and writes them to the pipeline as `status: scanned` with **no fit score**. The old
+  "Scored N → Apply/Research/Don't" summary is gone; scan now points you to `eval`.
+- **`jobdar tui` shows discovered roles as "pending eval"** — no band/score until the model has scored
+  them. Evaluated roles show the model's score + Apply/Research/Don't band, color-coded; a new `p` key
+  filters to pending. (The web `dashboard` only ever showed the application tracker — unchanged.)
+- The eval rubric (`modes/_shared.md` + `modes/eval.md`, EN + ES) now scores on the **0.0–5.0** scale with
+  **Apply / Research / Don't** bands (was 0–100 / Strong-Good-Stretch-Skip), matching the pipeline + TUI.
+
+### Added
+- **`jobdar eval` is no longer a stub.** Evaluation is model-backed (run it via your AI CLI); the model
+  records its verdict with **`jobdar eval --save --url <u> --score <0.0–5.0> [--band …] [--company …]
+  [--role …] [--note …]`**, flipping the row to `status: evaluated`. Discovery stays authoritative for
+  company/role/location, and a re-scan never clobbers a recorded verdict.
+- Pipeline store reshaped to `company · role · url · location · score · band · recommendation · status ·
+  updated`, read by header name (tolerant of older files).
+
+### Removed
+- The **deterministic fit scorer** (`lib/scoring.mjs`) and its résumé/location/salary/seniority composite.
+  Level-fit is still enforced as a **filter** (executive / above-target titles are dropped during `scan`),
+  but judging fit is the model's job now. Recoverable from git if a deterministic pre-rank is wanted later.
+
+### Notes
+- Delete or re-scan `data/pipeline.tsv` to move to the new shape; `scan` regenerates it.
+
+## [1.4.0] — 2026-06-05
+
+Scoring tuning — surface only the roles your résumé could realistically land. Fixes a case where a
+**Vice President, Product** role scored **4.1 (Apply)** under an entry/mid target, and where a broad
+résumé matched almost every role equally.
+
+### Added
+- **Executive tier in level classification** (`lib/levels.mjs`): VP / SVP / EVP / "Vice President" /
+  President / Chief / C-suite / "Head of" / Director / GM / Founder now read as `exec` — always above the
+  highest selectable level, so they're filtered out of an entry/mid (or even senior) scan. The old
+  `SENIOR` rule only matched the abbreviation `vp`, so a spelled-out "Vice President" slipped through as
+  "unclear" and could ride a keyword match into Apply.
+- **Level-fit gate in scoring** (`lib/scoring.mjs` → `levelCap`): a role above your top selected level is
+  hard-capped into the **Don't** band (one level over → 2.5; two+ → 1.0), so seniority is a real gate —
+  not one weighted term a high keyword overlap can outvote.
+
+### Changed
+- **Résumé fit now drives the score and actually discriminates.** Greenhouse postings carry the full JD
+  through to scoring — the provider requested `?content=true` but was *dropping* `content`, so fit was
+  computed on the **title alone** and saturated at 5.0 for every role. The fit score is now
+  **title-dominant and de-boilerplated** (generic JD language like "stakeholder / cross-functional /
+  strategy" no longer inflates a match), with lenient stem matching so "architect" lines up with
+  "architected". Default `score_weights` rebalanced to **résumé 0.7 / location 0.15 / seniority 0.1 /
+  salary 0.05** — after the level + region filters run, location and seniority are near-constant, so fit
+  should lead the ranking.
+- **Unknown salary drops out** of the composite (renormalized) instead of injecting a flat 3.0 that
+  inflated every score; the above-target seniority penalty is steeper; an unclear title scores a cautious
+  3.0 (was a near-pass 3.5).
+
+### Notes
+- The deterministic fit score is a **coarse first-pass filter**, not the final word: it ranks true fits to
+  the top (product / data / engineering) and sinks off-domain roles (marketing / legal / sales / finance),
+  but a few keyword coincidences can still reach Apply. Run **`jobdar eval <url>`** for the model's
+  semantic fit — the real "would this résumé land it?" read (on-device model arrives in Phase 8).
+- Re-run `jobdar scan` to re-score your pipeline under the new tuning.
+
 ## [1.3.1] — 2026-06-05
 
 ### Fixed

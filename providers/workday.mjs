@@ -10,7 +10,8 @@
 // Mirrors the greenhouse.mjs { id, detect, fetch } shape. detect() is network-free; fetch()
 // reuses lib/http.mjs (HTTPS-only, host allowlist, redirect:'error').
 
-import { postJson } from '../lib/http.mjs'
+import { fetchJson, postJson } from '../lib/http.mjs'
+import { stripTags, decodeEntities } from '../lib/html.mjs'
 
 // SSRF guard: only Workday job hosts, any shard (wd1 / wd3 / wd5 / wd101 …), HTTPS only.
 export const HOST_ALLOWLIST = [/^[a-z0-9-]+\.wd\d+\.myworkdayjobs\.com$/]
@@ -43,6 +44,26 @@ export function parseWorkdayUrl(careersUrl) {
   const segs = u.pathname.split('/').filter(Boolean).filter((s) => !/^[a-z]{2}-[A-Z]{2}$/.test(s))
   const site = segs.length ? segs[segs.length - 1] : null
   return { tenant, shard, site }
+}
+
+// Parse a Workday public job URL into the CXS detail-endpoint parts:
+//   https://nvidia.wd5.myworkdayjobs.com/External/job/US-CA/Engineer_JR123
+//     -> { tenant:'nvidia', shard:'wd5', site:'External', externalPath:'/job/US-CA/Engineer_JR123' }
+// Our list normalize emits {base}/{site}{externalPath}; a browser-pasted /{locale}/{site}/… also parses.
+export function parseWorkdayJobUrl(jobUrl) {
+  if (!jobUrl) return null
+  let u
+  try {
+    u = new URL(jobUrl)
+  } catch {
+    return null
+  }
+  const m = u.hostname.toLowerCase().match(/^([a-z0-9-]+)\.(wd\d+)\.myworkdayjobs\.com$/)
+  if (!m) return null
+  const [, tenant, shard] = m
+  const segs = u.pathname.split('/').filter(Boolean).filter((s) => !/^[a-z]{2}-[A-Z]{2}$/.test(s))
+  if (segs.length < 2) return null // need at least {site}/{…path}
+  return { tenant, shard, site: segs[0], externalPath: '/' + segs.slice(1).join('/') }
 }
 
 export function normalize(posting, base, site, company) {
@@ -117,6 +138,21 @@ const workday = {
     }
     if (firstOk) return firstOk
     throw lastErr || new Error(`No reachable Workday site for ${match.tenant}`)
+  },
+
+  // Eval-time: fetch ONE role's full JD via the CXS detail endpoint (the bulk /jobs list omits it).
+  // Returns { title, location, description }. jobDescription is HTML → strip to plain text.
+  async fetchJob(jobUrl) {
+    const p = parseWorkdayJobUrl(jobUrl)
+    if (!p) return null
+    const url = `https://${p.tenant}.${p.shard}.myworkdayjobs.com/wday/cxs/${p.tenant}/${p.site}${p.externalPath}`
+    const data = await fetchJson(url, { hostAllowlist: HOST_ALLOWLIST })
+    const info = (data && data.jobPostingInfo) || {}
+    return {
+      title: info.title || '',
+      location: info.location || '',
+      description: info.jobDescription ? stripTags(decodeEntities(info.jobDescription)) : '',
+    }
   },
 }
 

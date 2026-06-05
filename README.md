@@ -11,12 +11,12 @@ Jobdar scans company career pages (with first-class support for **Workday** and 
 dominate US enterprise employers), evaluates each role against your résumé, tailors an ATS-friendly CV and
 cover letter, and tracks every application.
 
-> **Status:** Phases 0–7 **complete** — **Jobdar CLI `1.3.1`**: bilingual core, live-verified Workday /
-> iCIMS / Greenhouse scanners, level + region toggles, the `jobdar init` wizard, and a **scan → score →
-> build** pipeline (0–5 fit scoring → Apply / Research / Don't) surfaced in a scored `jobdar tui` plus a
-> tailored ATS résumé (`jobdar pdf`). Remaining for the 1.0 ship: npm publish + marketplace, then a closed
-> beta. See **[ROADMAP.md](ROADMAP.md)** for the full build plan and **[CHANGELOG.md](CHANGELOG.md)** for
-> what's shipped.
+> **Status:** Phases 0–7 **complete** — **Jobdar CLI `1.6.0`**: bilingual core, live-verified Workday /
+> iCIMS / Greenhouse scanners, level + region toggles, the `jobdar init` wizard, and a **discover →
+> evaluate → build** pipeline — `scan` finds and filters roles (it never scores), the model's `jobdar eval`
+> scores fit (0–5 → Apply / Research / Don't) and records it, surfaced in `jobdar tui`; plus a tailored ATS
+> résumé (`jobdar pdf`). Remaining for the 1.0 ship: npm publish + marketplace, then a closed beta. See
+> **[ROADMAP.md](ROADMAP.md)** for the full build plan and **[CHANGELOG.md](CHANGELOG.md)** for what's shipped.
 
 ## Your data stays local
 
@@ -76,7 +76,7 @@ your first scan — `jobdar init` walks you through it in English or Spanish, no
 
 - **American English + Spanish**, full parity (English primary) — across CLI and web app.
 - **Scanner for US enterprise** — Workday + iCIMS first, plus Greenhouse/Lever/Ashby.
-- **Scored pipeline** — every scanned role gets a 0–5 fit score (résumé · location · salary · seniority) and an **Apply / Research / Don't** band, explorable in `jobdar tui`.
+- **Discover → evaluate pipeline** — `scan` finds and filters roles but **never scores them**; the model's `jobdar eval` scores fit **0–5** against your résumé and records an **Apply / Research / Don't** band. `jobdar tui` shows discovered roles as *pending eval* until the model has scored them.
 - **Region toggle** — Midwest by default; switch to Northeast/Southeast/Southwest/West/nationwide and the seeds, location filters, and search adapt.
 - **Level toggle** — entry by default; mid first-class; senior opt-in (ranks normally when chosen).
 - **A dedicated no-degree path** — surfaces skills-based, apprenticeship, and "or equivalent experience" roles.

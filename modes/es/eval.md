@@ -12,14 +12,15 @@ clave de API ahora, el modelo en el dispositivo desde la Fase 8. Aplica la rúbr
 [`_shared.md`](_shared.md).
 
 ## Entradas
-- La oferta (URL, archivo o texto pegado — ya la obtuvo el escáner; tú no la descargas).
+- La oferta — `jobdar eval <url>` la obtiene por ti vía el proveedor correspondiente
+  (greenhouse / workday / icims) y la imprime; tú la lees y la puntúas. (Un archivo o texto pegado también sirve.)
 - El perfil y el currículum de la persona (`config/profile.yml`, `cv.md`).
 
 ## Pasos
 1. Extrae los requisitos imprescindibles, los deseables, el nivel, la ubicación y cualquier
    requisito de título.
 2. Conecta las habilidades, proyectos e historial reales de la persona con ellos.
-3. Puntúa de 0 a 100 y asigna una banda (Fuerte / Buena / A intentar / Omitir) según `_shared.md`.
+3. Puntúa de **0.0 a 5.0** y asigna una banda (**Postular / Investigar / Descartar**) según `_shared.md`.
 4. Lee el **ajuste de nivel** (en objetivo vs. por encima del objetivo) y el **requisito de
    título** (barrera absoluta vs. señal suave — decisivo para quienes no tienen título).
 5. Decide una recomendación de una línea: postula ya, postula con preparación, a intentar u
@@ -29,7 +30,7 @@ clave de API ahora, el modelo en el dispositivo desde la Fase 8. Aplica la rúbr
 
 ```
 # Informe de compatibilidad — {puesto} @ {empresa}
-Puntuación de compatibilidad: {0–100} ({banda})
+Puntuación de compatibilidad: {0.0–5.0} ({banda})
 Recomendación: {una línea}
 
 ## Por qué encaja
@@ -49,6 +50,15 @@ include_degree_required_roles está activado.}
 
 ## Siguiente paso
 {postular, adaptar un CV (`jobdar pdf`) o seguir adelante — una acción concreta}
+```
+
+## Regístralo
+
+El escáner solo descubre puestos — nunca los puntúa. **Tú** eres quien puntúa, así que guarda tu
+veredicto en el flujo (luego aparece en `jobdar tui` / el panel):
+
+```
+jobdar eval --save --url <url> --score <0.0–5.0> --band <apply|research|dont> --company "{empresa}" --role "{puesto}" --note "{recomendación de una línea}"
 ```
 
 Sé conciso y específico. Cita la oferta. Nunca infles la puntuación ni inventes una cualificación.

@@ -41,7 +41,7 @@ scan:
   total_found: "{count} role(s) found across {portals} portal(s)."
   level_note: "{count} role(s) outside your level(s) were filtered out"
   region_note: "{count} role(s) outside your region(s) were filtered out"
-  scored: "Scored {total} → {apply} Apply · {research} Research · {dont} Don't"
+  eval_hint: "Discovered roles saved to your pipeline. Scan only finds roles — run `jobdar eval <url>` to score fit (the model scores, not the scanner)."
 
 doctor:
   title: "Jobdar doctor"
@@ -132,8 +132,10 @@ dashboard:
   access: "Open your dashboard — `jobdar tui` (terminal) or `jobdar dashboard` (web · http://localhost:4319)"
 
 tui:
-  keys: "s sort · 1/2/3 band · 0 all · c company · r refresh · q quit"
-  empty: "No scored roles yet — run `jobdar scan` to build your pipeline."
+  keys: "s sort · 1/2/3 band · p pending · 0 all · c company · r refresh · q quit"
+  empty: "No roles yet — run `jobdar scan` to discover roles, then `jobdar eval <url>` to score them."
+  none_match: "No roles match this filter."
+  pending: "pending"
   col_score: "Score"
   col_band: "Band"
   col_role: "Role"
@@ -148,6 +150,16 @@ bands:
   apply: "Apply"
   research: "Research"
   dont: "Don't"
+
+eval:
+  title: "Evaluate a role"
+  jd_for: "Job description — {role} (fetched for you; score it against your résumé):"
+  jd_none: "Couldn't fetch the JD automatically — open {url} to read it, then score."
+  jd_error: "Couldn't fetch the JD ({error}) — open the URL to read it, then score."
+  model_needed: "Evaluation is model-backed — run `/jobdar eval <url>` in your AI CLI. It reads modes/eval.md, scores fit against your résumé, and records the verdict."
+  save_hint: "It saves with: jobdar eval --save --url <url> --score <0.0–5.0> --band <apply|research|dont> --company \"…\" --role \"…\" --note \"…\""
+  save_usage: "Usage: jobdar eval --save --url <url> --score <0.0–5.0> [--band apply|research|dont] [--company …] [--role …] [--note …]"
+  saved: "Saved fit {score} ({band}) — {role}"
 
 pdf:
   title: "Build résumé"
