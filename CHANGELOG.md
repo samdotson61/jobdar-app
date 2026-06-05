@@ -6,6 +6,55 @@ All notable changes to Jobdar are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.8.0] — 2026-06-05
+
+Real Midwest & Southern employers via Workday + iCIMS. Greenhouse skews startup/tech, so the regional
+economy — especially **healthcare** — was missing. Added 35 live-verified health systems & large employers.
+
+### Added
+- **35 live-verified employers** in `data/seed/employers.yml`, on Workday + iCIMS (the ATSs that run
+  hospitals, insurers, manufacturers, retail):
+  - **Midwest +21** (catalog 17 → 38): Cleveland Clinic, OhioHealth, Nationwide Children's, Bon Secours
+    Mercy (Cincinnati), Corewell, Trinity, Advocate, Sanford, Gundersen, ThedaCare, Kettering, Carle, OSU
+    Physicians, The Methodist Hospitals, Children's Mercy KC, Ascension WI, Aspire Indiana, Benedictine +
+    Nationwide (insurance), Caterpillar (manufacturing), Kohl's (retail).
+  - **Southeast (new region coverage) +11**: Vanderbilt UMC, Ochsner, Baptist Health (KY / Jacksonville /
+    Montgomery), AdventHealth, Methodist Le Bonheur, Prisma, Piedmont, Bayfront + Lowe's.
+  - **Southwest +3**: Cook Children's, USAA, Banner Health.
+- Each was verified live **against Jobdar's own Workday/iCIMS providers** (not just curl) and its identity
+  confirmed by job location — excluding token traps (e.g. an HCA tenant serving only UK roles, Aurora-NJ
+  vs Aurora-WI) and JS-only/empty boards the zero-token path can't read.
+
+### Fixed
+- **`jobdar seed` curation filters**: `--sector` is now honored, and `--metro` matches case-insensitively as
+  a *contains* (so `--metro Cincinnati` finds "Cincinnati, OH"), with `;` separating multiple metros
+  (a metro is itself "City, ST", so the old comma-split was wrong).
+
+### Notes
+- These are large employers — a full multi-region scan now fetches a lot. Curate with
+  `jobdar seed --region <r> [--sector healthcare] [--metro "Cincinnati"] --write`, or scan one via
+  `jobdar scan --company "<name>"`. Some systems run Taleo/Phenom/Oracle (not Workday/iCIMS) and were
+  excluded; a couple of iCIMS tenants are JS-only and need `--playwright`.
+
+## [1.7.0] — 2026-06-05
+
+Expanded the Midwest seed catalog with smaller & midsize employers — markets where applicant
+competition is lighter (the career-ops "apply local/smaller first" strategy).
+
+### Added
+- **12 live-verified Midwest employers** in `data/seed/employers.yml` (catalog goes from 5 → 17):
+  **84.51°** (Cincinnati), **Path Robotics** (Columbus), **May Mobility / Censys / Workit Health**
+  (Ann Arbor), **Greenlight Guru** (Indianapolis), and **SpotHero / Amount / Sprout Social /
+  Civis Analytics / Cameo / Kalderos** (Chicago).
+- Each was verified live against the Greenhouse API and its identity confirmed by job location, so token
+  collisions (e.g. `relativity` → Relativity **Space** in California) and offshore-only boards (Sezzle,
+  Nerdy) were excluded rather than added blind.
+
+### Notes
+- `jobdar seed --region midwest --write` materializes all 17 into `config/portals.yml`. A live scan
+  discovered **~120** entry/mid Midwest + remote-US roles across them (up from ~48) — much of the new
+  volume from less-fierce metros (Columbus, Ann Arbor, Indianapolis).
+
 ## [1.6.0] — 2026-06-05
 
 Provider parity: Greenhouse, Workday, and iCIMS now share one contract — uniform discovery + an

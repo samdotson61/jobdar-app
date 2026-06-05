@@ -309,6 +309,17 @@ test('seed: region selection returns that region and swaps cleanly (gate)', () =
   assert.ok(toPortals(selectEmployers({ regions: ['midwest'] })).every((p) => p.company && p.careers_url))
 })
 
+test('seed: metro is a contains-match, sector filters, and the catalog spans all 3 providers', () => {
+  const cincy = selectEmployers({ regions: ['nationwide'], metros: ['Cincinnati'] }).map((e) => e.company)
+  assert.ok(cincy.includes('84.51°') && cincy.includes('Bon Secours Mercy Health')) // "Cincinnati" ⊂ "Cincinnati, OH"
+  const mwHealth = selectEmployers({ regions: ['midwest'], sectors: ['healthcare'] })
+  assert.ok(mwHealth.length >= 10 && mwHealth.every((e) => e.sector === 'healthcare'))
+  const se = selectEmployers({ regions: ['southeast'] })
+  assert.ok(se.length >= 10 && se.some((e) => e.company === 'Vanderbilt University Medical Center'))
+  const urls = selectEmployers({ regions: ['nationwide'] }).map((e) => e.careers_url).join(' ')
+  assert.ok(urls.includes('greenhouse.io') && urls.includes('myworkdayjobs.com') && urls.includes('icims.com'))
+})
+
 test('resume: parseResumeText pulls name/email/metro and invents nothing', () => {
   const r = parseResumeText('Sam Dotson\nsam.dotson@example.com\nIndianapolis, IN\nSkills: JS, SQL')
   assert.equal(r.name, 'Sam Dotson')

@@ -13,7 +13,7 @@ Jobdar escanea las páginas de empleo de las empresas (con soporte de primera cl
 puesto frente a tu currículum, adapta un CV y una carta de presentación compatibles con ATS, y
 registra cada postulación.
 
-> **Estado:** Fases 0–7 **completas** — **Jobdar CLI `1.6.0`**: núcleo bilingüe, escáneres Workday /
+> **Estado:** Fases 0–7 **completas** — **Jobdar CLI `1.8.0`**: núcleo bilingüe, escáneres Workday /
 > iCIMS / Greenhouse verificados en vivo, selectores de nivel y región, el asistente `jobdar init` y una
 > tubería **descubrir → evaluar → construir** — `scan` encuentra y filtra puestos (nunca los puntúa), el
 > modelo (`jobdar eval`) puntúa la compatibilidad (0–5 → Postular / Investigar / Descartar) y la registra,
