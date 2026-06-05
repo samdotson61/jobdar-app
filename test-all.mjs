@@ -11,6 +11,7 @@ import { PROFILE_DEFAULTS, SUPPORTED_LANGUAGES } from './lib/config.mjs'
 import { resolveProvider, providerIds } from './providers/_contract.mjs'
 import greenhouse from './providers/greenhouse.mjs'
 import workday, { HOST_ALLOWLIST as WORKDAY_HOSTS, parseWorkdayUrl } from './providers/workday.mjs'
+import icims, { HOST_ALLOWLIST as ICIMS_HOSTS, parseJobPostingsFromHtml } from './providers/icims.mjs'
 import { assertAllowedUrl } from './lib/http.mjs'
 import { resolveState, stateLabel, allStates } from './lib/states.mjs'
 
@@ -101,6 +102,63 @@ test('workday: POST pagination accumulates across pages and normalizes postings'
     assert.equal(jobs[0].url, 'https://acme.wd5.myworkdayjobs.com/job/r0') // absolute URL from externalPath
     assert.equal(jobs[0].location, 'Indianapolis, IN')
     assert.equal(jobs[0].company, 'Acme')
+  } finally {
+    globalThis.fetch = realFetch
+  }
+})
+
+const ICIMS_JSONLD_HTML = `<!doctype html><html><head>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"JobPosting","title":"Registered Nurse","datePosted":"2026-06-01","jobLocation":{"@type":"Place","address":{"@type":"PostalAddress","addressLocality":"Indianapolis","addressRegion":"IN"}},"url":"https://careers-acmehealth.icims.com/jobs/1001/registered-nurse/job"}
+</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"JobPosting","title":"Maintenance Technician &amp; HVAC","datePosted":"2026-06-02","jobLocation":{"address":{"addressLocality":"Columbus","addressRegion":"OH"}},"url":"/jobs/1002/maintenance-technician/job"}
+</script>
+</head><body>...</body></html>`
+
+const ICIMS_DOM_HTML = `<div class="iCIMS_JobsTable">
+<a class="iCIMS_Anchor" href="/jobs/2001/staff-accountant/job"><span>Staff Accountant</span></a>
+<a class="iCIMS_Anchor" href="https://careers-acmemfg.icims.com/jobs/2002/warehouse-associate/job">Warehouse Associate</a>
+</div>`
+
+test('icims: detect parses *.icims.com host; rejects non-iCIMS', () => {
+  const m = icims.detect({ company: 'Acme Health', careers_url: 'https://careers-acmehealth.icims.com/jobs/search' })
+  assert.equal(m.host, 'careers-acmehealth.icims.com')
+  assert.equal(m.company, 'Acme Health')
+  assert.equal(icims.detect({ careers_url: 'https://boards.greenhouse.io/acme' }), null)
+})
+
+test('icims: SSRF guard allows *.icims.com, rejects look-alike hosts', () => {
+  assert.ok(assertAllowedUrl('https://careers-acme.icims.com/jobs/search', { hostAllowlist: ICIMS_HOSTS }))
+  assert.throws(() => assertAllowedUrl('https://icims.com.evil.com/jobs', { hostAllowlist: ICIMS_HOSTS }))
+})
+
+test('icims: JSON-LD parse normalizes postings, decodes entities, resolves relative URLs', () => {
+  const jobs = parseJobPostingsFromHtml(ICIMS_JSONLD_HTML, 'https://careers-acmehealth.icims.com', 'Acme Health')
+  assert.equal(jobs.length, 2)
+  assert.equal(jobs[0].title, 'Registered Nurse')
+  assert.equal(jobs[0].location, 'Indianapolis, IN')
+  assert.equal(jobs[1].title, 'Maintenance Technician & HVAC') // &amp; decoded
+  assert.equal(jobs[1].url, 'https://careers-acmehealth.icims.com/jobs/1002/maintenance-technician/job') // relative resolved
+})
+
+test('icims: DOM fallback parses job-row anchors when no JSON-LD is present', () => {
+  const jobs = parseJobPostingsFromHtml(ICIMS_DOM_HTML, 'https://careers-acmemfg.icims.com', 'Acme Mfg')
+  assert.deepEqual(jobs.map((j) => j.title), ['Staff Accountant', 'Warehouse Associate'])
+  assert.equal(jobs[0].url, 'https://careers-acmemfg.icims.com/jobs/2001/staff-accountant/job')
+})
+
+test('icims: registered; HTML pagination dedupes and stops on an empty page', async () => {
+  assert.ok(providerIds().includes('icims'))
+  const realFetch = globalThis.fetch
+  const pages = { 0: ICIMS_JSONLD_HTML, 1: '<html><body>no jobs</body></html>' }
+  globalThis.fetch = async (url) => {
+    const pr = Number(new URL(url).searchParams.get('pr'))
+    return { ok: true, status: 200, text: async () => pages[pr] || '<html></html>' }
+  }
+  try {
+    const jobs = await icims.fetch({ host: 'careers-acmehealth.icims.com', company: 'Acme Health' })
+    assert.equal(jobs.length, 2)
   } finally {
     globalThis.fetch = realFetch
   }

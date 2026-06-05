@@ -6,6 +6,26 @@ All notable changes to Jobdar are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.4.0] — 2026-06-05
+
+Phase 3 — iCIMS provider. Covers the second big US enterprise ATS (health systems, insurers,
+manufacturers). iCIMS has no public JSON API, so the default path parses public career pages.
+
+### Added
+- `providers/icims.mjs` (`{ id, detect, fetch }`): detects `*.icims.com`, fetches the public
+  `/jobs/search` HTML and parses **JobPosting JSON-LD first** (reliable), with a best-effort DOM
+  job-row fallback; paginates via `pr`, dedupes by URL, resolves relative URLs, decodes entities.
+  SSRF-guarded (`*.icims.com`, HTTPS) and politely paced.
+- Opt-in **Playwright** render path for JS-rendered iCIMS widgets (`jobdar scan --playwright` or
+  `JOBDAR_PLAYWRIGHT=1`), sequential and lazy-imported so the default install stays light.
+- Documented (off-by-default) OAuth2 Job Portal API stub for users with employer credentials.
+- `lib/html.mjs` (JSON-LD extraction, entity decode, tag strip) + iCIMS fixture tests.
+
+### Notes
+- iCIMS is best-effort by nature; coverage varies per employer. JSON-LD tenants work zero-token;
+  JS-rendered tenants need `--playwright`. The parser is fixture-verified — validate live against
+  a specific employer. (Workday remains live-verified.)
+
 ## [0.3.0] — 2026-06-05
 
 Phase 2 — Workday provider. Jobdar can now scan the single most common US enterprise ATS,

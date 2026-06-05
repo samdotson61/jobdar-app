@@ -7,11 +7,11 @@
 > fit against your résumé, **tailors** an ATS-friendly CV/cover letter, and **tracks** every application —
 > with your data kept **local**, processed by a **private on-device model by default** or your own cloud API.
 >
-> **Status:** Phases 0–2 **complete** (`0.3.0`) — foundation + branding, the bilingual core, and
-> the **Workday provider** (detect, POST pagination, normalize, SSRF-guarded; verified live).
-> Next on the MVP cut line: **Phase 4 — level toggle + no-degree tuning** (then Phase 5 region,
-> Phase 6 wizard; Phase 3 iCIMS is a fast-follow). See [CHANGELOG.md](CHANGELOG.md).
-> **Date:** 2026-06-05 (Phases 0–2 built 2026-06-05)
+> **Status:** Phases 0–3 **complete** (`0.4.0`) — foundation + branding, the bilingual core, and
+> both marquee scanners: **Workday** (live-verified) and **iCIMS** (JSON-LD/HTML + opt-in
+> Playwright; fixture-verified). Next on the MVP cut line: **Phase 4 — level toggle + no-degree
+> tuning** (then Phase 5 region, Phase 6 wizard). See [CHANGELOG.md](CHANGELOG.md).
+> **Date:** 2026-06-05 (Phases 0–3 built 2026-06-05)
 
 ---
 

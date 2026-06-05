@@ -20,6 +20,7 @@ export async function runScan(argv = []) {
   const lang = resolveLang(flags, profile)
   const t = getT(lang)
   const dryRun = Boolean(flags['dry-run'] || flags.n)
+  const ctx = { render: Boolean(flags.playwright || process.env.JOBDAR_PLAYWRIGHT), lang }
 
   heading(dryRun ? t('scan.dry_run_title') : t('scan.title'))
   console.log(
@@ -64,7 +65,7 @@ export async function runScan(argv = []) {
       continue
     }
     try {
-      const jobs = await hit.provider.fetch(hit.match)
+      const jobs = await hit.provider.fetch(hit.match, ctx)
       total += jobs.length
       console.log(`  ${symbol.ok()} ${t('scan.found_for', { company: portal.company, count: jobs.length })}`)
     } catch (err) {

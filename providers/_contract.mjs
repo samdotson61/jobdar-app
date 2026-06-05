@@ -18,9 +18,10 @@
 
 import workday from './workday.mjs'
 import greenhouse from './greenhouse.mjs'
+import icims from './icims.mjs'
 
-// Register providers here as they land. iCIMS is Phase 3; Lever/Ashby follow.
-const REGISTRY = [workday, greenhouse]
+// Register providers here as they land. Lever/Ashby follow.
+const REGISTRY = [workday, greenhouse, icims]
 
 export function allProviders() {
   return REGISTRY.slice()
