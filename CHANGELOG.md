@@ -6,6 +6,39 @@ All notable changes to Jobdar are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.10.0] — 2026-06-05
+
+Dashboard polish: sortable columns + sector & location breakdowns.
+
+### Added
+- **Click-to-sort columns** on the dashboard pipeline table (score · band · role · company · location) —
+  a tiny inline vanilla-JS sorter (no libraries), with a ▲/▼ indicator, persisted in `sessionStorage` so
+  the sort survives the page's auto-refresh. Score sorts numerically, band by rank, the rest alphabetically.
+- **Two analytics charts** — **By sector** (joins pipeline companies to the seed catalog's sector metadata)
+  and **By location** (buckets each role's location into state / Remote / Intl / Other). Both stacked by
+  band, server-rendered inline SVG like the rest — still no JS libraries, nothing leaves your machine.
+
+### Changed
+- `analyze()` / `renderDashboard()` accept the employer `catalog` to power the sector breakdown;
+  `runDashboard` passes `loadEmployers()`.
+
+## [1.9.0] — 2026-06-05
+
+`jobdar dashboard` now mirrors the TUI and adds an analytics section with charts.
+
+### Added
+- The web dashboard surfaces the **scored pipeline** (TUI parity): every role with its fit score, band,
+  role, company, and location; **Apply / Research / Don't / Pending count cards** that double as band
+  filters (click → `?band=…`, refresh-safe); pending roles read "pending eval" until the model scores them.
+- An **Analytics** section with four server-rendered **inline-SVG charts** — no JS libraries, no CDN,
+  nothing leaves your machine: **band distribution**, **score histogram** (0–5), **top companies** stacked
+  by band, and a discover → evaluate → apply-tier → applied **funnel** — plus an "X of Y evaluated · avg
+  fit Z" summary.
+
+### Changed
+- `renderDashboard` now takes `{ pipeline, tracker, view }` (was a single `rows` = tracker). The
+  application-tracker and portals cards remain; the page still auto-refreshes and never phones home.
+
 ## [1.8.0] — 2026-06-05
 
 Real Midwest & Southern employers via Workday + iCIMS. Greenhouse skews startup/tech, so the regional

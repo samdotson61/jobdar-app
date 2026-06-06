@@ -11,7 +11,7 @@ Jobdar scans company career pages (with first-class support for **Workday** and 
 dominate US enterprise employers), evaluates each role against your résumé, tailors an ATS-friendly CV and
 cover letter, and tracks every application.
 
-> **Status:** Phases 0–7 **complete** — **Jobdar CLI `1.8.0`**: bilingual core, live-verified Workday /
+> **Status:** Phases 0–7 **complete** — **Jobdar CLI `1.10.0`**: bilingual core, live-verified Workday /
 > iCIMS / Greenhouse scanners, level + region toggles, the `jobdar init` wizard, and a **discover →
 > evaluate → build** pipeline — `scan` finds and filters roles (it never scores), the model's `jobdar eval`
 > scores fit (0–5 → Apply / Research / Don't) and records it, surfaced in `jobdar tui`; plus a tailored ATS

@@ -18,7 +18,7 @@ import { classifyTitle, levelDecision, filterByLevel } from './lib/levels.mjs'
 import { regionStateSet, locationMatches, filterByLocation } from './lib/regions.mjs'
 import { selectEmployers, toPortals } from './lib/seed.mjs'
 import { parseResumeText } from './lib/resume.mjs'
-import { renderDashboard } from './lib/commands/dashboard.mjs'
+import { renderDashboard, analyze } from './lib/commands/dashboard.mjs'
 import { renderTui } from './lib/commands/tui.mjs'
 import { mergeScanned, recordEval, serializePipeline, band, isEvaluated } from './lib/evaluations.mjs'
 import { cvToHtml, matchedKeywords } from './lib/cv_render.mjs'
@@ -357,13 +357,42 @@ test('providers: job-URL parsing for the eval-time JD fetch', () => {
   assert.equal(parseGhJobUrl('https://job-boards.greenhouse.io/enova'), null) // careers URL, no job id
 })
 
-test('dashboard: renders bilingual HTML with active config + portal list', () => {
+test('dashboard: renders config, pipeline (TUI parity), analytics charts + tracker', () => {
   const profile = { target_regions: ['midwest'], target_levels: ['entry'] }
   const portals = [{ company: 'Enova', careers_url: 'https://job-boards.greenhouse.io/enova' }]
-  const en = renderDashboard(getT('en'), { profile, portals, rows: [], lang: 'en' })
+  const pipeline = [
+    { company: 'Enova', role: 'Data Analyst I', location: 'Chicago, IL', score: '4.6', band: 'apply', status: 'evaluated' },
+    { company: 'Hudl', role: 'Product Manager', location: 'Lincoln, NE', score: '', band: '', status: 'scanned' },
+  ]
+  const catalog = [{ company: 'Enova', sector: 'fintech' }, { company: 'Hudl', sector: 'sports-tech' }]
+  const en = renderDashboard(getT('en'), { profile, portals, pipeline, tracker: [], catalog, lang: 'en' })
   assert.ok(en.includes('Jobdar dashboard') && en.includes('Midwest') && en.includes('Enova') && en.includes('greenhouse'))
-  const es = renderDashboard(getT('es'), { profile, portals: [], rows: [], lang: 'es' })
-  assert.ok(es.includes('Panel de Jobdar') && es.includes('Medio Oeste'))
+  assert.ok(en.includes('Data Analyst I') && en.includes('4.6')) // pipeline row — TUI parity
+  assert.ok(en.includes('Analytics') && en.includes('<svg') && en.includes('Top companies') && en.includes('Pipeline funnel'))
+  assert.ok(en.includes('By sector') && en.includes('By location')) // sector/region breakdown charts
+  assert.ok(en.includes('id="pipe"') && en.includes('sessionStorage')) // client-side sortable columns
+  const es = renderDashboard(getT('es'), { profile, portals: [], pipeline, tracker: [], catalog, lang: 'es' })
+  assert.ok(es.includes('Panel de Jobdar') && es.includes('Analíticas') && es.includes('<svg') && es.includes('Por sector'))
+})
+
+test('dashboard: analyze() computes counts, funnel, companies, sectors + locations', () => {
+  const pipeline = [
+    { company: 'A', location: 'Chicago, IL', score: '4.5', band: 'apply', status: 'evaluated' },
+    { company: 'A', location: 'Chicago, IL', score: '3.6', band: 'research', status: 'evaluated' },
+    { company: 'B', location: 'Remote, USA', score: '', band: '', status: 'scanned' },
+  ]
+  const catalog = [{ company: 'A', sector: 'fintech' }, { company: 'B', sector: 'healthcare' }]
+  const a = analyze(pipeline, [{ company: 'A', role: 'x', state: 'applied' }], catalog)
+  assert.equal(a.total, 3)
+  assert.equal(a.evaluated, 2)
+  assert.equal(a.counts.apply, 1)
+  assert.equal(a.counts.pending, 1)
+  assert.equal(a.topCompanies[0].name, 'A') // most roles
+  assert.equal(a.funnel.find((s) => s.label === 'applied').value, 1)
+  assert.equal(a.sectors.find((s) => s.name === 'fintech').total, 2) // company→sector join from catalog
+  assert.ok(a.sectors.find((s) => s.name === 'healthcare'))
+  assert.ok(a.locations.find((l) => l.name === 'IL')) // "Chicago, IL" → IL
+  assert.ok(a.locations.find((l) => l.name === 'Remote')) // "Remote, USA" → Remote
 })
 
 test('tui: evaluated roles show score + band; scanned roles read "pending eval"', () => {
