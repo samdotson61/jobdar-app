@@ -11,7 +11,7 @@ import { parseFlags, resolveLang, isDirectRun } from './lib/cli.mjs'
 import { resolveProvider } from './providers/_contract.mjs'
 import { filterByLevel } from './lib/levels.mjs'
 import { filterByLocation } from './lib/regions.mjs'
-import { upsertScanned } from './lib/evaluations.mjs'
+import { upsertScanned, prunePipeline } from './lib/evaluations.mjs'
 import { color, symbol, heading } from './lib/ui.mjs'
 
 const regionLabel = (t, regions) => (regions || []).map((r) => t(`regions.${r}`)).join(', ') || t('common.none')
@@ -66,16 +66,18 @@ export async function runScan(argv = []) {
     return { portals: portals.length, jobs: 0, dryRun: true }
   }
 
-  // Live scan.
+  // Live scan. Portals run through a small concurrency pool (3 at once) — each provider still paces
+  // its own pages politely; the pool only overlaps DIFFERENT employers' boards.
   console.log(t('scan.scanning', { count: resolved.length }))
   let total = 0
   let excludedLevel = 0
   let excludedRegion = 0
   const allKept = []
-  for (const { portal, hit } of resolved) {
+  const queue = resolved.slice()
+  const scanOne = async ({ portal, hit }) => {
     if (!hit) {
       console.log(`  ${symbol.warn()} ${t('scan.error_for', { company: portal.company, error: t('scan.no_provider') })}`)
-      continue
+      return
     }
     try {
       const jobs = await hit.provider.fetch(hit.match, ctx)
@@ -90,6 +92,10 @@ export async function runScan(argv = []) {
       console.log(`  ${symbol.fail()} ${t('scan.error_for', { company: portal.company, error: err.message })}`)
     }
   }
+  const workers = Array.from({ length: Math.min(3, queue.length) }, async () => {
+    while (queue.length) await scanOne(queue.shift())
+  })
+  await Promise.all(workers)
   if (excludedLevel > 0) console.log(color.dim(t('scan.level_note', { count: excludedLevel })))
   if (excludedRegion > 0) console.log(color.dim(t('scan.region_note', { count: excludedRegion })))
 
@@ -99,6 +105,12 @@ export async function runScan(argv = []) {
   if (allKept.length) {
     const date = new Date().toISOString().slice(0, 10)
     upsertScanned(allKept, date)
+    // --prune drops stale `scanned` rows no longer on any board. Only safe on a FULL scan — a
+    // --company scan would wrongly prune every other portal's roles, so it's skipped there.
+    if (flags.prune && !companyFilter) {
+      const pruned = prunePipeline(new Set(allKept.map((j) => j.url)))
+      if (pruned > 0) console.log(color.dim(t('scan.pruned', { count: pruned })))
+    }
     console.log('\n' + t('scan.eval_hint'))
   }
 

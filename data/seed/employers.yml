@@ -30,6 +30,74 @@ employers:
     metro: "Minneapolis, MN"
     sector: software
 
+  # Chicago–Cincinnati–Nashville corridor: small/midsize (added 2026-06-09 for an HR-focused scan)
+  # Cincinnati metro additions — live-verified 2026-06-09
+  - company: "Cincinnati Children's Hospital"
+    careers_url: "https://cincinnatichildrens.wd5.myworkdayjobs.com/careersatcincinnatichildrens"
+    region: midwest
+    metro: "Cincinnati, OH"
+    sector: healthcare
+  - company: "Fifth Third Bank"
+    careers_url: "https://fifththird.wd5.myworkdayjobs.com/53careers"
+    region: midwest
+    metro: "Cincinnati, OH"
+    sector: finance
+  - company: "Integrity Express Logistics"
+    careers_url: "https://ielfreight.wd1.myworkdayjobs.com/external"
+    region: midwest
+    metro: "Cincinnati, OH"
+    sector: logistics
+  - company: "VEGA Americas"
+    careers_url: "https://job-boards.greenhouse.io/vegaamericas"
+    region: midwest
+    metro: "Cincinnati, OH"
+    sector: industrial-tech
+  - company: "FC Cincinnati"
+    careers_url: "https://job-boards.greenhouse.io/fccincinnati"
+    region: midwest
+    metro: "Cincinnati, OH"
+    sector: sports
+  - company: "Jellyvision"
+    careers_url: "https://job-boards.greenhouse.io/jellyvision"
+    region: midwest
+    metro: "Chicago, IL"
+    sector: hr-tech
+  - company: "Avant"
+    careers_url: "https://job-boards.greenhouse.io/avant"
+    region: midwest
+    metro: "Chicago, IL"
+    sector: fintech
+  - company: "Relativity"
+    careers_url: "https://job-boards.greenhouse.io/relativity"
+    region: midwest
+    metro: "Chicago, IL"
+    sector: legal-tech
+  - company: "Tempus"
+    careers_url: "https://job-boards.greenhouse.io/tempus"
+    region: midwest
+    metro: "Chicago, IL"
+    sector: health-tech
+  - company: "Medpace"
+    careers_url: "https://job-boards.greenhouse.io/medpace"
+    region: midwest
+    metro: "Cincinnati, OH"
+    sector: health-tech
+  - company: "Qualifacts"
+    careers_url: "https://job-boards.greenhouse.io/qualifacts"
+    region: southeast
+    metro: "Nashville, TN"
+    sector: health-tech
+  - company: "Genesco"
+    careers_url: "https://careers-genesco.icims.com/jobs/search"
+    region: southeast
+    metro: "Nashville, TN"
+    sector: retail
+  - company: "HCA Healthcare"
+    careers_url: "https://hca.wd5.myworkdayjobs.com/HCAHospitals"
+    region: southeast
+    metro: "Nashville, TN"
+    sector: healthcare
+
   # Smaller & midsize Midwest employers — less applicant competition, local/regional roots
   # (added 2026-06-05; each live-verified to return public postings, identity confirmed by job location).
   - company: "84.51°"

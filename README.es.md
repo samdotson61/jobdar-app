@@ -13,13 +13,15 @@ Jobdar escanea las páginas de empleo de las empresas (con soporte de primera cl
 puesto frente a tu currículum, adapta un CV y una carta de presentación compatibles con ATS, y
 registra cada postulación.
 
-> **Estado:** Fases 0–7 **completas** — **Jobdar CLI `1.10.0`**: núcleo bilingüe, escáneres Workday /
-> iCIMS / Greenhouse verificados en vivo, selectores de nivel y región, el asistente `jobdar init` y una
-> tubería **descubrir → evaluar → construir** — `scan` encuentra y filtra puestos (nunca los puntúa), el
-> modelo (`jobdar eval`) puntúa la compatibilidad (0–5 → Postular / Investigar / Descartar) y la registra,
-> visible en `jobdar tui`; más un currículum ATS adaptado (`jobdar pdf`). Pendiente para 1.0:
-> publicar en npm + marketplace, y luego una beta cerrada. Consulta **[ROADMAP.md](ROADMAP.md)** para el
-> plan completo y **[CHANGELOG.md](CHANGELOG.md)** para lo ya entregado.
+> **Estado:** Fases 0–7 + 5.5 **completas** — **Jobdar CLI `1.12.0`**: núcleo bilingüe; **seis escáneres
+> verificados en vivo** (Workday, iCIMS, Greenhouse, Lever, Ashby + un lector JSON-LD opcional); selectores
+> de nivel y región y el asistente `jobdar init`; la tubería completa **descubrir → evaluar → registrar →
+> construir** — `scan` encuentra y filtra puestos (nunca los puntúa), el modelo (`jobdar eval`) puntúa la
+> compatibilidad (0–5 → Postular / Investigar / Descartar) y la registra, tú avanzas el estado (`a` en la
+> TUI o `jobdar tracker --set`) y `jobdar pdf` construye el currículum ATS adaptado; una TUI desplazable
+> con cursor + un panel web con analíticas; frescura (`posted` / `first_seen`, `scan --prune`). Pendiente
+> para 1.0: publicar en npm + marketplace, y luego una beta cerrada. Consulta **[ROADMAP.md](ROADMAP.md)**
+> para el plan completo y **[CHANGELOG.md](CHANGELOG.md)** para lo ya entregado.
 
 ## Tus datos se quedan en local
 

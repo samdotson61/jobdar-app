@@ -7,15 +7,19 @@
 > fit against your résumé, **tailors** an ATS-friendly CV/cover letter, and **tracks** every application —
 > with your data kept **local**, processed by a **private on-device model by default** or your own cloud API.
 >
-> **Status:** Phases 0–7 **complete** — **Jobdar CLI `1.10.0`**. Bilingual core; live-verified Workday +
-> iCIMS + Greenhouse scanners; level + no-degree tuning; region toggle + Midwest seeds + geo filter;
-> the `jobdar init` wizard; a **discover→evaluate→build pipeline** — `scan` finds + filters roles (it never
-> scores), the model's `jobdar eval` scores fit (0–5 → Apply/Research/Don't) and records it, surfaced in
-> `jobdar tui`; a tailored ATS résumé build (`jobdar pdf`) + localhost `jobdar dashboard`; a security + legal/privacy pass (zero
-> telemetry, SSRF-guarded). Remaining for 1.0 ship: **npm publish + marketplace** (needs the org from
-> Step 0.2) and the **closed beta** (7.6). Then Phase 8 (on-device model) and Phase 9 (web app).
+> **Status:** Phases 0–7 **and 5.5** complete — **Jobdar CLI `1.12.0`**. Bilingual core; **six scanner
+> providers** (Greenhouse, Workday, iCIMS, Lever, Ashby + an opt-in JSON-LD reader), all live-verified,
+> all with eval-time JD fetch; level + region toggles; the `jobdar init` wizard; the full
+> **discover→evaluate→track→build pipeline** — `scan` finds + filters (it never scores), the model's
+> `jobdar eval` scores fit (0–5 → Apply/Research/Don't) and records it, the human advances status
+> (`a` in the TUI / `jobdar tracker --set`), `jobdar pdf` builds the tailored ATS résumé; a scrollable
+> cursor-driven TUI workspace + a web dashboard with analytics; freshness tracking (`posted`/`first_seen`,
+> `scan --prune`); security/privacy pass (zero telemetry, SSRF-guarded).
+> Remaining for 1.0 ship: **npm publish + marketplace** (needs the org from Step 0.2) and the **closed
+> beta** (7.6 — can start from the GitHub repo + installer now). **Next build phase: Phase 8a** (BYO-key
+> automated eval), then **8b** (on-device via **winc.cpp**), then Phase 9 (web app).
 > See [CHANGELOG.md](CHANGELOG.md).
-> **Date:** 2026-06-05 (Phases 0–7 built 2026-06-05)
+> **Date:** 2026-06-09 (Phases 0–7 built 2026-06-05; 1.11/1.12 + Phase 5.5 on 2026-06-09)
 
 ---
 
@@ -75,7 +79,7 @@ API-key upgrade available. Both surfaces share the same scanner, regions, levels
   lightweight **on-device model by default** (private, free), an **API plugin** (BYO key — cloud, higher
   quality, zero-retention) opt-in, and a **confidential-cloud** option later. The zero-token scanner touches
   only public job data, so only evaluation needs a model — which keeps local feasible and cloud cheap. See
-  [Phase 8](#phase-8--pluggable-inference-local-default--api-plugin).
+  [Phase 8](#phase-8--pluggable-inference-8a-byo-key-auto-eval-then-8b-on-device-via-winccpp).
 - **Region toggle.** US-focused, **Midwest by default**; switch to Northeast/Southeast/Southwest/West/
   nationwide and the seeds, location filters, and search adapt.
 - **Level toggle.** Entry by default; mid first-class; senior opt-in (full-rank when chosen).
@@ -104,7 +108,7 @@ one-line installer; `npx jobdar` works with no install):
 `jobdar --help`, `jobdar <command> --help`, and `jobdar --version` — all bilingual. **Deterministic**
 commands (scan, tracker, doctor, init…) run with **no model**; **model-backed** commands (`eval`, `pdf`
 tailoring, `pipeline`'s eval step) use the configured **inference backend** — your own API key now, or the
-on-device model once [Phase 8](#phase-8--pluggable-inference-local-default--api-plugin) lands.
+on-device model once [Phase 8](#phase-8--pluggable-inference-8a-byo-key-auto-eval-then-8b-on-device-via-winccpp) lands.
 
 > **Two ways to drive it:** `jobdar <command>` in your **shell** (direct, scriptable, no AI CLI needed for
 > deterministic commands), or `/jobdar <mode>` inside an **AI CLI** (Claude Code / Gemini) for the full
@@ -130,9 +134,10 @@ on-device model once [Phase 8](#phase-8--pluggable-inference-local-default--api-
 - [Phase 3 — iCIMS provider (HTML/JSON-LD + Playwright fallback)](#phase-3--icims-provider-htmljson-ld--playwright-fallback)
 - [Phase 4 — Level toggle (entry default) + no-degree tuning](#phase-4--level-toggle-entry-default--no-degree-tuning)
 - [Phase 5 — Region toggle + seeds + geo tuning (Midwest default)](#phase-5--region-toggle--seeds--geo-tuning-midwest-default)
+- [Phase 5.5 — Provider expansion (demand-driven)](#phase-55--provider-expansion-demand-driven)
 - [Phase 6 — Effortless install & onboarding for anyone](#phase-6--effortless-install--onboarding-for-anyone)
 - [Phase 7 — Quality, dashboard, polish, release](#phase-7--quality-dashboard-polish-release)
-- [Phase 8 — Pluggable inference (local default + API plugin)](#phase-8--pluggable-inference-local-default--api-plugin)
+- [Phase 8 — Pluggable inference (8a BYO-key auto-eval, then 8b on-device via winc.cpp)](#phase-8--pluggable-inference-8a-byo-key-auto-eval-then-8b-on-device-via-winccpp)
 - [Phase 9 — Web app for non-technical users (future)](#phase-9--web-app-for-non-technical-users-future)
 - [MVP cut line](#mvp-cut-line-fastest-path-to-something-real)
 - [Risks & mitigations](#risks--mitigations)
@@ -263,6 +268,27 @@ returns US-wide + remote — all without the user hand-editing a file.
 
 ---
 
+## Phase 5.5 — Provider expansion (demand-driven)
+
+**Goal:** cover the ATSs where real small/midsize and regional employers actually post, beyond the
+big three. Greenhouse skews startup/tech; Workday/iCIMS carry enterprise + healthcare; Lever/Ashby
+carry the small-company long tail. Every provider implements the same contract
+(`detect` / `fetch` discovery / `fetchJob` eval-time JD).
+
+| Step | What | Status |
+|---|---|---|
+| 5.5.1 | **Lever provider** — unauthenticated `api.lever.co/v0/postings/{site}` list + per-posting detail (`descriptionPlain`); detects `jobs.lever.co/{site}`. | ✅ shipped 1.12.0 (live-verified: Spotify, Zoox, Octopus Energy) |
+| 5.5.2 | **Ashby provider** — unauthenticated `api.ashbyhq.com/posting-api/job-board/{org}` (carries `descriptionHtml`); detects `jobs.ashbyhq.com/{org}`. | ✅ shipped 1.12.0 (live-verified: Ramp, Replo) |
+| 5.5.3 | **Generic JSON-LD provider** (`provider: jsonld`, explicit opt-in) — schema.org JobPosting/ItemList embedded in any careers page; same-origin SSRF pinning. Escape hatch for Phenom/SmashFly-style sites that server-render JSON-LD. | ✅ shipped 1.12.0 (opt-in; note: TriHealth's SmashFly **listing** page is JS-only — no SSR JSON-LD — so it still needs 5.5.5) |
+| 5.5.4 | **Workday quirk tenants** — `allina`, `methodisthealthsystem` (HTTP 500) and `hca` (HTTP 422) reject the standard CXS POST even with a browser UA; needs deeper request replication (cookies/calendar token). | 🔶 open (diagnosed: not UA-gating) |
+| 5.5.5 | **Future readers, demand-driven** — Phenom, SmashFly/Symphony, Taleo, Oracle Recruiting, SmartRecruiters (these run TriHealth, UC Health, The Christ Hospital, and many regional systems). Build per real user demand; document per-employer coverage honestly. | ⬜ future |
+
+**Verification gate:** a portal on each new ATS scans live, dedupes, and feeds the same pipeline; the
+eval-time JD fetch returns real description text for at least one role per provider. *(Met for Lever +
+Ashby on 2026-06-09.)*
+
+---
+
 ## Phase 6 — Effortless install & onboarding for anyone
 
 **Goal:** a non-developer goes from zero → first real scan in under ~10 minutes, in EN or ES, without
@@ -293,31 +319,43 @@ only the README; repeat the whole flow in Spanish. Both pass.
 | 7.2 | Test coverage for Workday, iCIMS, i18n strings, the level toggle, and the region toggle in `test-all.mjs`; GitHub Actions CI green. | tests/CI |
 | 7.3 | Ethics/legal pass: ToS-respecting rate limits + backoff for Workday/iCIMS, robots awareness, a `LEGAL_DISCLAIMER`, a privacy statement ("data stays local; we host no résumés"), and license compliance for any reused third-party code. | compliance |
 | 7.4 | Security review of providers (SSRF allowlists, `redirect:'error'`, no secret leakage); confirm zero telemetry. | security |
-| 7.5 | Package & release: Claude Code plugin (`/jobdar`) in a marketplace + npm; `1.0.0`; bilingual release notes. | release |
-| 7.6 | Closed beta with target users (a new grad, a no-degree candidate, a career-changer, a Spanish-preferring user); iterate. | beta |
+| 7.5 | Package & release: Claude Code plugin (`/jobdar`) in a marketplace + npm; `1.0.0`; bilingual release notes. **Blocked on Step 0.2** (org/trademark + npm name grab) — everything else is ready. | release |
+| 7.6 | Closed beta with target users (a new grad, a no-degree candidate, a career-changer, a Spanish-preferring user); iterate. **Does NOT need 7.5** — beta can start now from the GitHub repo + one-line installer. | beta |
 
 ---
 
-## Phase 8 — Pluggable inference (local default + API plugin)
+## Phase 8 — Pluggable inference (8a BYO-key auto-eval, then 8b on-device via winc.cpp)
 
-**Goal:** make the model a **swappable backend** so the same evaluation/tailoring brain runs against (a) a
-lightweight **on-device model by default** — private, no key, no cost — or (b) a **cloud model via an opt-in
-API plugin** (BYO key, higher quality), with **data always local at rest**. This is what gives non-technical
-users evaluation + résumé consistency with **no privacy exposure**, and lets technical users keep using their
-own AI CLI/API. It also limits our liability: we never receive or store résumés.
+**Goal:** make the model a **swappable backend** so the same evaluation/tailoring brain runs against
+either a **cloud model via the user's own key** (8a — small, unblocks daily use first) or a fully
+**local model via [winc.cpp](https://github.com/samdotson61) — the PRIMARY on-device backend** (8b).
+The key architectural insight: **both halves speak the same wire format — the Anthropic Messages API.**
+winc.cpp's `llama-server` serves `/v1/messages` **natively** on localhost, so ONE tiny HTTP client
+covers both backends; only the base URL and the key differ. Data always local at rest; we never
+receive or store résumés.
+
+### Phase 8a — BYO-key automated eval (build first; small)
 
 | Step | What | Detail |
 |---|---|---|
-| 8.1 | **`InferenceProvider` interface** (same plugin spirit as the scanner): `evaluate(jd, profile, cv)` / `tailor(...)` → structured result. The Markdown rubric is the shared spec; backends are swappable. | abstraction |
-| 8.2 | **Local backend (default for non-tech):** integrate a lightweight on-device LLM — **Ollama** (cross-platform) with a small instruct model (e.g., Llama 3.2 3B / Qwen2.5 3B), plus a **`llamafile`** single-binary option for true zero-install. Auto-detect/auto-pull with a friendly "preparing model…" UX. Fully offline, no key, no cost. | private + free |
-| 8.3 | **API-plugin backend (opt-in, BYO key):** Anthropic (default) / OpenAI / Gemini; use **zero-retention** settings; send only the **minimal slice** (JD + relevant CV excerpt), never the whole history. For tech users + anyone wanting more accuracy. | the "tech users like today" path |
-| 8.4 | **Consistency & quality guardrails:** the deterministic scanner does all filtering (no model); the model only does nuanced eval. Structured-output schema so local and cloud return the same shape; a "consistency mode" (pinned prompt + schema) so résumé tailoring stays stable over time; a small eval set to compare local vs. cloud. | accuracy + consistency |
-| 8.5 | **Backend selector + fallback:** `inference: local\|api\|auto`. Wizard defaults non-tech users to `local`, tech users to `api`; `auto` runs local and offers an API upgrade on borderline roles. Clear UX about the privacy/quality tradeoff. | user control |
-| 8.6 | **(Future) confidential-cloud option:** managed inference in a TEE (Nitro Enclaves / confidential VMs / a Private-Cloud-Compute-style enclave) for cloud quality the operator can't read — for when local isn't enough and the user won't BYO key. Documented, not built yet. | advanced |
+| 8a.1 | **`InferenceProvider` interface** (same plugin spirit as the scanner): `evaluate(jd, profile, cv)` → structured verdict `{ score, band, recommendation, … }`. The Markdown rubric (`modes/_shared.md` + `modes/eval.md`) is the shared spec. | abstraction |
+| 8a.2 | **`jobdar eval --auto [<url> \| --next \| --all-pending]`** — reads the key `init` already stores in `data/credentials.env` (today it's collected and never used), calls the **Anthropic Messages API** with rubric + JD + `cv.md`, parses the structured verdict, records it via the existing `eval --save` path. Batch mode walks every pending role politely. | the single biggest daily-use unlock |
+| 8a.3 | **Minimal-slice + zero-retention posture:** send only the JD + relevant CV excerpt, never history; document the retention settings; key never leaves `credentials.env` (gitignored, 0600). | privacy |
+| 8a.4 | **Consistency guardrails:** pinned prompt + structured-output schema so every backend returns the same shape; a small eval set to sanity-check scoring stability. | accuracy |
 
-**Verification gate:** the same JD evaluates end-to-end with `inference: local` (no key, offline) and with
-`inference: api` (BYO key), returning the same structured shape; the local path makes **zero** network calls
-to any model provider.
+### Phase 8b — on-device backend: winc.cpp primary (private, no key, no cost)
+
+| Step | What | Detail |
+|---|---|---|
+| 8b.1 | **winc.cpp as the PRIMARY local backend.** `inference: local` points the SAME 8a client at winc's local `llama-server` (default `http://127.0.0.1:8080/v1/messages`, configurable via `inference_url`) — it speaks the Anthropic Messages API natively, so no translation layer and no new client code. No key, no cost, fully offline. | one client, two backends |
+| 8b.2 | **Friendly liveness UX:** detect whether the local server is up; if not, print the exact start command (`winc serve`, or `winc serve --multi` for hot-swapped models) and the winc.cpp install pointer. | onboarding |
+| 8b.3 | **Alternate local runtimes** behind the same interface for users without winc: **Ollama** / **llamafile** (OpenAI-compat shim mapped to the shared schema). Secondary — winc is the documented happy path. | breadth |
+| 8b.4 | **Backend selector + fallback:** `inference: local\|api\|auto`. Wizard defaults non-tech users to `local` (winc), tech users to `api`; `auto` runs local and offers an API upgrade on borderline roles. Clear UX about the privacy/quality tradeoff. | user control |
+| 8b.5 | **(Future) confidential-cloud option:** TEE-based managed inference for cloud quality the operator can't read — only if local proves too weak and users won't BYO key. Documented, not built. | advanced |
+
+**Verification gate:** the same JD evaluates end-to-end with `inference: api` (BYO key) and with
+`inference: local` (**winc.cpp's `winc serve` running; zero external network calls**), both recording the
+same structured verdict shape into the pipeline.
 
 ---
 
@@ -421,7 +459,12 @@ from a guided wizard — the core promise — before we invest in iCIMS, the loc
 - **Strategy:** JSON-LD/HTML parse → Playwright fallback (sequential). Expect more breakage than Workday; document coverage per employer.
 
 ### Inference options (Phase 8/9)
-- **Local (default, private):** Ollama + a small instruct model (Llama 3.2 3B / Qwen2.5 3B) for CLI/desktop; `llamafile` single-binary for zero-install; **WebLLM (WebGPU)** in-browser for the web app. No key, no cost, nothing leaves the device.
+- **Local PRIMARY (winc.cpp):** the user's `winc serve` runs llama.cpp's `llama-server`, which serves the
+  **Anthropic Messages API natively** (`/v1/messages`) on `127.0.0.1:8080` — Jobdar's API client just
+  points at it (no key, no translation proxy, nothing leaves the device). Model management (download,
+  hardware detect, hot-swap via llama-swap) is winc's job, not ours.
+- **Local alternates:** Ollama + a small instruct model (Llama 3.2 3B / Qwen2.5 3B) or `llamafile`
+  single-binary (both via an OpenAI-compat shim); **WebLLM (WebGPU)** in-browser for the web app.
 - **API plugin (opt-in):** BYO key — Anthropic (default) / OpenAI / Gemini; **zero-retention** settings; send only the minimal JD + CV excerpt.
 - **Confidential cloud (future):** TEE-based managed inference (Nitro Enclaves / confidential VMs / Private-Cloud-Compute-style) for cloud quality without exposing data.
 - **Why this is feasible:** the scanner is **zero-token** (no model — it only fetches public job data), so only evaluation/tailoring needs a model. That keeps the local path practical and the cloud path cheap.

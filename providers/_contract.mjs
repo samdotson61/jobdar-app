@@ -22,9 +22,12 @@
 import workday from './workday.mjs'
 import greenhouse from './greenhouse.mjs'
 import icims from './icims.mjs'
+import lever from './lever.mjs'
+import ashby from './ashby.mjs'
+import jsonld from './jsonld.mjs'
 
-// Register providers here as they land. Lever/Ashby follow.
-const REGISTRY = [workday, greenhouse, icims]
+// Register providers here as they land. `jsonld` is opt-in (detect requires `provider: jsonld`).
+const REGISTRY = [workday, greenhouse, icims, lever, ashby, jsonld]
 
 export function allProviders() {
   return REGISTRY.slice()

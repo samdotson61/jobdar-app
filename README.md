@@ -11,12 +11,15 @@ Jobdar scans company career pages (with first-class support for **Workday** and 
 dominate US enterprise employers), evaluates each role against your résumé, tailors an ATS-friendly CV and
 cover letter, and tracks every application.
 
-> **Status:** Phases 0–7 **complete** — **Jobdar CLI `1.10.0`**: bilingual core, live-verified Workday /
-> iCIMS / Greenhouse scanners, level + region toggles, the `jobdar init` wizard, and a **discover →
-> evaluate → build** pipeline — `scan` finds and filters roles (it never scores), the model's `jobdar eval`
-> scores fit (0–5 → Apply / Research / Don't) and records it, surfaced in `jobdar tui`; plus a tailored ATS
-> résumé (`jobdar pdf`). Remaining for the 1.0 ship: npm publish + marketplace, then a closed beta. See
-> **[ROADMAP.md](ROADMAP.md)** for the full build plan and **[CHANGELOG.md](CHANGELOG.md)** for what's shipped.
+> **Status:** Phases 0–7 + 5.5 **complete** — **Jobdar CLI `1.12.0`**: bilingual core; **six live-verified
+> scanner providers** (Workday, iCIMS, Greenhouse, Lever, Ashby + an opt-in JSON-LD reader); level + region
+> toggles and the `jobdar init` wizard; the full **discover → evaluate → track → build** pipeline — `scan`
+> finds and filters roles (it never scores), the model's `jobdar eval` scores fit (0–5 → Apply / Research /
+> Don't) and records it, you advance status (`a` in the TUI or `jobdar tracker --set`), and `jobdar pdf`
+> builds the tailored ATS résumé; a scrollable cursor-driven `jobdar tui` workspace + a web dashboard with
+> analytics; freshness tracking (`posted` / `first_seen`, `scan --prune`). Remaining for the 1.0 ship:
+> npm publish + marketplace, then a closed beta. See **[ROADMAP.md](ROADMAP.md)** for the full build plan
+> and **[CHANGELOG.md](CHANGELOG.md)** for what's shipped.
 
 ## Your data stays local
 

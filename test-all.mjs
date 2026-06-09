@@ -12,6 +12,9 @@ import { resolveProvider, providerIds } from './providers/_contract.mjs'
 import greenhouse, { parseJobUrl as parseGhJobUrl } from './providers/greenhouse.mjs'
 import workday, { HOST_ALLOWLIST as WORKDAY_HOSTS, parseWorkdayUrl, parseWorkdayJobUrl } from './providers/workday.mjs'
 import icims, { HOST_ALLOWLIST as ICIMS_HOSTS, parseJobPostingsFromHtml } from './providers/icims.mjs'
+import lever, { parseLeverJobUrl } from './providers/lever.mjs'
+import ashby, { parseAshbyJobUrl } from './providers/ashby.mjs'
+import jsonldProvider, { parseJsonLdJobs } from './providers/jsonld.mjs'
 import { assertAllowedUrl } from './lib/http.mjs'
 import { resolveState, stateLabel, allStates } from './lib/states.mjs'
 import { classifyTitle, levelDecision, filterByLevel } from './lib/levels.mjs'
@@ -19,8 +22,9 @@ import { regionStateSet, locationMatches, filterByLocation } from './lib/regions
 import { selectEmployers, toPortals } from './lib/seed.mjs'
 import { parseResumeText } from './lib/resume.mjs'
 import { renderDashboard, analyze } from './lib/commands/dashboard.mjs'
-import { renderTui } from './lib/commands/tui.mjs'
-import { mergeScanned, recordEval, serializePipeline, band, isEvaluated } from './lib/evaluations.mjs'
+import { renderTui, pipelineView } from './lib/commands/tui.mjs'
+import { mergeScanned, recordEval, serializePipeline, band, isEvaluated, isTracked, setStatus, pruneScanned } from './lib/evaluations.mjs'
+import { trackerRowsFrom } from './lib/tracker.mjs'
 import { cvToHtml, matchedKeywords } from './lib/cv_render.mjs'
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url))
@@ -339,12 +343,27 @@ test('security: http guard enforces HTTPS, no credentials, and the host allowlis
   assert.throws(() => assertAllowedUrl('https://evil.example.org/x', { hostAllowlist: allow })) // off-allowlist
 })
 
-test('providers: greenhouse, workday, icims share the contract (detect + fetch + fetchJob)', () => {
-  for (const p of [greenhouse, workday, icims]) {
+test('providers: all six share the contract (detect + fetch + fetchJob)', () => {
+  for (const p of [greenhouse, workday, icims, lever, ashby, jsonldProvider]) {
     assert.equal(typeof p.detect, 'function')
     assert.equal(typeof p.fetch, 'function') // discovery (uniform shape, no JD)
-    assert.equal(typeof p.fetchJob, 'function') // eval-time JD fetch — parity across all three
+    assert.equal(typeof p.fetchJob, 'function') // eval-time JD fetch — parity across all
   }
+})
+
+test('providers: lever/ashby detect their board URLs; jsonld is explicit opt-in only', () => {
+  assert.equal(lever.detect({ careers_url: 'https://jobs.lever.co/acme' }).site, 'acme')
+  assert.equal(lever.detect({ careers_url: 'https://job-boards.greenhouse.io/acme' }), null)
+  assert.deepEqual(parseLeverJobUrl('https://jobs.lever.co/acme/123-abc'), { site: 'acme', id: '123-abc' })
+  assert.equal(ashby.detect({ careers_url: 'https://jobs.ashbyhq.com/acme' }).org, 'acme')
+  assert.deepEqual(parseAshbyJobUrl('https://jobs.ashbyhq.com/acme/uuid-1'), { org: 'acme', id: 'uuid-1' })
+  // jsonld never auto-claims a portal — provider: jsonld is required
+  assert.equal(jsonldProvider.detect({ careers_url: 'https://careers.example.org/search' }), null)
+  assert.equal(jsonldProvider.detect({ careers_url: 'https://careers.example.org/search', provider: 'jsonld' }).host, 'careers.example.org')
+  const html = '<script type="application/ld+json">{"@type":"ItemList","itemListElement":[{"item":{"@type":"JobPosting","title":"RN","url":"https://careers.example.org/j/1","jobLocation":{"address":{"addressLocality":"Cincinnati","addressRegion":"OH"}}}}]}</script>'
+  const jobs = parseJsonLdJobs(html, 'X')
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].location, 'Cincinnati, OH')
 })
 
 test('providers: job-URL parsing for the eval-time JD fetch', () => {
@@ -361,13 +380,14 @@ test('dashboard: renders config, pipeline (TUI parity), analytics charts + track
   const profile = { target_regions: ['midwest'], target_levels: ['entry'] }
   const portals = [{ company: 'Enova', careers_url: 'https://job-boards.greenhouse.io/enova' }]
   const pipeline = [
-    { company: 'Enova', role: 'Data Analyst I', location: 'Chicago, IL', score: '4.6', band: 'apply', status: 'evaluated' },
-    { company: 'Hudl', role: 'Product Manager', location: 'Lincoln, NE', score: '', band: '', status: 'scanned' },
+    { company: 'Enova', role: 'Data Analyst I', location: 'Chicago, IL', score: '4.6', band: 'apply', status: 'evaluated', url: 'https://job-boards.greenhouse.io/enova/jobs/1' },
+    { company: 'Hudl', role: 'Product Manager', location: 'Lincoln, NE', score: '', band: '', status: 'scanned', url: 'https://job-boards.greenhouse.io/hudl/jobs/2' },
   ]
   const catalog = [{ company: 'Enova', sector: 'fintech' }, { company: 'Hudl', sector: 'sports-tech' }]
   const en = renderDashboard(getT('en'), { profile, portals, pipeline, tracker: [], catalog, lang: 'en' })
   assert.ok(en.includes('Jobdar dashboard') && en.includes('Midwest') && en.includes('Enova') && en.includes('greenhouse'))
   assert.ok(en.includes('Data Analyst I') && en.includes('4.6')) // pipeline row — TUI parity
+  assert.ok(en.includes('href="https://job-boards.greenhouse.io/enova/jobs/1"')) // role links to the posting
   assert.ok(en.includes('Analytics') && en.includes('<svg') && en.includes('Top companies') && en.includes('Pipeline funnel'))
   assert.ok(en.includes('By sector') && en.includes('By location')) // sector/region breakdown charts
   assert.ok(en.includes('id="pipe"') && en.includes('sessionStorage')) // client-side sortable columns
@@ -398,9 +418,9 @@ test('dashboard: analyze() computes counts, funnel, companies, sectors + locatio
 test('tui: evaluated roles show score + band; scanned roles read "pending eval"', () => {
   const profile = { target_regions: ['midwest'], target_levels: ['entry', 'mid'] }
   const rows = [
-    { company: 'Enova', role: 'Data Analyst I', location: 'Chicago, IL', score: '4.7', band: 'apply', status: 'evaluated' },
-    { company: 'Acme', role: 'Marketing Analyst', location: 'Austin, TX', score: '3.6', band: 'research', status: 'evaluated' },
-    { company: 'Globex', role: 'Software Engineer', location: 'Remote, USA', score: '', band: '', status: 'scanned' },
+    { company: 'Enova', role: 'Data Analyst I', location: 'Chicago, IL', score: '4.7', band: 'apply', status: 'evaluated', url: 'u1' },
+    { company: 'Acme', role: 'Marketing Analyst', location: 'Austin, TX', score: '3.6', band: 'research', status: 'evaluated', url: 'u2' },
+    { company: 'Globex', role: 'Software Engineer', location: 'Remote, USA', score: '', band: '', status: 'scanned', url: 'u3' },
   ]
   const out = renderTui(getT('en'), { profile, rows, lang: 'en', sort: 'score', filter: 'all', height: 24 })
   assert.ok(out.includes('Data Analyst I') && out.includes('4.7')) // evaluated shows its model score
@@ -412,6 +432,21 @@ test('tui: evaluated roles show score + band; scanned roles read "pending eval"'
   assert.ok(applied.includes('Data Analyst I') && !applied.includes('Marketing Analyst')) // band filter
 })
 
+test('tui: position indicator, cursor highlight, and tracked-state rows', () => {
+  const profile = { target_regions: ['midwest'], target_levels: ['entry'] }
+  const rows = [
+    { company: 'A', role: 'PM', location: 'Chicago, IL', score: '4.4', band: 'apply', status: 'applied', url: 'u1' },
+    { company: 'B', role: 'Analyst', location: 'Columbus, OH', score: '', band: '', status: 'scanned', url: 'u2' },
+  ]
+  const out = renderTui(getT('en'), { profile, rows, lang: 'en', cursor: 0, height: 24 })
+  assert.ok(out.includes('1–2 of 2')) // position indicator
+  assert.ok(out.includes('\x1b[7m')) // cursor row is inverse-video highlighted
+  assert.ok(out.includes('Applied')) // tracked status shows its state label, not a band
+  const v = pipelineView(rows, { filter: 'pending' })
+  assert.equal(v.length, 1) // shared view helper agrees with the filter
+  assert.equal(v[0].url, 'u2')
+})
+
 test('pipeline: band maps a 0–5 model score to Apply / Research / Dont (empty → no band)', () => {
   assert.equal(band(4.2), 'apply')
   assert.equal(band(3.7), 'research')
@@ -421,7 +456,7 @@ test('pipeline: band maps a 0–5 model score to Apply / Research / Dont (empty 
 
 test('pipeline: scan writes DISCOVERED roles (status scanned, no score) — the tool does not score', () => {
   const discovered = [
-    { company: 'Enova', title: 'Product Manager', url: 'u1', location: 'Chicago, IL' },
+    { company: 'Enova', title: 'Product Manager', url: 'u1', location: 'Chicago, IL', postedOn: '2026-06-01T08:00:00Z' },
     { company: 'Hudl', title: 'Data Analyst', url: 'u2', location: 'Lincoln, NE' },
   ]
   const rows = mergeScanned([], discovered, '2026-06-05')
@@ -430,8 +465,40 @@ test('pipeline: scan writes DISCOVERED roles (status scanned, no score) — the 
   assert.equal(rows[0].role, 'Product Manager')
   assert.equal(rows[0].score, '') // no score comes from scanning
   assert.equal(rows[0].band, '')
+  assert.equal(rows[0].posted, '2026-06-01') // board posting date persisted (day precision)
+  assert.equal(rows[0].first_seen, '2026-06-05') // when scan first found it
   assert.ok(!isEvaluated(rows[0]))
+  // a later re-scan keeps the original first_seen
+  const again = mergeScanned(rows, [{ company: 'Enova', title: 'Product Manager', url: 'u1', location: 'Chicago, IL' }], '2026-06-09')
+  assert.equal(again.find((r) => r.url === 'u1').first_seen, '2026-06-05')
   assert.ok(serializePipeline(rows).startsWith('company\trole\turl'))
+})
+
+test('pipeline: status advances (applied), tracker derives from it, prune keeps your work', () => {
+  let rows = mergeScanned([], [
+    { company: 'A', title: 'PM', url: 'u1' },
+    { company: 'B', title: 'Analyst', url: 'u2' },
+    { company: 'C', title: 'Dev', url: 'u3' },
+  ], '2026-06-05')
+  rows = recordEval(rows, { url: 'u1', score: 4.4 }, '2026-06-06')
+  rows = setStatus(rows, 'u1', 'applied', '2026-06-07')
+  const u1 = rows.find((r) => r.url === 'u1')
+  assert.equal(u1.status, 'applied')
+  assert.ok(isTracked(u1))
+  assert.equal(u1.score, 4.4) // score survives the status change
+  // a later eval refresh must NOT demote the applied status
+  rows = recordEval(rows, { url: 'u1', score: 4.6 }, '2026-06-08')
+  assert.equal(rows.find((r) => r.url === 'u1').status, 'applied')
+  // tracker = view over the pipeline
+  const tracked = trackerRowsFrom(rows)
+  assert.equal(tracked.length, 1)
+  assert.equal(tracked[0].state, 'applied')
+  // prune: u2 vanished from boards (scanned → dropped); u1 applied + u3 still listed → kept
+  const { rows: kept, pruned } = pruneScanned(rows, new Set(['u3']))
+  assert.equal(pruned, 1)
+  assert.ok(kept.find((r) => r.url === 'u1') && kept.find((r) => r.url === 'u3'))
+  assert.ok(!kept.find((r) => r.url === 'u2'))
+  assert.equal(setStatus(rows, 'nope', 'applied', '2026-06-07'), null) // unknown URL → null
 })
 
 test('pipeline: eval records the model verdict (score + band), re-scan never clobbers it', () => {

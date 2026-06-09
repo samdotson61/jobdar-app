@@ -42,6 +42,7 @@ scan:
   level_note: "{count} role(s) outside your level(s) were filtered out"
   region_note: "{count} role(s) outside your region(s) were filtered out"
   eval_hint: "Discovered roles saved to your pipeline. Scan only finds roles — run `jobdar eval <url>` to score fit (the model scores, not the scanner)."
+  pruned: "{count} stale role(s) pruned (no longer listed on any board)"
 
 doctor:
   title: "Jobdar doctor"
@@ -62,8 +63,11 @@ doctor:
 
 tracker:
   title: "Application tracker"
-  empty: "No applications tracked yet. Run `jobdar pipeline`, or add entries once tracking lands (Phase 6)."
+  empty: "No applications tracked yet — press `a` on a role in `jobdar tui`, or run `jobdar tracker --set <url> applied`."
   count: "{count} application(s) tracked"
+  set_usage: "Usage: jobdar tracker --set <url> <state>   (states: {states})"
+  set_missing: "No pipeline role with that URL — run `jobdar scan` first ({url})"
+  set_done: "Marked {state} — {url}"
   col_company: "Company"
   col_role: "Role"
   col_state: "State"
@@ -147,10 +151,11 @@ dashboard:
   funnel_applied: "Applied"
 
 tui:
-  keys: "s sort · 1/2/3 band · p pending · 0 all · c company · r refresh · q quit"
+  keys: "↑/↓ move · ⏎/o open · a applied · PgUp/PgDn g/G jump · s sort · 1/2/3 band · p pending · 0 all · c company · r refresh · q quit"
   empty: "No roles yet — run `jobdar scan` to discover roles, then `jobdar eval <url>` to score them."
   none_match: "No roles match this filter."
   pending: "pending"
+  position: "{from}–{to} of {total}"
   col_score: "Score"
   col_band: "Band"
   col_role: "Role"
@@ -168,6 +173,8 @@ bands:
 
 eval:
   title: "Evaluate a role"
+  next_for: "Next pending: {role} @ {company} ({remaining} pending)"
+  next_none: "Nothing pending — every discovered role is evaluated. Run `jobdar scan` for fresh roles."
   jd_for: "Job description — {role} (fetched for you; score it against your résumé):"
   jd_none: "Couldn't fetch the JD automatically — open {url} to read it, then score."
   jd_error: "Couldn't fetch the JD ({error}) — open the URL to read it, then score."

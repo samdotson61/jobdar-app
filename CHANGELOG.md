@@ -6,6 +6,59 @@ All notable changes to Jobdar are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.12.0] — 2026-06-09
+
+Phase 5.5 — provider expansion. Six scanner providers, one contract.
+
+### Added
+- **Lever provider** (`providers/lever.mjs`) — unauthenticated `api.lever.co` postings list + per-role
+  detail (`descriptionPlain`) for eval; detects `jobs.lever.co/{site}` (and `jobs.eu.lever.co`).
+  Live-verified: Spotify (147), Zoox (220), Octopus Energy (163), with JD text flowing.
+- **Ashby provider** (`providers/ashby.mjs`) — unauthenticated `api.ashbyhq.com/posting-api/job-board/{org}`;
+  detects `jobs.ashbyhq.com/{org}`; JD from the board's `descriptionHtml`. Live-verified: Ramp (110, 4.2k-char
+  JD), Replo. Covers the small/midsize startup long tail alongside Lever.
+- **Generic JSON-LD provider** (`providers/jsonld.mjs`, **explicit opt-in** via `provider: jsonld`) — reads
+  schema.org JobPosting/ItemList embedded in any careers page, SSRF-pinned to that page's own host. The
+  escape hatch for Phenom/SmashFly-style portals that server-render JSON-LD. (Tested: TriHealth's SmashFly
+  listing is JS-only — no SSR JSON-LD — so the big Cincinnati systems still need a dedicated reader; see
+  ROADMAP 5.5.5.)
+
+### Notes
+- Workday quirk tenants diagnosed: `allina`/`methodisthealthsystem` (HTTP 500) and `hca` (HTTP 422) reject
+  the standard CXS POST **even with a browser User-Agent** — not UA-gating; needs deeper request
+  replication. Tracked as ROADMAP 5.5.4; those portals fail visibly per-portal in a scan, nothing silent.
+- ROADMAP restructured per review: new **Phase 5.5** (this release), **Phase 8 split into 8a** (BYO-key
+  automated eval — the key `init` stores finally gets used) **and 8b** (on-device via **winc.cpp** as the
+  PRIMARY local backend — its `llama-server` speaks the Anthropic Messages API natively on localhost, so
+  8a's client serves both); 7.5 marked blocked on Step 0.2 only; 7.6 beta can start pre-npm.
+
+## [1.11.0] — 2026-06-09
+
+The TUI becomes a workspace, the tracker becomes real, and the pipeline learns freshness.
+
+### Added
+- **TUI scrolling overhaul** — mouse-wheel support (alternate-scroll mode `?1007h`), PgUp/PgDn,
+  Home/End, `g`/`G`, a **cursor row** (inverse-video) with **⏎/`o` = open the posting in your browser**
+  and **`a` = mark applied**, plus a `from–to of N` position indicator. Scroll/cursor clamp against the
+  *filtered* view (no more scrolling into blank space under a band filter).
+- **Tracker unified with the pipeline** — `applied` (and any canonical state: interviewing, offer, …) is
+  now a pipeline **status**: set it from the TUI (`a`) or `jobdar tracker --set <url> <state>` (ES aliases
+  accepted). `jobdar tracker` and the dashboard's tracker card + funnel "Applied" stage read straight from
+  the pipeline — the dead never-written `tracker.tsv` is gone, and an eval refresh never demotes a
+  human-tracked status.
+- **Freshness** — the pipeline persists each role's **`posted`** (board date) and **`first_seen`** (when
+  scan found it); `scan --prune` drops stale `scanned` rows that left every board (your evaluated/applied
+  rows are never pruned; ignored under `--company` scans where it would over-prune).
+- **`jobdar eval --next`** — pops the freshest pending role (posted desc, then first_seen) and prints its
+  JD, so the model loop is "next → score → save" with no URL copying.
+- **Dashboard**: each pipeline row's role now links to the live posting.
+
+### Changed
+- `scan` runs portals through a polite ×3 concurrency pool (per-provider page pacing unchanged) — a
+  38-board healthcare scan no longer crawls one employer at a time.
+- Pipeline columns: + `posted`, `first_seen` (header-based reads keep old files compatible; the next scan
+  rewrites the file in the new shape).
+
 ## [1.10.0] — 2026-06-05
 
 Dashboard polish: sortable columns + sector & location breakdowns.

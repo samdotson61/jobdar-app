@@ -42,6 +42,7 @@ scan:
   level_note: "{count} puesto(s) fuera de tu(s) nivel(es) fueron filtrados"
   region_note: "{count} puesto(s) fuera de tu(s) región(es) fueron filtrados"
   eval_hint: "Puestos descubiertos guardados en tu flujo. El escaneo solo encuentra puestos — ejecuta `jobdar eval <url>` para puntuar la compatibilidad (puntúa el modelo, no el escáner)."
+  pruned: "{count} puesto(s) obsoleto(s) eliminados (ya no aparecen en ningún portal)"
 
 doctor:
   title: "Diagnóstico de Jobdar"
@@ -62,8 +63,11 @@ doctor:
 
 tracker:
   title: "Registro de solicitudes"
-  empty: "Aún no hay solicitudes registradas. Ejecuta `jobdar pipeline` o agrega entradas cuando el registro esté disponible (Fase 6)."
+  empty: "Aún no hay solicitudes registradas — pulsa `a` sobre un puesto en `jobdar tui`, o ejecuta `jobdar tracker --set <url> applied`."
   count: "{count} solicitud(es) registrada(s)"
+  set_usage: "Uso: jobdar tracker --set <url> <estado>   (estados: {states})"
+  set_missing: "No hay ningún puesto con esa URL en el flujo — ejecuta `jobdar scan` primero ({url})"
+  set_done: "Marcado {state} — {url}"
   col_company: "Empresa"
   col_role: "Puesto"
   col_state: "Estado"
@@ -147,10 +151,11 @@ dashboard:
   funnel_applied: "Postulados"
 
 tui:
-  keys: "s ordenar · 1/2/3 banda · p pendiente · 0 todas · c empresa · r actualizar · q salir"
+  keys: "↑/↓ mover · ⏎/o abrir · a postulado · PgUp/PgDn g/G saltar · s ordenar · 1/2/3 banda · p pendiente · 0 todas · c empresa · r actualizar · q salir"
   empty: "Aún no hay puestos — ejecuta `jobdar scan` para descubrir puestos y luego `jobdar eval <url>` para puntuarlos."
   none_match: "Ningún puesto coincide con este filtro."
   pending: "pendiente"
+  position: "{from}–{to} de {total}"
   col_score: "Puntuación"
   col_band: "Banda"
   col_role: "Puesto"
@@ -168,6 +173,8 @@ bands:
 
 eval:
   title: "Evaluar un puesto"
+  next_for: "Siguiente pendiente: {role} @ {company} ({remaining} pendientes)"
+  next_none: "Nada pendiente — todos los puestos descubiertos están evaluados. Ejecuta `jobdar scan` para puestos nuevos."
   jd_for: "Descripción del puesto — {role} (obtenida para ti; puntúala frente a tu currículum):"
   jd_none: "No se pudo obtener la descripción automáticamente — abre {url} para leerla y luego puntúa."
   jd_error: "No se pudo obtener la descripción ({error}) — abre la URL para leerla y luego puntúa."
