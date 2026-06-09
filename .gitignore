@@ -7,6 +7,14 @@ data/*
 output/
 reports/
 
+# Personal config — NEVER commit. profile.yml carries PII (name, metro, target salary) and
+# portals.yml reveals your job-search targets. `jobdar init` creates both locally; the repo
+# ships only the *.example.yml templates.
+config/profile.yml
+config/profile.yml.*
+config/portals.yml
+config/portals.yml.*
+
 # Logs
 *.log
 npm-debug.log*

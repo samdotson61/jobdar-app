@@ -1,0 +1,12 @@
+# Jobdar portals — EXAMPLE. Copy to config/portals.yml, or better: run `jobdar init` (seeds your
+# region) or `jobdar seed --region <r> --write`. config/portals.yml is GITIGNORED — the set of
+# employers you're targeting is part of your private job search.
+portals:
+  - company: Hudl
+    careers_url: https://job-boards.greenhouse.io/hudl
+  # Workday boards need the /{site} segment; iCIMS/Lever/Ashby are auto-detected from the URL:
+  # - company: OhioHealth
+  #   careers_url: https://ohiohealth.wd5.myworkdayjobs.com/OhioHealthJobs
+  # - company: Example (JSON-LD careers page)
+  #   careers_url: https://careers.example.org/search
+  #   provider: jsonld

@@ -3,7 +3,7 @@
 // the provider registry / Greenhouse detect(), EN<->ES modes parity, and state aliases.
 
 import { strict as assert } from 'node:assert'
-import { readdirSync, existsSync } from 'node:fs'
+import { readdirSync, existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { getStrings, listKeys, getT } from './lib/i18n.mjs'
@@ -313,6 +313,18 @@ test('seed: region selection returns that region and swaps cleanly (gate)', () =
   assert.ok(toPortals(selectEmployers({ regions: ['midwest'] })).every((p) => p.company && p.careers_url))
 })
 
+test('privacy: personal config is gitignored and never shipped to npm', () => {
+  const gi = readFileSync(path.join(ROOT, '.gitignore'), 'utf8')
+  for (const p of ['config/profile.yml', 'config/portals.yml', 'data/*', '.env']) {
+    assert.ok(gi.includes(p), `.gitignore must cover ${p}`)
+  }
+  const pkg = JSON.parse(readFileSync(path.join(ROOT, 'package.json'), 'utf8'))
+  assert.ok(!pkg.files.includes('config/'), 'npm files must not pack config/ wholesale (profile.yml has PII)')
+  assert.ok(pkg.files.includes('config/i18n/'), 'i18n tables must still ship')
+  assert.ok(existsSync(path.join(ROOT, 'config', 'profile.example.yml'))) // PII-free template ships instead
+  assert.ok(existsSync(path.join(ROOT, 'config', 'portals.example.yml')))
+})
+
 test('seed: metro is a contains-match, sector filters, and the catalog spans all 3 providers', () => {
   const cincy = selectEmployers({ regions: ['nationwide'], metros: ['Cincinnati'] }).map((e) => e.company)
   assert.ok(cincy.includes('84.51°') && cincy.includes('Bon Secours Mercy Health')) // "Cincinnati" ⊂ "Cincinnati, OH"
@@ -325,9 +337,9 @@ test('seed: metro is a contains-match, sector filters, and the catalog spans all
 })
 
 test('resume: parseResumeText pulls name/email/metro and invents nothing', () => {
-  const r = parseResumeText('Sam Dotson\nsam.dotson@example.com\nIndianapolis, IN\nSkills: JS, SQL')
-  assert.equal(r.name, 'Sam Dotson')
-  assert.equal(r.email, 'sam.dotson@example.com')
+  const r = parseResumeText('Jane Doe\njane.doe@example.com\nIndianapolis, IN\nSkills: JS, SQL')
+  assert.equal(r.name, 'Jane Doe')
+  assert.equal(r.email, 'jane.doe@example.com')
   assert.equal(r.location, 'Indianapolis, IN')
   const empty = parseResumeText('')
   assert.equal(empty.name, '')

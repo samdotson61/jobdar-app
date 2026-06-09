@@ -13,7 +13,7 @@ Jobdar escanea las páginas de empleo de las empresas (con soporte de primera cl
 puesto frente a tu currículum, adapta un CV y una carta de presentación compatibles con ATS, y
 registra cada postulación.
 
-> **Estado:** Fases 0–7 + 5.5 **completas** — **Jobdar CLI `1.12.0`**: núcleo bilingüe; **seis escáneres
+> **Estado:** Fases 0–7 + 5.5 **completas** — **Jobdar CLI `1.12.1`**: núcleo bilingüe; **seis escáneres
 > verificados en vivo** (Workday, iCIMS, Greenhouse, Lever, Ashby + un lector JSON-LD opcional); selectores
 > de nivel y región y el asistente `jobdar init`; la tubería completa **descubrir → evaluar → registrar →
 > construir** — `scan` encuentra y filtra puestos (nunca los puntúa), el modelo (`jobdar eval`) puntúa la
@@ -37,6 +37,12 @@ web). El modelo que hace el trabajo es **intercambiable**:
 El escáner solo toca ofertas de empleo **públicas** — nunca tu currículum — así que **no alojamos
 datos personales**. Eso protege tu privacidad y limita nuestra responsabilidad. Consulta
 **[SECURITY.md](SECURITY.md)** y **[Legal y uso responsable](docs/legal.md)** para conocer todo el enfoque.
+
+**Tu perfil nunca llega a un repositorio.** `config/profile.yml` (nombre, área metropolitana, salario
+objetivo — creado por `jobdar init` a partir de tus respuestas o tu currículum) y `config/portals.yml`
+(las empresas que sigues) están **en .gitignore y excluidos del paquete de npm**; el repositorio solo
+incluye plantillas `*.example.yml` sin datos personales. Tu currículum (`data/cv.md`), tu clave de API y
+tu flujo viven en el directorio `data/`, también ignorado por git.
 
 ## Dos superficies, un mismo motor
 

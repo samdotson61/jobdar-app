@@ -93,9 +93,24 @@ impact, and people or technical leadership.
 `tuning_profile` shapes how you frame the candidate (orthogonal to level):
 
 - **new_grad** (default) — recent degree; lead with internships, projects, coursework.
+  - **Level fit modifier:** A new grad has a degree but no meaningful field experience. Score accordingly:
+    - **Entry-level roles** — treat a clean level match as a positive signal on the Level fit dimension;
+      bump the level-fit sub-score up (the candidate is genuinely competitive here).
+    - **Mid-level roles** — require clear evidence the JD is accessible without prior experience (e.g.,
+      "0–2 years", "new grad welcome", strong project/coursework substitutes). Without it, apply a
+      meaningful level-fit penalty — field experience the candidate lacks is a real gap.
 - **early_career** — 1–3 years; lead with shipped work and growth.
 - **no_degree** — see below; lead with skills, certs, and work history over credentials.
 - **career_changer** — translate prior-field wins into transferable skills; address the pivot head-on.
+  - **Level fit modifier:** A career changer is breaking into a new field and is inherently entry-level
+    in it, regardless of seniority in prior roles. Score accordingly:
+    - **Entry-level roles** — treat a clean level match as a positive signal on the Level fit dimension;
+      bump the level-fit sub-score up (the candidate is genuinely competitive here).
+    - **Mid-level roles** — require clear evidence that transferable skills substitute for field
+      experience (e.g., the JD says "or equivalent experience", the role is functional rather than
+      technical, or the candidate's prior work maps directly). Without that evidence, apply a
+      meaningful level-fit penalty — mid-level field experience the candidate lacks is a real gap,
+      not a formality.
 
 ## The no-degree path (first-class)
 

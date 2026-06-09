@@ -6,6 +6,23 @@ All notable changes to Jobdar are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.12.1] — 2026-06-09
+
+Privacy hotfix: personal config must never reach git or npm.
+
+### Security
+- **`config/profile.yml` and `config/portals.yml` are now gitignored and untracked** (plus any
+  `profile.yml.*` backups). The profile carries PII — name, metro, target salary — and the portal list
+  reveals your job-search targets; both are created locally by `jobdar init` (from your answers or an
+  uploaded résumé) and stay on your machine. The repo ships PII-free **`config/profile.example.yml` /
+  `config/portals.example.yml`** templates instead.
+- **npm `files` no longer packs `config/` wholesale** — only `config/i18n/` + the two example templates
+  ship, so a published tarball can never include a real profile.
+- **Git history scrubbed**: all past commits of `config/profile.yml`, `config/portals.yml`, and a tracked
+  profile backup were removed from history and the remote was force-updated — previously, real names,
+  metros, and a salary target were visible on GitHub.
+- Added a privacy regression test (gitignore coverage + npm whitelist + templates present).
+
 ## [1.12.0] — 2026-06-09
 
 Phase 5.5 — provider expansion. Six scanner providers, one contract.

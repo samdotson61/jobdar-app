@@ -1,0 +1,14 @@
+# Jobdar profile — EXAMPLE. Copy to config/profile.yml (or just run `jobdar init`, which writes it
+# for you). config/profile.yml is GITIGNORED: it holds your name, metro, and salary target — personal
+# data that must never reach a repo or npm package.
+language: en            # en | es
+target_regions:         # midwest | northeast | southeast | southwest | west | nationwide | custom
+  - midwest
+target_levels:          # entry (default) | mid | senior (opt-in, ranks on merit)
+  - entry
+tuning_profile: new_grad   # new_grad | early_career | no_degree | career_changer
+inference: api          # api (BYO key) | local (on-device, Phase 8b)
+name: ""                # your name — stays local
+location: ""            # your metro, e.g. "Indianapolis, IN" — stays local
+include_degree_required_roles: true
+target_salary: 0        # annual USD target (0 = unset) — stays local

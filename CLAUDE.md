@@ -12,5 +12,5 @@ Scope is locked: American English + Spanish; Midwest-default region; entry-defau
 (senior opt-in, ranks on merit). Keep the user's résumé local — the scanner only ever
 touches public job data.
 
-> Status: Phases 0–7 + 5.5 complete — Jobdar CLI 1.12.0 (see `ROADMAP.md` / `CHANGELOG.md`).
+> Status: Phases 0–7 + 5.5 complete — Jobdar CLI 1.12.1 (see `ROADMAP.md` / `CHANGELOG.md`).
 > Scan discovers + filters roles; the model's `eval` scores fit — the scanner never scores.
