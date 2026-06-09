@@ -328,7 +328,7 @@ only the README; repeat the whole flow in Spanish. Both pass.
 
 **Goal:** make the model a **swappable backend** so the same evaluation/tailoring brain runs against
 either a **cloud model via the user's own key** (8a — small, unblocks daily use first) or a fully
-**local model via [winc.cpp](https://github.com/samdotson61) — the PRIMARY on-device backend** (8b).
+**local model via [winc.cpp](https://github.com/samdotson61/winc.cpp) — the PRIMARY on-device backend** (8b).
 The key architectural insight: **both halves speak the same wire format — the Anthropic Messages API.**
 winc.cpp's `llama-server` serves `/v1/messages` **natively** on localhost, so ONE tiny HTTP client
 covers both backends; only the base URL and the key differ. Data always local at rest; we never
@@ -345,10 +345,17 @@ receive or store résumés.
 
 ### Phase 8b — on-device backend: winc.cpp primary (private, no key, no cost)
 
+> **Source of truth: the published repo — [github.com/samdotson61/winc.cpp](https://github.com/samdotson61/winc.cpp).**
+> All 8b integration work targets winc.cpp as released on GitHub (its README, `winc.toml` schema,
+> `winc serve` contract, and releases) — never a local checkout, which may drift behind origin.
+> Verified against origin/master (v1.4.5, 2026-06-09): `winc serve [--multi]` fronts llama.cpp's
+> `llama-server` (router included), serving the **Anthropic Messages API natively** (`/v1/messages`)
+> at the `host`/`port` in `winc.toml` (default `127.0.0.1:8080`).
+
 | Step | What | Detail |
 |---|---|---|
-| 8b.1 | **winc.cpp as the PRIMARY local backend.** `inference: local` points the SAME 8a client at winc's local `llama-server` (default `http://127.0.0.1:8080/v1/messages`, configurable via `inference_url`) — it speaks the Anthropic Messages API natively, so no translation layer and no new client code. No key, no cost, fully offline. | one client, two backends |
-| 8b.2 | **Friendly liveness UX:** detect whether the local server is up; if not, print the exact start command (`winc serve`, or `winc serve --multi` for hot-swapped models) and the winc.cpp install pointer. | onboarding |
+| 8b.1 | **winc.cpp as the PRIMARY local backend.** `inference: local` points the SAME 8a client at winc's local server (default `http://127.0.0.1:8080/v1/messages`, configurable via `inference_url` to match the user's `winc.toml`) — it speaks the Anthropic Messages API natively, so no translation layer and no new client code. No key, no cost, fully offline. | one client, two backends |
+| 8b.2 | **Friendly liveness UX:** detect whether the local server is up; if not, print the exact start command (`winc serve`, or `winc serve --multi` for hot-swapped models) and the install pointer (`git clone https://github.com/samdotson61/winc.cpp` → run the installer, or a Releases binary + `winc setup`). | onboarding |
 | 8b.3 | **Alternate local runtimes** behind the same interface for users without winc: **Ollama** / **llamafile** (OpenAI-compat shim mapped to the shared schema). Secondary — winc is the documented happy path. | breadth |
 | 8b.4 | **Backend selector + fallback:** `inference: local\|api\|auto`. Wizard defaults non-tech users to `local` (winc), tech users to `api`; `auto` runs local and offers an API upgrade on borderline roles. Clear UX about the privacy/quality tradeoff. | user control |
 | 8b.5 | **(Future) confidential-cloud option:** TEE-based managed inference for cloud quality the operator can't read — only if local proves too weak and users won't BYO key. Documented, not built. | advanced |
@@ -459,10 +466,11 @@ from a guided wizard — the core promise — before we invest in iCIMS, the loc
 - **Strategy:** JSON-LD/HTML parse → Playwright fallback (sequential). Expect more breakage than Workday; document coverage per employer.
 
 ### Inference options (Phase 8/9)
-- **Local PRIMARY (winc.cpp):** the user's `winc serve` runs llama.cpp's `llama-server`, which serves the
-  **Anthropic Messages API natively** (`/v1/messages`) on `127.0.0.1:8080` — Jobdar's API client just
-  points at it (no key, no translation proxy, nothing leaves the device). Model management (download,
-  hardware detect, hot-swap via llama-swap) is winc's job, not ours.
+- **Local PRIMARY ([winc.cpp](https://github.com/samdotson61/winc.cpp)):** the user's `winc serve` runs
+  llama.cpp's `llama-server`, which serves the **Anthropic Messages API natively** (`/v1/messages`) on
+  `127.0.0.1:8080` (per `winc.toml`) — Jobdar's API client just points at it (no key, no translation
+  proxy, nothing leaves the device). Model management (download, hardware detect, hot-swap via
+  llama-swap) is winc's job, not ours. Integration tracks the GitHub repo/releases, not local checkouts.
 - **Local alternates:** Ollama + a small instruct model (Llama 3.2 3B / Qwen2.5 3B) or `llamafile`
   single-binary (both via an OpenAI-compat shim); **WebLLM (WebGPU)** in-browser for the web app.
 - **API plugin (opt-in):** BYO key — Anthropic (default) / OpenAI / Gemini; **zero-retention** settings; send only the minimal JD + CV excerpt.

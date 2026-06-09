@@ -28,9 +28,11 @@ Phase 5.5 — provider expansion. Six scanner providers, one contract.
   the standard CXS POST **even with a browser User-Agent** — not UA-gating; needs deeper request
   replication. Tracked as ROADMAP 5.5.4; those portals fail visibly per-portal in a scan, nothing silent.
 - ROADMAP restructured per review: new **Phase 5.5** (this release), **Phase 8 split into 8a** (BYO-key
-  automated eval — the key `init` stores finally gets used) **and 8b** (on-device via **winc.cpp** as the
-  PRIMARY local backend — its `llama-server` speaks the Anthropic Messages API natively on localhost, so
-  8a's client serves both); 7.5 marked blocked on Step 0.2 only; 7.6 beta can start pre-npm.
+  automated eval — the key `init` stores finally gets used) **and 8b** (on-device via
+  **[winc.cpp](https://github.com/samdotson61/winc.cpp)** as the PRIMARY local backend — its
+  `llama-server` speaks the Anthropic Messages API natively on localhost, so 8a's client serves both;
+  planning tracks the **GitHub repo**, verified against origin/master v1.4.5); 7.5 marked blocked on
+  Step 0.2 only; 7.6 beta can start pre-npm.
 
 ## [1.11.0] — 2026-06-09
 
