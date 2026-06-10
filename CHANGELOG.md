@@ -6,6 +6,33 @@ All notable changes to Jobdar are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.14.0] — 2026-06-10
+
+Portability: one relocatable user-data home; no path coupling to the install dir.
+
+### Added
+- **`JOBDAR_HOME`** — one variable relocates ALL user data (config + data + output). Resolution:
+  `JOBDAR_HOME` → repo-local mode (a checkout with its own `config/profile.yml` stays a self-contained,
+  movable unit) → **`~/.jobdar`** (the default for global installs, so user data never lives inside
+  `node_modules` where an update would wipe it). Per-dir `JOBDAR_CONFIG_DIR`/`JOBDAR_DATA_DIR`/
+  `JOBDAR_OUTPUT_DIR` overrides still win. Moving devices = copying one folder — verified end-to-end
+  (fresh init → scan → copy home → doctor/tui read everything on the "new device").
+- `jobdar doctor` now prints the active user-data home.
+
+### Fixed
+- **i18n tables decoupled from the user config dir** — they're a package asset and now always load from
+  the install root. Previously, pointing `JOBDAR_CONFIG_DIR` (or running with a fresh home) degraded
+  every UI string to its raw key (`cli.usage`). Regression-tested via subprocess.
+- `jobdar init` / `jobdar seed --write` create the config dir if missing (first run against a fresh
+  `JOBDAR_HOME` / `~/.jobdar` no longer assumes the repo's `config/` exists).
+- `jobdar pdf` prints output paths relative to your cwd instead of the install dir.
+- Version lockstep: `.claude-plugin/plugin.json` and the doc banners caught up (the 1.13.0 release bumped
+  `package.json` only).
+
+### Notes
+- Audit found **zero hardcoded absolute paths/usernames** in code or installers; ports are
+  flag-overridable. The flaws were all *install-dir coupling*, now removed.
+
 ## [1.13.0] — 2026-06-10
 
 The build-order implementation guide: every remaining phase mapped step-by-step, eval-tuning

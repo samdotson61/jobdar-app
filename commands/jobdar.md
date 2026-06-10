@@ -17,4 +17,4 @@ Guidance:
   (entry default; senior opt-in ranks on merit), and tuning profile.
 - Keep the user's résumé local; use only public job data.
 
-> Phases 0–7 + 5.5 complete (Jobdar CLI 1.12.1) — the `modes/` brain is fully authored (EN + ES).
+> Phases 0–7 + 5.5 complete (Jobdar CLI 1.14.0) — the `modes/` brain is fully authored (EN + ES).

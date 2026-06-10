@@ -13,7 +13,7 @@ Jobdar escanea las páginas de empleo de las empresas (con soporte de primera cl
 puesto frente a tu currículum, adapta un CV y una carta de presentación compatibles con ATS, y
 registra cada postulación.
 
-> **Estado:** Fases 0–7 + 5.5 **completas** — **Jobdar CLI `1.12.1`**: núcleo bilingüe; **seis escáneres
+> **Estado:** Fases 0–7 + 5.5 **completas** — **Jobdar CLI `1.14.0`**: núcleo bilingüe; **seis escáneres
 > verificados en vivo** (Workday, iCIMS, Greenhouse, Lever, Ashby + un lector JSON-LD opcional); selectores
 > de nivel y región y el asistente `jobdar init`; la tubería completa **descubrir → evaluar → registrar →
 > construir** — `scan` encuentra y filtra puestos (nunca los puntúa), el modelo (`jobdar eval`) puntúa la
@@ -43,6 +43,13 @@ objetivo — creado por `jobdar init` a partir de tus respuestas o tu currículu
 (las empresas que sigues) están **en .gitignore y excluidos del paquete de npm**; el repositorio solo
 incluye plantillas `*.example.yml` sin datos personales. Tu currículum (`data/cv.md`), tu clave de API y
 tu flujo viven en el directorio `data/`, también ignorado por git.
+
+**Portátil entre dispositivos.** Todos tus datos viven en un único *directorio de datos del usuario*:
+un clon del repositorio los guarda dentro de la carpeta (todo el clon es una unidad autónoma y móvil),
+una instalación global usa `~/.jobdar` (nunca dentro de `node_modules`, así las actualizaciones no lo
+borran), y **`JOBDAR_HOME`** lo reubica donde quieras. Cambiar de equipo = copiar una carpeta;
+`jobdar doctor` muestra el directorio activo. Las tablas de idioma y el catálogo de empleadores viajan
+con el código, así que funcionan desde cualquier ubicación.
 
 ## Dos superficies, un mismo motor
 

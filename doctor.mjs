@@ -43,12 +43,15 @@ export async function runDoctor(argv = []) {
   // Dependencies — if config.mjs imported, js-yaml resolved, so we're good here.
   ok(t('doctor.deps_ok'))
 
+  // Where user data lives (portable: JOBDAR_HOME > repo-local checkout > ~/.jobdar).
+  ok(t('doctor.home', { home: paths.home }))
+
   // Config files (warn, don't fail — `init` will create them).
   if (fileExists(paths.profile) && fileExists(paths.portals)) {
     ok(t('doctor.config_ok'))
   } else {
-    if (!fileExists(paths.profile)) warn(t('doctor.config_missing', { file: 'config/profile.yml' }))
-    if (!fileExists(paths.portals)) warn(t('doctor.config_missing', { file: 'config/portals.yml' }))
+    if (!fileExists(paths.profile)) warn(t('doctor.config_missing', { file: paths.profile }))
+    if (!fileExists(paths.portals)) warn(t('doctor.config_missing', { file: paths.portals }))
   }
 
   // i18n tables (hard — the UI needs them).

@@ -50,6 +50,7 @@ doctor:
   node_old: "Node.js {version} — Jobdar needs >= {min}"
   deps_ok: "Dependencies installed"
   deps_missing: "Dependencies missing — run `npm install`"
+  home: "User data home: {home}  (set JOBDAR_HOME to relocate; copy that folder to move devices)"
   config_ok: "Config found (profile.yml + portals.yml)"
   config_missing: "{file} not found — run `jobdar init` to create it"
   i18n_ok: "Language tables present: {langs}"

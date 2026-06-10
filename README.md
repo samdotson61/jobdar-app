@@ -11,7 +11,7 @@ Jobdar scans company career pages (with first-class support for **Workday** and 
 dominate US enterprise employers), evaluates each role against your résumé, tailors an ATS-friendly CV and
 cover letter, and tracks every application.
 
-> **Status:** Phases 0–7 + 5.5 **complete** — **Jobdar CLI `1.12.1`**: bilingual core; **six live-verified
+> **Status:** Phases 0–7 + 5.5 **complete** — **Jobdar CLI `1.14.0`**: bilingual core; **six live-verified
 > scanner providers** (Workday, iCIMS, Greenhouse, Lever, Ashby + an opt-in JSON-LD reader); level + region
 > toggles and the `jobdar init` wizard; the full **discover → evaluate → track → build** pipeline — `scan`
 > finds and filters roles (it never scores), the model's `jobdar eval` scores fit (0–5 → Apply / Research /
@@ -40,6 +40,12 @@ That protects your privacy and limits our liability. See **[SECURITY.md](SECURIT
 targeting) are **gitignored and excluded from the npm package**; the repo ships only PII-free
 `*.example.yml` templates. Your résumé (`data/cv.md`), API key, and pipeline live under the gitignored
 `data/` dir.
+
+**Portable between devices.** All your data lives in one *user data home*: a repo checkout keeps it
+inside the folder (the whole clone is a self-contained, movable unit), a global install uses
+`~/.jobdar` (never inside `node_modules`, so updates can't wipe it), and **`JOBDAR_HOME`** relocates
+it anywhere. Moving machines = copying one folder; `jobdar doctor` shows the active home. Language
+tables and the employer catalog ship with the code, so they work from any location.
 
 ## Two surfaces, one engine
 

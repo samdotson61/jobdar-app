@@ -6,8 +6,10 @@ import { strict as assert } from 'node:assert'
 import { readdirSync, existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { execFileSync } from 'node:child_process'
+import { tmpdir } from 'node:os'
 import { getStrings, listKeys, getT } from './lib/i18n.mjs'
-import { PROFILE_DEFAULTS, SUPPORTED_LANGUAGES } from './lib/config.mjs'
+import { PROFILE_DEFAULTS, SUPPORTED_LANGUAGES, paths, ROOT as PKG_ROOT } from './lib/config.mjs'
 import { resolveProvider, providerIds } from './providers/_contract.mjs'
 import greenhouse, { parseJobUrl as parseGhJobUrl } from './providers/greenhouse.mjs'
 import workday, { HOST_ALLOWLIST as WORKDAY_HOSTS, parseWorkdayUrl, parseWorkdayJobUrl } from './providers/workday.mjs'
@@ -311,6 +313,37 @@ test('seed: region selection returns that region and swaps cleanly (gate)', () =
   assert.ok(sw.includes('Carvana') && sw.includes('Axon'))
   assert.equal(mw.some((c) => sw.includes(c)), false) // disjoint -> toggle swaps employers
   assert.ok(toPortals(selectEmployers({ regions: ['midwest'] })).every((p) => p.company && p.careers_url))
+})
+
+test('portability: package assets resolve from ROOT; user dirs follow JOBDAR_HOME', () => {
+  // package assets are never coupled to the user config dir
+  assert.equal(paths.i18nDir, path.join(PKG_ROOT, 'config', 'i18n'))
+  assert.equal(paths.states, path.join(PKG_ROOT, 'templates', 'states.yml'))
+  // this checkout has config/profile.yml → repo-local mode (the folder is a self-contained unit)
+  assert.equal(paths.home, PKG_ROOT)
+  // JOBDAR_HOME relocates every user dir (subprocess: paths resolve at import time)
+  const home = path.join(tmpdir(), 'jobdar-portability-test')
+  const out = execFileSync(process.execPath, ['-e', "import('./lib/config.mjs').then(m => console.log(JSON.stringify(m.paths)))"], {
+    cwd: ROOT,
+    env: { ...process.env, JOBDAR_HOME: home, JOBDAR_CONFIG_DIR: '', JOBDAR_DATA_DIR: '', JOBDAR_OUTPUT_DIR: '' },
+    encoding: 'utf8',
+  })
+  const p = JSON.parse(out)
+  assert.equal(p.home, home)
+  assert.ok(p.configDir.startsWith(home) && p.dataDir.startsWith(home) && p.outputDir.startsWith(home))
+  assert.ok(p.i18nDir.startsWith(PKG_ROOT)) // language tables stay with the package
+})
+
+test('portability: i18n renders real strings even when the user config dir is elsewhere', () => {
+  // Regression: i18n used to load from CONFIG_DIR, so JOBDAR_CONFIG_DIR=<empty> degraded every
+  // string to its raw key ("cli.usage"). Tables are a package asset now.
+  const out = execFileSync(process.execPath, ['bin/jobdar', '--help'], {
+    cwd: ROOT,
+    env: { ...process.env, JOBDAR_HOME: path.join(tmpdir(), 'jobdar-empty-home-test') },
+    encoding: 'utf8',
+  })
+  assert.ok(out.includes('Usage: jobdar <command>'), 'help must render real strings')
+  assert.ok(!out.includes('cli.usage'), 'raw i18n keys must not leak')
 })
 
 test('privacy: personal config is gitignored and never shipped to npm', () => {
