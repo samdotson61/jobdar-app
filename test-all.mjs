@@ -7,7 +7,7 @@ import { readdirSync, existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { execFileSync } from 'node:child_process'
-import { tmpdir } from 'node:os'
+import { tmpdir, homedir } from 'node:os'
 import { getStrings, listKeys, getT } from './lib/i18n.mjs'
 import { PROFILE_DEFAULTS, SUPPORTED_LANGUAGES, paths, ROOT as PKG_ROOT } from './lib/config.mjs'
 import { resolveProvider, providerIds } from './providers/_contract.mjs'
@@ -319,8 +319,13 @@ test('portability: package assets resolve from ROOT; user dirs follow JOBDAR_HOM
   // package assets are never coupled to the user config dir
   assert.equal(paths.i18nDir, path.join(PKG_ROOT, 'config', 'i18n'))
   assert.equal(paths.states, path.join(PKG_ROOT, 'templates', 'states.yml'))
-  // this checkout has config/profile.yml → repo-local mode (the folder is a self-contained unit)
-  assert.equal(paths.home, PKG_ROOT)
+  // a checkout WITH config/profile.yml is repo-local (a self-contained unit); profile.yml is
+  // gitignored, so a fresh clone (and CI) must fall back to ~/.jobdar — assert the rule, not
+  // one machine's state
+  const expectedHome = existsSync(path.join(PKG_ROOT, 'config', 'profile.yml'))
+    ? PKG_ROOT
+    : path.join(homedir(), '.jobdar')
+  assert.equal(paths.home, expectedHome)
   // JOBDAR_HOME relocates every user dir (subprocess: paths resolve at import time)
   const home = path.join(tmpdir(), 'jobdar-portability-test')
   const out = execFileSync(process.execPath, ['-e', "import('./lib/config.mjs').then(m => console.log(JSON.stringify(m.paths)))"], {

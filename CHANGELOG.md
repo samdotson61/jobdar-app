@@ -6,6 +6,11 @@ All notable changes to Jobdar are documented here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+- **Portability test no longer assumes a personal `config/profile.yml` exists** — that file is
+  gitignored, so on a fresh clone (and CI) the 1.14.0 test failed even though the code was correct.
+  The test now asserts the resolution *rule*: profile present → repo-local home; absent → `~/.jobdar`.
+
 ## [1.14.0] — 2026-06-10
 
 Portability: one relocatable user-data home; no path coupling to the install dir.
