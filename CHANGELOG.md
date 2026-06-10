@@ -6,6 +6,11 @@ All notable changes to Jobdar are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.13.0] — 2026-06-10
+
+The build-order implementation guide: every remaining phase mapped step-by-step, eval-tuning
+research in hand, and a slightly faster scan.
+
 ### Changed
 - **Scan concurrency pool raised 3 → 4** (`scan.mjs`) — one more employer board overlapped per scan;
   per-provider politeness pacing is unchanged.
