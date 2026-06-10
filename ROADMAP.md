@@ -7,7 +7,7 @@
 > fit against your résumé, **tailors** an ATS-friendly CV/cover letter, and **tracks** every application —
 > with your data kept **local**, processed by a **private on-device model by default** or your own cloud API.
 >
-> **Status:** Phases 0–7 **and 5.5** complete — **Jobdar CLI `1.14.0`**. Bilingual core; **six scanner
+> **Status:** Phases 0–7 **and 5.5** complete — **Jobdar CLI `1.14.1`**. Bilingual core; **six scanner
 > providers** (Greenhouse, Workday, iCIMS, Lever, Ashby + an opt-in JSON-LD reader), all live-verified,
 > all with eval-time JD fetch; level + region toggles; the `jobdar init` wizard; the full
 > **discover→evaluate→track→build pipeline** — `scan` finds + filters (it never scores), the model's
@@ -189,17 +189,20 @@ engine** through the Phase 8e contract — no second pipeline, ever.
 
 ## Phase 0 — Foundation & branding
 
+> **Status: ✅ shipped** (2026-06-05) — all steps built; the only loose end is 0.2's externals
+> (formal trademark search + domain/GitHub-org grab), the sole blocker on 7.5.
+
 **Goal:** a clean `Jobdar` repo that installs, passes `doctor`, and runs a dry-run scan — Jobdar-branded
 throughout, scoped to EN/ES and the entry-default, Midwest-default focus.
 
 | Step | What | Key files |
 |---|---|---|
-| 0.1 | Scaffold the Jobdar codebase: the two-layer structure (`scan.mjs` + `providers/`, `modes/` + `AGENTS.md`, `config/`, tracker scripts, `doctor.mjs`). Repo + `git init` already done; add `LICENSE`. | repo root, `LICENSE` |
-| 0.2 | **Name locked: "Jobdar"** (screened clear on npm + jobs/HR products, 2026-06-05). Final confirm: formal USPTO/EUIPO trademark search; grab `jobdar.app`/`.io` (the `.com` is parked-for-resale) + a GitHub org (`/jobdar` is taken — use e.g. `getjobdar`/`jobdar-app`). | — |
-| 0.3 | Jobdar branding + the **`jobdar` CLI entrypoint**: register `bin/jobdar` in `package.json`'s `bin` (so `npm i -g`/`npx` expose a real `jobdar` shell command) with a subcommand router (`jobdar <command>`); the AI-CLI slash command `/jobdar`; env vars `JOBDAR_*`; `.claude-plugin/{plugin,marketplace}.json`; `.agents/skills/`. | `package.json` (`bin`), `bin/jobdar`, `.claude-plugin/*`, all docs |
-| 0.4 | Lock scope to **EN/ES only**; default region **Midwest**, default level **entry** — no coastal-skewed default content. | `config/`, `modes/` |
-| 0.5 | Make PDF/Playwright **optional** in `doctor.mjs` (warn, don't fail) so a no-PDF first run is green. | `doctor.mjs` |
-| 0.6 | Repo hygiene: `CHANGELOG.md` at `0.1.0`, `LICENSE`, `.github/` issue/PR templates + CI, and a `.gitignore` (`node_modules/`, `data/`, `output/`, `reports/`). | `CHANGELOG.md`, `.github/*`, `.gitignore` |
+| 0.1 ✅ | Scaffold the Jobdar codebase: the two-layer structure (`scan.mjs` + `providers/`, `modes/` + `AGENTS.md`, `config/`, tracker scripts, `doctor.mjs`). Repo + `git init` already done; add `LICENSE`. | repo root, `LICENSE` |
+| 0.2 🔶 | **Name locked: "Jobdar"** (screened clear on npm + jobs/HR products, 2026-06-05). Final confirm: formal USPTO/EUIPO trademark search; grab `jobdar.app`/`.io` (the `.com` is parked-for-resale) + a GitHub org (`/jobdar` is taken — use e.g. `getjobdar`/`jobdar-app`). | — |
+| 0.3 ✅ | Jobdar branding + the **`jobdar` CLI entrypoint**: register `bin/jobdar` in `package.json`'s `bin` (so `npm i -g`/`npx` expose a real `jobdar` shell command) with a subcommand router (`jobdar <command>`); the AI-CLI slash command `/jobdar`; env vars `JOBDAR_*`; `.claude-plugin/{plugin,marketplace}.json`; `.agents/skills/`. | `package.json` (`bin`), `bin/jobdar`, `.claude-plugin/*`, all docs |
+| 0.4 ✅ | Lock scope to **EN/ES only**; default region **Midwest**, default level **entry** — no coastal-skewed default content. | `config/`, `modes/` |
+| 0.5 ✅ | Make PDF/Playwright **optional** in `doctor.mjs` (warn, don't fail) so a no-PDF first run is green. | `doctor.mjs` |
+| 0.6 ✅ | Repo hygiene: `CHANGELOG.md` at `0.1.0`, `LICENSE`, `.github/` issue/PR templates + CI, and a `.gitignore` (`node_modules/`, `data/`, `output/`, `reports/`). | `CHANGELOG.md`, `.github/*`, `.gitignore` |
 
 **Verification gate:** `npm install && npm run doctor` passes (PDF shown as optional); `node scan.mjs --dry-run`
 runs against a tiny stub `portals.yml` and prints a clean summary; a branding grep shows only `jobdar`.
@@ -207,6 +210,8 @@ runs against a tiny stub `portals.yml` and prints a clean summary; a branding gr
 ---
 
 ## Phase 1 — American-English-first bilingual core
+
+> **Status: ✅ shipped** (2026-06-05).
 
 **Goal:** EN is the canonical language; ES is a full, first-class peer (not a partial translation); no
 hardcoded display strings live in code.
@@ -228,6 +233,8 @@ in the selected language.
 
 ## Phase 2 — Workday provider (the marquee scanner win)
 
+> **Status: ✅ shipped** (2026-06-05; live-verified — see 5.5.4 for the open quirk tenants).
+
 **Goal:** scan the single most important ATS for US enterprise employers, zero-token, fitting the provider
 plugin contract. (Most large employers — manufacturers, retailers, health systems, banks, ag — run Workday.)
 
@@ -246,6 +253,8 @@ returns normalized postings that pass title/location filters and dedup correctly
 ---
 
 ## Phase 3 — iCIMS provider (HTML/JSON-LD + Playwright fallback)
+
+> **Status: ✅ shipped** (2026-06-05; live-verified).
 
 **Goal:** cover the second big enterprise ATS (common in healthcare systems, insurers, manufacturers).
 Harder than Workday — **no public unauthenticated JSON API**; the official Search/Job-Portal APIs require
@@ -266,6 +275,8 @@ one JS-heavy site.
 ---
 
 ## Phase 4 — Level toggle (entry default) + no-degree tuning
+
+> **Status: ✅ shipped** (2026-06-05).
 
 **Goal:** ship a built-in, toggle-able **level of work** selector — **entry-level by default**, **mid-level**
 a first-class option, and **senior opt-in** (off by default, but full-rank when you choose it) — alongside a
@@ -291,6 +302,8 @@ Engineer — BS required" shows as a flagged stretch rather than hidden.
 
 ## Phase 5 — Region toggle + seeds + geo tuning (Midwest default)
 
+> **Status: ✅ shipped** (2026-06-05).
+
 **Goal:** a built-in **region selector** so the tool adapts to wherever the user is. Midwest ships first
 and is the default; switching region re-aims the company seeds, location filter, and search. A fresh user
 gets useful, level-appropriate results out of the box.
@@ -310,6 +323,9 @@ returns US-wide + remote — all without the user hand-editing a file.
 ---
 
 ## Phase 5.5 — Provider expansion (demand-driven)
+
+> **Status: ✅ core shipped** (1.12.0, 2026-06-09) — 5.5.1–5.5.3 live; 5.5.4/5.5.5 stay open as
+> the demand-driven parallel track (milestone 9).
 
 **Goal:** cover the ATSs where real small/midsize and regional employers actually post, beyond the
 big three. Greenhouse skews startup/tech; Workday/iCIMS carry enterprise + healthcare; Lever/Ashby
@@ -332,6 +348,9 @@ Ashby on 2026-06-09.)*
 
 ## Phase 6 — Effortless install & onboarding for anyone
 
+> **Status: ✅ shipped** (2026-06-05) — 6.6's PDF/DOCX half is superseded by the fuller Phase 8c
+> plan (the paste path shipped).
+
 **Goal:** a non-developer goes from zero → first real scan in under ~10 minutes, in EN or ES, without
 hand-editing YAML. (For the CLI; the web app in Phase 9 lowers the bar further.)
 
@@ -352,20 +371,25 @@ only the README; repeat the whole flow in Spanish. Both pass.
 
 ## Phase 7 — Quality, dashboard, polish, release
 
+> **Status: 🔶 nearly complete** — 7.1–7.4 ✅; 7.5 🔶 blocked on the 0.2 externals only;
+> 7.6 ⬜ ready to start now (GitHub repo + installer; npm not required).
+
 **Goal:** ship a trustworthy 1.0 (CLI).
 
 | Step | What | Detail |
 |---|---|---|
-| 7.1 | Dashboard decision: keep a Go TUI **optional** and/or add a lightweight `jobdar dashboard` → localhost web view as the friendly default. Bilingual labels; show active region + level(s). | see Open Decisions |
-| 7.2 | Test coverage for Workday, iCIMS, i18n strings, the level toggle, and the region toggle in `test-all.mjs`; GitHub Actions CI green. | tests/CI |
-| 7.3 | Ethics/legal pass: ToS-respecting rate limits + backoff for Workday/iCIMS, robots awareness, a `LEGAL_DISCLAIMER`, a privacy statement ("data stays local; we host no résumés"), and license compliance for any reused third-party code. | compliance |
-| 7.4 | Security review of providers (SSRF allowlists, `redirect:'error'`, no secret leakage); confirm zero telemetry. | security |
-| 7.5 | Package & release: Claude Code plugin (`/jobdar`) in a marketplace + npm; `1.0.0`; bilingual release notes. **Blocked on Step 0.2** (org/trademark + npm name grab) — everything else is ready. | release |
-| 7.6 | Closed beta with target users (a new grad, a no-degree candidate, a career-changer, a Spanish-preferring user); iterate. **Does NOT need 7.5** — beta can start now from the GitHub repo + one-line installer. | beta |
+| 7.1 ✅ | Dashboard decision: keep a Go TUI **optional** and/or add a lightweight `jobdar dashboard` → localhost web view as the friendly default. Bilingual labels; show active region + level(s). | see Open Decisions |
+| 7.2 ✅ | Test coverage for Workday, iCIMS, i18n strings, the level toggle, and the region toggle in `test-all.mjs`; GitHub Actions CI green. | tests/CI |
+| 7.3 ✅ | Ethics/legal pass: ToS-respecting rate limits + backoff for Workday/iCIMS, robots awareness, a `LEGAL_DISCLAIMER`, a privacy statement ("data stays local; we host no résumés"), and license compliance for any reused third-party code. | compliance |
+| 7.4 ✅ | Security review of providers (SSRF allowlists, `redirect:'error'`, no secret leakage); confirm zero telemetry. | security |
+| 7.5 🔶 | Package & release: Claude Code plugin (`/jobdar`) in a marketplace + npm; `1.0.0`; bilingual release notes. **Blocked on Step 0.2** (org/trademark + npm name grab) — everything else is ready. | release |
+| 7.6 ⬜ | Closed beta with target users (a new grad, a no-degree candidate, a career-changer, a Spanish-preferring user); iterate. **Does NOT need 7.5** — beta can start now from the GitHub repo + one-line installer. | beta |
 
 ---
 
 ## Phase 8 — Pluggable inference (8a BYO-key auto-eval, then 8b on-device via winc.cpp)
+
+> **Status: ⬜ not started** — 8a is the next build (milestones 2–3); 8b follows (milestone 4).
 
 **Goal:** make the model a **swappable backend** so the same evaluation/tailoring brain runs against
 either a **cloud model via the user's own key** (8a — small, unblocks daily use first) or a fully
@@ -411,6 +435,8 @@ same structured verdict shape into the pipeline.
 
 ## Phase 8c — Document understanding (PDFs in, structured data out)
 
+> **Status: ⬜ not started** (milestone 5).
+
 **Goal:** Jobdar automatically reads and understands PDFs. A résumé PDF/DOCX becomes `data/cv.md` + a
 prefilled `config/profile.yml` with no hand-editing, and `jobdar eval` accepts a PDF JD. The division of
 labor is strict: **extraction is deterministic** (a parser, no model); **understanding is the inference
@@ -433,6 +459,8 @@ library survey in [docs/eval-tuning-research.md](docs/eval-tuning-research.md) �
 
 ## Phase 8d — Offer evaluation
 
+> **Status: ⬜ not started** (milestone 6).
+
 **Goal:** when applications turn into offers, evaluate the offer the way we evaluate fit — against the
 user's profile, region, and **real wage data** — on the same swappable backends. The model never invents
 numbers: deterministic code supplies market context; the model interprets it. (Data sources in
@@ -453,6 +481,8 @@ identical structured shape on `inference: api` and `inference: local`; a Spanish
 
 ## Phase 8e — The engine contract (CLI, web, mobile plug in here)
 
+> **Status: ⬜ not started** (milestone 7).
+
 **Goal:** freeze the headless pipeline — **import → scan → eval → track → build** — behind ONE documented
 programmatic seam, so the CLI, the web app, and the mobile app are thin front-ends over the **same engine**.
 This is the phase that makes Phase 9 a UI project instead of a rewrite.
@@ -470,6 +500,8 @@ This is the phase that makes Phase 9 a UI project instead of a rewrite.
 ---
 
 ## Phase 9 — Web and mobile apps (future / post-1.0)
+
+> **Status: ⬜ not started** — post-1.0 (milestone 10).
 
 **Goal:** a hosted, cross-platform, bilingual **web app** — and, after it, a **mobile app** — where a
 non-technical user uploads a résumé and is pointed toward fitting jobs with little effort. **Ease of use

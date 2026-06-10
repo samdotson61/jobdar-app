@@ -6,6 +6,17 @@ All notable changes to Jobdar are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.14.1] — 2026-06-10
+
+Docs: the roadmap now shows at a glance what's shipped — plus the pending portability-test fix.
+
+### Changed
+- **ROADMAP completion marks** — every phase now carries an explicit status line (✅ shipped /
+  🔶 partial / ⬜ not started), and the two mixed phases mark per step: 0.2 is 🔶 (name locked;
+  the trademark/domain/GitHub-org externals stay open — the sole 7.5 blocker), and Phase 7 reads
+  7.1–7.4 ✅ / 7.5 🔶 blocked / 7.6 ⬜ ready-to-start. Not-yet-started phases (8a–8e, 9) point at
+  their milestone row in the build-order guide. No code changes.
+
 ### Fixed
 - **Portability test no longer assumes a personal `config/profile.yml` exists** — that file is
   gitignored, so on a fresh clone (and CI) the 1.14.0 test failed even though the code was correct.
