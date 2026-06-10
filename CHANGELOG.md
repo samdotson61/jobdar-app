@@ -6,6 +6,23 @@ All notable changes to Jobdar are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+- **Scan concurrency pool raised 3 → 4** (`scan.mjs`) — one more employer board overlapped per scan;
+  per-provider politeness pacing is unchanged.
+- **Default inference backend decided: local via winc.cpp, everywhere** (ROADMAP 8b.4; Open Decision 2
+  resolved) — private, free, no key. BYO-key API becomes the opt-in accuracy upgrade.
+
+### Added
+- **ROADMAP: build-order implementation guide** covering everything unfinished — closed beta (7.6) →
+  8a automated eval (+ new 8a.5 calibration set, 8a.6 fairness guards) → 8b winc.cpp-default backend →
+  **new Phase 8c** (PDF résumé/JD understanding via deterministic extraction + model structuring),
+  **new Phase 8d** (offer evaluation with shipped BLS wage context, `jobdar offer`), **new Phase 8e**
+  (the headless engine contract — `lib/engine.mjs` + `jobdar serve` — that the web **and mobile** apps
+  plug into) → 7.5 npm publish → Phase 9 (retitled web **and mobile** apps, new step 9.8).
+- **Eval-tuning research notes** (`docs/eval-tuning-research.md`) — decomposed rubric design with
+  weights and band thresholds, calibration-set practice, fairness guards for the no-degree path,
+  offer-evaluation data sources, and the PDF-extraction library survey backing 8c.
+
 ## [1.12.1] — 2026-06-09
 
 Privacy hotfix: personal config must never reach git or npm.

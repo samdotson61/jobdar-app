@@ -66,7 +66,7 @@ export async function runScan(argv = []) {
     return { portals: portals.length, jobs: 0, dryRun: true }
   }
 
-  // Live scan. Portals run through a small concurrency pool (3 at once) — each provider still paces
+  // Live scan. Portals run through a small concurrency pool (4 at once) — each provider still paces
   // its own pages politely; the pool only overlaps DIFFERENT employers' boards.
   console.log(t('scan.scanning', { count: resolved.length }))
   let total = 0
@@ -92,7 +92,7 @@ export async function runScan(argv = []) {
       console.log(`  ${symbol.fail()} ${t('scan.error_for', { company: portal.company, error: err.message })}`)
     }
   }
-  const workers = Array.from({ length: Math.min(3, queue.length) }, async () => {
+  const workers = Array.from({ length: Math.min(4, queue.length) }, async () => {
     while (queue.length) await scanOne(queue.shift())
   })
   await Promise.all(workers)

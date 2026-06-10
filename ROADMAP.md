@@ -17,9 +17,12 @@
 > `scan --prune`); security/privacy pass (zero telemetry, SSRF-guarded).
 > Remaining for 1.0 ship: **npm publish + marketplace** (needs the org from Step 0.2) and the **closed
 > beta** (7.6 — can start from the GitHub repo + installer now). **Next build phase: Phase 8a** (BYO-key
-> automated eval), then **8b** (on-device via **winc.cpp**), then Phase 9 (web app).
+> automated eval), then **8b** (on-device via **winc.cpp** — the **default** backend), **8c** (PDF
+> résumé/JD understanding), **8d** (offer evaluation), **8e** (the engine contract), then Phase 9
+> (web + mobile apps). Step-by-step:
+> [Remaining work — build-order implementation guide](#remaining-work--build-order-implementation-guide).
 > See [CHANGELOG.md](CHANGELOG.md).
-> **Date:** 2026-06-09 (Phases 0–7 built 2026-06-05; 1.11/1.12 + Phase 5.5 on 2026-06-09)
+> **Date:** 2026-06-10 (Phases 0–7 built 2026-06-05; 1.11/1.12 + Phase 5.5 on 2026-06-09)
 
 ---
 
@@ -52,7 +55,7 @@ accuracy; and a **confidential-cloud** option down the line. We never host your 
 privacy intact and our liability low.
 
 **Two surfaces, one engine.** The **CLI is the backbone** — local-first, for technical users, who run it
-with their own AI CLI/API much like today's agentic dev tools. A **web app** for non-technical users comes
+with their own AI CLI/API much like today's agentic dev tools. A **web app** — then a **mobile app** — for non-technical users comes
 later (Phase 9): upload a résumé and get pointed toward fitting jobs with little effort, with evaluation
 running **in the browser on a private model by default** (the résumé never leaves the device) and an
 API-key upgrade available. Both surfaces share the same scanner, regions, levels, bilingual content, and rubric.
@@ -74,7 +77,7 @@ API-key upgrade available. Both surfaces share the same scanner, regions, levels
   Markdown prompt files (`AGENTS.md` + `modes/*.md`) that the chosen model reads to evaluate roles, tailor
   résumés, and prep interviews.
 - **CLI is the backbone.** The command-line tool is the core product for technical users and ships first;
-  the hosted web app for non-technical users follows in [Phase 9](#phase-9--web-app-for-non-technical-users-future).
+  the hosted web app (and the mobile app after it) for non-technical users follows in [Phase 9](#phase-9--web-and-mobile-apps-future--post-10).
 - **Local data, pluggable inference.** Data stays **local at rest**. The inference engine is swappable: a
   lightweight **on-device model by default** (private, free), an **API plugin** (BYO key — cloud, higher
   quality, zero-retention) opt-in, and a **confidential-cloud** option later. The zero-token scanner touches
@@ -128,6 +131,7 @@ on-device model once [Phase 8](#phase-8--pluggable-inference-8a-byo-key-auto-eva
 
 ## Table of contents
 
+- [Remaining work — build-order implementation guide](#remaining-work--build-order-implementation-guide)
 - [Phase 0 — Foundation & branding](#phase-0--foundation--branding)
 - [Phase 1 — American-English-first bilingual core](#phase-1--american-english-first-bilingual-core)
 - [Phase 2 — Workday provider (the marquee scanner win)](#phase-2--workday-provider-the-marquee-scanner-win)
@@ -138,11 +142,48 @@ on-device model once [Phase 8](#phase-8--pluggable-inference-8a-byo-key-auto-eva
 - [Phase 6 — Effortless install & onboarding for anyone](#phase-6--effortless-install--onboarding-for-anyone)
 - [Phase 7 — Quality, dashboard, polish, release](#phase-7--quality-dashboard-polish-release)
 - [Phase 8 — Pluggable inference (8a BYO-key auto-eval, then 8b on-device via winc.cpp)](#phase-8--pluggable-inference-8a-byo-key-auto-eval-then-8b-on-device-via-winccpp)
-- [Phase 9 — Web app for non-technical users (future)](#phase-9--web-app-for-non-technical-users-future)
+- [Phase 8c — Document understanding (PDFs in, structured data out)](#phase-8c--document-understanding-pdfs-in-structured-data-out)
+- [Phase 8d — Offer evaluation](#phase-8d--offer-evaluation)
+- [Phase 8e — The engine contract (CLI, web, mobile plug in here)](#phase-8e--the-engine-contract-cli-web-mobile-plug-in-here)
+- [Phase 9 — Web and mobile apps (future / post-1.0)](#phase-9--web-and-mobile-apps-future--post-10)
 - [MVP cut line](#mvp-cut-line-fastest-path-to-something-real)
 - [Risks & mitigations](#risks--mitigations)
 - [Open decisions](#open-decisions-recommendation--alternatives)
 - [Technical appendix](#technical-appendix-provider--inference-specifics)
+
+---
+
+## Remaining work — build-order implementation guide
+
+> Phases 0–7 + 5.5 are **shipped**. This is everything left, in the order to build it — and the
+> end-state it adds up to: **one headless engine** that every surface plugs into.
+
+```
+résumé PDF/DOCX ─▶ 8c understand ─▶ cv.md + profile.yml
+                                         │
+portals.yml ─▶ scan (zero-token) ─▶ pending roles ─▶ 8a/8b eval 0–5
+                                         │            (winc.cpp local by DEFAULT;
+                                         │             BYO-key API opt-in)
+                          tracker ─▶ offer in hand ─▶ 8d offer verdict
+                                         │
+                               build (tailored CV / cover letter)
+```
+
+The CLI drives this engine today; the **web app and the mobile app (Phase 9) plug into the same
+engine** through the Phase 8e contract — no second pipeline, ever.
+
+| # | Milestone | Where | Status | Why this order |
+|---|---|---|---|---|
+| 1 | **Closed beta starts** | 7.6 | ⬜ ready now (GitHub repo + installer; npm NOT required) | real-user feedback steers everything below |
+| 2 | **BYO-key automated eval** | 8a.1–8a.3 | ⬜ next build | the single biggest daily-use unlock; small build |
+| 3 | **Eval tuning + calibration + fairness** | 8a.4–8a.6 | ⬜ with 8a | scores must be trustworthy before they're the product; research done → [docs/eval-tuning-research.md](docs/eval-tuning-research.md) |
+| 4 | **winc.cpp local backend — the DEFAULT** | 8b.1–8b.4 | ⬜ after 8a | same client, new base URL; makes "private, free, offline" real |
+| 5 | **PDF/document understanding** | 8c.1–8c.5 | ⬜ | "upload a résumé → go" for init; PDF JDs in eval |
+| 6 | **Offer evaluation** | 8d.1–8d.5 | ⬜ | completes discover → evaluate → **decide** |
+| 7 | **The engine contract** | 8e.1–8e.4 | ⬜ | freezes the seam web/mobile build against |
+| 8 | **npm publish + marketplace → 1.0** | 7.5 | 🔶 blocked on Step 0.2 (org/trademark) only | distribution, not function |
+| 9 | **Workday quirk tenants; new ATS readers** | 5.5.4 / 5.5.5 | 🔶 / ⬜ demand-driven | parallel track, paced by beta demand |
+| 10 | **Web app, then mobile app** | 9.1–9.8 | ⬜ post-1.0 | thin front-ends over the 8e engine |
 
 ---
 
@@ -341,7 +382,9 @@ receive or store résumés.
 | 8a.1 | **`InferenceProvider` interface** (same plugin spirit as the scanner): `evaluate(jd, profile, cv)` → structured verdict `{ score, band, recommendation, … }`. The Markdown rubric (`modes/_shared.md` + `modes/eval.md`) is the shared spec. | abstraction |
 | 8a.2 | **`jobdar eval --auto [<url> \| --next \| --all-pending]`** — reads the key `init` already stores in `data/credentials.env` (today it's collected and never used), calls the **Anthropic Messages API** with rubric + JD + `cv.md`, parses the structured verdict, records it via the existing `eval --save` path. Batch mode walks every pending role politely. | the single biggest daily-use unlock |
 | 8a.3 | **Minimal-slice + zero-retention posture:** send only the JD + relevant CV excerpt, never history; document the retention settings; key never leaves `credentials.env` (gitignored, 0600). | privacy |
-| 8a.4 | **Consistency guardrails:** pinned prompt + structured-output schema so every backend returns the same shape; a small eval set to sanity-check scoring stability. | accuracy |
+| 8a.4 | **Consistency guardrails + rubric design** (per [docs/eval-tuning-research.md](docs/eval-tuning-research.md)): pinned prompt, temperature 0, structured-output schema so every backend returns the same shape. **Decomposed sub-criteria** — skills 35% / experience 25% / level-fit 20% / logistics 10% / education-gate 10% — each a categorical `strong/partial/none` judgment **with a quoted JD line as evidence**, reason-then-judge ordering, 2 short anchor examples per band. **Code, not the model, computes the 0–5** from the weighted sub-judgments and applies band thresholds (Apply ≥ 3.5 / Research 2.0–3.4 / Don't < 2.0 — config-tunable). | accuracy |
+| 8a.5 | **Calibration set:** 30–50 real JDs hand-banded by us (incl. no-degree / "or equivalent experience" pairs) as fixtures; `test-all.mjs` scores them against the configured backend and reports agreement + drift on every prompt or model change. | trust |
+| 8a.6 | **Fairness guards:** strip name/contact lines from the CV slice before the prompt is built (smaller bias surface AND less PII out the door — off-the-shelf LLMs measurably carry demographic bias in hiring contexts); under `no_degree`, a degree requirement can flag a role but never auto-zero it, and the calibration set makes a regression here a **test failure**, not a vibe. | fairness |
 
 ### Phase 8b — on-device backend: winc.cpp primary (private, no key, no cost)
 
@@ -357,7 +400,7 @@ receive or store résumés.
 | 8b.1 | **winc.cpp as the PRIMARY local backend.** `inference: local` points the SAME 8a client at winc's local server (default `http://127.0.0.1:8080/v1/messages`, configurable via `inference_url` to match the user's `winc.toml`) — it speaks the Anthropic Messages API natively, so no translation layer and no new client code. No key, no cost, fully offline. | one client, two backends |
 | 8b.2 | **Friendly liveness UX:** detect whether the local server is up; if not, print the exact start command (`winc serve`, or `winc serve --multi` for hot-swapped models) and the install pointer (`git clone https://github.com/samdotson61/winc.cpp` → run the installer, or a Releases binary + `winc setup`). | onboarding |
 | 8b.3 | **Alternate local runtimes** behind the same interface for users without winc: **Ollama** / **llamafile** (OpenAI-compat shim mapped to the shared schema). Secondary — winc is the documented happy path. | breadth |
-| 8b.4 | **Backend selector + fallback:** `inference: local\|api\|auto`. Wizard defaults non-tech users to `local` (winc), tech users to `api`; `auto` runs local and offers an API upgrade on borderline roles. Clear UX about the privacy/quality tradeoff. | user control |
+| 8b.4 | **Backend selector + fallback:** `inference: local\|api\|auto`. **Default for everyone: `local` via winc.cpp** — private, free, no key; `api` (BYO key) is the opt-in accuracy upgrade; `auto` runs local and offers an API upgrade on borderline roles. Clear UX about the privacy/quality tradeoff. | user control |
 | 8b.5 | **(Future) confidential-cloud option:** TEE-based managed inference for cloud quality the operator can't read — only if local proves too weak and users won't BYO key. Documented, not built. | advanced |
 
 **Verification gate:** the same JD evaluates end-to-end with `inference: api` (BYO key) and with
@@ -366,12 +409,73 @@ same structured verdict shape into the pipeline.
 
 ---
 
-## Phase 9 — Web app for non-technical users (future / post-1.0)
+## Phase 8c — Document understanding (PDFs in, structured data out)
 
-**Goal:** a hosted, cross-platform, bilingual **web app** where a non-technical user uploads a résumé and is
-pointed toward fitting jobs with little effort. **Ease of use and accuracy** are the two named targets. It
-reuses the Phase 8 inference layer — and, crucially, **runs evaluation in the browser by default**, so the
-résumé never leaves the device.
+**Goal:** Jobdar automatically reads and understands PDFs. A résumé PDF/DOCX becomes `data/cv.md` + a
+prefilled `config/profile.yml` with no hand-editing, and `jobdar eval` accepts a PDF JD. The division of
+labor is strict: **extraction is deterministic** (a parser, no model); **understanding is the inference
+backend's job** (text → structured fields) — so résumé understanding is private-by-default on winc.cpp
+and accuracy scales with whichever backend the user picked. (Supersedes the 6.6 sketch with a real plan;
+library survey in [docs/eval-tuning-research.md](docs/eval-tuning-research.md) §5.)
+
+| Step | What | Detail |
+|---|---|---|
+| 8c.1 | **Text-extraction layer** `lib/pdf_extract.mjs`: [unpdf](https://github.com/unjs/unpdf) (maintained, Mozilla pdf.js under the hood, no native binaries, runs in Node **and** serverless — the same code will serve Phase 9's server) as **the one new dependency**. `extractText(buffer) → { text, pages, meta }`. DOCX via a thin `mammoth` adapter; `.txt`/`.md` pass through. | one module, swappable |
+| 8c.2 | **`jobdar import <file>`** (+ wired into `jobdar init`): extract → send ONLY the extracted text to the inference backend with a structuring prompt → write `data/cv.md` (canonical Markdown CV) + prefill `config/profile.yml` (name, metro, suggested level(s), skills) → show a bilingual confirm/edit summary **before** saving anything. | the "upload résumé → go" path |
+| 8c.3 | **PDF JDs in eval:** `jobdar eval <file.pdf>` runs the same extraction and feeds the JD text through the existing eval path (eval already accepts files/stdin — this puts a PDF reader in front). | symmetry |
+| 8c.4 | **Scanned/image PDFs:** detect a near-empty text layer and fail honestly — a bilingual error + "export as text/DOCX" hint. OCR is documented as out of scope for now. | honest failure |
+| 8c.5 | **Tests:** fixture PDFs in `test-all.mjs` — a text-based résumé (EN + ES), a JD, and an image-only scan — extraction asserted offline, no network, no model. | regression net |
+
+**Verification gate:** a real résumé PDF → `jobdar import` → confirmed `cv.md` + prefilled profile, then
+`jobdar scan` and `jobdar eval --next` complete — **zero hand-edited YAML, fully offline on winc.cpp**.
+
+---
+
+## Phase 8d — Offer evaluation
+
+**Goal:** when applications turn into offers, evaluate the offer the way we evaluate fit — against the
+user's profile, region, and **real wage data** — on the same swappable backends. The model never invents
+numbers: deterministic code supplies market context; the model interprets it. (Data sources in
+[docs/eval-tuning-research.md](docs/eval-tuning-research.md) §4.)
+
+| Step | What | Detail |
+|---|---|---|
+| 8d.1 | **`jobdar offer <company>`** — bilingual interactive capture: base, bonus, benefits, PTO, metro/remote, start date → stored on the tracker row (new `offer` fields + an `offer` state in `templates/states.yml`, EN canonical / ES alias per 1.4). | capture first |
+| 8d.2 | **Wage-context pack (deterministic, zero-token):** `data/seed/wages.yml` — BLS OEWS median/percentile wages for the entry archetypes × major metros + a metro cost-of-living index; refreshed per release with provenance documented. Code computes offer-vs-metro percentile and COL-adjusted comparisons. | facts from data, not the model |
+| 8d.3 | **Offer rubric** `modes/offer.md` (EN + ES): the model weighs comp-vs-market (from 8d.2), benefits completeness, growth trajectory, commute/remote — plus entry-level-specific factors (training, mentorship, first-role résumé value) → structured verdict `{ assessment: strong/fair/below, negotiation_levers[], questions_to_ask[] }` under the same 8a.4 consistency guardrails. | judgment on top of facts |
+| 8d.4 | **Multi-offer compare:** `jobdar offer --compare` — a COL-adjusted side-by-side of every recorded offer. | the real decision moment |
+| 8d.5 | **Tests:** wage-math fixtures + verdict-shape checks on both backends in `test-all.mjs`. | parity |
+
+**Verification gate:** record a real-shaped offer; the verdict cites metro wage context and returns the
+identical structured shape on `inference: api` and `inference: local`; a Spanish run renders fully in Spanish.
+
+---
+
+## Phase 8e — The engine contract (CLI, web, mobile plug in here)
+
+**Goal:** freeze the headless pipeline — **import → scan → eval → track → build** — behind ONE documented
+programmatic seam, so the CLI, the web app, and the mobile app are thin front-ends over the **same engine**.
+This is the phase that makes Phase 9 a UI project instead of a rewrite.
+
+| Step | What | Detail |
+|---|---|---|
+| 8e.1 | **`lib/engine.mjs`** — export the verbs as functions with **no console I/O** (structured returns + progress callbacks): `importDocument()`, `scan()`, `evaluate()`, tracker verbs, `buildCv()`. The CLI subcommands become thin callers — behavior identical, seam explicit. | extract, don't rewrite |
+| 8e.2 | **Local HTTP façade** `jobdar serve` — the same verbs as JSON endpoints on localhost (the dashboard already proves the pattern); CORS locked to localhost; no secrets in responses. This is what a dev-build web front-end — or a phone on the LAN — talks to. | the plug socket |
+| 8e.3 | **Contract doc** `docs/engine.md` — verb signatures, the `Job` / `Verdict` / `Offer` shapes, progress events; versioned. **Phase 9 builds against this doc, never against internals.** | the promise |
+| 8e.4 | **Conformance test:** one script in `test-all.mjs` drives a full pipeline run through `lib/engine.mjs` only — no CLI — and asserts every shape. | keeps the seam honest |
+
+**Verification gate:** a single script (no CLI) goes résumé-PDF → scanned → evaluated → tracked via
+`lib/engine.mjs`; `jobdar serve` does the same over HTTP from a browser `fetch`.
+
+---
+
+## Phase 9 — Web and mobile apps (future / post-1.0)
+
+**Goal:** a hosted, cross-platform, bilingual **web app** — and, after it, a **mobile app** — where a
+non-technical user uploads a résumé and is pointed toward fitting jobs with little effort. **Ease of use
+and accuracy** are the two named targets. Both surfaces are thin front-ends over the **Phase 8e engine
+contract** (import → scan → eval → track → build) and the Phase 8 inference layer — and, crucially,
+evaluation **runs in the browser by default**, so the résumé never leaves the device.
 
 > **Privacy by architecture:** the browser holds the résumé and runs the model (WebLLM/WebGPU); the **server
 > only runs the PII-free scanner** (fetches public job listings) and serves static assets. So the cloud
@@ -387,6 +491,7 @@ résumé never leaves the device.
 | 9.5 | **API-key upgrade (opt-in):** users who want higher accuracy plug in a key; only the minimal slice is sent, zero-retention, with explicit consent. | accuracy lever |
 | 9.6 | **Fallback for low-end devices/browsers** (no WebGPU): a smaller model, or — with explicit consent — confidential-cloud inference (Phase 8.6). Never silently ship a résumé to a server. | honest fallback |
 | 9.7 | **Accuracy & UX measurement + cost controls:** track match **accuracy** (human-rated) and **ease of use** (task success + time-to-first-match); monitor any server cost (scanner only ⇒ low). | both targets |
+| 9.8 | **Mobile app:** PWA-installable first (9.3 already targets it); then a thin native wrapper (e.g. Capacitor) over the **same in-browser engine + the 8e contract** — no second codebase. New-match notifications land here. | meet job-seekers on their phones |
 
 **Verification gate:** a non-technical, Spanish-preferring user on a phone uploads a résumé and reaches a
 ranked, region-appropriate match list with a tailored CV — and a network trace shows the **résumé never
@@ -434,11 +539,13 @@ from a guided wizard — the core promise — before we invest in iCIMS, the loc
 
 1. **Primary AI CLI / API.** → *Recommend:* default to **Claude Code** for tech users; CLI-agnostic
    `AGENTS.md` so Gemini CLI works too. *Alt:* lead with a free tier for cost-sensitive users.
-2. **Inference defaults per surface.** → *Recommend:* CLI/tech users → **API (BYO key)**; wizard non-tech +
-   web app → **on-device model**. `auto` offers an API upgrade on borderline roles. *Alt:* always-local with
-   an explicit opt-in to cloud.
-3. **Local model + runtime.** → *Recommend:* **Ollama** (CLI/desktop) + **llamafile** (zero-install) +
-   **WebLLM/WebGPU** (web), small instruct model (Llama 3.2 3B / Qwen2.5 3B). *Alt:* a single runtime only.
+2. **Inference defaults.** → **Decided 2026-06-10:** **local via winc.cpp is the default everywhere**
+   (CLI, web, mobile) — private, free, no key; **API (BYO key)** is the opt-in accuracy upgrade; `auto`
+   offers that upgrade on borderline roles.
+3. **Local model + runtime.** → **Decided (Phase 8b):** **winc.cpp is the PRIMARY local runtime** (it
+   speaks the Anthropic Messages API natively on localhost); **Ollama / llamafile** are secondary
+   alternates behind the same interface; **WebLLM/WebGPU** in-browser for web/mobile. Model selection,
+   download, and hardware fit are winc's job, not ours.
 4. **Regions to seed after Midwest.** → *Recommend:* let early user demand decide; `nationwide`/remote works
    from day one regardless. *Alt:* pre-seed all regions (more upfront work).
 5. **Confidential-cloud.** → *Recommend:* build only if the local model proves too weak and users won't BYO

@@ -44,7 +44,7 @@ targeting) are **gitignored and excluded from the npm package**; the repo ships 
 ## Two surfaces, one engine
 
 - **CLI (the backbone)** — local-first, for technical users, run with your own AI CLI/API. Ships first.
-- **Web app (later — [Phase 9](ROADMAP.md#phase-9--web-app-for-non-technical-users-future))** — a hosted,
+- **Web app (later — [Phase 9](ROADMAP.md#phase-9--web-and-mobile-apps-future--post-10))** — a hosted,
   cross-platform, bilingual app for non-technical users: upload a résumé, get pointed toward fitting jobs
   with little effort. Evaluation runs **in your browser** by default, so the résumé never leaves your
   device. Targets: **ease of use** and **accuracy**.

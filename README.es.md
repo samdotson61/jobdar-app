@@ -48,7 +48,7 @@ tu flujo viven en el directorio `data/`, también ignorado por git.
 
 - **CLI (la columna vertebral)** — local primero, para personas técnicas, se ejecuta con tu propia
   CLI/API de IA. Sale primero.
-- **Aplicación web (después — [Fase 9](ROADMAP.md#phase-9--web-app-for-non-technical-users-future))**
+- **Aplicación web (después — [Fase 9](ROADMAP.md#phase-9--web-and-mobile-apps-future--post-10))**
   — una app alojada, multiplataforma y bilingüe para personas no técnicas: sube un currículum y
   recibe orientación hacia empleos que encajan, con poco esfuerzo. La evaluación se ejecuta **en
   tu navegador** por defecto, así que el currículum nunca sale de tu dispositivo. Objetivos:
