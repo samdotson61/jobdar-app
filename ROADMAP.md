@@ -91,6 +91,22 @@ API-key upgrade available. Both surfaces share the same scanner, regions, levels
   plus Greenhouse/Lever/Ashby — under a region-aware seed catalog.
 - **Friendly install.** A guided wizard, a zero-config first scan, and Playwright/PDF deferred until needed.
 
+### Design philosophy
+
+**Clean and tight, but homey. The user should come away feeling confident — never coddled.**
+Applies to every surface: CLI + TUI today, web and mobile (Phase 9) later.
+
+- **Clean & tight.** Every screen earns its pixels: small surfaces, fast paths, no decorative chrome,
+  one obvious next action at any moment. Dense-but-legible information is the house style — the TUI is
+  the reference (cursor, bands, counts; nothing else).
+- **Homey, not "friendly."** Jobdar is a well-kept workshop, not a cheerleader. Plain, warm language
+  ("3 new roles at Medtronic"), no mascots, no exclamation marks, no congratulating the user for
+  clicking. The Spanish voice carries the same register — cálido y directo, nunca meloso.
+- **Confidence is the product.** The job hunt is stressful; the tool must never be. Always show what
+  just happened, what it cost (zero-token scan vs. a model call), and what to do next. Honest failure
+  beats silent magic — a board we can't read says so, per portal. Predictability — same command, same
+  shape of result, every time — is what makes a first-time job-seeker trust the pipeline.
+
 ### The `jobdar` command
 
 One binary, simple subcommands — **`jobdar <command>`** — installed on your PATH (`npm i -g jobdar` or the
@@ -507,7 +523,9 @@ This is the phase that makes Phase 9 a UI project instead of a rewrite.
 non-technical user uploads a résumé and is pointed toward fitting jobs with little effort. **Ease of use
 and accuracy** are the two named targets. Both surfaces are thin front-ends over the **Phase 8e engine
 contract** (import → scan → eval → track → build) and the Phase 8 inference layer — and, crucially,
-evaluation **runs in the browser by default**, so the résumé never leaves the device.
+evaluation **runs in the browser by default**, so the résumé never leaves the device. Both surfaces
+follow the [design philosophy](#design-philosophy): clean and tight, homey rather than chummy — the
+user always knows what happened, what it cost, and what's next.
 
 > **Privacy by architecture:** the browser holds the résumé and runs the model (WebLLM/WebGPU); the **server
 > only runs the PII-free scanner** (fetches public job listings) and serves static assets. So the cloud
