@@ -11,11 +11,13 @@ Jobdar scans company career pages (with first-class support for **Workday** and 
 dominate US enterprise employers), evaluates each role against your résumé, tailors an ATS-friendly CV and
 cover letter, and tracks every application.
 
-> **Status:** Phases 0–7 + 5.5 **complete** — **Jobdar CLI `1.14.1`**: bilingual core; **six live-verified
+> **Status:** Phases 0–7, 5.5 + 7.7 **complete** — **Jobdar CLI `1.15.0`**: bilingual core; **six live-verified
 > scanner providers** (Workday, iCIMS, Greenhouse, Lever, Ashby + an opt-in JSON-LD reader); level + region
-> toggles and the `jobdar init` wizard; the full **discover → evaluate → track → build** pipeline — `scan`
-> finds and filters roles (it never scores), the model's `jobdar eval` scores fit (0–5 → Apply / Research /
-> Don't) and records it, you advance status (`a` in the TUI or `jobdar tracker --set`), and `jobdar pdf`
+> toggles and the `jobdar init` wizard; the full **discover → prescreen → evaluate → track → build** pipeline —
+> `scan` finds and filters roles (it never scores), `jobdar prescreen` **gates + ranks the queue zero-token**
+> (hard gates screen with a quoted reason, never silently), the model's `jobdar eval` scores fit (0–5 →
+> Apply / Research / Don't) and records it, you advance status (`a` in the TUI or `jobdar tracker --set`),
+> `jobdar outreach` finds the **warm contact** and keeps follow-ups polite by construction, and `jobdar pdf`
 > builds the tailored ATS résumé; a scrollable cursor-driven `jobdar tui` workspace + a web dashboard with
 > analytics; freshness tracking (`posted` / `first_seen`, `scan --prune`). Remaining for the 1.0 ship:
 > npm publish + marketplace, then a closed beta. See **[ROADMAP.md](ROADMAP.md)** for the full build plan
@@ -63,9 +65,11 @@ tables and the employer catalog ship with the code, so they work from any locati
 jobdar init           # bilingual setup wizard (region, level, profile)
 jobdar scan           # scan portals for new roles (no model needed)
 jobdar seed --region midwest --write   # add real employers for your region
+jobdar prescreen      # gate + rank pending roles by likelihood (no model needed)
 jobdar eval <url>     # evaluate a role against your résumé
 jobdar pipeline       # scan -> evaluate -> track, end to end
 jobdar pdf [company]  # tailored ATS résumé → output/ (HTML, +PDF with Playwright)
+jobdar outreach <url> # find people to contact about a role; polite follow-ups, enforced
 jobdar tracker        # view your applications
 jobdar dashboard      # localhost web view of your pipeline
 jobdar tui            # interactive terminal dashboard
@@ -91,7 +95,8 @@ your first scan — `jobdar init` walks you through it in English or Spanish, no
 
 - **American English + Spanish**, full parity (English primary) — across CLI and web app.
 - **Scanner for US enterprise** — Workday + iCIMS first, plus Greenhouse/Lever/Ashby.
-- **Discover → evaluate pipeline** — `scan` finds and filters roles but **never scores them**; the model's `jobdar eval` scores fit **0–5** against your résumé and records an **Apply / Research / Don't** band. `jobdar tui` shows discovered roles as *pending eval* until the model has scored them.
+- **Discover → prescreen → evaluate pipeline** — `scan` finds and filters roles but **never scores them**; `jobdar prescreen` screens hard gates (years required, active clearance, degree gates) **with a quoted reason — never silently** — and ranks the rest by skill overlap + freshness; the model's `jobdar eval` scores fit **0–5** against your résumé and records an **Apply / Research / Don't** band. `jobdar tui` shows discovered roles as *pending eval* until the model has scored them.
+- **A warm contact beats a cold application** — `jobdar outreach` builds LinkedIn people-search links (you browse and choose; Jobdar never scrapes or sends), drafts stay yours to send, and the polite cadence — 2 people per role, ONE follow-up after 5+ business days, then stop — is enforced in code.
 - **Region toggle** — Midwest by default; switch to Northeast/Southeast/Southwest/West/nationwide and the seeds, location filters, and search adapt.
 - **Level toggle** — entry by default; mid first-class; senior opt-in (ranks normally when chosen).
 - **A dedicated no-degree path** — surfaces skills-based, apprenticeship, and "or equivalent experience" roles.

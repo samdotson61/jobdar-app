@@ -37,15 +37,35 @@ node bin/jobdar scan
 Verás puestos nuevos de los empleadores de tu región, filtrados a tu nivel y zona. Agrega o cambia
 empleadores cuando quieras con `jobdar seed --region <región> --write`.
 
-## 4. Evaluar un puesto
+## 4. Prefiltrar (sáltate los puestos que no puedes conseguir)
 
 ```bash
-node bin/jobdar eval <url-del-puesto>
+node bin/jobdar prescreen
+```
+Sin tokens y rápido: los puestos con un requisito duro que no puedes superar (años exigidos, una
+autorización de seguridad activa, un título que excluiste) se descartan **citando la línea de la
+descripción como razón** — nunca en silencio — y el resto se ordena por coincidencia de
+habilidades + frescura para que evalúes primero el puesto más ganable.
+
+## 5. Evaluar un puesto
+
+```bash
+node bin/jobdar eval <url-del-puesto>    # o: eval --next para el mejor puesto pendiente
 ```
 Dentro de una CLI de IA (como Claude Code), las mismas acciones son comandos de barra: `/jobdar scan`,
 `/jobdar eval` y un onboarding guiado `/jobdar`.
 
-## 5. Crea un currículum adaptado
+## 6. Contacta (un contacto cálido vale más que una solicitud fría)
+
+```bash
+node bin/jobdar outreach <url-del-puesto>
+```
+Obtienes enlaces de búsqueda en LinkedIn de reclutadores y posibles gerentes de contratación — tú
+navegas y eliges a la persona; Jobdar nunca extrae datos ni envía nada. Registra lo que envíes
+(`--log`), y `--due` te dice cuándo madura el único seguimiento cortés (5+ días hábiles; después el
+hilo se cierra).
+
+## 7. Crea un currículum adaptado
 
 ```bash
 node bin/jobdar pdf Enova    # adapta tu currículum a ese puesto → output/*.html

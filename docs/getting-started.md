@@ -37,15 +37,34 @@ node bin/jobdar scan
 You'll see fresh roles from your region's employers, filtered to your level and area. Add or change
 employers any time with `jobdar seed --region <region> --write`.
 
-## 4. Evaluate a role
+## 4. Prescreen (skip the jobs you can't get)
 
 ```bash
-node bin/jobdar eval <job-url>
+node bin/jobdar prescreen
+```
+Zero-token and fast: roles with a hard gate you can't clear (years required, an active security
+clearance, a degree you excluded) are screened out **with the JD line quoted as the reason** —
+never silently — and the rest are ranked by skill match + freshness so you evaluate the most
+winnable role first.
+
+## 5. Evaluate a role
+
+```bash
+node bin/jobdar eval <job-url>    # or: eval --next for the best pending role
 ```
 Inside an AI CLI (like Claude Code), the same actions are slash commands: `/jobdar scan`,
 `/jobdar eval`, and a guided `/jobdar` onboarding.
 
-## 5. Build a tailored résumé
+## 6. Reach out (a warm contact beats a cold application)
+
+```bash
+node bin/jobdar outreach <job-url>
+```
+You get LinkedIn search links for recruiters and likely hiring managers — you browse and pick the
+person; Jobdar never scrapes or sends anything. Log what you send (`--log`), and `--due` tells you
+when the one polite follow-up is ripe (5+ business days; then the thread closes).
+
+## 7. Build a tailored résumé
 
 ```bash
 node bin/jobdar pdf Enova    # tailors your résumé to that role → output/*.html

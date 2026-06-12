@@ -13,15 +13,18 @@ Jobdar escanea las páginas de empleo de las empresas (con soporte de primera cl
 puesto frente a tu currículum, adapta un CV y una carta de presentación compatibles con ATS, y
 registra cada postulación.
 
-> **Estado:** Fases 0–7 + 5.5 **completas** — **Jobdar CLI `1.14.1`**: núcleo bilingüe; **seis escáneres
+> **Estado:** Fases 0–7, 5.5 + 7.7 **completas** — **Jobdar CLI `1.15.0`**: núcleo bilingüe; **seis escáneres
 > verificados en vivo** (Workday, iCIMS, Greenhouse, Lever, Ashby + un lector JSON-LD opcional); selectores
-> de nivel y región y el asistente `jobdar init`; la tubería completa **descubrir → evaluar → registrar →
-> construir** — `scan` encuentra y filtra puestos (nunca los puntúa), el modelo (`jobdar eval`) puntúa la
-> compatibilidad (0–5 → Postular / Investigar / Descartar) y la registra, tú avanzas el estado (`a` en la
-> TUI o `jobdar tracker --set`) y `jobdar pdf` construye el currículum ATS adaptado; una TUI desplazable
-> con cursor + un panel web con analíticas; frescura (`posted` / `first_seen`, `scan --prune`). Pendiente
-> para 1.0: publicar en npm + marketplace, y luego una beta cerrada. Consulta **[ROADMAP.md](ROADMAP.md)**
-> para el plan completo y **[CHANGELOG.md](CHANGELOG.md)** para lo ya entregado.
+> de nivel y región y el asistente `jobdar init`; la tubería completa **descubrir → prefiltrar → evaluar →
+> registrar → construir** — `scan` encuentra y filtra puestos (nunca los puntúa), `jobdar prescreen`
+> **filtra y ordena la cola sin gastar tokens** (los requisitos duros descartan con una razón citada, nunca
+> en silencio), el modelo (`jobdar eval`) puntúa la compatibilidad (0–5 → Postular / Investigar / Descartar)
+> y la registra, tú avanzas el estado (`a` en la TUI o `jobdar tracker --set`), `jobdar outreach` encuentra
+> el **contacto cálido** y mantiene los seguimientos corteses por construcción, y `jobdar pdf` construye el
+> currículum ATS adaptado; una TUI desplazable con cursor + un panel web con analíticas; frescura
+> (`posted` / `first_seen`, `scan --prune`). Pendiente para 1.0: publicar en npm + marketplace, y luego una
+> beta cerrada. Consulta **[ROADMAP.md](ROADMAP.md)** para el plan completo y
+> **[CHANGELOG.md](CHANGELOG.md)** para lo ya entregado.
 
 ## Tus datos se quedan en local
 
@@ -69,9 +72,11 @@ con el código, así que funcionan desde cualquier ubicación.
 jobdar init           # asistente de configuración bilingüe (región, nivel, perfil)
 jobdar scan           # escanea portales en busca de nuevos puestos (sin modelo)
 jobdar seed --region midwest --write   # agrega empleadores reales de tu región
+jobdar prescreen      # filtra y ordena los puestos pendientes por probabilidad (sin modelo)
 jobdar eval <url>     # evalúa un puesto frente a tu currículum
 jobdar pipeline       # escanear -> evaluar -> registrar, de principio a fin
 jobdar pdf [empresa]  # currículum adaptado para ATS → output/ (HTML, +PDF con Playwright)
+jobdar outreach <url> # encuentra personas a quienes contactar; seguimientos corteses, aplicados
 jobdar tracker        # consulta tus postulaciones
 jobdar dashboard      # panel web local de tu flujo
 jobdar tui            # panel interactivo en la terminal
@@ -98,7 +103,8 @@ nivel intermedio, o activa senior (que entonces se clasifica con normalidad, sin
 
 - **Inglés estadounidense + español**, paridad completa (inglés primario) — en la CLI y la app web.
 - **Escáner para grandes empresas de EE. UU.** — Workday + iCIMS primero, más Greenhouse/Lever/Ashby.
-- **Flujo descubrir → evaluar** — `scan` encuentra y filtra puestos pero **nunca los puntúa**; el modelo (`jobdar eval`) puntúa la compatibilidad **0–5** con tu currículum y registra una banda **Postular / Investigar / Descartar**. `jobdar tui` muestra los puestos descubiertos como *pendiente eval* hasta que el modelo los puntúa.
+- **Flujo descubrir → prefiltrar → evaluar** — `scan` encuentra y filtra puestos pero **nunca los puntúa**; `jobdar prescreen` descarta requisitos duros (años exigidos, autorización de seguridad activa, título obligatorio) **con una razón citada — nunca en silencio** — y ordena el resto por coincidencia de habilidades + frescura; el modelo (`jobdar eval`) puntúa la compatibilidad **0–5** con tu currículum y registra una banda **Postular / Investigar / Descartar**. `jobdar tui` muestra los puestos descubiertos como *pendiente eval* hasta que el modelo los puntúa.
+- **Un contacto cálido vale más que una solicitud fría** — `jobdar outreach` construye enlaces de búsqueda de personas en LinkedIn (tú navegas y eliges; Jobdar nunca extrae datos ni envía nada), los borradores los envías tú, y la cadencia cortés — 2 personas por puesto, UN seguimiento tras 5+ días hábiles, y se acabó — la aplica el código.
 - **Ajuste de región** — Medio Oeste por defecto; cambia a Noreste/Sureste/Suroeste/Oeste/todo el
   país y las semillas, los filtros de ubicación y la búsqueda se adaptan.
 - **Ajuste de nivel** — inicial por defecto; intermedio de primera clase; senior opcional (se

@@ -6,6 +6,57 @@ All notable changes to Jobdar are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.15.0] — 2026-06-12
+
+Phase 7.7 — apply-likelihood. Stop evaluating jobs you were never going to get; start warming up
+the ones you might. Built from real beta pain (evals wasted on hard-gated roles).
+
+### Added
+- **`jobdar prescreen`** (`lib/prescreen.mjs`, `lib/commands/prescreen.mjs`) — the zero-token gate
+  between scan and eval. Fetches each pending role's JD politely (sequential, 800 ms pacing) and:
+  - **screens hard gates with a QUOTED reason** — years-required vs your level(s) (entry >2 /
+    mid >5 / senior >10; the lowest stated floor counts; "10 years of innovation" never matches),
+    an ACTIVE security clearance (TS/SCI etc.), and degree gates (`yes/no/unclear`, with
+    "or equivalent experience" downgrading to unclear). Under `no_degree` a degree ask flags a
+    stretch and **never** screens (the 4.5 rule); `include_degree_required_roles: false` makes it
+    a screen. Soft signals (obtainable clearance, no-sponsorship, license/cert) only flag.
+  - **ranks the rest 0–100** by skill overlap (cv.md ∩ JD vocabulary, identical extraction on both
+    sides) + posting freshness (`posted`/`first_seen`) + headroom minus soft flags. An unreachable
+    JD scores neutral and is never screened.
+  - Nothing is hidden silently: screened rows keep `screen_reason` on the pipeline (new
+    `prescreen` + `screen_reason` columns; old pipeline files read fine), print with their quoted
+    reason, and `eval --next --include-screened` re-admits them.
+- **`eval --next` now serves the prescreen-ranked queue** (likelihood desc, then freshness) and
+  skips screened + human-tracked rows by default; tells you how many are screened out and why.
+- **`jobdar outreach`** (`lib/outreach.mjs`, `lib/commands/outreach.mjs`) — the referral lever,
+  polite by construction:
+  - **people-finder**: deterministic LinkedIn people-search LINKS (recruiters/TA; likely hiring
+    manager via a level-stripped role title; company people). The user browses and picks —
+    **Jobdar never scrapes LinkedIn and never sends a message.**
+  - **cadence enforced in code**: a gitignored ledger (`data/outreach.tsv` — name/title/channel/
+    date only) caps contacts at 2 per role, one thread per person, ONE follow-up ripe after ≥5
+    business days (`--due` says when), hard stop after — no override flag exists for the stop.
+  - **draft lint** (`--lint <file|->`): rejects >300-char LinkedIn notes, leftover
+    `{placeholders}`, and drafts missing the recipient's name. Refusals exit non-zero.
+- **modes/outreach.md + modes/es/outreach.md** — full paste-to-personalize flow: the user pastes a
+  person's public headline; it feeds ONE draft and is never written to disk (on the winc.cpp
+  default backend it never leaves the device at all). Cadence + lint steps spelled out for the
+  model; EN/ES parity maintained, 47 new i18n strings per language.
+- 11 new tests (62 total): gate extraction, screen decisions, scoring, queue ordering, pipeline
+  columns, people-finder links, business-day math, cadence enforcement, draft lint.
+
+### Changed
+- **ROADMAP restructured: Phase 8b (winc.cpp on-device inference) is now the NEXT build**, ahead
+  of 8a — it's the default backend everywhere and the engine the Phase 9 web + iOS/Android apps
+  embed. 8a follows as the opt-in accuracy upgrade and gains two steps: **8a.7** bulk evals via
+  the Message Batches API (one role per request — never multi-JD prompts — at 50% price) and
+  **8a.8** prompt-caching the byte-stable rubric+CV prefix. New Phase 7.7 section records this
+  release.
+
+### Fixed
+- `bin/jobdar` now respects a command's `process.exitCode` — refusals (outreach cadence, tracker
+  `--set` misuse) previously printed an error but exited 0.
+
 ## [1.14.1] — 2026-06-10
 
 Docs: the roadmap now shows at a glance what's shipped — plus the pending portability-test fix.

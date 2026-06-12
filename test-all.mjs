@@ -25,7 +25,9 @@ import { selectEmployers, toPortals } from './lib/seed.mjs'
 import { parseResumeText } from './lib/resume.mjs'
 import { renderDashboard, analyze } from './lib/commands/dashboard.mjs'
 import { renderTui, pipelineView } from './lib/commands/tui.mjs'
-import { mergeScanned, recordEval, serializePipeline, band, isEvaluated, isTracked, setStatus, pruneScanned } from './lib/evaluations.mjs'
+import { mergeScanned, recordEval, serializePipeline, band, isEvaluated, isTracked, setStatus, pruneScanned, PIPELINE_COLS, recordPrescreen, pendingQueue } from './lib/evaluations.mjs'
+import { extractYearsRequired, extractDegreeGate, extractGates, screenDecision, prescreenRole, freshnessPoints, reasonLine } from './lib/prescreen.mjs'
+import { baseRoleTitle, peopleFinderLinks, businessDaysBetween, canContact, canFollowup, dueFollowups, lintDraft } from './lib/outreach.mjs'
 import { trackerRowsFrom } from './lib/tracker.mjs'
 import { cvToHtml, matchedKeywords } from './lib/cv_render.mjs'
 
@@ -611,6 +613,128 @@ test('states: labels are localized; IDs are stable lowercase English', () => {
   assert.equal(stateLabel('applied', 'es'), 'Postulado')
   assert.equal(stateLabel('unknown', 'es'), 'unknown')
   assert.ok(allStates().every((s) => s.id === s.id.toLowerCase()))
+})
+
+// --- Prescreen (the apply-likelihood gate) ---
+
+test('prescreen: years gate parses "N+ years experience" and screens above the selected level', () => {
+  const jd = 'We need 5+ years of professional experience shipping data products. 10 years of innovation behind us.'
+  const g = extractYearsRequired(jd)
+  assert.equal(g.years, 5) // "10 years of innovation" must NOT match (no "experience")
+  assert.ok(g.quote.includes('5+ years'))
+  const entry = screenDecision(extractGates(jd), { target_levels: ['entry'] })
+  assert.ok(entry.screened && entry.reasons[0].kind === 'years')
+  const senior = screenDecision(extractGates(jd), { target_levels: ['entry', 'senior'] })
+  assert.ok(!senior.screened) // senior ceiling (10) clears a 5-year ask
+  const range = extractYearsRequired('1-2 years of experience preferred; 7 years experience is a plus')
+  assert.equal(range.years, 1) // the LOWEST stated floor is the requirement
+})
+
+test('prescreen: degree gate is yes/no/unclear; no_degree flags a stretch but NEVER screens', () => {
+  assert.equal(extractDegreeGate('Bachelor’s degree required in CS.').gate, 'yes')
+  assert.equal(extractDegreeGate('Bachelor’s degree or equivalent experience.').gate, 'unclear')
+  assert.equal(extractDegreeGate('Great attitude required.').gate, 'no')
+  const jd = 'Bachelor’s degree required.'
+  const noDegree = screenDecision(extractGates(jd), { tuning_profile: 'no_degree', include_degree_required_roles: true })
+  assert.ok(!noDegree.screened, 'no_degree must never auto-screen a degree ask')
+  assert.ok(noDegree.flags.some((f) => f.kind === 'degree_stretch'))
+  const excluded = screenDecision(extractGates(jd), { include_degree_required_roles: false })
+  assert.ok(excluded.screened && excluded.reasons[0].kind === 'degree')
+})
+
+test('prescreen: active clearance screens; "able to obtain" + sponsorship + license only flag', () => {
+  const hard = screenDecision(extractGates('Must hold an active Top Secret clearance.'), {})
+  assert.ok(hard.screened && hard.reasons[0].kind === 'clearance')
+  const soft = screenDecision(extractGates('Ability to obtain a security clearance is a plus. No visa sponsorship available. CDL Class A required.'), {})
+  assert.ok(!soft.screened)
+  const kinds = soft.flags.map((f) => f.kind).sort()
+  assert.deepEqual(kinds, ['clearance', 'license', 'sponsorship'])
+})
+
+test('prescreen: score blends skill overlap + freshness; flags subtract; screened scores 0', () => {
+  const cv = 'Analyst with SQL, Python, Excel dashboards and reporting experience.'
+  const jdGood = 'Analyst role: SQL, Python, Excel, dashboards, reporting.'
+  const today = '2026-06-12'
+  const fresh = prescreenRole({ jdText: jdGood, cvText: cv, posted: '2026-06-10', today, profile: {} })
+  const stale = prescreenRole({ jdText: jdGood, cvText: cv, posted: '2026-03-01', today, profile: {} })
+  assert.ok(fresh.score > stale.score, 'fresher posting must outrank the same JD stale')
+  assert.equal(freshnessPoints('', '', today), 12) // unknown age → neutral
+  const noJd = prescreenRole({ jdText: '', cvText: cv, posted: '2026-06-10', today, profile: {} })
+  assert.ok(!noJd.screened && !noJd.jdAvailable && noJd.score > 0) // unreachable JD never screens
+  const screened = prescreenRole({ jdText: 'Requires 9+ years of experience.', cvText: cv, today, profile: { target_levels: ['entry'] } })
+  assert.equal(screened.score, 0)
+  assert.ok(reasonLine(screened.reasons).includes('9+ years'), 'reason carries the quote')
+})
+
+test('pipeline: prescreen columns persist, recordPrescreen annotates, old files read clean', () => {
+  assert.ok(PIPELINE_COLS.includes('prescreen') && PIPELINE_COLS.includes('screen_reason'))
+  const rows = mergeScanned([], [{ company: 'Acme', title: 'Analyst I', url: 'u1' }], '2026-06-12')
+  const out = recordPrescreen(rows, 'u1', { score: 73, reason: '' }, '2026-06-12')
+  assert.equal(out.find((r) => r.url === 'u1').prescreen, '73')
+  assert.equal(recordPrescreen(rows, 'missing', { score: 1 }, '2026-06-12'), null) // never invents rows
+  // an old pipeline file without the new columns reads with '' backfill (header-name reads)
+  const serialized = serializePipeline(out)
+  assert.ok(serialized.split('\n')[0].includes('screen_reason'))
+})
+
+test('pipeline: pendingQueue ranks by prescreen then freshness; screened excluded unless asked', () => {
+  const rows = [
+    { url: 'a', status: 'scanned', score: '', prescreen: '40', screen_reason: '', posted: '2026-06-01', first_seen: '' },
+    { url: 'b', status: 'scanned', score: '', prescreen: '90', screen_reason: '', posted: '2026-05-01', first_seen: '' },
+    { url: 'c', status: 'scanned', score: '', prescreen: '0', screen_reason: 'asks for more experience', posted: '2026-06-11', first_seen: '' },
+    { url: 'd', status: 'scanned', score: '', prescreen: '', screen_reason: '', posted: '2026-06-11', first_seen: '' },
+    { url: 'e', status: 'applied', score: '', prescreen: '99', screen_reason: '', posted: '', first_seen: '' }, // tracked → not pending
+    { url: 'f', status: 'evaluated', score: '4.1', prescreen: '80', screen_reason: '', posted: '', first_seen: '' },
+  ]
+  const q = pendingQueue(rows)
+  assert.deepEqual(q.map((r) => r.url), ['b', 'a', 'd']) // prescreen desc; unscored after scored; screened out
+  const all = pendingQueue(rows, { includeScreened: true })
+  assert.ok(all.map((r) => r.url).includes('c'))
+})
+
+// --- Outreach (the referral lever) ---
+
+test('outreach: people-finder builds LinkedIn search links; manager search strips level tokens', () => {
+  assert.equal(baseRoleTitle('Senior Data Analyst II'), 'Data Analyst')
+  assert.equal(baseRoleTitle('Jr. Software Engineer'), 'Software Engineer')
+  const links = peopleFinderLinks({ company: 'Acme Corp', role: 'Data Analyst I' })
+  assert.equal(links.length, 3)
+  assert.ok(links.every((l) => l.url.startsWith('https://www.linkedin.com/search/results/people/?keywords=')))
+  assert.ok(decodeURIComponent(links[0].url).includes('"Acme Corp" recruiter'))
+  assert.ok(decodeURIComponent(links[1].url).includes('"Data Analyst" manager'))
+})
+
+test('outreach: business days skip weekends', () => {
+  assert.equal(businessDaysBetween('2026-06-05', '2026-06-08'), 1) // Fri → Mon
+  assert.equal(businessDaysBetween('2026-06-08', '2026-06-12'), 4) // Mon → Fri same week
+  assert.equal(businessDaysBetween('2026-06-12', '2026-06-12'), 0)
+})
+
+test('outreach: cadence — role cap of 2, one thread per person, follow-up ripe at 5 business days, then hard stop', () => {
+  const ledger = [
+    { url: 'u1', person: 'Ana Ruiz', kind: 'contact', date: '2026-06-01' },
+    { url: 'u1', person: 'Bob Lee', kind: 'contact', date: '2026-06-02' },
+  ]
+  assert.equal(canContact(ledger, { url: 'u1', person: 'ana ruiz' }).reason, 'duplicate_person') // case-insensitive
+  assert.equal(canContact(ledger, { url: 'u1', person: 'Cara Day' }).reason, 'role_cap')
+  assert.ok(canContact(ledger, { url: 'u2', person: 'Cara Day' }).ok) // a different role is fine
+  assert.equal(canFollowup(ledger, { url: 'u1', person: 'Nobody', today: '2026-06-12' }).reason, 'no_contact')
+  assert.equal(canFollowup(ledger, { url: 'u1', person: 'Ana Ruiz', today: '2026-06-03' }).reason, 'too_soon')
+  assert.ok(canFollowup(ledger, { url: 'u1', person: 'Ana Ruiz', today: '2026-06-12' }).ok) // ≥5 business days
+  const after = [...ledger, { url: 'u1', person: 'Ana Ruiz', kind: 'followup', date: '2026-06-12' }]
+  assert.equal(canFollowup(after, { url: 'u1', person: 'Ana Ruiz', today: '2026-07-01' }).reason, 'followed_up') // hard stop
+  const { due, closed } = dueFollowups(after, '2026-06-12')
+  assert.deepEqual(due.map((d) => d.person), ['Bob Lee'])
+  assert.deepEqual(closed.map((c) => c.person), ['Ana Ruiz'])
+})
+
+test('outreach: draft lint catches empty, over-length, placeholders, and a missing recipient name', () => {
+  assert.ok(lintDraft('Hi Ana — saw the Analyst I role at Acme. My SQL dashboards cut reporting time 40%. Open to a quick chat?', { channel: 'linkedin', person: 'Ana Ruiz' }).ok)
+  assert.ok(lintDraft('', {}).problems.some((p) => p.kind === 'empty'))
+  assert.ok(lintDraft('x'.repeat(301), { channel: 'linkedin' }).problems.some((p) => p.kind === 'too_long'))
+  assert.ok(lintDraft('x'.repeat(301), { channel: 'email' }).ok) // email has no 300-char cap
+  assert.ok(lintDraft('Hi {name}, about the role…', {}).problems.some((p) => p.kind === 'placeholder'))
+  assert.ok(lintDraft('Hello! Great role at Acme.', { person: 'Ana Ruiz' }).problems.some((p) => p.kind === 'missing_name'))
 })
 
 let passed = 0

@@ -7,22 +7,26 @@
 > fit against your résumé, **tailors** an ATS-friendly CV/cover letter, and **tracks** every application —
 > with your data kept **local**, processed by a **private on-device model by default** or your own cloud API.
 >
-> **Status:** Phases 0–7 **and 5.5** complete — **Jobdar CLI `1.14.1`**. Bilingual core; **six scanner
+> **Status:** Phases 0–7, **5.5 and 7.7** complete — **Jobdar CLI `1.15.0`**. Bilingual core; **six scanner
 > providers** (Greenhouse, Workday, iCIMS, Lever, Ashby + an opt-in JSON-LD reader), all live-verified,
 > all with eval-time JD fetch; level + region toggles; the `jobdar init` wizard; the full
-> **discover→evaluate→track→build pipeline** — `scan` finds + filters (it never scores), the model's
-> `jobdar eval` scores fit (0–5 → Apply/Research/Don't) and records it, the human advances status
-> (`a` in the TUI / `jobdar tracker --set`), `jobdar pdf` builds the tailored ATS résumé; a scrollable
-> cursor-driven TUI workspace + a web dashboard with analytics; freshness tracking (`posted`/`first_seen`,
-> `scan --prune`); security/privacy pass (zero telemetry, SSRF-guarded).
+> **discover→prescreen→evaluate→track→build pipeline** — `scan` finds + filters (it never scores),
+> **`jobdar prescreen` gates + ranks the queue zero-token** (hard gates screen with a quoted reason,
+> never silently), the model's `jobdar eval` scores fit (0–5 → Apply/Research/Don't) and records it,
+> the human advances status (`a` in the TUI / `jobdar tracker --set`), **`jobdar outreach`** finds the
+> warm contact and enforces the polite follow-up cadence in code, `jobdar pdf` builds the tailored ATS
+> résumé; a scrollable cursor-driven TUI workspace + a web dashboard with analytics; freshness tracking
+> (`posted`/`first_seen`, `scan --prune`); security/privacy pass (zero telemetry, SSRF-guarded).
 > Remaining for 1.0 ship: **npm publish + marketplace** (needs the org from Step 0.2) and the **closed
-> beta** (7.6 — can start from the GitHub repo + installer now). **Next build phase: Phase 8a** (BYO-key
-> automated eval), then **8b** (on-device via **winc.cpp** — the **default** backend), **8c** (PDF
-> résumé/JD understanding), **8d** (offer evaluation), **8e** (the engine contract), then Phase 9
+> beta** (7.6 — can start from the GitHub repo + installer now). **Next build phase: Phase 8b** —
+> on-device inference via **winc.cpp**, the **default** backend and the engine the Phase 9 **web +
+> iOS/Android apps embed**. Then **8a** (BYO-key automated eval — the opt-in accuracy upgrade), **8c**
+> (PDF résumé/JD understanding), **8d** (offer evaluation), **8e** (the engine contract), then Phase 9
 > (web + mobile apps). Step-by-step:
 > [Remaining work — build-order implementation guide](#remaining-work--build-order-implementation-guide).
 > See [CHANGELOG.md](CHANGELOG.md).
-> **Date:** 2026-06-10 (Phases 0–7 built 2026-06-05; 1.11/1.12 + Phase 5.5 on 2026-06-09)
+> **Date:** 2026-06-12 (Phases 0–7 built 2026-06-05; 1.11/1.12 + Phase 5.5 on 2026-06-09; 7.7
+> prescreen + outreach on 2026-06-12)
 
 ---
 
@@ -82,7 +86,7 @@ API-key upgrade available. Both surfaces share the same scanner, regions, levels
   lightweight **on-device model by default** (private, free), an **API plugin** (BYO key — cloud, higher
   quality, zero-retention) opt-in, and a **confidential-cloud** option later. The zero-token scanner touches
   only public job data, so only evaluation needs a model — which keeps local feasible and cloud cheap. See
-  [Phase 8](#phase-8--pluggable-inference-8a-byo-key-auto-eval-then-8b-on-device-via-winccpp).
+  [Phase 8](#phase-8--pluggable-inference-8b-on-device-via-winccpp-first-then-8a-byo-key-auto-eval).
 - **Region toggle.** US-focused, **Midwest by default**; switch to Northeast/Southeast/Southwest/West/
   nationwide and the seeds, location filters, and search adapt.
 - **Level toggle.** Entry by default; mid first-class; senior opt-in (full-rank when chosen).
@@ -127,7 +131,7 @@ one-line installer; `npx jobdar` works with no install):
 `jobdar --help`, `jobdar <command> --help`, and `jobdar --version` — all bilingual. **Deterministic**
 commands (scan, tracker, doctor, init…) run with **no model**; **model-backed** commands (`eval`, `pdf`
 tailoring, `pipeline`'s eval step) use the configured **inference backend** — your own API key now, or the
-on-device model once [Phase 8](#phase-8--pluggable-inference-8a-byo-key-auto-eval-then-8b-on-device-via-winccpp) lands.
+on-device model once [Phase 8](#phase-8--pluggable-inference-8b-on-device-via-winccpp-first-then-8a-byo-key-auto-eval) lands.
 
 > **Two ways to drive it:** `jobdar <command>` in your **shell** (direct, scriptable, no AI CLI needed for
 > deterministic commands), or `/jobdar <mode>` inside an **AI CLI** (Claude Code / Gemini) for the full
@@ -157,7 +161,8 @@ on-device model once [Phase 8](#phase-8--pluggable-inference-8a-byo-key-auto-eva
 - [Phase 5.5 — Provider expansion (demand-driven)](#phase-55--provider-expansion-demand-driven)
 - [Phase 6 — Effortless install & onboarding for anyone](#phase-6--effortless-install--onboarding-for-anyone)
 - [Phase 7 — Quality, dashboard, polish, release](#phase-7--quality-dashboard-polish-release)
-- [Phase 8 — Pluggable inference (8a BYO-key auto-eval, then 8b on-device via winc.cpp)](#phase-8--pluggable-inference-8a-byo-key-auto-eval-then-8b-on-device-via-winccpp)
+- [Phase 7.7 — Apply-likelihood: the prescreen gate + the outreach engine](#phase-77--apply-likelihood-the-prescreen-gate--the-outreach-engine)
+- [Phase 8 — Pluggable inference (8b on-device via winc.cpp FIRST, then 8a BYO-key auto-eval)](#phase-8--pluggable-inference-8b-on-device-via-winccpp-first-then-8a-byo-key-auto-eval)
 - [Phase 8c — Document understanding (PDFs in, structured data out)](#phase-8c--document-understanding-pdfs-in-structured-data-out)
 - [Phase 8d — Offer evaluation](#phase-8d--offer-evaluation)
 - [Phase 8e — The engine contract (CLI, web, mobile plug in here)](#phase-8e--the-engine-contract-cli-web-mobile-plug-in-here)
@@ -171,35 +176,37 @@ on-device model once [Phase 8](#phase-8--pluggable-inference-8a-byo-key-auto-eva
 
 ## Remaining work — build-order implementation guide
 
-> Phases 0–7 + 5.5 are **shipped**. This is everything left, in the order to build it — and the
+> Phases 0–7, 5.5 + 7.7 are **shipped**. This is everything left, in the order to build it — and the
 > end-state it adds up to: **one headless engine** that every surface plugs into.
 
 ```
 résumé PDF/DOCX ─▶ 8c understand ─▶ cv.md + profile.yml
                                          │
-portals.yml ─▶ scan (zero-token) ─▶ pending roles ─▶ 8a/8b eval 0–5
+portals.yml ─▶ scan (zero-token) ─▶ 7.7 prescreen (zero-token gate+rank) ─▶ 8a/8b eval 0–5
                                          │            (winc.cpp local by DEFAULT;
                                          │             BYO-key API opt-in)
                           tracker ─▶ offer in hand ─▶ 8d offer verdict
                                          │
-                               build (tailored CV / cover letter)
+                     7.7 outreach (warm contact) + build (tailored CV / cover letter)
 ```
 
 The CLI drives this engine today; the **web app and the mobile app (Phase 9) plug into the same
-engine** through the Phase 8e contract — no second pipeline, ever.
+engine** through the Phase 8e contract — no second pipeline, ever — and **embed the same 8b
+on-device inference**, which is why winc.cpp comes first below.
 
 | # | Milestone | Where | Status | Why this order |
 |---|---|---|---|---|
+| ✅ | **Prescreen gate + outreach engine** | 7.7 | ✅ shipped 1.15.0 (2026-06-12) | kills wasted evals before any model runs; builds the queue 8a/8b will consume |
 | 1 | **Closed beta starts** | 7.6 | ⬜ ready now (GitHub repo + installer; npm NOT required) | real-user feedback steers everything below |
-| 2 | **BYO-key automated eval** | 8a.1–8a.3 | ⬜ next build | the single biggest daily-use unlock; small build |
-| 3 | **Eval tuning + calibration + fairness** | 8a.4–8a.6 | ⬜ with 8a | scores must be trustworthy before they're the product; research done → [docs/eval-tuning-research.md](docs/eval-tuning-research.md) |
-| 4 | **winc.cpp local backend — the DEFAULT** | 8b.1–8b.4 | ⬜ after 8a | same client, new base URL; makes "private, free, offline" real |
+| 2 | **winc.cpp local backend — the DEFAULT** | 8b.1–8b.5 | ⬜ **NEXT BUILD** | the on-device engine the Phase 9 web + iOS/Android apps embed; makes "private, free, offline" real |
+| 3 | **BYO-key automated eval** | 8a.1–8a.3 | ⬜ after 8b — same client, different base URL | the opt-in accuracy upgrade; small build |
+| 4 | **Eval tuning + calibration + fairness + economics** | 8a.4–8a.8 | ⬜ with 8a | scores must be trustworthy before they're the product; research done → [docs/eval-tuning-research.md](docs/eval-tuning-research.md) |
 | 5 | **PDF/document understanding** | 8c.1–8c.5 | ⬜ | "upload a résumé → go" for init; PDF JDs in eval |
 | 6 | **Offer evaluation** | 8d.1–8d.5 | ⬜ | completes discover → evaluate → **decide** |
 | 7 | **The engine contract** | 8e.1–8e.4 | ⬜ | freezes the seam web/mobile build against |
 | 8 | **npm publish + marketplace → 1.0** | 7.5 | 🔶 blocked on Step 0.2 (org/trademark) only | distribution, not function |
 | 9 | **Workday quirk tenants; new ATS readers** | 5.5.4 / 5.5.5 | 🔶 / ⬜ demand-driven | parallel track, paced by beta demand |
-| 10 | **Web app, then mobile app** | 9.1–9.8 | ⬜ post-1.0 | thin front-ends over the 8e engine |
+| 10 | **Web app, then mobile app** | 9.1–9.8 | ⬜ post-1.0 | thin front-ends over the 8e engine, with 8b inference embedded |
 
 ---
 
@@ -403,30 +410,57 @@ only the README; repeat the whole flow in Spanish. Both pass.
 
 ---
 
-## Phase 8 — Pluggable inference (8a BYO-key auto-eval, then 8b on-device via winc.cpp)
+## Phase 7.7 — Apply-likelihood: the prescreen gate + the outreach engine
 
-> **Status: ⬜ not started** — 8a is the next build (milestones 2–3); 8b follows (milestone 4).
+> **Status: ✅ shipped** (1.15.0, 2026-06-12) — built from real beta pain: evals were being spent on
+> roles a hard gate had already closed. Both halves are zero-token; fit *judgment* stays the model's job.
 
-**Goal:** make the model a **swappable backend** so the same evaluation/tailoring brain runs against
-either a **cloud model via the user's own key** (8a — small, unblocks daily use first) or a fully
-**local model via [winc.cpp](https://github.com/samdotson61/winc.cpp) — the PRIMARY on-device backend** (8b).
-The key architectural insight: **both halves speak the same wire format — the Anthropic Messages API.**
-winc.cpp's `llama-server` serves `/v1/messages` **natively** on localhost, so ONE tiny HTTP client
-covers both backends; only the base URL and the key differ. Data always local at rest; we never
-receive or store résumés.
+**Goal:** raise the odds an application leads anywhere BEFORE any model spends a token — never evaluate
+a role a hard gate already closed, always evaluate the most winnable role first, and turn cold
+applications warm with polite, tracked outreach.
 
-### Phase 8a — BYO-key automated eval (build first; small)
+| Step | What | Detail |
+|---|---|---|
+| 7.7.1 ✅ | **`jobdar prescreen`** (`lib/prescreen.mjs`) — fetches each pending role's JD politely (sequential, paced) and extracts hard gates with a QUOTED snippet as evidence: years-required vs the selected level(s) (entry >2 / mid >5 / senior >10 — the LOWEST stated floor counts), an ACTIVE security clearance, and degree gates (`yes/no/unclear`; "or equivalent experience" downgrades to unclear). Soft signals (obtainable clearance, no-sponsorship, license/cert) only flag. Screened rows keep `screen_reason` on the pipeline — **nothing is ever hidden silently** (the 4.5 rule), and under `no_degree` a degree ask flags a stretch but NEVER screens. | the zero-token gate |
+| 7.7.2 ✅ | **Likelihood score 0–100** = skill overlap (cv.md ∩ JD vocabulary, identical extraction both sides) + posting freshness (the `posted`/`first_seen` data the pipeline already tracked) + headroom minus soft flags. `eval --next` now serves the **prescreen-ranked queue**; screened roles return only with `--include-screened`. | rank the eval queue |
+| 7.7.3 ✅ | **`jobdar outreach`** (`lib/outreach.mjs`) — deterministic LinkedIn people-search LINKS (recruiters/TA, likely hiring manager via a level-stripped title, company people). The user browses and picks the human; **Jobdar never scrapes LinkedIn and never sends a message** (ToS + the politeness bar). | the referral lever |
+| 7.7.4 ✅ | **Cadence enforced in code, not vibes:** a gitignored ledger (`data/outreach.tsv` — name/title/channel/date only) caps contacts at **2 per role**, one thread per person, **ONE follow-up** ripe after **≥5 business days** (`--due` says when), hard stop after — no override flag exists for the stop. | polite by construction |
+| 7.7.5 ✅ | **Draft lint + paste-to-personalize:** `outreach --lint` rejects >300-char LinkedIn notes, leftover `{placeholders}`, and drafts missing the recipient's name. `modes/outreach.md` (EN + ES parity) walks the flow: the pasted public headline feeds ONE draft and is never written to disk — and on the winc.cpp default backend (8b) it never leaves the device at all. | quality + privacy |
+
+**Verification gate:** ✅ met 2026-06-12 — the 62-test suite covers gate extraction, scoring, queue
+ordering, cadence enforcement, and lint; a live smoke run showed screened-with-reason output, the ranked
+queue feeding `eval --next`, duplicate/follow-up refusals exiting non-zero, and a clean lint pass.
+
+---
+
+## Phase 8 — Pluggable inference (8b on-device via winc.cpp FIRST, then 8a BYO-key auto-eval)
+
+> **Status: ⬜ not started — 8b (winc.cpp) is the NEXT build** (milestone 2): it's the default backend
+> everywhere AND the engine the Phase 9 web + iOS/Android apps embed, so it lands before 8a (milestones
+> 3–4), which reuses the same client with a different base URL.
+
+**Goal:** make the model a **swappable backend** so the same evaluation/tailoring brain runs against a
+fully **local model via [winc.cpp](https://github.com/samdotson61/winc.cpp) — the PRIMARY on-device
+backend and the DEFAULT** (8b, built first), or a **cloud model via the user's own key** (8a — the
+opt-in accuracy upgrade). The key architectural insight: **both halves speak the same wire format — the
+Anthropic Messages API.** winc.cpp's `llama-server` serves `/v1/messages` **natively** on localhost, so
+ONE tiny HTTP client covers both backends; only the base URL and the key differ. Data always local at
+rest; we never receive or store résumés.
+
+### Phase 8a — BYO-key automated eval (after 8b; the accuracy upgrade)
 
 | Step | What | Detail |
 |---|---|---|
 | 8a.1 | **`InferenceProvider` interface** (same plugin spirit as the scanner): `evaluate(jd, profile, cv)` → structured verdict `{ score, band, recommendation, … }`. The Markdown rubric (`modes/_shared.md` + `modes/eval.md`) is the shared spec. | abstraction |
-| 8a.2 | **`jobdar eval --auto [<url> \| --next \| --all-pending]`** — reads the key `init` already stores in `data/credentials.env` (today it's collected and never used), calls the **Anthropic Messages API** with rubric + JD + `cv.md`, parses the structured verdict, records it via the existing `eval --save` path. Batch mode walks every pending role politely. | the single biggest daily-use unlock |
+| 8a.2 | **`jobdar eval --auto [<url> \| --next \| --all-pending]`** — reads the key `init` already stores in `data/credentials.env` (today it's collected and never used), calls the **Anthropic Messages API** with rubric + JD + `cv.md`, parses the structured verdict, records it via the existing `eval --save` path. Batch mode walks the **prescreen-ranked queue (7.7)** politely — the gate has already removed roles a hard requirement closed, so every token lands on a winnable role. **One JD per request, always** — multi-JD prompts degrade quality, cross-contaminate verdicts, and break 8a.4's quoted-evidence design. | the single biggest daily-use unlock |
 | 8a.3 | **Minimal-slice + zero-retention posture:** send only the JD + relevant CV excerpt, never history; document the retention settings; key never leaves `credentials.env` (gitignored, 0600). | privacy |
 | 8a.4 | **Consistency guardrails + rubric design** (per [docs/eval-tuning-research.md](docs/eval-tuning-research.md)): pinned prompt, temperature 0, structured-output schema so every backend returns the same shape. **Decomposed sub-criteria** — skills 35% / experience 25% / level-fit 20% / logistics 10% / education-gate 10% — each a categorical `strong/partial/none` judgment **with a quoted JD line as evidence**, reason-then-judge ordering, 2 short anchor examples per band. **Code, not the model, computes the 0–5** from the weighted sub-judgments and applies band thresholds (Apply ≥ 3.5 / Research 2.0–3.4 / Don't < 2.0 — config-tunable). | accuracy |
 | 8a.5 | **Calibration set:** 30–50 real JDs hand-banded by us (incl. no-degree / "or equivalent experience" pairs) as fixtures; `test-all.mjs` scores them against the configured backend and reports agreement + drift on every prompt or model change. | trust |
 | 8a.6 | **Fairness guards:** strip name/contact lines from the CV slice before the prompt is built (smaller bias surface AND less PII out the door — off-the-shelf LLMs measurably carry demographic bias in hiring contexts); under `no_degree`, a degree requirement can flag a role but never auto-zero it, and the calibration set makes a regression here a **test failure**, not a vibe. | fairness |
+| 8a.7 | **Bulk-eval economics — the Message Batches API:** `--all-pending` on the API backend submits one Batches-API job (one role per request) instead of N live calls — **50% of standard price**, up to 100k requests per batch, usually done within the hour; results polled and recorded via the same `--save` path. Interactive evals (`--next`, single URL) stay on the live Messages API. | half-price overnight runs |
+| 8a.8 | **Prompt caching for the shared prefix:** rubric + `cv.md` are byte-identical across every eval in a run — mark them with `cache_control` so each call pays full price only for the JD (~0.1× input price on the cached prefix; 5-min TTL that a paced sequential queue keeps warm). Requires a byte-stable prefix: no timestamps or per-run IDs ahead of the JD. | each eval pays only for the JD |
 
-### Phase 8b — on-device backend: winc.cpp primary (private, no key, no cost)
+### Phase 8b — on-device backend: winc.cpp primary (private, no key, no cost) — **BUILD FIRST**
 
 > **Source of truth: the published repo — [github.com/samdotson61/winc.cpp](https://github.com/samdotson61/winc.cpp).**
 > All 8b integration work targets winc.cpp as released on GitHub (its README, `winc.toml` schema,
@@ -434,6 +468,10 @@ receive or store résumés.
 > Verified against origin/master (v1.4.5, 2026-06-09): `winc serve [--multi]` fronts llama.cpp's
 > `llama-server` (router included), serving the **Anthropic Messages API natively** (`/v1/messages`)
 > at the `host`/`port` in `winc.toml` (default `127.0.0.1:8080`).
+>
+> **Why 8b now leads Phase 8:** this local engine is the default backend for every surface AND what the
+> Phase 9 web + iOS/Android apps embed (WebLLM in-browser; the native wrapper ships the same on-device
+> inference) — landing it first means everything after it builds against the real default.
 
 | Step | What | Detail |
 |---|---|---|
@@ -517,7 +555,9 @@ This is the phase that makes Phase 9 a UI project instead of a rewrite.
 
 ## Phase 9 — Web and mobile apps (future / post-1.0)
 
-> **Status: ⬜ not started** — post-1.0 (milestone 10).
+> **Status: ⬜ not started** — post-1.0 (milestone 10). Both apps **embed the 8b on-device inference**
+> (WebLLM in the browser; the native iOS/Android wrapper ships the same local-model functionality) —
+> which is why 8b is the next build: the apps are thin shells around an engine that already exists.
 
 **Goal:** a hosted, cross-platform, bilingual **web app** — and, after it, a **mobile app** — where a
 non-technical user uploads a résumé and is pointed toward fitting jobs with little effort. **Ease of use

@@ -14,7 +14,7 @@ const PLANNED = {
   update: 'npm publish (Phase 7.5) — for now: git pull && npm install',
 }
 
-const COMMAND_ORDER = ['init', 'scan', 'seed', 'eval', 'pipeline', 'pdf', 'tracker', 'dashboard', 'tui', 'doctor', 'update']
+const COMMAND_ORDER = ['init', 'scan', 'seed', 'prescreen', 'eval', 'pipeline', 'pdf', 'outreach', 'tracker', 'dashboard', 'tui', 'doctor', 'update']
 
 function printHelp(t) {
   console.log(`jobdar — ${t('cli.tagline')}\n`)
@@ -58,9 +58,19 @@ async function main() {
       await runScan(rest)
       return 0
     }
+    case 'prescreen': {
+      const { runPrescreen } = await import('../lib/commands/prescreen.mjs')
+      await runPrescreen(rest)
+      return 0
+    }
     case 'eval': {
       const { runEval } = await import('../lib/commands/eval.mjs')
       await runEval(rest)
+      return 0
+    }
+    case 'outreach': {
+      const { runOutreach } = await import('../lib/commands/outreach.mjs')
+      await runOutreach(rest)
       return 0
     }
     case 'seed': {
@@ -105,7 +115,8 @@ async function main() {
 }
 
 main()
-  .then((code) => process.exit(code || 0))
+  // Respect a command's process.exitCode (refusals set it) — exit(0) would clobber it.
+  .then((code) => process.exit(code || process.exitCode || 0))
   .catch((err) => {
     console.error(err && err.stack ? err.stack : String(err))
     process.exit(1)
