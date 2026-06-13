@@ -6,6 +6,26 @@ All notable changes to Jobdar are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.17.1] — 2026-06-13
+
+Roadmap: resolve the two open build-blocking decisions so Phase 7.8/8 implementation starts unblocked.
+Planning only — no code.
+
+### Changed
+- **Eval bands DECIDED:** the eval verdict uses the **shipped** `lib/evaluations.mjs` `BANDS`
+  (Apply ≥ 4.0 / Research ≥ 3.5 / else Don't). The 8a.4 draft's ≥3.5/≥2.0 is dropped; the reconcile
+  warning is removed.
+- **BLS data source DECIDED — keyless OEWS bulk download, no key, no account.** Verified that the BLS
+  v2 API requires per-user registration (not out-of-the-box) and keyless v1 caps at ~10 requests/day,
+  while OEWS data is a keyless direct download (XLSX/TXT at `download.bls.gov` / `bls.gov/oes`). So 8d.2
+  ships a national-by-SOC seed floor + grows `data/cache/wages.yml` from keyless bulk downloads sliced
+  locally; 8d.2b's `lib/bls.mjs` drops all API-key/registration logic; SECURITY.md outbound hosts become
+  `download.bls.gov` / `www.bls.gov`. Open Decision #8 resolved; the 8d Risk row narrows to bulk-file
+  size/format/cadence.
+- **New governing principle — "out of the box with winc":** no feature may require an external account
+  or manual key generation to work; prefer the keyless path even at the cost of more code. Operationalized
+  by 8b.0 (auto-install), 8b.4 (local inference default), and 8d.2 (keyless wages).
+
 ## [1.17.0] — 2026-06-13
 
 Roadmap: reconcile with the updated `rec-spec.md` + winc-jobdar `1.21.3-jobdar.4`. Planning only — no
