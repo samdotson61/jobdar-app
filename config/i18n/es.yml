@@ -181,6 +181,7 @@ eval:
   next_screened_hint: "{count} puesto(s) quedaron filtrados por el prescreen — vuelve a ejecutar con --include-screened para verlos de todos modos."
   next_screened_note: "el prescreen filtró este puesto — {reason}"
   jd_for: "Descripción del puesto — {role} (obtenida para ti; puntúala frente a tu currículum):"
+  today: "La fecha de hoy es {date} — trata cualquier “Presente”/“Actual” del currículum como esta fecha, nunca como una fecha futura."
   jd_none: "No se pudo obtener la descripción automáticamente — abre {url} para leerla y luego puntúa."
   jd_error: "No se pudo obtener la descripción ({error}) — abre la URL para leerla y luego puntúa."
   model_needed: "La evaluación la hace el modelo — ejecuta `/jobdar eval <url>` en tu CLI de IA. Lee modes/eval.md, puntúa la compatibilidad con tu currículum y registra el veredicto."

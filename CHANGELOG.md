@@ -6,6 +6,50 @@ All notable changes to Jobdar are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.18.0] — 2026-06-13
+
+**Phase 7.8 — deterministic data quality (salary, dates, dedup).** The zero-token cleanup pass before
+the Phase 8 inference work: it makes the pipeline's pay, dates, and rows trustworthy without a model.
+Validated against a 100-JD corpus fetched live from 17 Greenhouse boards on macOS (committed as the
+acceptance set), then adversarially verified — 95% extraction precision after the fixes below.
+
+### Added
+- **`lib/salary.mjs` — deterministic STATED-pay extraction (7.8.1, rec-spec §1).** `extractPay(jd)`
+  reads pay via five ordered rules (hourly range ×2080, single hourly, annual range with K-suffix +
+  20k–600k sanity bound, single annual, location-tiered non-HCOL selection for a Midwest/SE
+  candidate); the model never produces a number. `bandVsTarget(pay, target)` scores fit against
+  `target_salary` with a **lenient `near` band** — a role whose top pay is within `SALARY_TOLERANCE`
+  (5%) under target is caught (not rejected) at a slightly reduced score, ramping linearly to 0 at
+  `SALARY_FLOOR` (15%) under. Bands: **above / within / near / below**. Wires the previously-dormant
+  `target_salary` + `score_weights.salary`. **Never a gate** — pay only nudges the prescreen rank.
+- **`lib/dates.mjs` — résumé date normalization (7.8.2, rec-spec §3a).** `normalizeResumeDates(text,
+  today)` resolves an open-ended "Present"/"Current" in a date range to today's month-year (prose
+  untouched), so an eval can't misread "Mar 2025 – Present" as future employment. `jobdar eval` now
+  prints the current date; `modes/eval.md` instructs the model to use it.
+- **Near-duplicate dedup (7.8.3, rec-spec §5).** `mergeScanned` now collapses a second posting of the
+  same role (normalized company + title + canonical metro, via the new `regions.mjs canonicalLocation`)
+  into an **alias on the survivor** (tracked > evaluated > earliest first-seen) instead of a duplicate
+  row; `recordEval`/`recordPrescreen`/`setStatus` resolve an alias URL to its survivor before writing,
+  and `prune` keeps a survivor whose alias is still live. New `pay` + `aliases` pipeline columns.
+- **Committed salary acceptance corpus** at `test/fixtures/salary-corpus.json` (100 live JDs) + 13 new
+  offline tests covering the five rules, leniency, false-positive guards, entity/USD ranges, dedup,
+  dates, and `canonicalLocation`. `npm test`: 74 passing, 0 failing, still fully offline.
+
+### Fixed
+- **`lib/html.mjs decodeEntities` now decodes `&mdash;`/`&ndash;` (and `&rsquo;`/`&ldquo;`/`&rdquo;`/
+  `&hellip;`/`&bull;`/`&deg;`/… + hex `&#x…;`).** Greenhouse encodes salary ranges as
+  `$73,125&mdash;$117,000`; leaving the dash entity undecoded made a range parse as its floor only —
+  it silently truncated 34% of extractions in testing. The fix helps every JD consumer, not just pay.
+- Salary extraction is robust to a `USD`/`US$` suffix between a figure and the separator
+  (`$143,000 USD - $177,000 USD`), rejects OTE/on-target-earnings ranges as base pay, rejects bare
+  numeric ranges (percentages, year-counts, headcounts), and skips foreign-currency figures.
+
+### Changed
+- **`modes/_shared.md` (+ Spanish peer): removed the stale `lib/scoring.mjs` pre-score reference
+  (7.8.4)** — that module was already deleted; over-experience screening is the zero-token prescreen
+  (`YEARS_CEILING`), and the model does the nuanced read. Documented the new STATED-pay band there and
+  in `modes/eval.md`. `target_salary`/`score_weights.salary` are now live (no longer dead config).
+
 ## [1.17.1] — 2026-06-13
 
 Roadmap: resolve the two open build-blocking decisions so Phase 7.8/8 implementation starts unblocked.

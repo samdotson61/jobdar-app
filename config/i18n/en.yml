@@ -181,6 +181,7 @@ eval:
   next_screened_hint: "{count} role(s) are screened out by prescreen — re-run with --include-screened to see them anyway."
   next_screened_note: "prescreen screened this role — {reason}"
   jd_for: "Job description — {role} (fetched for you; score it against your résumé):"
+  today: "Today's date is {date} — treat any “Present”/“Current” on the résumé as this date, never as a future date."
   jd_none: "Couldn't fetch the JD automatically — open {url} to read it, then score."
   jd_error: "Couldn't fetch the JD ({error}) — open the URL to read it, then score."
   model_needed: "Evaluation is model-backed — run `/jobdar eval <url>` in your AI CLI. It reads modes/eval.md, scores fit against your résumé, and records the verdict."

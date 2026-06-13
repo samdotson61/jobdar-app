@@ -14,6 +14,8 @@ your API key now, the on-device model from Phase 8. Apply the rubric in [`_share
 - The job description — `jobdar eval <url>` fetches it for you via the matching provider
   (greenhouse / workday / icims) and prints it; you read and score it. (A file or pasted text works too.)
 - The user's profile + résumé (`config/profile.yml`, `cv.md`).
+- **Today's date** — `jobdar eval` prints it. Use it: treat any "Present"/"Current" on the résumé as
+  today, **never as a future date** (a "Mar 2025 – Present" role is ongoing, not future employment).
 
 ## Steps
 1. Extract the role's must-haves, nice-to-haves, level, location, and any degree requirement.
@@ -43,6 +45,10 @@ Recommendation: {one line}
 degree_required: {yes | no | unclear}
 {if yes: hard gate or soft ("or equivalent experience")? For no-degree candidates, say what would
 close the gap. Degree-gated roles stay visible (flagged) when include_degree_required_roles is on.}
+
+## Pay
+{cite the JD's STATED range if present (`jobdar prescreen` extracts it into the `pay` column) and how
+it compares to target — above / within / near / below. If pay is undisclosed, say so. Never invent a number.}
 
 ## Next step
 {apply, tailor a CV (`jobdar pdf`), or move on — one concrete action}

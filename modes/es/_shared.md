@@ -54,7 +54,11 @@ Pondera estas dimensiones (el escáner ya filtró títulos y ubicaciones — tú
 `target_levels` es uno o más de `entry` (predeterminado), `mid`, `senior`. El escáner determinista
 ya aplica un **pre-filtro de título aproximado** (`lib/levels.mjs`): descarta los títulos que
 claramente se leen como un nivel que la persona no eligió (p. ej. "Senior Engineer" cuando eligió
-inicial) y deja pasar los títulos ambiguos ("Maintenance Technician", "Software Engineer").
+inicial) y deja pasar los títulos ambiguos ("Maintenance Technician", "Software Engineer"). El
+prescreen sin tokens (`lib/prescreen.mjs`) además **filtra una exigencia explícita de exceso de
+experiencia** (p. ej. "8+ años" frente a un objetivo inicial, vía `YEARS_CEILING`) y conserva el
+motivo citado en la fila — así una alta coincidencia de palabras clave no puede colar un puesto
+fuera de nivel en tu cola. Tú haces la lectura con matices de lo que sobrevive.
 
 Tu trabajo es la lectura con matices de lo que sobrevivió:
 
@@ -121,6 +125,11 @@ Cuando hables de salario, ajústalo al **nivel seleccionado** y al **costo de vi
 - Ajusta por el costo de vida del Medio Oeste / la región; señala los puestos remotos en EE. UU. que
   pagan según otro mercado.
 - Sé honesto con los rangos; cita el rango publicado en la oferta cuando exista.
+- El salario **DECLARADO** lo lee de forma determinista `lib/salary.mjs` (nunca tú) y aparece en
+  `jobdar prescreen` y en la columna `pay` del flujo. Frente al `target_salary` de la persona, un
+  puesto se clasifica como **por encima / dentro / cerca / por debajo**: "cerca" = el techo del pago
+  queda a ~5% por debajo del objetivo (una penalización leve y puntuada — no un descarte). El salario
+  nunca filtra un puesto; solo ajusta el orden del prescreen.
 
 ## Reglas que nunca se rompen
 

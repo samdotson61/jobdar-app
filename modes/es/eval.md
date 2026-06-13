@@ -15,6 +15,9 @@ clave de API ahora, el modelo en el dispositivo desde la Fase 8. Aplica la rúbr
 - La oferta — `jobdar eval <url>` la obtiene por ti vía el proveedor correspondiente
   (greenhouse / workday / icims) y la imprime; tú la lees y la puntúas. (Un archivo o texto pegado también sirve.)
 - El perfil y el currículum de la persona (`config/profile.yml`, `cv.md`).
+- **La fecha de hoy** — `jobdar eval` la imprime. Úsala: trata cualquier "Presente"/"Actual" del
+  currículum como hoy, **nunca como una fecha futura** (un puesto "mar 2025 – Presente" está en curso,
+  no es empleo futuro).
 
 ## Pasos
 1. Extrae los requisitos imprescindibles, los deseables, el nivel, la ubicación y cualquier
@@ -47,6 +50,11 @@ degree_required: {yes | no | unclear}
 {si es yes: ¿barrera absoluta o suave ("o experiencia equivalente")? Para quienes no tienen título,
 di qué cerraría la brecha. Los puestos con barrera de título siguen visibles (marcados) cuando
 include_degree_required_roles está activado.}
+
+## Salario
+{cita el rango DECLARADO de la oferta si existe (`jobdar prescreen` lo extrae en la columna `pay`) y
+cómo se compara con el objetivo — por encima / dentro / cerca / por debajo. Si no se publica, dilo.
+Nunca inventes una cifra.}
 
 ## Siguiente paso
 {postular, adaptar un CV (`jobdar pdf`) o seguir adelante — una acción concreta}

@@ -7,7 +7,7 @@
 > fit against your résumé, **tailors** an ATS-friendly CV/cover letter, and **tracks** every application —
 > with your data kept **local**, processed by a **private on-device model by default** or your own cloud API.
 >
-> **Status:** Phases 0–7, **5.5 and 7.7** complete — **Jobdar CLI `1.17.1`**. Bilingual core; **six scanner
+> **Status:** Phases 0–7, **5.5, 7.7 and 7.8** complete — **Jobdar CLI `1.18.0`**. Bilingual core; **six scanner
 > providers** (Greenhouse, Workday, iCIMS, Lever, Ashby + an opt-in JSON-LD reader), all live-verified,
 > all with eval-time JD fetch; level + region toggles; the `jobdar init` wizard; the full
 > **discover→prescreen→evaluate→track→build pipeline** — `scan` finds + filters (it never scores),
@@ -18,9 +18,9 @@
 > résumé; a scrollable cursor-driven TUI workspace + a web dashboard with analytics; freshness tracking
 > (`posted`/`first_seen`, `scan --prune`); security/privacy pass (zero telemetry, SSRF-guarded).
 > Remaining for 1.0 ship: **npm publish + marketplace** (needs the org from Step 0.2) and the **closed
-> beta** (7.6 — can start from the GitHub repo + installer now). **Next build phase: Phase 7.8** —
-> three zero-token deterministic fixes from the 2026-06-13 eval+pay study (pay extraction, date
-> normalization, dedup) that ship now and feed everything after. Then **Phase 8b** —
+> beta** (7.6 — can start from the GitHub repo + installer now). **Phase 7.8 shipped (1.18.0)** — the
+> zero-token deterministic pass (pay extraction, date normalization, dedup) that feeds everything after.
+> **Next build phase: Phase 8b** —
 > on-device inference via **winc.cpp** (the `winc-jobdar` branch), the **default** backend and the engine
 > the Phase 9 **web + iOS/Android apps embed**, with a one-command `jobdar backend --install` bootstrap.
 > Then **8a** (BYO-key automated eval — the opt-in accuracy upgrade), **8c**
@@ -207,9 +207,9 @@ on-device inference**, which is why winc.cpp comes first below.
 | # | Milestone | Where | Status | Why this order |
 |---|---|---|---|---|
 | ✅ | **Prescreen gate + outreach engine** | 7.7 | ✅ shipped 1.15.0 (2026-06-12) | kills wasted evals before any model runs; builds the queue 8a/8b will consume |
-| 1 | **Deterministic eval-precision (pay extract / date-normalize / dedup)** | 7.8 | ⬜ **NEXT BUILD** — zero-token, ships now | removes the worst measured defects (model salary, "future" dates, dup roles) before any backend work; feeds 8a/8d |
+| ✅ | **Deterministic eval-precision (pay extract / date-normalize / dedup)** | 7.8 | ✅ shipped 1.18.0 (2026-06-13) | removed the worst measured defects (model salary, "future" dates, dup roles) before any backend work; feeds 8a/8d |
 | 2 | **Closed beta starts** | 7.6 | ⬜ ready now (GitHub repo + installer; npm NOT required) | real-user feedback steers everything below |
-| 3 | **winc.cpp local backend — the DEFAULT (+ `jobdar backend --install` bootstrap)** | 8b.0–8b.5 | ⬜ after 7.8 | the on-device engine the Phase 9 web + iOS/Android apps embed; makes "private, free, offline" real |
+| 3 | **winc.cpp local backend — the DEFAULT (+ `jobdar backend --install` bootstrap)** | 8b.0–8b.5 | ⬜ **NEXT BUILD** — after 7.8 | the on-device engine the Phase 9 web + iOS/Android apps embed; makes "private, free, offline" real |
 | 4 | **BYO-key automated eval** | 8a.1–8a.3 | ⬜ after 8b — same client, different base URL | the opt-in accuracy upgrade; small build |
 | 5 | **Eval tuning + calibration + fairness + economics** | 8a.4–8a.9 | ⬜ with 8a | scores must be trustworthy before they're the product; research done → [docs/eval-tuning-research.md](docs/eval-tuning-research.md) — incl. the measured requirements-check win + grammar-constrained JSON |
 | 6 | **PDF/document understanding** | 8c.1–8c.5 | ⬜ | "upload a résumé → go" for init; PDF JDs in eval |
@@ -446,11 +446,17 @@ queue feeding `eval --next`, duplicate/follow-up refusals exiting non-zero, and 
 
 ## Phase 7.8 — Deterministic eval-precision primitives (pay, dates, dedup)
 
-> **Status: ⬜ NEXT BUILD** — three zero-token, deterministic fixes from the 2026-06-13 eval + pay-data
-> study (`rec-spec.md`: real résumé, 79 live Midwest/SE IT/PM postings, local models via `winc serve
-> --eval`). All ship BEFORE the Phase 8 backend work — they need no model, remove the worst MEASURED
-> defects, and several are prerequisites for 8a/8d. Throughline: **the model normalizes and judges fit;
-> deterministic code owns every number.**
+> **Status: ✅ shipped 1.18.0** (2026-06-13) — all five steps built, 13 new offline tests (74 total,
+> 0 failing). Validated on a **100-JD corpus fetched live on macOS** from 17 Greenhouse boards
+> (committed as the acceptance set) and adversarially verified at **95% extraction precision**.
+> As built, differing from the original sketch: the leniency band is **above / within / near / below**
+> (a `near` 4th band) with **halved** knobs — tolerance 5% / floor 15% (an $80k target still catches a
+> $78k role at score 0.86); the `lib/html.mjs` `decodeEntities` `&mdash;`/`&ndash;` fix was **bundled
+> in** (Greenhouse encodes ranges as `$73,125&mdash;$117,000`, the real cause of a 34% floor-only
+> truncation); and `target_salary`/`score_weights.salary` were **wired live**, not removed (7.8.4
+> narrowed to the stale `scoring.mjs` doc line). These zero-token fixes ship BEFORE the Phase 8 backend
+> work and feed 8a/8d. Throughline: **the model normalizes and judges fit; deterministic code owns
+> every number.**
 
 **Goal:** kill the defects no backend choice fixes — the model mislabeling/hallucinating salary (3 tiers
 got stated pay wrong; a 12-line extractor got 7/7), misreading recent dates as "future" employment, and
@@ -458,11 +464,11 @@ duplicate roles reaching the user — with pure code.
 
 | Step | What | Detail |
 |---|---|---|
-| 7.8.1 | **`lib/salary.mjs` — deterministic salary extraction** (rec-spec §1; highest impact / lowest effort). `extractPay(jd) → {period,min,max,annualMin,annualMax,location_tiered,quote} \| null` + `bandVsTarget(pay,target) → below/within/above`. Five ordered rules: hourly range ×2080, single hourly, annual range (K-suffix, 20k–600k sanity bound), single annual, **location-tiered** non-HCOL selection for a Midwest/SE candidate. Reuses `prescreen.mjs` conventions (`clip` quote helper, matchAll-pick-the-right-match, null-on-absent). **NOT a gate** — pay never screens a role out (4.5 honesty). Wires the dormant `target_salary` + `score_weights.salary`. The model NEVER produces a pay number. Also the STATED layer beneath the 8d resolver. | the worst defect, fixed |
-| 7.8.2 | **`lib/dates.mjs` — résumé date normalization** (rec-spec §3a). `normalizeResumeDates(resume, today)` resolves "Present"→today and strips ambiguity BEFORE the prompt; the eval injects `Today's date is {today}` **after** any cached prefix (so it never busts 8a.8's prompt-cache). Measured: a prompt date-stamp alone cut the "future employment" misread 3→1; code normalization closes the rest. | dates are code's job |
-| 7.8.3 | **Near-duplicate dedup** (rec-spec §5). Extend `lib/evaluations.mjs mergeScanned()` from URL-only to `normalized(company+title) + canonical-location` (campus/building collapsed within a metro; different metros stay distinct). Keep `url` as the row key; record a collapsed dup as an **alias on the survivor** (survivor = tracked > evaluated > earliest `first_seen`); `recordEval`/`recordPrescreen`/`setStatus` resolve an alias URL to its survivor before writing; live aliases feed `prune`. Needs a NEW city/metro canonicalizer (export `regions.mjs`'s metro tables — `parseLocation` only yields a state set). 4.5 honesty: the survivor shows it absorbed N postings. | one role, one row |
-| 7.8.4 | **Config + rubric cleanup** (rec-spec §3b residue): the since-REMOVED `lib/scoring.mjs` left orphans — reconcile/remove `score_weights.salary` + `target_salary` in `config.mjs` and the stale `lib/scoring.mjs` pre-score/levelCap reference in `modes/_shared.md`. (The model already emits no salary; this is dead-config cleanup, not a model change.) | sweep the dead scorer |
-| 7.8.5 | **Test-fixture migration** (blocks 7.8 acceptance): copy the 2026-06-13 study corpus off Windows (`jobdar-wider-2026-06-13.json` — 79 JDs; `winc-resume-eval`/`reeval-*.jsonl`) into a committed `test/fixtures/`; lift the 7 verified-pay JD snippets as inline test consts (test-all.mjs's established style — it reads no external JD fixtures today). The same corpus is the acceptance set for 8d resolver coverage, the §3 gate re-run, and 8a.5 calibration — migrate once, reuse. | unblock CI |
+| 7.8.1 ✅ | **`lib/salary.mjs` — deterministic salary extraction** (rec-spec §1; highest impact / lowest effort). `extractPay(jd) → {period,min,max,annualMin,annualMax,location_tiered,quote} \| null` + `bandVsTarget(pay,target) → above/within/near/below (lenient `near` band, tol 5% / floor 15%)`. Five ordered rules: hourly range ×2080, single hourly, annual range (K-suffix, 20k–600k sanity bound), single annual, **location-tiered** non-HCOL selection for a Midwest/SE candidate. Reuses `prescreen.mjs` conventions (`clip` quote helper, matchAll-pick-the-right-match, null-on-absent). **NOT a gate** — pay never screens a role out (4.5 honesty). Wires the dormant `target_salary` + `score_weights.salary`. The model NEVER produces a pay number. Also the STATED layer beneath the 8d resolver. | the worst defect, fixed |
+| 7.8.2 ✅ | **`lib/dates.mjs` — résumé date normalization** (rec-spec §3a). `normalizeResumeDates(resume, today)` resolves "Present"→today and strips ambiguity BEFORE the prompt; the eval injects `Today's date is {today}` **after** any cached prefix (so it never busts 8a.8's prompt-cache). Measured: a prompt date-stamp alone cut the "future employment" misread 3→1; code normalization closes the rest. | dates are code's job |
+| 7.8.3 ✅ | **Near-duplicate dedup** (rec-spec §5). Extend `lib/evaluations.mjs mergeScanned()` from URL-only to `normalized(company+title) + canonical-location` (campus/building collapsed within a metro; different metros stay distinct). Keep `url` as the row key; record a collapsed dup as an **alias on the survivor** (survivor = tracked > evaluated > earliest `first_seen`); `recordEval`/`recordPrescreen`/`setStatus` resolve an alias URL to its survivor before writing; live aliases feed `prune`. Needs a NEW city/metro canonicalizer (export `regions.mjs`'s metro tables — `parseLocation` only yields a state set). 4.5 honesty: the survivor shows it absorbed N postings. | one role, one row |
+| 7.8.4 ✅ | **Config + rubric cleanup** (rec-spec §3b residue): the since-REMOVED `lib/scoring.mjs` left orphans — reconcile/remove `score_weights.salary` + `target_salary` in `config.mjs` and the stale `lib/scoring.mjs` pre-score/levelCap reference in `modes/_shared.md`. (The model already emits no salary; this is dead-config cleanup, not a model change.) | sweep the dead scorer |
+| 7.8.5 ✅ | **Test-fixture migration** (blocks 7.8 acceptance): copy the 2026-06-13 study corpus off Windows (`jobdar-wider-2026-06-13.json` — 79 JDs; `winc-resume-eval`/`reeval-*.jsonl`) into a committed `test/fixtures/`; lift the 7 verified-pay JD snippets as inline test consts (test-all.mjs's established style — it reads no external JD fixtures today). The same corpus is the acceptance set for 8d resolver coverage, the §3 gate re-run, and 8a.5 calibration — migrate once, reuse. | unblock CI |
 
 **Verification gate:** `extractPay` returns the correct annual band for the 7 verified-pay fixtures
 (Carle $37.64/hr→$78,291 below; Censys non-HCOL $103–130k above; Cincinnati $91.5–116.7k above;

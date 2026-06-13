@@ -45,7 +45,10 @@ node bin/jobdar prescreen
 Sin tokens y rápido: los puestos con un requisito duro que no puedes superar (años exigidos, una
 autorización de seguridad activa, un título que excluiste) se descartan **citando la línea de la
 descripción como razón** — nunca en silencio — y el resto se ordena por coincidencia de
-habilidades + frescura para que evalúes primero el puesto más ganable.
+habilidades + frescura para que evalúes primero el puesto más ganable. También lee el **salario
+declarado** de la oferta y lo clasifica frente a tu `target_salary` (por encima / dentro / cerca /
+por debajo), mostrado junto a cada puesto; un puesto que paga algo por debajo del objetivo es una
+coincidencia "cerca", penalizada levemente, nunca descartada.
 
 ## 5. Evaluar un puesto
 

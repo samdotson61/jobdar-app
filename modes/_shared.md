@@ -55,9 +55,10 @@ already applies a **coarse title pre-filter** (`lib/levels.mjs`): it drops title
 as a level the user didn't pick (e.g. "Senior Engineer" when they chose entry), **always drops
 executive / above-the-top titles** (VP, "Vice President", President, Chief / C-suite, "Head of",
 Director, GM, Founder — never a target for this audience), and passes ambiguous titles ("Maintenance
-Technician", "Software Engineer") through to you. The deterministic 0–5 pre-score (`lib/scoring.mjs`)
-additionally **caps any above-target role into the Don't band**, so a high keyword overlap can't float
-an out-of-level role up.
+Technician", "Software Engineer") through to you. The zero-token prescreen (`lib/prescreen.mjs`)
+additionally **screens an explicit over-experience ask** (e.g. "8+ years" against an entry target, via
+`YEARS_CEILING`) and keeps the quoted reason on the row — so a high keyword overlap can't float an
+out-of-level role into your queue. You do the nuanced read on what survives.
 
 Your job is the nuanced read on what survived:
 
@@ -135,6 +136,10 @@ When you discuss pay, tune it to **the selected level** and **the region's cost 
   national-average or coastal-skewed number.
 - Adjust for Midwest / regional cost of living; flag remote-US roles that pay to a different market.
 - Be honest about ranges; cite the JD's posted range when present.
+- The **STATED** pay is read deterministically by `lib/salary.mjs` (never by you) and surfaces in
+  `jobdar prescreen` and the pipeline `pay` column. Against the user's `target_salary` a role bands as
+  **above / within / near / below**: "near" = top pay within ~5% under target (a slight, scored
+  penalty — not a miss). Pay never screens a role out; it only nudges the prescreen rank.
 
 ## Rules that never bend
 
