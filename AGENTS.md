@@ -51,7 +51,7 @@ Deterministic work needs no model; only **evaluation/tailoring** does.
 
 Each base mode has a full Spanish peer in `modes/es/`.
 
-> Status: Phases 0–7, 5.5 + 7.7 complete — Jobdar CLI 1.16.0. The brain is authored EN-canonical with full
+> Status: Phases 0–7, 5.5 + 7.7 complete — Jobdar CLI 1.17.0. The brain is authored EN-canonical with full
 > Spanish parity; level archetypes (Phase 4) and region tuning (Phase 5) are wired into the rubric.
 > Next up: on-device inference via winc.cpp (Phase 8b — the default backend, embedded by the Phase 9
 > web + iOS/Android apps), then BYO-key auto-eval (8a). See `CHANGELOG.md`.

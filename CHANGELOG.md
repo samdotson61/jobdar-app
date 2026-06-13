@@ -6,6 +6,36 @@ All notable changes to Jobdar are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.17.0] — 2026-06-13
+
+Roadmap: reconcile with the updated `rec-spec.md` + winc-jobdar `1.21.3-jobdar.4`. Planning only — no
+code. Brings the measured §3 eval-pipeline refinements (a 72-eval A/B/C/D study) and the now-shipped
+winc grammar path into the Phase 8 plan so implementation can begin against a flush roadmap.
+
+### Added
+- **8a.4a — grammar-constrained structured output:** the eval call uses winc's
+  `POST /v1/chat/completions` with `response_format=json_schema` (the 8a.4 schema) for guaranteed valid
+  JSON. **Winc side is already shipped** (winc-jobdar 1.21.3-jobdar.4: the eval profile advertises the
+  endpoint on ready; the router preserves `response_format` across both paths, regression-tested). Other
+  jobdar calls stay on `/v1/messages`.
+- **8a.4b — in-band requirements-check (measured win):** the eval schema adds a `required` block
+  (`{min_years, certs[], degree, candidate_meets_all}`) filled FIRST; best form passes prescreen's
+  quote-backed requirements into the prompt and has the model fill only `candidate_meets_all`. Measured
+  +reqcheck: Qwen-4B 4/6→6/6, gemma 2/3→3/3, Qwen-2B 1/3→2/3 gating (~+90 tokens). Few-shot examples
+  **rejected** (backfired — leniency + JSON corruption 6/6→4/6).
+- **8a.9 — targeted escalation ladder (optional):** run gemma on every role, re-score only borderline/
+  negative verdicts on Qwen-4B — recovers the small model's over-strict misses without paying 4B latency
+  everywhere.
+- **8a.4 cert gate:** extend `lib/prescreen.mjs extractLicense` to promote a stated-**required** cert
+  (e.g. "PMP required") from flag → hard gate for users who lack it.
+
+### Changed
+- **winc dependency pinned to `1.21.3-jobdar.4`** (was jobdar.3) and the 8b contract note now documents
+  **two surfaces** — `/v1/messages` (general) + the guaranteed-JSON `/v1/chat/completions` eval path.
+- Milestone-table eval-tuning range widened `8a.4–8a.8` → `8a.4–8a.9`.
+- `rec-spec.md` now carries a STATUS header marking it absorbed into the roadmap (roadmap is
+  authoritative; the doc remains the measured evidence + the winc-side contract).
+
 ## [1.16.0] — 2026-06-13
 
 Roadmap: fold in the 2026-06-13 eval + pay-data study (`rec-spec.md`) and pin the winc dependency to
