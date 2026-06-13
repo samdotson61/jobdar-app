@@ -6,6 +6,46 @@ All notable changes to Jobdar are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.16.0] — 2026-06-13
+
+Roadmap: fold in the 2026-06-13 eval + pay-data study (`rec-spec.md`) and pin the winc dependency to
+the `winc-jobdar` branch. Planning only — no code yet; every item is a roadmap step for the phases
+below. Verified against the live code + the newest winc-jobdar (`1.21.3-jobdar.3`) by a 7-track
+cross-analysis.
+
+### Added
+- **NEW Phase 7.8 — Deterministic eval-precision primitives (zero-token, NEXT BUILD, before Phase 8):**
+  `lib/salary.mjs` (deterministic pay extraction + `bandVsTarget`; the model never produces a number),
+  `lib/dates.mjs` (résumé date normalization — fixes the "Mar 2025–Present read as future" defect),
+  near-duplicate dedup in `mergeScanned` (company+title+canonical-location, alias-on-survivor), a
+  config/rubric cleanup of the removed-`lib/scoring.mjs` residue, and the Windows test-fixture
+  migration. Drawn from the study's measured defects; reuses the shipped prescreen conventions.
+- **Phase 8b — new step 8b.0:** `jobdar backend --install` one-command bootstrap (winc setup → tiered
+  model pull → `winc serve --eval` → `/health` canary), target fully-featured < 10 min; the Phase 9
+  first-run prototype. Plus the cross-repo ask for prebuilt `-jobdar.N` releases.
+- **Phase 8d — new sub-steps 8d.2a/8d.2b:** `lib/pay.mjs` three-layer `resolvePay` (stated → comparable
+  → BLS, mandatory source label) and `lib/bls.mjs` on-demand fetcher with a national-adjusted fallback;
+  the §2c hard split (model routes SOC/seniority, software owns every number).
+- **New Open Decision (#8):** BLS API-key model (recommend ship-no-key + national seed floor +
+  user-paste on init). **New Risk row:** BLS live-API-vs-annual-bulk + rate-limit + new outbound host.
+
+### Changed
+- **Phase 8 reordered earlier still:** Phase 7.8 (zero-token) now precedes the 8b winc build; the
+  milestone table renumbers around it.
+- **8b dependency pinned to the `winc-jobdar` branch** (`1.21.3-jobdar.3`) + `winc serve --eval`; the
+  stale "origin/master v1.4.5 / `winc serve`" note is replaced (master is now v1.21.2, and bare `serve`
+  runs reasoning ON → empty content). 8b.2 liveness = `GET /health`; model choice delegated to winc's
+  tiering (gemma4-e2b < 5 GiB / qwen3.5-4b ≥ 5 GiB; qwen3.5-2b floor-only). 8b.1 surfaces Messages-API
+  `usage` as a per-eval cost; 8b.4 flips `PROFILE_DEFAULTS.inference` `api`→`local` (Open Decision 2).
+- **REVISE 8a.4:** lock the eval JSON to exclude `salary_fit` (band merged post-model); the requirement
+  gate/clamp **reuses the shipped `lib/prescreen.mjs` extractors — no new `lib/gate.mjs`**; reconcile the
+  draft band thresholds (Apply ≥3.5) against the shipped scale (`BANDS`: Apply ≥4.0 / Research ≥3.5).
+- **REVISE 8a.5:** add the clamp-override log + per-tier agreement; move the live-backend scorer out of
+  `npm test` into an opt-in `jobdar calibrate` (preserves the offline-test invariant).
+- **REWRITE 8d.2:** from a static shipped `data/seed/wages.yml` to an on-demand growing
+  `data/cache/wages.yml` (+ a small national-by-SOC seed floor); preserve the metro COL index 8d.3/8d.4
+  depend on.
+
 ## [1.15.0] — 2026-06-12
 
 Phase 7.7 — apply-likelihood. Stop evaluating jobs you were never going to get; start warming up

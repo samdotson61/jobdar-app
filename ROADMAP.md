@@ -7,7 +7,7 @@
 > fit against your résumé, **tailors** an ATS-friendly CV/cover letter, and **tracks** every application —
 > with your data kept **local**, processed by a **private on-device model by default** or your own cloud API.
 >
-> **Status:** Phases 0–7, **5.5 and 7.7** complete — **Jobdar CLI `1.15.0`**. Bilingual core; **six scanner
+> **Status:** Phases 0–7, **5.5 and 7.7** complete — **Jobdar CLI `1.16.0`**. Bilingual core; **six scanner
 > providers** (Greenhouse, Workday, iCIMS, Lever, Ashby + an opt-in JSON-LD reader), all live-verified,
 > all with eval-time JD fetch; level + region toggles; the `jobdar init` wizard; the full
 > **discover→prescreen→evaluate→track→build pipeline** — `scan` finds + filters (it never scores),
@@ -18,9 +18,12 @@
 > résumé; a scrollable cursor-driven TUI workspace + a web dashboard with analytics; freshness tracking
 > (`posted`/`first_seen`, `scan --prune`); security/privacy pass (zero telemetry, SSRF-guarded).
 > Remaining for 1.0 ship: **npm publish + marketplace** (needs the org from Step 0.2) and the **closed
-> beta** (7.6 — can start from the GitHub repo + installer now). **Next build phase: Phase 8b** —
-> on-device inference via **winc.cpp**, the **default** backend and the engine the Phase 9 **web +
-> iOS/Android apps embed**. Then **8a** (BYO-key automated eval — the opt-in accuracy upgrade), **8c**
+> beta** (7.6 — can start from the GitHub repo + installer now). **Next build phase: Phase 7.8** —
+> three zero-token deterministic fixes from the 2026-06-13 eval+pay study (pay extraction, date
+> normalization, dedup) that ship now and feed everything after. Then **Phase 8b** —
+> on-device inference via **winc.cpp** (the `winc-jobdar` branch), the **default** backend and the engine
+> the Phase 9 **web + iOS/Android apps embed**, with a one-command `jobdar backend --install` bootstrap.
+> Then **8a** (BYO-key automated eval — the opt-in accuracy upgrade), **8c**
 > (PDF résumé/JD understanding), **8d** (offer evaluation), **8e** (the engine contract), then Phase 9
 > (web + mobile apps). Step-by-step:
 > [Remaining work — build-order implementation guide](#remaining-work--build-order-implementation-guide).
@@ -162,6 +165,7 @@ on-device model once [Phase 8](#phase-8--pluggable-inference-8b-on-device-via-wi
 - [Phase 6 — Effortless install & onboarding for anyone](#phase-6--effortless-install--onboarding-for-anyone)
 - [Phase 7 — Quality, dashboard, polish, release](#phase-7--quality-dashboard-polish-release)
 - [Phase 7.7 — Apply-likelihood: the prescreen gate + the outreach engine](#phase-77--apply-likelihood-the-prescreen-gate--the-outreach-engine)
+- [Phase 7.8 — Deterministic eval-precision primitives (pay, dates, dedup)](#phase-78--deterministic-eval-precision-primitives-pay-dates-dedup)
 - [Phase 8 — Pluggable inference (8b on-device via winc.cpp FIRST, then 8a BYO-key auto-eval)](#phase-8--pluggable-inference-8b-on-device-via-winccpp-first-then-8a-byo-key-auto-eval)
 - [Phase 8c — Document understanding (PDFs in, structured data out)](#phase-8c--document-understanding-pdfs-in-structured-data-out)
 - [Phase 8d — Offer evaluation](#phase-8d--offer-evaluation)
@@ -197,16 +201,17 @@ on-device inference**, which is why winc.cpp comes first below.
 | # | Milestone | Where | Status | Why this order |
 |---|---|---|---|---|
 | ✅ | **Prescreen gate + outreach engine** | 7.7 | ✅ shipped 1.15.0 (2026-06-12) | kills wasted evals before any model runs; builds the queue 8a/8b will consume |
-| 1 | **Closed beta starts** | 7.6 | ⬜ ready now (GitHub repo + installer; npm NOT required) | real-user feedback steers everything below |
-| 2 | **winc.cpp local backend — the DEFAULT** | 8b.1–8b.5 | ⬜ **NEXT BUILD** | the on-device engine the Phase 9 web + iOS/Android apps embed; makes "private, free, offline" real |
-| 3 | **BYO-key automated eval** | 8a.1–8a.3 | ⬜ after 8b — same client, different base URL | the opt-in accuracy upgrade; small build |
-| 4 | **Eval tuning + calibration + fairness + economics** | 8a.4–8a.8 | ⬜ with 8a | scores must be trustworthy before they're the product; research done → [docs/eval-tuning-research.md](docs/eval-tuning-research.md) |
-| 5 | **PDF/document understanding** | 8c.1–8c.5 | ⬜ | "upload a résumé → go" for init; PDF JDs in eval |
-| 6 | **Offer evaluation** | 8d.1–8d.5 | ⬜ | completes discover → evaluate → **decide** |
-| 7 | **The engine contract** | 8e.1–8e.4 | ⬜ | freezes the seam web/mobile build against |
-| 8 | **npm publish + marketplace → 1.0** | 7.5 | 🔶 blocked on Step 0.2 (org/trademark) only | distribution, not function |
-| 9 | **Workday quirk tenants; new ATS readers** | 5.5.4 / 5.5.5 | 🔶 / ⬜ demand-driven | parallel track, paced by beta demand |
-| 10 | **Web app, then mobile app** | 9.1–9.8 | ⬜ post-1.0 | thin front-ends over the 8e engine, with 8b inference embedded |
+| 1 | **Deterministic eval-precision (pay extract / date-normalize / dedup)** | 7.8 | ⬜ **NEXT BUILD** — zero-token, ships now | removes the worst measured defects (model salary, "future" dates, dup roles) before any backend work; feeds 8a/8d |
+| 2 | **Closed beta starts** | 7.6 | ⬜ ready now (GitHub repo + installer; npm NOT required) | real-user feedback steers everything below |
+| 3 | **winc.cpp local backend — the DEFAULT (+ `jobdar backend --install` bootstrap)** | 8b.0–8b.5 | ⬜ after 7.8 | the on-device engine the Phase 9 web + iOS/Android apps embed; makes "private, free, offline" real |
+| 4 | **BYO-key automated eval** | 8a.1–8a.3 | ⬜ after 8b — same client, different base URL | the opt-in accuracy upgrade; small build |
+| 5 | **Eval tuning + calibration + fairness + economics** | 8a.4–8a.8 | ⬜ with 8a | scores must be trustworthy before they're the product; research done → [docs/eval-tuning-research.md](docs/eval-tuning-research.md) |
+| 6 | **PDF/document understanding** | 8c.1–8c.5 | ⬜ | "upload a résumé → go" for init; PDF JDs in eval |
+| 7 | **Offer evaluation + on-demand BLS pay resolver** | 8d.1–8d.5 | ⬜ | completes discover → evaluate → **decide**; revised 8d.2 = a growing wage cache, not a static pack |
+| 8 | **The engine contract** | 8e.1–8e.4 | ⬜ | freezes the seam web/mobile build against |
+| 9 | **npm publish + marketplace → 1.0** | 7.5 | 🔶 blocked on Step 0.2 (org/trademark) only | distribution, not function |
+| 10 | **Workday quirk tenants; new ATS readers** | 5.5.4 / 5.5.5 | 🔶 / ⬜ demand-driven | parallel track, paced by beta demand |
+| 11 | **Web app, then mobile app** | 9.1–9.8 | ⬜ post-1.0 | thin front-ends over the 8e engine, with 8b inference embedded |
 
 ---
 
@@ -433,6 +438,34 @@ queue feeding `eval --next`, duplicate/follow-up refusals exiting non-zero, and 
 
 ---
 
+## Phase 7.8 — Deterministic eval-precision primitives (pay, dates, dedup)
+
+> **Status: ⬜ NEXT BUILD** — three zero-token, deterministic fixes from the 2026-06-13 eval + pay-data
+> study (`rec-spec.md`: real résumé, 79 live Midwest/SE IT/PM postings, local models via `winc serve
+> --eval`). All ship BEFORE the Phase 8 backend work — they need no model, remove the worst MEASURED
+> defects, and several are prerequisites for 8a/8d. Throughline: **the model normalizes and judges fit;
+> deterministic code owns every number.**
+
+**Goal:** kill the defects no backend choice fixes — the model mislabeling/hallucinating salary (3 tiers
+got stated pay wrong; a 12-line extractor got 7/7), misreading recent dates as "future" employment, and
+duplicate roles reaching the user — with pure code.
+
+| Step | What | Detail |
+|---|---|---|
+| 7.8.1 | **`lib/salary.mjs` — deterministic salary extraction** (rec-spec §1; highest impact / lowest effort). `extractPay(jd) → {period,min,max,annualMin,annualMax,location_tiered,quote} \| null` + `bandVsTarget(pay,target) → below/within/above`. Five ordered rules: hourly range ×2080, single hourly, annual range (K-suffix, 20k–600k sanity bound), single annual, **location-tiered** non-HCOL selection for a Midwest/SE candidate. Reuses `prescreen.mjs` conventions (`clip` quote helper, matchAll-pick-the-right-match, null-on-absent). **NOT a gate** — pay never screens a role out (4.5 honesty). Wires the dormant `target_salary` + `score_weights.salary`. The model NEVER produces a pay number. Also the STATED layer beneath the 8d resolver. | the worst defect, fixed |
+| 7.8.2 | **`lib/dates.mjs` — résumé date normalization** (rec-spec §3a). `normalizeResumeDates(resume, today)` resolves "Present"→today and strips ambiguity BEFORE the prompt; the eval injects `Today's date is {today}` **after** any cached prefix (so it never busts 8a.8's prompt-cache). Measured: a prompt date-stamp alone cut the "future employment" misread 3→1; code normalization closes the rest. | dates are code's job |
+| 7.8.3 | **Near-duplicate dedup** (rec-spec §5). Extend `lib/evaluations.mjs mergeScanned()` from URL-only to `normalized(company+title) + canonical-location` (campus/building collapsed within a metro; different metros stay distinct). Keep `url` as the row key; record a collapsed dup as an **alias on the survivor** (survivor = tracked > evaluated > earliest `first_seen`); `recordEval`/`recordPrescreen`/`setStatus` resolve an alias URL to its survivor before writing; live aliases feed `prune`. Needs a NEW city/metro canonicalizer (export `regions.mjs`'s metro tables — `parseLocation` only yields a state set). 4.5 honesty: the survivor shows it absorbed N postings. | one role, one row |
+| 7.8.4 | **Config + rubric cleanup** (rec-spec §3b residue): the since-REMOVED `lib/scoring.mjs` left orphans — reconcile/remove `score_weights.salary` + `target_salary` in `config.mjs` and the stale `lib/scoring.mjs` pre-score/levelCap reference in `modes/_shared.md`. (The model already emits no salary; this is dead-config cleanup, not a model change.) | sweep the dead scorer |
+| 7.8.5 | **Test-fixture migration** (blocks 7.8 acceptance): copy the 2026-06-13 study corpus off Windows (`jobdar-wider-2026-06-13.json` — 79 JDs; `winc-resume-eval`/`reeval-*.jsonl`) into a committed `test/fixtures/`; lift the 7 verified-pay JD snippets as inline test consts (test-all.mjs's established style — it reads no external JD fixtures today). The same corpus is the acceptance set for 8d resolver coverage, the §3 gate re-run, and 8a.5 calibration — migrate once, reuse. | unblock CI |
+
+**Verification gate:** `extractPay` returns the correct annual band for the 7 verified-pay fixtures
+(Carle $37.64/hr→$78,291 below; Censys non-HCOL $103–130k above; Cincinnati $91.5–116.7k above;
+Cincinnati BSA $56.8–72.5k below); the study's known dups (Kettering "PM Oper Excellence" ×2; two
+identical-pay Cincinnati PMs) collapse to one row each with no distinct-role loss; a "Mar 2025–Present"
+résumé no longer reads as future. All offline, no model, no network.
+
+---
+
 ## Phase 8 — Pluggable inference (8b on-device via winc.cpp FIRST, then 8a BYO-key auto-eval)
 
 > **Status: ⬜ not started — 8b (winc.cpp) is the NEXT build** (milestone 2): it's the default backend
@@ -454,8 +487,8 @@ rest; we never receive or store résumés.
 | 8a.1 | **`InferenceProvider` interface** (same plugin spirit as the scanner): `evaluate(jd, profile, cv)` → structured verdict `{ score, band, recommendation, … }`. The Markdown rubric (`modes/_shared.md` + `modes/eval.md`) is the shared spec. | abstraction |
 | 8a.2 | **`jobdar eval --auto [<url> \| --next \| --all-pending]`** — reads the key `init` already stores in `data/credentials.env` (today it's collected and never used), calls the **Anthropic Messages API** with rubric + JD + `cv.md`, parses the structured verdict, records it via the existing `eval --save` path. Batch mode walks the **prescreen-ranked queue (7.7)** politely — the gate has already removed roles a hard requirement closed, so every token lands on a winnable role. **One JD per request, always** — multi-JD prompts degrade quality, cross-contaminate verdicts, and break 8a.4's quoted-evidence design. | the single biggest daily-use unlock |
 | 8a.3 | **Minimal-slice + zero-retention posture:** send only the JD + relevant CV excerpt, never history; document the retention settings; key never leaves `credentials.env` (gitignored, 0600). | privacy |
-| 8a.4 | **Consistency guardrails + rubric design** (per [docs/eval-tuning-research.md](docs/eval-tuning-research.md)): pinned prompt, temperature 0, structured-output schema so every backend returns the same shape. **Decomposed sub-criteria** — skills 35% / experience 25% / level-fit 20% / logistics 10% / education-gate 10% — each a categorical `strong/partial/none` judgment **with a quoted JD line as evidence**, reason-then-judge ordering, 2 short anchor examples per band. **Code, not the model, computes the 0–5** from the weighted sub-judgments and applies band thresholds (Apply ≥ 3.5 / Research 2.0–3.4 / Don't < 2.0 — config-tunable). | accuracy |
-| 8a.5 | **Calibration set:** 30–50 real JDs hand-banded by us (incl. no-degree / "or equivalent experience" pairs) as fixtures; `test-all.mjs` scores them against the configured backend and reports agreement + drift on every prompt or model change. | trust |
+| 8a.4 | **Consistency guardrails + rubric design** (per [docs/eval-tuning-research.md](docs/eval-tuning-research.md)): pinned prompt, temperature 0, structured-output schema so every backend returns the same shape. **Decomposed sub-criteria** — skills 35% / experience 25% / level-fit 20% / logistics 10% / education-gate 10% — each a categorical `strong/partial/none` judgment **with a quoted JD line as evidence**, reason-then-judge ordering, 2 short anchor examples per band. **Code, not the model, computes the 0–5** from the weighted sub-judgments and applies band thresholds. **⚠ Reconcile the bands FIRST:** this step's draft (Apply ≥3.5 / Research 2.0–3.4) CONTRADICTS the SHIPPED scale in `lib/evaluations.mjs` (`BANDS`: Apply ≥4.0 / Research ≥3.5) — pick ONE before building. **§3 pipeline (rec-spec):** the eval JSON **MUST NOT contain `salary_fit`** (band merged post-model by `lib/salary.mjs`/8d resolver, §3b); optional `soc_code`/`seniority` gated behind the 8d pay resolver (emit only when it ships); the requirement gate/clamp **REUSES the shipped 7.7.1 `lib/prescreen.mjs` extractors + `lib/levels.mjs classifyTitle` — NO new `lib/gate.mjs`** (one extractor, two enforcement points: prescreen excludes pre-eval, the clamp overrides post-eval); unify on the shipped `YEARS_CEILING {entry:2,mid:5,senior:10}`; code owns the clamp (`qualified:false` → force the score below the Research band into `dont`, carrying the quoted gate line, via the existing `recordEval`). Pipeline order: normalizeDates → extract → gate → judge(fit-only) → clamp(+merge pay) → record. | accuracy + the §3 pipeline |
+| 8a.5 | **Calibration set + clamp-override log + per-tier agreement (trust):** 30–50 real hand-banded JDs (incl. no-degree / "or equivalent experience" pairs) as **offline** fixtures asserting (1) salary-band accuracy 100% where stated (7.8.1 `extractPay`), (2) gate correctness on reach roles (`qualified:false` every tier — OhioHealth ePMO / Cincinnati 6-yr PM / Carle construction), (3) source-label presence on silent roles (8d resolver). Persist every **clamp override** (model said X, gate/pay said Y) — plus the winc `model` id + `usage` — to a gitignored `data/` log (outreach-ledger privacy: no CV text) to compute per-tier agreement (gemma4-e2b / 4B / 2B) + drift on every prompt/model change. **The live-backend scorer is an opt-in `jobdar calibrate`, NOT `npm test`** — only the fixture corpus + the pure scoring/agreement/drift functions stay in `test-all.mjs` (preserves the offline-test invariant). | trust |
 | 8a.6 | **Fairness guards:** strip name/contact lines from the CV slice before the prompt is built (smaller bias surface AND less PII out the door — off-the-shelf LLMs measurably carry demographic bias in hiring contexts); under `no_degree`, a degree requirement can flag a role but never auto-zero it, and the calibration set makes a regression here a **test failure**, not a vibe. | fairness |
 | 8a.7 | **Bulk-eval economics — the Message Batches API:** `--all-pending` on the API backend submits one Batches-API job (one role per request) instead of N live calls — **50% of standard price**, up to 100k requests per batch, usually done within the hour; results polled and recorded via the same `--save` path. Interactive evals (`--next`, single URL) stay on the live Messages API. | half-price overnight runs |
 | 8a.8 | **Prompt caching for the shared prefix:** rubric + `cv.md` are byte-identical across every eval in a run — mark them with `cache_control` so each call pays full price only for the JD (~0.1× input price on the cached prefix; 5-min TTL that a paced sequential queue keeps warm). Requires a byte-stable prefix: no timestamps or per-run IDs ahead of the JD. | each eval pays only for the JD |
@@ -465,9 +498,13 @@ rest; we never receive or store résumés.
 > **Source of truth: the published repo — [github.com/samdotson61/winc.cpp](https://github.com/samdotson61/winc.cpp).**
 > All 8b integration work targets winc.cpp as released on GitHub (its README, `winc.toml` schema,
 > `winc serve` contract, and releases) — never a local checkout, which may drift behind origin.
-> Verified against origin/master (v1.4.5, 2026-06-09): `winc serve [--multi]` fronts llama.cpp's
-> `llama-server` (router included), serving the **Anthropic Messages API natively** (`/v1/messages`)
-> at the `host`/`port` in `winc.toml` (default `127.0.0.1:8080`).
+> **Dependency: the `winc-jobdar` BRANCH** (newest `1.21.3-jobdar.3`), NOT master — its **`winc serve
+> --eval`** profile is the contract: reasoning OFF at the template level (budget-0 measured broken on
+> Qwen3.5 → empty content), q8 KV / 16384 window, a native `/v1/messages` router on the `winc.toml`
+> port (default `127.0.0.1:8080`), auto-picking **gemma4-e2b < 5 GiB / qwen3.5-4b ≥ 5 GiB** (qwen3.5-2b
+> floor-only — over-accepts). Branch builds are versioned `-jobdar.N` and **refuse a master self-update**.
+> (The old "origin/master v1.4.5 / `winc serve`" note was doubly stale — master is now v1.21.2, and the
+> bare-`serve` agent profile runs reasoning ON, which returns EMPTY content to an eval client.)
 >
 > **Why 8b now leads Phase 8:** this local engine is the default backend for every surface AND what the
 > Phase 9 web + iOS/Android apps embed (WebLLM in-browser; the native wrapper ships the same on-device
@@ -475,10 +512,11 @@ rest; we never receive or store résumés.
 
 | Step | What | Detail |
 |---|---|---|
-| 8b.1 | **winc.cpp as the PRIMARY local backend.** `inference: local` points the SAME 8a client at winc's local server (default `http://127.0.0.1:8080/v1/messages`, configurable via `inference_url` to match the user's `winc.toml`) — it speaks the Anthropic Messages API natively, so no translation layer and no new client code. No key, no cost, fully offline. | one client, two backends |
-| 8b.2 | **Friendly liveness UX:** detect whether the local server is up; if not, print the exact start command (`winc serve`, or `winc serve --multi` for hot-swapped models) and the install pointer (`git clone https://github.com/samdotson61/winc.cpp` → run the installer, or a Releases binary + `winc setup`). | onboarding |
+| 8b.0 | **One-command local bootstrap — `jobdar backend --install`** (+ the on-device `jobdar init` path): `winc setup` (engine/PATH) → **winc-tiered model pull (DELEGATED — never hardcode an alias; gemma4-e2b ~2.9 GB low-end, qwen3.5-4b 2.6 GB ≥ 5 GiB)** → `winc serve --eval` → canary-verify (`GET /health` 200 + one real eval round-trip). Target **fully-featured < 10 min** (the model download is the long pole). Install via a prebuilt `-jobdar.N` release (no compiler) or `git clone -b winc-jobdar … && ./install.sh` (source; install.sh auto-installs Go) fallback. **This is the Phase 9 first-run prototype** — same model family, size budget, and 10-min SLA. **Cross-repo dep:** winc must publish prebuilt `-jobdar.N` releases per OS/arch (the sha256 download path exists in `update.go`, gated off for jobdar builds) for the no-compiler path. | the onboarding gate — BUILD FIRST in 8b |
+| 8b.1 | **winc.cpp as the PRIMARY local backend.** `inference: local` points the SAME 8a client at winc's local server (default `http://127.0.0.1:8080/v1/messages`, configurable via `inference_url` to match the user's `winc.toml`) — it speaks the Anthropic Messages API natively, so no translation layer and no new client code. No key, no cost, fully offline. The client captures the Messages-API `usage` block and surfaces input/output tokens as a per-eval transparency "cost" (tokens on the local path; dollars only on the 8a/api path). | one client, two backends |
+| 8b.2 | **Friendly liveness UX:** probe `GET /health` (proxied through to llama-server → 200 only when fully loaded); if down, print the exact start command **`winc serve --eval`** (NOT bare `winc serve` — that's the agent profile with reasoning ON → empty content) plus the install pointer (`git clone -b winc-jobdar https://github.com/samdotson61/winc.cpp` → `./install.sh`, or a prebuilt `-jobdar.N` release + `winc setup`). **Delegate model choice to winc** — never print or pull a specific alias. | onboarding |
 | 8b.3 | **Alternate local runtimes** behind the same interface for users without winc: **Ollama** / **llamafile** (OpenAI-compat shim mapped to the shared schema). Secondary — winc is the documented happy path. | breadth |
-| 8b.4 | **Backend selector + fallback:** `inference: local\|api\|auto`. **Default for everyone: `local` via winc.cpp** — private, free, no key; `api` (BYO key) is the opt-in accuracy upgrade; `auto` runs local and offers an API upgrade on borderline roles. Clear UX about the privacy/quality tradeoff. | user control |
+| 8b.4 | **Backend selector + fallback:** `inference: local\|api\|auto`. **Default for everyone: `local` via winc.cpp** — private, free, no key; `api` (BYO key) is the opt-in accuracy upgrade; `auto` runs local and offers an API upgrade on borderline roles. Clear UX about the privacy/quality tradeoff. **Flip `PROFILE_DEFAULTS.inference` from `'api'` to `'local'` here** — shipped code still defaults to `api`, contradicting Open Decision 2 (local-default, decided 2026-06-10). | user control |
 | 8b.5 | **(Future) confidential-cloud option:** TEE-based managed inference for cloud quality the operator can't read — only if local proves too weak and users won't BYO key. Documented, not built. | advanced |
 
 **Verification gate:** the same JD evaluates end-to-end with `inference: api` (BYO key) and with
@@ -523,7 +561,9 @@ numbers: deterministic code supplies market context; the model interprets it. (D
 | Step | What | Detail |
 |---|---|---|
 | 8d.1 | **`jobdar offer <company>`** — bilingual interactive capture: base, bonus, benefits, PTO, metro/remote, start date → stored on the tracker row (new `offer` fields + an `offer` state in `templates/states.yml`, EN canonical / ES alias per 1.4). | capture first |
-| 8d.2 | **Wage-context pack (deterministic, zero-token):** `data/seed/wages.yml` — BLS OEWS median/percentile wages for the entry archetypes × major metros + a metro cost-of-living index; refreshed per release with provenance documented. Code computes offer-vs-metro percentile and COL-adjusted comparisons. | facts from data, not the model |
+| 8d.2 | **On-demand wage cache (rec-spec §2 — REVISED from a static pack):** `data/cache/wages.yml` ships **EMPTY** and **grows on demand** — on a region change / a new metro surfacing, resolve region → metro MSAs → BLS area codes and fetch only the missing `(area, soc)` OEWS rows, append, offline thereafter (`jobdar pay --refresh` for the annual release). **Ship a small national-by-SOC seed** (`data/seed/wages-national.yml`) as the keyless, always-offline floor so coverage is never blank (honors the §2 "100% sourced band" bar offline / behind egress / over the API cap). **KEEP the metro cost-of-living index that 8d.3/8d.4/4.7 depend on** — relocate it into the seed, do NOT drop it. (Pay sparsity is real: only 23/79 study postings stated pay, worst on the target roles — IT Support 0/8 — so an external anchor is required, not optional.) | facts from data, on demand |
+| 8d.2a | **`lib/pay.mjs` — three-layer `resolvePay(jd, role, metro, target)`:** STATED (`lib/salary.mjs extractPay`, high) → COMPARABLE (in-scan median {soc, seniority, metro}, n≥3, reusing `cv_render matchedKeywords`, med) → BLS (`wages.yml` percentile by seniority: entry→p25 / mid→median / senior→p75, base). Always returns `{annualMin, annualMax, source, confidence, band}`; **the source label is mandatory UI text** ("stated $X" / "est. $Y (N comparable)" / "est. $Z (BLS median, [occ], [metro])"); never blank, never model-produced. | the de-skew engine |
+| 8d.2b | **`lib/bls.mjs` + the hard split (§2b/§2c):** `ensureWages(regions, socCodes)` (idempotent, batched, daily-cap-aware, resumable) + `lookupWage(...)` (pure cache read) + `nationalAdjusted(soc, metro)` fallback (national row × metro pay-differential, `source:'bls-national-adj'`) for rural/unreachable. SSRF-guarded via `lib/http.mjs` (`api.bls.gov` allowlist, HTTPS, `redirect:'error'`). **Hard split:** the **model is the SOC + seniority router ONLY** (its measured strength; deterministic `data/seed/soc-map.yml` fallback for offline/no-model — local-first); **software owns every number** (fetch, area-code lookup, percentile + hourly↔annual, cache). **⚠ Verify first:** OEWS may only be practical via the annual bulk file, not a live per-(area,soc) API — if so, restructure to download-the-release-once-then-slice-locally. **SECURITY.md (lockstep):** add `api.bls.gov` as a permitted outbound host — public reference data, SOC + area codes only, NO PII. | model routes, software calculates |
 | 8d.3 | **Offer rubric** `modes/offer.md` (EN + ES): the model weighs comp-vs-market (from 8d.2), benefits completeness, growth trajectory, commute/remote — plus entry-level-specific factors (training, mentorship, first-role résumé value) → structured verdict `{ assessment: strong/fair/below, negotiation_levers[], questions_to_ask[] }` under the same 8a.4 consistency guardrails. | judgment on top of facts |
 | 8d.4 | **Multi-offer compare:** `jobdar offer --compare` — a COL-adjusted side-by-side of every recorded offer. | the real decision moment |
 | 8d.5 | **Tests:** wage-math fixtures + verdict-shape checks on both backends in `test-all.mjs`. | parity |
@@ -620,6 +660,7 @@ from a guided wizard — the core promise — before we invest in iCIMS, the loc
 | **ATS ToS / rate-limiting / IP blocks** | Medium | Polite concurrency caps + backoff, honor robots, document responsible-use; human-in-the-loop (no auto-apply) |
 | **Mid-level is fuzzy to detect by title** | Medium | Coarse title filter + let the rubric do level-fit scoring; tune with real fixtures |
 | **Spanish parity rots** as EN evolves | Medium | Single i18n string table + a CI check for missing ES keys |
+| **BLS pay data (8d): live API vs annual bulk; rate limit; new outbound host** | Medium | Verify OEWS is a live per-`(area,soc)` API before committing to on-demand fetch — else download-the-annual-release-once + slice locally; ship a national-by-SOC seed floor (keyless, offline); cap-aware/paced/resumable fetch (a cold "nationwide" scan can blow the ~500/day key cap); document `api.bls.gov` in SECURITY.md (no PII — SOC + area codes only) |
 | **Name/trademark** | Low | "Jobdar" screened clear; lock with a formal trademark search + domain/org grab (Step 0.2) |
 | **Scope creep** | Medium | Hold to the MVP cut line; don't build every mode, region, the local backend, or the web app before the CLI lands |
 
@@ -644,6 +685,10 @@ from a guided wizard — the core promise — before we invest in iCIMS, the loc
    *open sub-question:* build vs. buy the static-host + scanner-API stack.
 7. **Other languages / dashboard / distribution.** → EN+ES for 1.0; TUI optional + later web dashboard;
    GitHub template + npm + Claude plugin for the CLI, standard web deploy for the app.
+8. **BLS API key (Phase 8d).** → *Recommend:* ship **no key** (honors "Jobdar ships no API keys") — the
+   national-by-SOC seed is the keyless default, and the user pastes a free BLS key on `init` ONLY for
+   live per-metro refresh. *Alt:* ship a shared key — simpler onboarding, but a shared rate-limit cap +
+   rotation/abuse risk, and it contradicts the no-keys posture.
 
 ---
 
