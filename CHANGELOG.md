@@ -6,6 +6,50 @@ All notable changes to Jobdar are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.19.0] — 2026-06-13
+
+**Phase 8b — on-device inference via winc.cpp (the new default backend).** The model becomes a swappable
+backend: the same evaluation brain runs against a fully local model with no key and no cost. Verified
+end-to-end on macOS against a live `winc serve --eval` (Qwen3.5-4B) — `/health` + a real eval round-trip
+scoring a canary role, zero external network.
+
+### Added
+- **`lib/inference.mjs` — one Messages-API client for both backends.** winc.cpp serves `/v1/messages`
+  natively on localhost, so a single tiny client covers local and api (BYO key) — only the base URL and
+  auth header differ. `resolveBackend`/`selectActive` resolve `inference: local | api | auto` (auto =
+  local when winc is up, else api when a key exists); `backendHealth` probes `GET /health`; `evaluate`
+  runs one role and `parseVerdict` reads the modes/eval.md score/band/recommendation; the Messages-API
+  `usage` block is captured for per-eval token transparency. Loopback-only for the no-TLS local path;
+  HTTPS + key enforced for api.
+- **`jobdar backend` command (EN/ES)** — `backend` (status: backend, URL, live-or-not), `backend --check`
+  (the verification gate: `/health` + one real eval round-trip, printing score/band/model/tokens), and
+  `backend --install` (delegates the model pull + serve to winc; jobdar orchestrates + verifies, and
+  prints the exact install path when winc is absent).
+- **8b.3 — alternate local runtimes (Ollama / llamafile).** `inference_runtime: winc | ollama | llamafile`
+  behind the same interface: winc speaks the Messages API; Ollama/llamafile speak OpenAI chat-completions,
+  so a `callOpenAI` shim (with the usage block mapped back to the Messages shape) covers them. Per-runtime
+  default URL + liveness path (Ollama has no `/health` → `/api/tags`); new `local_model` field for the
+  runtimes that need a model id (winc `--eval` auto-picks). winc stays the documented happy path. 10 new
+  offline tests via loopback mock servers (74 → 85 passing, still no network).
+
+### Changed
+- **Default backend flipped to `local` (winc.cpp)** in `PROFILE_DEFAULTS` and the `jobdar init` wizard
+  (local is now listed first and is the default; api is the opt-in accuracy upgrade) — private, no key,
+  no cost out of the box. New `inference_url` profile field (blank → winc default `http://127.0.0.1:8080`).
+
+### Fixed
+- Hardening from an adversarial review (21 findings triaged): `parseVerdict` now reads the band from the
+  score line's tag only (preamble prose like "don't rule it out…" can't hijack it) and rejects
+  off-rubric numbers (a `10`/`50` from a drifting model is unparsed, not a truncated wrong score);
+  `resolveBackend` threads the injected env to the API key (true pure function); `callMessages` never
+  stringifies an odd content shape to `[object Object]`; the `--check` canary points at `winc serve
+  --eval` when a healthy server replies empty (the bare-`winc serve` trap); and stale "Phase 8 / arrives
+  in Phase 8" framing was cleared from `init`, `AGENTS.md`, `SECURITY.md`, `docs/legal.md`, and ROADMAP 6.4.
+
+Scope notes: 8b.5 (confidential-cloud) remains future (documented-only); the full
+`eval --auto` batch UX is Phase 8a, which reuses this exact client with a different base URL. winc.cpp
+itself ships from its own repo (the `winc-jobdar` branch) — these are the Jobdar-side integration pieces.
+
 ## [1.18.1] — 2026-06-13
 
 Patch: harden Phase 7.8 against 7 findings from an adversarial multi-agent self-review — all latent at

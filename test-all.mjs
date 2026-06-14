@@ -33,6 +33,8 @@ import { decodeEntities, stripTags } from './lib/html.mjs'
 import { baseRoleTitle, peopleFinderLinks, businessDaysBetween, canContact, canFollowup, dueFollowups, lintDraft } from './lib/outreach.mjs'
 import { trackerRowsFrom } from './lib/tracker.mjs'
 import { cvToHtml, matchedKeywords } from './lib/cv_render.mjs'
+import http from 'node:http'
+import { resolveBackend, isLoopbackUrl, parseVerdict, selectActive, backendHealth, callMessages, callOpenAI, callBackend, evaluate, WINC_DEFAULT_URL, LOCAL_RUNTIMES } from './lib/inference.mjs'
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url))
 const tests = []
@@ -886,6 +888,165 @@ test('salary: extractPay runs clean over the committed live corpus, mdash ranges
   assert.ok(mdash.length >= 5, `expected mdash pay ranges in the corpus, got ${mdash.length}`)
   const fullRanges = mdash.map((j) => extractPay(j.description)).filter((p) => p && p.annualMin !== p.annualMax)
   assert.ok(fullRanges.length >= Math.floor(mdash.length * 0.6), `mdash ranges must parse as ranges not floors: ${fullRanges.length}/${mdash.length}`)
+})
+
+// --- Phase 8b: inference backend (winc.cpp local + api), all offline via a loopback mock server ---
+
+// Spin a fake Messages-API server on 127.0.0.1 (loopback = no external network). Returns { url, close }.
+function mockBackend({ reply = 'Fit score: 4.2 (Apply)\nRecommendation: strong SQL match' } = {}) {
+  return new Promise((resolve) => {
+    const server = http.createServer((req, res) => {
+      if (req.url === '/health') { res.writeHead(200); res.end('ok'); return }
+      if (req.method === 'POST' && req.url === '/v1/messages') {
+        res.writeHead(200, { 'content-type': 'application/json' })
+        res.end(JSON.stringify({ model: 'mock-2b', content: [{ type: 'text', text: reply }], usage: { input_tokens: 40, output_tokens: 12 } }))
+        return
+      }
+      res.writeHead(404); res.end()
+    })
+    server.listen(0, '127.0.0.1', () => resolve({ url: `http://127.0.0.1:${server.address().port}`, close: () => new Promise((r) => server.close(r)) }))
+  })
+}
+
+test('inference: resolveBackend defaults to local winc, honors profile + env overrides', () => {
+  const d = resolveBackend({}, {})
+  assert.equal(d.mode, 'local')
+  assert.equal(d.localUrl, WINC_DEFAULT_URL)
+  assert.ok(d.apiModel && d.apiUrl.startsWith('https://'))
+  assert.equal(resolveBackend({ inference: 'api' }, {}).mode, 'api')
+  assert.equal(resolveBackend({ inference: 'bogus' }, {}).mode, 'local') // unknown → local
+  assert.equal(resolveBackend({ inference_url: 'http://127.0.0.1:9000/' }, {}).localUrl, 'http://127.0.0.1:9000') // trailing slash trimmed
+  assert.equal(resolveBackend({}, { JOBDAR_INFERENCE_URL: 'http://localhost:1234' }).localUrl, 'http://localhost:1234')
+})
+
+test('inference: isLoopbackUrl gates the no-TLS local path', () => {
+  for (const u of ['http://127.0.0.1:8080', 'http://localhost:8080', 'http://[::1]:8080']) assert.ok(isLoopbackUrl(u), u)
+  for (const u of ['https://api.anthropic.com', 'http://evil.example.com', 'not a url']) assert.ok(!isLoopbackUrl(u), u)
+})
+
+test('inference: parseVerdict reads the modes/eval.md format; band falls back to the score', () => {
+  assert.deepEqual(parseVerdict('Fit score: 4.2 (Apply)\nRecommendation: strong fit'), { score: 4.2, band: 'apply', recommendation: 'strong fit' })
+  assert.equal(parseVerdict('Fit score: 3.6').band, 'research') // band derived from score when no tag
+  assert.equal(parseVerdict('Fit score: 2.0').band, 'dont')
+  assert.equal(parseVerdict('no score here').score, null)
+  // band comes from the score line's tag, not stray prose (a 2B model's preamble must not hijack it)
+  assert.deepEqual(parseVerdict("don't rule it out — Fit score: 4.8 (Apply)"), { score: 4.8, band: 'apply', recommendation: '' })
+  assert.equal(parseVerdict('Fit score: 4.5\nRecommendation: research the salary, then apply').band, 'apply') // no tag → from score
+  // off-rubric numbers (model drifted to 0–10 / 0–100) are unparsed, never a truncated wrong score
+  assert.equal(parseVerdict('Fit score: 10').score, null)
+  assert.equal(parseVerdict('Fit score: 50').score, null)
+})
+
+test('inference: backendHealth — loopback up is true, closed port false, non-loopback false', async () => {
+  const m = await mockBackend()
+  assert.equal(await backendHealth(m.url), true)
+  await m.close()
+  assert.equal(await backendHealth(m.url, { timeoutMs: 500 }), false) // server closed
+  assert.equal(await backendHealth('https://api.anthropic.com'), false) // not loopback → not probed
+})
+
+test('inference: selectActive resolves local/api/auto; auto falls back to api when winc is down', async () => {
+  const m = await mockBackend()
+  const localProfile = { inference: 'local', inference_url: m.url }
+  const up = await selectActive(localProfile)
+  assert.equal(up.kind, 'local')
+  assert.equal(up.up, true)
+  const prevKey = process.env.JOBDAR_API_KEY
+  process.env.JOBDAR_API_KEY = 'sk-test'
+  try {
+    const api = await selectActive({ inference: 'api' })
+    assert.equal(api.kind, 'api')
+    assert.equal(api.up, true)
+    const auto = await selectActive({ inference: 'auto', inference_url: m.url })
+    assert.equal(auto.kind, 'local') // winc up → auto picks local
+    await m.close()
+    const autoDown = await selectActive({ inference: 'auto', inference_url: m.url })
+    assert.equal(autoDown.kind, 'api') // winc down + key → auto picks api
+  } finally {
+    if (prevKey === undefined) delete process.env.JOBDAR_API_KEY
+    else process.env.JOBDAR_API_KEY = prevKey
+  }
+})
+
+test('inference: callMessages + evaluate complete a round-trip and parse the verdict (mock backend)', async () => {
+  const m = await mockBackend()
+  const active = { kind: 'local', baseUrl: m.url, key: '', model: '' }
+  const r = await callMessages(active, { system: 'sys', user: 'hi', maxTokens: 64 })
+  assert.ok(r.text.includes('Fit score'))
+  assert.deepEqual(r.usage, { input_tokens: 40, output_tokens: 12 })
+  const v = await evaluate({ active, jd: 'Data Analyst — SQL, Excel.', cv: 'Analyst with SQL.', today: '2026-06-13' })
+  assert.equal(v.score, 4.2)
+  assert.equal(v.band, 'apply')
+  assert.equal(v.backend, 'local')
+  await m.close()
+})
+
+// Mock an OpenAI chat-completions server (Ollama/llamafile shape) on loopback.
+function mockOpenAI({ content = 'Fit score: 4.0 (Apply)\nRecommendation: solid' } = {}) {
+  return new Promise((resolve) => {
+    const server = http.createServer((req, res) => {
+      if (req.url === '/api/tags') { res.writeHead(200); res.end('{}'); return }
+      if (req.method === 'POST' && req.url === '/v1/chat/completions') {
+        res.writeHead(200, { 'content-type': 'application/json' })
+        res.end(JSON.stringify({ model: 'ollama-qwen', choices: [{ message: { role: 'assistant', content } }], usage: { prompt_tokens: 30, completion_tokens: 9 } }))
+        return
+      }
+      res.writeHead(404); res.end()
+    })
+    server.listen(0, '127.0.0.1', () => resolve({ url: `http://127.0.0.1:${server.address().port}`, close: () => new Promise((r) => server.close(r)) }))
+  })
+}
+
+test('inference: 8b.3 runtime resolution — winc (Messages) default, ollama/llamafile (OpenAI) shims', () => {
+  assert.deepEqual(LOCAL_RUNTIMES, ['winc', 'ollama', 'llamafile'])
+  const w = resolveBackend({}, {})
+  assert.equal(w.runtime, 'winc'); assert.equal(w.protocol, 'messages'); assert.equal(w.healthPath, '/health')
+  const o = resolveBackend({ inference_runtime: 'ollama' }, {})
+  assert.equal(o.protocol, 'openai'); assert.equal(o.localUrl, 'http://127.0.0.1:11434'); assert.equal(o.healthPath, '/api/tags')
+  assert.equal(resolveBackend({ inference_runtime: 'llamafile' }, {}).localUrl, 'http://127.0.0.1:8080')
+  assert.equal(resolveBackend({ inference_runtime: 'bogus' }, {}).runtime, 'winc') // unknown → winc
+  assert.equal(resolveBackend({ local_model: 'qwen2.5' }, {}).localModel, 'qwen2.5')
+})
+
+test('inference: 8b.3 OpenAI-compat shim — health, selectActive, and an eval round-trip (mock ollama)', async () => {
+  const m = await mockOpenAI()
+  const profile = { inference: 'local', inference_runtime: 'ollama', inference_url: m.url, local_model: 'qwen2.5' }
+  assert.equal(await backendHealth(m.url, { path: '/api/tags' }), true)
+  const active = await selectActive(profile)
+  assert.equal(active.protocol, 'openai'); assert.equal(active.up, true); assert.equal(active.model, 'qwen2.5')
+  const r = await callOpenAI(active, { system: 's', user: 'u' })
+  assert.ok(r.text.includes('Fit score'))
+  assert.deepEqual(r.usage, { input_tokens: 30, output_tokens: 9 }) // OpenAI usage mapped to the Messages shape
+  const v = await evaluate({ active, jd: 'Data Analyst — SQL.', cv: 'Analyst with SQL.', today: '2026-06-14' })
+  assert.equal(v.score, 4.0); assert.equal(v.band, 'apply'); assert.equal(v.runtime, 'ollama') // callBackend dispatched to OpenAI
+  await m.close()
+})
+
+test('inference: 8b.3 callBackend routes by protocol; callOpenAI enforces the loopback guard', async () => {
+  await assert.rejects(callOpenAI({ runtime: 'ollama', baseUrl: 'https://evil.example.com', key: 'k' }, { user: 'x' }), /loopback/)
+  const mm = await mockBackend() // answers ONLY /v1/messages (+/health)
+  const mo = await mockOpenAI() //  answers ONLY /v1/chat/completions (+/api/tags)
+  const viaMessages = await callBackend({ kind: 'local', protocol: 'messages', baseUrl: mm.url }, { user: 'u' })
+  assert.ok(viaMessages.text.includes('Fit score')) // routed to /v1/messages (would 404→throw if misrouted)
+  const viaOpenAI = await callBackend({ kind: 'local', protocol: 'openai', runtime: 'ollama', baseUrl: mo.url, model: 'm' }, { user: 'u' })
+  assert.ok(viaOpenAI.text.includes('Fit score')) // routed to /v1/chat/completions
+  await mm.close(); await mo.close()
+})
+
+test('inference: selectActive marks an OpenAI runtime with no model NOT ready (ollama /api/tags 200s regardless)', async () => {
+  const m = await mockOpenAI()
+  const noModel = await selectActive({ inference: 'local', inference_runtime: 'ollama', inference_url: m.url }) // local_model blank
+  assert.equal(noModel.up, false) // daemon up but no model → not ready
+  assert.match(noModel.reason, /no model/)
+  const withModel = await selectActive({ inference: 'local', inference_runtime: 'ollama', inference_url: m.url, local_model: 'qwen2.5' })
+  assert.equal(withModel.up, true)
+  await m.close()
+})
+
+test('inference: callMessages guards — api requires HTTPS + key; local requires loopback', async () => {
+  await assert.rejects(callMessages({ kind: 'api', baseUrl: 'http://127.0.0.1:1', key: 'k' }, { user: 'x' }), /non-HTTPS/)
+  await assert.rejects(callMessages({ kind: 'api', baseUrl: 'https://api.anthropic.com', key: '' }, { user: 'x' }), /No API key/)
+  await assert.rejects(callMessages({ kind: 'local', baseUrl: 'http://evil.example.com', key: '' }, { user: 'x' }), /loopback/)
 })
 
 let passed = 0

@@ -14,7 +14,7 @@ const PLANNED = {
   update: 'npm publish (Phase 7.5) — for now: git pull && npm install',
 }
 
-const COMMAND_ORDER = ['init', 'scan', 'seed', 'prescreen', 'eval', 'pipeline', 'pdf', 'outreach', 'tracker', 'dashboard', 'tui', 'doctor', 'update']
+const COMMAND_ORDER = ['init', 'scan', 'seed', 'prescreen', 'eval', 'pipeline', 'pdf', 'outreach', 'tracker', 'dashboard', 'tui', 'backend', 'doctor', 'update']
 
 function printHelp(t) {
   console.log(`jobdar — ${t('cli.tagline')}\n`)
@@ -81,6 +81,11 @@ async function main() {
     case 'pdf': {
       const { runPdf } = await import('../lib/commands/pdf.mjs')
       await runPdf(rest)
+      return 0
+    }
+    case 'backend': {
+      const { runBackend } = await import('../lib/commands/backend.mjs')
+      await runBackend(rest)
       return 0
     }
     case 'doctor': {

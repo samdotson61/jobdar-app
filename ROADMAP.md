@@ -7,7 +7,7 @@
 > fit against your résumé, **tailors** an ATS-friendly CV/cover letter, and **tracks** every application —
 > with your data kept **local**, processed by a **private on-device model by default** or your own cloud API.
 >
-> **Status:** Phases 0–7, **5.5, 7.7 and 7.8** complete — **Jobdar CLI `1.18.1`**. Bilingual core; **six scanner
+> **Status:** Phases 0–7, **5.5, 7.7, 7.8 and 8b** complete — **Jobdar CLI `1.19.0`**. Bilingual core; **six scanner
 > providers** (Greenhouse, Workday, iCIMS, Lever, Ashby + an opt-in JSON-LD reader), all live-verified,
 > all with eval-time JD fetch; level + region toggles; the `jobdar init` wizard; the full
 > **discover→prescreen→evaluate→track→build pipeline** — `scan` finds + filters (it never scores),
@@ -20,10 +20,11 @@
 > Remaining for 1.0 ship: **npm publish + marketplace** (needs the org from Step 0.2) and the **closed
 > beta** (7.6 — can start from the GitHub repo + installer now). **Phase 7.8 shipped (1.18.0)** — the
 > zero-token deterministic pass (pay extraction, date normalization, dedup) that feeds everything after.
-> **Next build phase: Phase 8b** —
-> on-device inference via **winc.cpp** (the `winc-jobdar` branch), the **default** backend and the engine
-> the Phase 9 **web + iOS/Android apps embed**, with a one-command `jobdar backend --install` bootstrap.
-> Then **8a** (BYO-key automated eval — the opt-in accuracy upgrade), **8c**
+> **Phase 8b shipped (1.19.0)** — on-device inference via **winc.cpp** (the `winc-jobdar` branch) is now
+> the **default** backend (private, no key, no cost) and the engine the Phase 9 **web + iOS/Android apps
+> embed**, with a `jobdar backend` command + `--install` bootstrap; verified end-to-end against a live
+> `winc serve --eval`. **Next build phase: Phase 8a** (BYO-key automated eval — the opt-in accuracy
+> upgrade, reusing the same client with a different base URL). Then **8c**
 > (PDF résumé/JD understanding), **8d** (offer evaluation), **8e** (the engine contract), then Phase 9
 > (web + mobile apps). Step-by-step:
 > [Remaining work — build-order implementation guide](#remaining-work--build-order-implementation-guide).
@@ -209,8 +210,8 @@ on-device inference**, which is why winc.cpp comes first below.
 | ✅ | **Prescreen gate + outreach engine** | 7.7 | ✅ shipped 1.15.0 (2026-06-12) | kills wasted evals before any model runs; builds the queue 8a/8b will consume |
 | ✅ | **Deterministic eval-precision (pay extract / date-normalize / dedup)** | 7.8 | ✅ shipped 1.18.0 (2026-06-13) | removed the worst measured defects (model salary, "future" dates, dup roles) before any backend work; feeds 8a/8d |
 | 2 | **Closed beta starts** | 7.6 | ⬜ ready now (GitHub repo + installer; npm NOT required) | real-user feedback steers everything below |
-| 3 | **winc.cpp local backend — the DEFAULT (+ `jobdar backend --install` bootstrap)** | 8b.0–8b.5 | ⬜ **NEXT BUILD** — after 7.8 | the on-device engine the Phase 9 web + iOS/Android apps embed; makes "private, free, offline" real |
-| 4 | **BYO-key automated eval** | 8a.1–8a.3 | ⬜ after 8b — same client, different base URL | the opt-in accuracy upgrade; small build |
+| ✅ | **winc.cpp local backend — the DEFAULT (+ `jobdar backend --install` bootstrap)** | 8b.0–8b.5 | ✅ shipped 1.19.0 (2026-06-13) | the on-device engine the Phase 9 web + iOS/Android apps embed; makes "private, free, offline" real |
+| 4 | **BYO-key automated eval** | 8a.1–8a.3 | ⬜ **NEXT BUILD** — same client, different base URL | the opt-in accuracy upgrade; small build |
 | 5 | **Eval tuning + calibration + fairness + economics** | 8a.4–8a.9 | ⬜ with 8a | scores must be trustworthy before they're the product; research done → [docs/eval-tuning-research.md](docs/eval-tuning-research.md) — incl. the measured requirements-check win + grammar-constrained JSON |
 | 6 | **PDF/document understanding** | 8c.1–8c.5 | ⬜ | "upload a résumé → go" for init; PDF JDs in eval |
 | 7 | **Offer evaluation + on-demand BLS pay resolver** | 8d.1–8d.5 | ⬜ | completes discover → evaluate → **decide**; revised 8d.2 = a growing wage cache, not a static pack |
@@ -393,7 +394,7 @@ hand-editing YAML. (For the CLI; the web app in Phase 9 lowers the bar further.)
 | 6.1 | **Interactive setup wizard** `npx jobdar init`: bilingual prompts for name/contact, **region** (Midwest default) + metro, **target level(s)** (entry default; mid optional; senior opt-in), tuning profile (`new_grad` / no-degree), **inference** (on-device default vs. API key), language — then **writes `profile.yml` + `portals.yml` automatically**. No manual YAML. | new `setup.mjs` |
 | 6.2 | **Zero-config first scan:** sensible defaults so `jobdar scan` works immediately after `init`. Defer Playwright/PDF — lazy-install only on the first PDF request. | remove first-run friction |
 | 6.3 | **One-command install:** `curl … \| bash` (macOS/Linux) + PowerShell (Windows) that checks/installs Node, fetches Jobdar, installs deps, runs `doctor`, launches the wizard. Plus a GitHub "Use this template" repo + a **devcontainer/Codespaces** path. | installers + `.devcontainer/` |
-| 6.4 | Flesh out the unified **`jobdar`** command: `jobdar init / scan / eval / pipeline / pdf / tracker / dashboard / doctor / update`, each with `--help` + `--version`; bilingual help; shell tab-completion. Deterministic subcommands need no model; `eval`/tailoring use the inference backend (API key now, on-device model from Phase 8). | `bin/jobdar` |
+| 6.4 | Flesh out the unified **`jobdar`** command: `jobdar init / scan / eval / pipeline / pdf / tracker / dashboard / doctor / update`, each with `--help` + `--version`; bilingual help; shell tab-completion. Deterministic subcommands need no model; `eval`/tailoring use the inference backend (on-device winc.cpp by default, or a BYO API key). | `bin/jobdar` |
 | 6.5 | **Conversational guided onboarding** in the agent layer: a bilingual first-run flow that ingests a pasted résumé and confirms region + level(s). | `AGENTS.md`, `modes/_shared.md` |
 | 6.6 | **Résumé bootstrap:** accept a PDF/DOCX/paste → generate `cv.md` + prefill `profile.yml`. (Reused server-side by the Phase 9 web app.) | new helper + mode |
 | 6.7 | Plain-language **Getting Started** (EN + ES), 5-minute quickstart with screenshots/gif, troubleshooting page. | `docs/` |
@@ -480,7 +481,7 @@ résumé no longer reads as future. All offline, no model, no network.
 
 ## Phase 8 — Pluggable inference (8b on-device via winc.cpp FIRST, then 8a BYO-key auto-eval)
 
-> **Status: ⬜ not started — 8b (winc.cpp) is the NEXT build** (milestone 2): it's the default backend
+> **Status: 🔶 in progress — 8b (winc.cpp) shipped 1.19.0; 8a (BYO-key auto-eval) is the NEXT build**: it's the default backend
 > everywhere AND the engine the Phase 9 web + iOS/Android apps embed, so it lands before 8a (milestones
 > 3–4), which reuses the same client with a different base URL.
 
@@ -508,7 +509,15 @@ rest; we never receive or store résumés.
 | 8a.8 | **Prompt caching for the shared prefix:** rubric + `cv.md` are byte-identical across every eval in a run — mark them with `cache_control` so each call pays full price only for the JD (~0.1× input price on the cached prefix; 5-min TTL that a paced sequential queue keeps warm). Requires a byte-stable prefix: no timestamps or per-run IDs ahead of the JD. | each eval pays only for the JD |
 | 8a.9 | **Targeted escalation ladder (optional cost/quality, §3f).** Run the fast low-end model (gemma4-e2b — safe on rejects, occasionally over-strict) on EVERY role, then **re-score only the borderline / negative verdicts on Qwen-4B** (via winc team mode or a second profile) — recovers gemma's over-strict misses without paying 4B latency on every job. Measured: gemma+reqcheck 3/3 rejects but over-strict; Qwen-4B+reqcheck 6/6. | pay 4B only where it matters |
 
-### Phase 8b — on-device backend: winc.cpp primary (private, no key, no cost) — **BUILD FIRST**
+### Phase 8b — on-device backend: winc.cpp primary (private, no key, no cost) — **✅ SHIPPED 1.19.0**
+
+> **Shipped 1.19.0 (2026-06-13), Jobdar side:** `lib/inference.mjs` (one Messages-API client for local +
+> api), `jobdar backend` (status / `--check` canary / `--install`), `inference: local|api|auto` with
+> **local as the default**, `inference_url`. Verified end-to-end against a live `winc serve --eval`
+> (Qwen3.5-4B) — `/health` + a real eval round-trip, zero external network; offline tests (85 total).
+> 8b.3 (Ollama/llamafile OpenAI-compat shims) now also shipped; only 8b.5 (confidential cloud) remains
+> future (documented-only). The cross-repo winc contract below stands; the local install here is
+> `1.21.3-jobdar.3` (pin remains jobdar.4).
 
 > **Source of truth: the published repo — [github.com/samdotson61/winc.cpp](https://github.com/samdotson61/winc.cpp).**
 > All 8b integration work targets winc.cpp as released on GitHub (its README, `winc.toml` schema,
@@ -530,12 +539,12 @@ rest; we never receive or store résumés.
 
 | Step | What | Detail |
 |---|---|---|
-| 8b.0 | **One-command local bootstrap — `jobdar backend --install`** (+ the on-device `jobdar init` path): `winc setup` (engine/PATH) → **winc-tiered model pull (DELEGATED — never hardcode an alias; gemma4-e2b ~2.9 GB low-end, qwen3.5-4b 2.6 GB ≥ 5 GiB)** → `winc serve --eval` → canary-verify (`GET /health` 200 + one real eval round-trip). Target **fully-featured < 10 min** (the model download is the long pole). Install via a prebuilt `-jobdar.N` release (no compiler) or `git clone -b winc-jobdar … && ./install.sh` (source; install.sh auto-installs Go) fallback. **This is the Phase 9 first-run prototype** — same model family, size budget, and 10-min SLA. **Cross-repo dep:** winc must publish prebuilt `-jobdar.N` releases per OS/arch (the sha256 download path exists in `update.go`, gated off for jobdar builds) for the no-compiler path. | the onboarding gate — BUILD FIRST in 8b |
-| 8b.1 | **winc.cpp as the PRIMARY local backend.** `inference: local` points the SAME 8a client at winc's local server (default `http://127.0.0.1:8080/v1/messages`, configurable via `inference_url` to match the user's `winc.toml`) — it speaks the Anthropic Messages API natively, so no translation layer and no new client code. No key, no cost, fully offline. The client captures the Messages-API `usage` block and surfaces input/output tokens as a per-eval transparency "cost" (tokens on the local path; dollars only on the 8a/api path). | one client, two backends |
-| 8b.2 | **Friendly liveness UX:** probe `GET /health` (proxied through to llama-server → 200 only when fully loaded); if down, print the exact start command **`winc serve --eval`** (NOT bare `winc serve` — that's the agent profile with reasoning ON → empty content) plus the install pointer (`git clone -b winc-jobdar https://github.com/samdotson61/winc.cpp` → `./install.sh`, or a prebuilt `-jobdar.N` release + `winc setup`). **Delegate model choice to winc** — never print or pull a specific alias. | onboarding |
-| 8b.3 | **Alternate local runtimes** behind the same interface for users without winc: **Ollama** / **llamafile** (OpenAI-compat shim mapped to the shared schema). Secondary — winc is the documented happy path. | breadth |
-| 8b.4 | **Backend selector + fallback:** `inference: local\|api\|auto`. **Default for everyone: `local` via winc.cpp** — private, free, no key; `api` (BYO key) is the opt-in accuracy upgrade; `auto` runs local and offers an API upgrade on borderline roles. Clear UX about the privacy/quality tradeoff. **Flip `PROFILE_DEFAULTS.inference` from `'api'` to `'local'` here** — shipped code still defaults to `api`, contradicting Open Decision 2 (local-default, decided 2026-06-10). | user control |
-| 8b.5 | **(Future) confidential-cloud option:** TEE-based managed inference for cloud quality the operator can't read — only if local proves too weak and users won't BYO key. Documented, not built. | advanced |
+| 8b.0 ✅ | **One-command local bootstrap — `jobdar backend --install`** (+ the on-device `jobdar init` path): `winc setup` (engine/PATH) → **winc-tiered model pull (DELEGATED — never hardcode an alias; gemma4-e2b ~2.9 GB low-end, qwen3.5-4b 2.6 GB ≥ 5 GiB)** → `winc serve --eval` → canary-verify (`GET /health` 200 + one real eval round-trip). Target **fully-featured < 10 min** (the model download is the long pole). Install via a prebuilt `-jobdar.N` release (no compiler) or `git clone -b winc-jobdar … && ./install.sh` (source; install.sh auto-installs Go) fallback. **This is the Phase 9 first-run prototype** — same model family, size budget, and 10-min SLA. **Cross-repo dep:** winc must publish prebuilt `-jobdar.N` releases per OS/arch (the sha256 download path exists in `update.go`, gated off for jobdar builds) for the no-compiler path. | the onboarding gate — BUILD FIRST in 8b |
+| 8b.1 ✅ | **winc.cpp as the PRIMARY local backend.** `inference: local` points the SAME 8a client at winc's local server (default `http://127.0.0.1:8080/v1/messages`, configurable via `inference_url` to match the user's `winc.toml`) — it speaks the Anthropic Messages API natively, so no translation layer and no new client code. No key, no cost, fully offline. The client captures the Messages-API `usage` block and surfaces input/output tokens as a per-eval transparency "cost" (tokens on the local path; dollars only on the 8a/api path). | one client, two backends |
+| 8b.2 ✅ | **Friendly liveness UX:** probe `GET /health` (proxied through to llama-server → 200 only when fully loaded); if down, print the exact start command **`winc serve --eval`** (NOT bare `winc serve` — that's the agent profile with reasoning ON → empty content) plus the install pointer (`git clone -b winc-jobdar https://github.com/samdotson61/winc.cpp` → `./install.sh`, or a prebuilt `-jobdar.N` release + `winc setup`). **Delegate model choice to winc** — never print or pull a specific alias. | onboarding |
+| 8b.3 ✅ | **Alternate local runtimes** behind the same interface for users without winc: **Ollama** / **llamafile** (OpenAI-compat shim mapped to the shared schema). Secondary — winc is the documented happy path. | breadth |
+| 8b.4 ✅ | **Backend selector + fallback:** `inference: local\|api\|auto`. **Default for everyone: `local` via winc.cpp** — private, free, no key; `api` (BYO key) is the opt-in accuracy upgrade; `auto` runs local and offers an API upgrade on borderline roles. Clear UX about the privacy/quality tradeoff. **Flip `PROFILE_DEFAULTS.inference` from `'api'` to `'local'` here** — shipped code still defaults to `api`, contradicting Open Decision 2 (local-default, decided 2026-06-10). | user control |
+| 8b.5 ⬜ | **(Future) confidential-cloud option:** TEE-based managed inference for cloud quality the operator can't read — only if local proves too weak and users won't BYO key. Documented, not built. | advanced |
 
 **Verification gate:** the same JD evaluates end-to-end with `inference: api` (BYO key) and with
 `inference: local` (**winc.cpp's `winc serve --eval` running; zero external network calls**), both recording the

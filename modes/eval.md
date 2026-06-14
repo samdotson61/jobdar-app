@@ -8,7 +8,8 @@ status: authored
 
 **Goal:** read one job description against the user's résumé and return a clear fit report.
 Model-backed — uses the configured inference backend (`inference:` in `config/profile.yml`):
-your API key now, the on-device model from Phase 8. Apply the rubric in [`_shared.md`](_shared.md).
+**on-device winc.cpp by default** (local, private, no key), or your own API key (`api`). `jobdar backend`
+checks it's live. Apply the rubric in [`_shared.md`](_shared.md).
 
 ## Inputs
 - The job description — `jobdar eval <url>` fetches it for you via the matching provider

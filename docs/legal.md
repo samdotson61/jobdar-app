@@ -11,7 +11,8 @@ responsible for how you use it, including compliance with each site's Terms of S
   your browser). Jobdar hosts no personal data.
 - The scanner reads only **public** job listings — the same pages a career site serves to a browser. It
   never uploads your résumé.
-- If you opt into a cloud inference API (Phase 8, bring-your-own-key), only the minimal job description
+- The default backend is on-device (winc.cpp) — no key, nothing leaves your machine. If you opt into a
+  cloud inference API (the `api` backend, bring-your-own-key), only the minimal job description
   + relevant CV excerpt is sent, with zero-retention settings.
 
 ## Responsible use

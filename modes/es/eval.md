@@ -7,9 +7,9 @@ status: authored
 # Evaluar un puesto
 
 **Objetivo:** leer una oferta de empleo frente al currículum de la persona y devolver un informe
-de compatibilidad claro. Usa el modelo configurado (`inference:` en `config/profile.yml`): tu
-clave de API ahora, el modelo en el dispositivo desde la Fase 8. Aplica la rúbrica de
-[`_shared.md`](_shared.md).
+de compatibilidad claro. Usa el backend de inferencia configurado (`inference:` en `config/profile.yml`):
+**winc.cpp en el dispositivo por defecto** (local, privado, sin clave) o tu propia clave de API (`api`).
+`jobdar backend` comprueba que esté activo. Aplica la rúbrica de [`_shared.md`](_shared.md).
 
 ## Entradas
 - La oferta — `jobdar eval <url>` la obtiene por ti vía el proveedor correspondiente

@@ -7,7 +7,10 @@ target_regions:         # midwest | northeast | southeast | southwest | west | n
 target_levels:          # entry (default) | mid | senior (opt-in, ranks on merit)
   - entry
 tuning_profile: new_grad   # new_grad | early_career | no_degree | career_changer
-inference: api          # api (BYO key) | local (on-device, Phase 8b)
+inference: local        # local (on-device — default, private, no key) | api (BYO key) | auto
+inference_runtime: winc # local runtime: winc (default) | ollama | llamafile (OpenAI-compat)
+inference_url: ""       # blank → the runtime's localhost default (winc 127.0.0.1:8080); point it at the server matching inference_runtime
+local_model: ""         # model id for ollama/llamafile; winc --eval auto-picks, so leave blank for winc
 name: ""                # your name — stays local
 location: ""            # your metro, e.g. "Indianapolis, IN" — stays local
 include_degree_required_roles: true
