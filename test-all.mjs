@@ -35,6 +35,8 @@ import { trackerRowsFrom } from './lib/tracker.mjs'
 import { cvToHtml, matchedKeywords } from './lib/cv_render.mjs'
 import http from 'node:http'
 import { resolveBackend, isLoopbackUrl, parseVerdict, selectActive, backendHealth, callMessages, callOpenAI, callBackend, evaluate, WINC_DEFAULT_URL, LOCAL_RUNTIMES } from './lib/inference.mjs'
+import { scoreFromJudgments, parseEvalJson, stripPII, clampVerdict, buildEvalUser, evalRole, buildVerdict, prepEval } from './lib/eval_engine.mjs'
+import { bandAgreement, buildBatchRequests, parseBatchResults, clampLogEntry } from './lib/eval_ops.mjs'
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url))
 const tests = []
@@ -1047,6 +1049,102 @@ test('inference: callMessages guards — api requires HTTPS + key; local require
   await assert.rejects(callMessages({ kind: 'api', baseUrl: 'http://127.0.0.1:1', key: 'k' }, { user: 'x' }), /non-HTTPS/)
   await assert.rejects(callMessages({ kind: 'api', baseUrl: 'https://api.anthropic.com', key: '' }, { user: 'x' }), /No API key/)
   await assert.rejects(callMessages({ kind: 'local', baseUrl: 'http://evil.example.com', key: '' }, { user: 'x' }), /loopback/)
+})
+
+// --- Phase 8a: the automated eval engine (decomposed rubric, code-computed score, §3 gate/clamp) ---
+
+const ALL = (r) => ({ skills: { rating: r }, experience: { rating: r }, level_fit: { rating: r }, logistics: { rating: r }, education: { rating: r } })
+
+test('8a: scoreFromJudgments computes the weighted 0–5 (code owns the number, not the model)', () => {
+  assert.equal(scoreFromJudgments(ALL('strong')), 5.0)
+  assert.equal(scoreFromJudgments(ALL('none')), 0.0)
+  // skills strong .35 + exp partial .125 + level strong .20 + logistics none 0 + edu partial .05 = .725 → 3.6
+  assert.equal(scoreFromJudgments({ skills: { rating: 'strong' }, experience: { rating: 'partial' }, level_fit: { rating: 'strong' }, logistics: { rating: 'none' }, education: { rating: 'partial' } }), 3.6)
+  assert.equal(scoreFromJudgments({}), 0.0) // missing → none
+})
+
+test('8a: parseEvalJson extracts the verdict object; stripPII scrubs the CV slice', () => {
+  assert.deepEqual(parseEvalJson('reasoning… {"required":{"candidate_meets_all":true}} trailing'), { required: { candidate_meets_all: true } })
+  assert.equal(parseEvalJson('no json here'), null)
+  assert.equal(stripPII('Jane Roe — jane@x.com — 555-123-4567 — https://li.com/in/jane', { name: 'Jane Roe' }), '[name] — [email] — [phone] — [url]')
+  assert.equal(stripPII('Acme 2019-2023; B.S. 2015-2019'), 'Acme 2019-2023; B.S. 2015-2019') // date ranges must survive (not eaten as phones)
+  assert.deepEqual(parseEvalJson('{"a":1} then a stray } brace'), { a: 1 }) // balanced-brace fallback past trailing prose
+})
+
+test('8a: clampVerdict forces Don\'t on unmet requirements / hard gates; no_degree exempts the degree', () => {
+  const meets = clampVerdict({ score: 4.6, judgments: { required: { candidate_meets_all: true } }, gates: {}, decision: { screened: false }, profile: {} })
+  assert.deepEqual([meets.clamped, meets.band], [false, 'apply'])
+  const unmet = clampVerdict({ score: 4.6, judgments: { required: { candidate_meets_all: false, note: '5+ yrs' } }, gates: {}, decision: { screened: false }, profile: {} })
+  assert.equal(unmet.clamped, true); assert.equal(unmet.band, 'dont'); assert.ok(unmet.score <= 3.4)
+  const yearsGate = clampVerdict({ score: 4.6, judgments: { required: { candidate_meets_all: true } }, gates: {}, decision: { screened: true, reasons: [{ kind: 'years', quote: '8+ years' }] }, profile: {} })
+  assert.equal(yearsGate.band, 'dont')
+  // no_degree: a degree screen must NOT clamp (4.5 honesty — flag, never auto-zero)
+  const degNoDegree = clampVerdict({ score: 4.2, judgments: { required: { candidate_meets_all: true } }, gates: {}, decision: { screened: true, reasons: [{ kind: 'degree', quote: "Bachelor's required" }] }, profile: { tuning_profile: 'no_degree' } })
+  assert.equal(degNoDegree.clamped, false)
+  assert.doesNotThrow(() => clampVerdict({ score: 4, judgments: {}, gates: {}, decision: { screened: true }, profile: {} })) // reasons missing → no crash
+  assert.equal(clampVerdict({ score: 4.5, judgments: { required: { candidate_meets_all: 'no' } }, gates: {}, decision: { screened: false }, profile: {} }).band, 'dont') // stringy negative still clamps
+})
+
+test('8a: buildEvalUser injects the verified gate facts + today, and the JD/CV', () => {
+  const gates = { years: { years: 5, quote: '5+ years' }, degree: { gate: 'yes' }, clearance: { gate: 'none' }, license: { flagged: false } }
+  const u = buildEvalUser({ jd: 'Need SQL', cv: 'I know SQL', profile: { target_levels: ['entry'] }, gates, today: '2026-06-14' })
+  assert.ok(u.includes("Today's date is 2026-06-14"))
+  assert.ok(u.includes('Minimum years of experience required: 5'))
+  assert.ok(u.includes('Need SQL') && u.includes('I know SQL'))
+  assert.doesNotThrow(() => buildEvalUser({ jd: 'x', cv: 'y', profile: {}, gates: {}, today: '2026-06-14' })) // partial/empty gates are null-safe
+})
+
+test('8a: evalRole runs the full pipeline against a backend (mock) — score, band, clamp, pay merge', async () => {
+  const verdict = JSON.stringify({ required: { candidate_meets_all: true }, ...ALL('strong'), recommendation: 'strong match' })
+  const m = await mockBackend({ reply: verdict })
+  const active = { kind: 'local', protocol: 'messages', baseUrl: m.url }
+  const jd = 'Data Analyst (entry). SQL, Excel. The annual salary range is $90,000 - $110,000.'
+  const v = await evalRole({ active, jd, cv: 'Analyst with SQL and Excel.', profile: { target_salary: 80000 }, today: '2026-06-14' })
+  assert.equal(v.ok, true); assert.equal(v.score, 5.0); assert.equal(v.band, 'apply'); assert.equal(v.clamped, false)
+  assert.equal(v.recommendation, 'strong match')
+  assert.ok(v.pay.includes('above')) // pay merged post-model (not in the score)
+  await m.close()
+  // a model that fails the requirements clamps to Don't regardless of strong sub-scores
+  const m2 = await mockBackend({ reply: JSON.stringify({ required: { candidate_meets_all: false, note: 'needs PE license' }, ...ALL('strong'), recommendation: 'x' }) })
+  const v2 = await evalRole({ active: { kind: 'local', protocol: 'messages', baseUrl: m2.url }, jd, cv: 'x', profile: {}, today: '2026-06-14' })
+  assert.equal(v2.band, 'dont'); assert.equal(v2.clamped, true)
+  await m2.close()
+})
+
+test('8a: prepEval + buildVerdict — the batch-shared pure path; a hard gate clamps despite strong scores', () => {
+  const prep = prepEval({ jd: 'Need 5+ years experience. SQL.', cv: 'SQL analyst.', profile: { target_levels: ['entry'] }, today: '2026-06-14' })
+  assert.equal(prep.gates.years.years, 5)
+  assert.equal(prep.decision.screened, true) // 5 > entry ceiling (2)
+  assert.ok(prep.user.includes('5'))
+  const v = buildVerdict({ text: JSON.stringify({ required: { candidate_meets_all: true }, ...ALL('strong'), recommendation: 'r' }), jd: 'SQL. Salary $90,000-$110,000.', gates: prep.gates, decision: prep.decision, profile: { target_salary: 80000 } })
+  assert.equal(v.clamped, true); assert.equal(v.band, 'dont') // years gate overrides the strong sub-scores
+  assert.ok(v.pay.includes('above')) // pay still merged
+})
+
+test('8a.5: bandAgreement computes overall + per-tier accuracy; clampLogEntry carries no CV text', () => {
+  const a = bandAgreement([{ got: 'apply', expected: 'apply' }, { got: 'dont', expected: 'research' }, { got: 'dont', expected: 'dont' }, { got: 'research', expected: undefined }])
+  assert.equal(a.n, 3) // the row with no expected band is ignored
+  assert.equal(a.overall, 67) // 2 of 3
+  assert.deepEqual(a.perTier.dont, { correct: 1, total: 1 })
+  assert.deepEqual(a.perTier.research, { correct: 0, total: 1 })
+  const e = clampLogEntry({ score: 3.0, rawScore: 4.6, band: 'dont', model: 'm', backend: 'local', recommendation: 'years' }, { url: 'u', company: 'C', role: 'R' })
+  assert.deepEqual([e.url, e.raw_score, e.final_score, e.band], ['u', 4.6, 3.0, 'dont'])
+  assert.ok(!('cv' in e) && !('resume' in e)) // privacy: never the résumé text
+})
+
+test('8a.7: buildBatchRequests + parseBatchResults shape the Batches wire format (cached prefix)', () => {
+  const reqs = buildBatchRequests([{ custom_id: 'r0', user: 'u0' }, { user: 'u1' }], { model: 'm', system: 'SYS' })
+  assert.equal(reqs.length, 2)
+  assert.deepEqual([reqs[0].custom_id, reqs[1].custom_id], ['r0', 'role-1'])
+  assert.equal(reqs[0].params.model, 'm')
+  assert.equal(reqs[0].params.system[0].cache_control.type, 'ephemeral') // 8a.8 cache on the stable prefix
+  assert.equal(reqs[0].params.messages[0].content, 'u0')
+  const parsed = parseBatchResults([
+    { custom_id: 'r0', result: { type: 'succeeded', message: { content: [{ type: 'text', text: 'ok' }], usage: { input_tokens: 5 } } } },
+    { custom_id: 'r1', result: { type: 'errored' } },
+  ])
+  assert.equal(parsed.r0.text, 'ok'); assert.deepEqual(parsed.r0.usage, { input_tokens: 5 })
+  assert.equal(parsed.r1.status, 'errored'); assert.equal(parsed.r1.text, '')
 })
 
 let passed = 0

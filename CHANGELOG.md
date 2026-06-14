@@ -6,6 +6,49 @@ All notable changes to Jobdar are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.20.0] — 2026-06-14
+
+**Phase 8a — automated evaluation (the daily-use unlock); Phase 8 is now feature-complete (8a + 8b).**
+Jobdar scores roles itself: the MODEL judges fit on a decomposed rubric while CODE owns the number and
+the gates. Live-verified against `winc serve --eval` (Qwen3.5-4B) — the model returned conformant
+decomposed JSON and the §3 pipeline clamped a non-matching role to Don't.
+
+### Added
+- **`lib/eval_engine.mjs` — the §3 eval pipeline:** normalizeDates → extract (prescreen) → gate (screen)
+  → judge (model, fit-only) → clamp (+merge pay) → verdict. The model rates 5 weighted sub-criteria
+  (skills 35 / experience 25 / level-fit 20 / logistics 10 / education 10) strong/partial/none with quoted
+  evidence and fills a requirements-check block FIRST (8a.4b) against facts prescreen already extracted;
+  CODE computes the 0–5 (`scoreFromJudgments`) and applies the shipped band thresholds (8a.4). A hard gate
+  or unmet requirement clamps to Don't — reusing `prescreen` + `levels` (no new `gate.mjs`); the eval JSON
+  never contains a salary number — pay is merged post-model from `lib/salary.mjs`. Robust JSON parse with
+  optional `response_format` guaranteed-JSON (8a.4a). Fairness (8a.6): the CV slice is PII-stripped and a
+  degree requirement never auto-zeros under `no_degree`.
+- **`jobdar eval --auto [<url> | --next | --all-pending]` (8a.1–8a.3)** — scores roles against the
+  configured backend and records each verdict via the existing `--save` path; walks the prescreen-ranked
+  queue, one JD per request; minimal-slice (JD + PII-stripped CV excerpt only).
+- **`jobdar calibrate` (8a.5)** — opt-in live scorer over a hand-banded set (`data/calibration.json`),
+  reporting per-tier band agreement; every clamp override is logged to a gitignored `data/clamp-log.jsonl`
+  (no CV text). The pure agreement/scoring functions are unit-tested; the live scorer is a command, never `npm test`.
+- **Batch economics (8a.7) + prompt caching (8a.8):** `eval --auto --all-pending --batch` submits one
+  Message Batches job on the api backend (50% price) instead of N live calls; the byte-stable rubric prefix
+  is marked `cache_control` on the api path. (`lib/eval_ops.mjs` + `inference.submitBatch`.)
+- 19 new offline tests (74 → 93) via loopback mocks — scorer, clamp/gate, pay-merge, no-degree fairness,
+  JSON parse, batch wire-format, agreement. Still fully offline; EN/ES parity maintained.
+
+### Fixed
+- Hardening from an adversarial review (15 findings triaged): the CV PII-strip no longer eats résumé date
+  ranges like `2019-2023` (it matched them as phone numbers, corrupting the experience/level-fit signal);
+  `eval --auto <url>` now scores the named URL (the value-less flag had swallowed it into `flags.auto`);
+  `clampVerdict`/`buildEvalUser` are null-safe on partial gate objects and `clampVerdict` accepts stringy
+  negatives; `parseEvalJson` falls back to a balanced-brace scan past trailing prose; the batch path counts
+  JD-fetch failures and attributes the model; `submitBatch` checks every HTTP status; `bandAgreement`
+  ignores out-of-tier expected bands; and stale "next: Phase 8a" framing was cleared from AGENTS.md + the
+  ROADMAP banner.
+
+Deferred: 8a.9 (targeted escalation ladder) — the roadmap marks it optional; a follow-up. The grammar-JSON
+path (8a.4a) is wired but defaults to robust prompt-parse on backends without `response_format` (this
+machine's winc.cpp jobdar.3).
+
 ## [1.19.0] — 2026-06-13
 
 **Phase 8b — on-device inference via winc.cpp (the new default backend).** The model becomes a swappable

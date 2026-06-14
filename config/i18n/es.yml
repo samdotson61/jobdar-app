@@ -20,6 +20,7 @@ cli:
     dashboard: "Abre el panel del flujo de trabajo (web)"
     tui: "Panel interactivo en la terminal"
     backend: "Configura / revisa el backend de inferencia en el dispositivo (winc.cpp)"
+    calibrate: "Calibra el evaluador contra un conjunto con banda asignada (en vivo, opcional)"
     doctor: "Verifica que tu configuración esté lista"
     update: "Actualiza Jobdar a la última versión"
   opt_help: "Muestra la ayuda"
@@ -190,6 +191,14 @@ eval:
   save_hint: "Se guarda con: jobdar eval --save --url <url> --score <0.0–5.0> --band <apply|research|dont> --company \"…\" --role \"…\" --note \"…\""
   save_usage: "Uso: jobdar eval --save --url <url> --score <0.0–5.0> [--band apply|research|dont] [--company …] [--role …] [--note …]"
   saved: "Guardado: compatibilidad {score} ({band}) — {role}"
+  auto_backend_down: "Ningún backend de inferencia está listo ({reason})."
+  auto_running: "Evaluando automáticamente {count} puesto(s) vía el backend {backend}…"
+  auto_no_jd: "omitido (no se pudo obtener la descripción): {role}"
+  auto_unparsed: "omitido (la respuesta del modelo no se pudo leer): {role}"
+  auto_error: "falló ({error}): {role}"
+  auto_clamped: "ajustado"
+  auto_done: "Evaluación automática terminada — {evaluated} puntuados, {failed} omitidos."
+  batch_skipped: "--batch requiere el backend api y más de un puesto — ejecutando en vivo."
 
 backend:
   title: "Backend de inferencia"
@@ -223,6 +232,14 @@ backend:
   serve_step: "Inicia el servidor de evaluación:  winc serve --eval"
   already_up: "● ya está sirviendo en {url}"
   serve_then_check: "Tras `winc serve --eval`, verifica con: jobdar backend --check  ({url})"
+
+calibrate:
+  title: "Calibrar el evaluador"
+  none: "No hay conjunto de calibración en {file}. Proporciona un arreglo JSON de puestos con banda asignada a mano (cada uno: url o jd, más expect)."
+  backend_down: "Ningún backend de inferencia está listo ({reason})."
+  running: "Puntuando {count} puesto(s) de calibración vía el backend {backend}…"
+  result: "Concordancia de banda: {overall}% sobre {n} puestos."
+  tier: "{tier}: {correct}/{total}"
 
 pdf:
   title: "Crear currículum"

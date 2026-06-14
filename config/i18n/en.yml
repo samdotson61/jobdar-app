@@ -20,6 +20,7 @@ cli:
     dashboard: "Launch the pipeline dashboard (web)"
     tui: "Interactive terminal dashboard"
     backend: "Set up / check the on-device inference backend (winc.cpp)"
+    calibrate: "Calibrate the evaluator against a hand-banded set (live, opt-in)"
     doctor: "Check that your setup is ready"
     update: "Update Jobdar to the latest version"
   opt_help: "Show help"
@@ -190,6 +191,14 @@ eval:
   save_hint: "It saves with: jobdar eval --save --url <url> --score <0.0–5.0> --band <apply|research|dont> --company \"…\" --role \"…\" --note \"…\""
   save_usage: "Usage: jobdar eval --save --url <url> --score <0.0–5.0> [--band apply|research|dont] [--company …] [--role …] [--note …]"
   saved: "Saved fit {score} ({band}) — {role}"
+  auto_backend_down: "No inference backend is ready ({reason})."
+  auto_running: "Auto-evaluating {count} role(s) via the {backend} backend…"
+  auto_no_jd: "skipped (couldn't fetch the JD): {role}"
+  auto_unparsed: "skipped (model reply didn't parse): {role}"
+  auto_error: "failed ({error}): {role}"
+  auto_clamped: "clamped"
+  auto_done: "Auto-eval done — {evaluated} scored, {failed} skipped."
+  batch_skipped: "--batch needs the api backend and more than one role — running live instead."
 
 backend:
   title: "Inference backend"
@@ -223,6 +232,14 @@ backend:
   serve_step: "Start the eval server:  winc serve --eval"
   already_up: "● already serving at {url}"
   serve_then_check: "After `winc serve --eval`, verify with: jobdar backend --check  ({url})"
+
+calibrate:
+  title: "Calibrate the evaluator"
+  none: "No calibration set at {file}. Provide a JSON array of hand-banded roles (each: url or jd, plus expect)."
+  backend_down: "No inference backend is ready ({reason})."
+  running: "Scoring {count} calibration role(s) via the {backend} backend…"
+  result: "Band agreement: {overall}% over {n} roles."
+  tier: "{tier}: {correct}/{total}"
 
 pdf:
   title: "Build résumé"
