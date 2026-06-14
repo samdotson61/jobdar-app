@@ -638,6 +638,14 @@ user always knows what happened, what it cost, and what's next.
 > delivers the app and the public job data, but **never receives the résumé** by default. This is the
 > liability-limiting design — not "trust us with your data," but "your data never reaches us."
 
+**The app shell — three tabs that ARE the workflow** (canonical for web + mobile; design intent 2026-06-14). One GUI, three tabs mapping 1:1 onto the shipped pipeline; the bottom bar **1·Search → 2·Apply → 3·Follow-up** is the same spine on phone + web:
+
+1. **Search** — onboarding prompt *“Upload your résumé and tell us what you want”*: parse the résumé locally (9.4) → infer field/title/level/region → server-side zero-token `scan`/`seed` → a **light on-device AI pass** labels each result (“likely fit / worth a look / skip”) to drop obvious misses BEFORE the expensive scoring pass (efficiency: it thins the queue `eval` runs on). Free-form intent works too (“jobs that take me outside”) → the model maps it to a search. = shipped `prescreen` (zero-token gate) + a thin AI confirm.
+2. **Apply** — the scoring stage: `eval --auto` (8a decomposed rubric → 0–5 → Apply/Research/Don’t, gate/clamp, pay band) on the pre-thinned set, then one-tap tailored CV + cover letter (`pdf`).
+3. **Follow-up** — `outreach`: warm-contact finder + the code-enforced polite cadence + draft lint.
+
+All three run on the **local AI by default** (8b) with the **tiered API-key upgrade** (8a) for premium editions — the same `inference: local|api|auto` backend the CLI already ships. The Search tab’s light-AI pre-confirm is a NEW thin layer between 9.1 (in-browser model) and the heavy `eval` — a cheap yes/maybe/no, not a score.
+
 | Step | What | Detail |
 |---|---|---|
 | 9.1 | **In-browser inference (default):** run the Phase 8 local model in the browser via **WebLLM/WebGPU**. The résumé + matching happen client-side; nothing PII goes to the server. | privacy by default |
