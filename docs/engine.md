@@ -7,7 +7,7 @@ track → build. It has **no console I/O**: every verb returns a structured valu
 to a signature or a returned shape.
 
 The same verbs are exposed as JSON over localhost by `jobdar serve` (default `http://127.0.0.1:4320`,
-CORS locked to localhost): `GET /health`, `POST /evaluate {jd, cv?, confirm?}`, `POST /import {file}`.
+CORS locked to localhost): `GET /health`, `POST /evaluate {jd, cv?, confirm?, transferable?}`, `POST /import {file}`.
 
 ## Verbs
 
@@ -21,16 +21,21 @@ structure the profile fields. `cv` is the **extracted text**, never a model rewr
 `discover(portal) → Job[]` is injected (the CLI passes the provider fetch). Merges discovered roles into
 `existing` pipeline rows (URL + near-duplicate dedup). `Job` = `{ title, url, company, location, postedOn? }`.
 
-### `evaluate({ active, jd, cv?, profile?, today?, confirm?, escalate? }) → Verdict`
+### `evaluate({ active, jd, cv?, profile?, today?, confirm?, escalate?, transferable? }) → Verdict`
 The §3 pipeline: normalizeDates → extract → gate → judge (decomposed rubric, code-computed 0–5) →
 clamp (+merge pay). `confirm: true` runs the cheap pre-confirm triage first (returns
 `{ ok: true, skipped: true, preConfirm }` if it drops the role). `escalate` is a second active backend
-used to re-score a borderline verdict.
+used to re-score a borderline verdict. `transferable` (defaults to `profile.transferable_skills`)
+turns on transferable-skills mode: both the judge and the pre-confirm credit genuine adjacent/foundational
+skills, and the clamp stops treating an unmet "X+ years in [field]" requirement as a hard gate (hard
+credentials — license/cert/clearance — still gate). It changes *what* counts as a fit, not the bar.
 - `Verdict` = `{ ok: true, score: 0–5, band: 'apply'|'research'|'dont', recommendation, clamped, rawScore,
   judgments, pay, payBand, usage, model, backend }` — or `{ ok: false, raw }` when the reply didn't parse.
 
-### `preConfirm({ active, jd, cv?, profile? }) → { verdict: 'fit'|'maybe'|'skip', reason }`
+### `preConfirm({ active, jd, cv?, profile?, transferable? }) → { verdict: 'fit'|'maybe'|'skip', reason }`
 The fast triage that thins the queue before `evaluate` (the Search-tab pre-confirm). Unknown → `maybe`.
+`transferable` (defaults to `profile.transferable_skills`) lets it pass genuine cross-field bridges while
+still skipping aspirational stretches.
 
 ### Track (pure — rows in, rows out)
 - `recordVerdict(rows, { url, score, band, company?, role?, location?, recommendation? }, dateStr) → rows`
