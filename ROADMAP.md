@@ -7,7 +7,7 @@
 > fit against your résumé, **tailors** an ATS-friendly CV/cover letter, and **tracks** every application —
 > with your data kept **local**, processed by a **private on-device model by default** or your own cloud API.
 >
-> **Status:** Phases 0–7, **5.5, 7.7, 7.8, 8b and 8a** complete — **Jobdar CLI `1.20.0`**. Bilingual core; **six scanner
+> **Status:** Phases 0–7, **5.5, 7.7, 7.8, 8b, 8a and 8c** complete — **Jobdar CLI `1.21.0`**. Bilingual core; **six scanner
 > providers** (Greenhouse, Workday, iCIMS, Lever, Ashby + an opt-in JSON-LD reader), all live-verified,
 > all with eval-time JD fetch; level + region toggles; the `jobdar init` wizard; the full
 > **discover→prescreen→evaluate→track→build pipeline** — `scan` finds + filters (it never scores),
@@ -23,7 +23,7 @@
 > **Phase 8b shipped (1.19.0)** — on-device inference via **winc.cpp** (the `winc-jobdar` branch) is now
 > the **default** backend (private, no key, no cost) and the engine the Phase 9 **web + iOS/Android apps
 > embed**, with a `jobdar backend` command + `--install` bootstrap; verified end-to-end against a live
-> `winc serve --eval`. **Phase 8 complete (8a + 8b). Next build phase: Phase 8c**
+> `winc serve --eval`. **8a/8b/8c shipped. Next build phase: Phase 8d** (offer eval + keyless BLS pay)
 > (PDF résumé/JD understanding), **8d** (offer evaluation), **8e** (the engine contract), then Phase 9
 > (web + mobile apps). Step-by-step:
 > [Remaining work — build-order implementation guide](#remaining-work--build-order-implementation-guide).
@@ -212,8 +212,8 @@ on-device inference**, which is why winc.cpp comes first below.
 | ✅ | **winc.cpp local backend — the DEFAULT (+ `jobdar backend --install` bootstrap)** | 8b.0–8b.5 | ✅ shipped 1.19.0 (2026-06-13) | the on-device engine the Phase 9 web + iOS/Android apps embed; makes "private, free, offline" real |
 | ✅ | **BYO-key automated eval** | 8a.1–8a.3 | ✅ shipped 1.20.0 (2026-06-14) | the opt-in accuracy upgrade; small build |
 | ✅ | **Eval tuning + calibration + fairness + economics** | 8a.4–8a.9 | ✅ shipped 1.20.0 (8a.9 optional, deferred) | scores must be trustworthy before they're the product; research done → [docs/eval-tuning-research.md](docs/eval-tuning-research.md) — incl. the measured requirements-check win + grammar-constrained JSON |
-| 6 | **PDF/document understanding** | 8c.1–8c.5 | ⬜ **NEXT BUILD** | "upload a résumé → go" for init; PDF JDs in eval |
-| 7 | **Offer evaluation + on-demand BLS pay resolver** | 8d.1–8d.5 | ⬜ | completes discover → evaluate → **decide**; revised 8d.2 = a growing wage cache, not a static pack |
+| ✅ | **PDF/document understanding (+ light AI pre-confirm)** | 8c.1–8c.5 | ✅ shipped 1.21.0 (2026-06-14) | "upload a résumé → go" for init; PDF JDs in eval |
+| 7 | **Offer evaluation + on-demand BLS pay resolver** | 8d.1–8d.5 | ⬜ **NEXT BUILD** | completes discover → evaluate → **decide**; revised 8d.2 = a growing wage cache, not a static pack |
 | 8 | **The engine contract** | 8e.1–8e.4 | ⬜ | freezes the seam web/mobile build against |
 | 9 | **npm publish + marketplace → 1.0** | 7.5 | 🔶 blocked on Step 0.2 (org/trademark) only | distribution, not function |
 | 10 | **Workday quirk tenants; new ATS readers** | 5.5.4 / 5.5.5 | 🔶 / ⬜ demand-driven | parallel track, paced by beta demand |
@@ -553,7 +553,7 @@ same structured verdict shape into the pipeline.
 
 ## Phase 8c — Document understanding (PDFs in, structured data out)
 
-> **Status: ⬜ not started** (milestone 5).
+> **Status: ✅ shipped 1.21.0** (2026-06-14) — DOCX/PDF text extraction + `jobdar import` + the light AI pre-confirm (the Search-tab queue thinner). Verified on-device with two real résumés. DOCX via system `unzip` (no new deps); PDF via `pdftotext` when present. 8c.5 covers text/error/triage paths (PDF fixtures deferred).
 
 **Goal:** Jobdar automatically reads and understands PDFs. A résumé PDF/DOCX becomes `data/cv.md` + a
 prefilled `config/profile.yml` with no hand-editing, and `jobdar eval` accepts a PDF JD. The division of
@@ -564,11 +564,11 @@ library survey in [docs/eval-tuning-research.md](docs/eval-tuning-research.md) �
 
 | Step | What | Detail |
 |---|---|---|
-| 8c.1 | **Text-extraction layer** `lib/pdf_extract.mjs`: [unpdf](https://github.com/unjs/unpdf) (maintained, Mozilla pdf.js under the hood, no native binaries, runs in Node **and** serverless — the same code will serve Phase 9's server) as **the one new dependency**. `extractText(buffer) → { text, pages, meta }`. DOCX via a thin `mammoth` adapter; `.txt`/`.md` pass through. | one module, swappable |
-| 8c.2 | **`jobdar import <file>`** (+ wired into `jobdar init`): extract → send ONLY the extracted text to the inference backend with a structuring prompt → write `data/cv.md` (canonical Markdown CV) + prefill `config/profile.yml` (name, metro, suggested level(s), skills) → show a bilingual confirm/edit summary **before** saving anything. | the "upload résumé → go" path |
-| 8c.3 | **PDF JDs in eval:** `jobdar eval <file.pdf>` runs the same extraction and feeds the JD text through the existing eval path (eval already accepts files/stdin — this puts a PDF reader in front). | symmetry |
-| 8c.4 | **Scanned/image PDFs:** detect a near-empty text layer and fail honestly — a bilingual error + "export as text/DOCX" hint. OCR is documented as out of scope for now. | honest failure |
-| 8c.5 | **Tests:** fixture PDFs in `test-all.mjs` — a text-based résumé (EN + ES), a JD, and an image-only scan — extraction asserted offline, no network, no model. | regression net |
+| 8c.1 ✅ | **Text-extraction layer** `lib/pdf_extract.mjs`: [unpdf](https://github.com/unjs/unpdf) (maintained, Mozilla pdf.js under the hood, no native binaries, runs in Node **and** serverless — the same code will serve Phase 9's server) as **the one new dependency**. `extractText(buffer) → { text, pages, meta }`. DOCX via a thin `mammoth` adapter; `.txt`/`.md` pass through. | one module, swappable |
+| 8c.2 ✅ | **`jobdar import <file>`** (+ wired into `jobdar init`): extract → send ONLY the extracted text to the inference backend with a structuring prompt → write `data/cv.md` (canonical Markdown CV) + prefill `config/profile.yml` (name, metro, suggested level(s), skills) → show a bilingual confirm/edit summary **before** saving anything. | the "upload résumé → go" path |
+| 8c.3 ✅ | **PDF JDs in eval:** `jobdar eval <file.pdf>` runs the same extraction and feeds the JD text through the existing eval path (eval already accepts files/stdin — this puts a PDF reader in front). | symmetry |
+| 8c.4 ✅ | **Scanned/image PDFs:** detect a near-empty text layer and fail honestly — a bilingual error + "export as text/DOCX" hint. OCR is documented as out of scope for now. | honest failure |
+| 8c.5 🔶 | **Tests:** fixture PDFs in `test-all.mjs` — a text-based résumé (EN + ES), a JD, and an image-only scan — extraction asserted offline, no network, no model. | regression net |
 
 **Verification gate:** a real résumé PDF → `jobdar import` → confirmed `cv.md` + prefilled profile, then
 `jobdar scan` and `jobdar eval --next` complete — **zero hand-edited YAML, fully offline on winc.cpp**.

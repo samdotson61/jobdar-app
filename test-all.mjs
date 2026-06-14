@@ -37,6 +37,8 @@ import http from 'node:http'
 import { resolveBackend, isLoopbackUrl, parseVerdict, selectActive, backendHealth, callMessages, callOpenAI, callBackend, evaluate, WINC_DEFAULT_URL, LOCAL_RUNTIMES } from './lib/inference.mjs'
 import { scoreFromJudgments, parseEvalJson, stripPII, clampVerdict, buildEvalUser, evalRole, buildVerdict, prepEval } from './lib/eval_engine.mjs'
 import { bandAgreement, buildBatchRequests, parseBatchResults, clampLogEntry } from './lib/eval_ops.mjs'
+import { extractText, isExtractable } from './lib/docparse.mjs'
+import { parsePreConfirm } from './lib/eval_engine.mjs'
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url))
 const tests = []
@@ -1145,6 +1147,24 @@ test('8a.7: buildBatchRequests + parseBatchResults shape the Batches wire format
   ])
   assert.equal(parsed.r0.text, 'ok'); assert.deepEqual(parsed.r0.usage, { input_tokens: 5 })
   assert.equal(parsed.r1.status, 'errored'); assert.equal(parsed.r1.text, '')
+})
+
+test('8c: extractText reads text, flags missing/unsupported; isExtractable gates file types', () => {
+  const md = extractText(path.join(ROOT, 'CLAUDE.md'))
+  assert.ok(md.text.length > 50)
+  assert.equal(md.error, undefined)
+  assert.equal(extractText('/no/such/file.docx').error, 'not-found')
+  assert.equal(extractText(path.join(ROOT, 'package.json')).error, 'unsupported') // .json not a doc type
+  assert.ok(isExtractable('resume.docx') && isExtractable('jd.pdf') && isExtractable('notes.txt'))
+  assert.ok(!isExtractable('photo.png') && !isExtractable('data.csv'))
+})
+
+test('8c/pre-confirm: parsePreConfirm reads the triage verdict; unknown → maybe (never drops a role)', () => {
+  assert.equal(parsePreConfirm('{"verdict":"skip","reason":"wrong field"}').verdict, 'skip')
+  assert.equal(parsePreConfirm('reasoning… {"verdict":"fit"}').verdict, 'fit')
+  assert.equal(parsePreConfirm('garbage, no json').verdict, 'maybe')
+  assert.equal(parsePreConfirm('{"verdict":"weird"}').verdict, 'maybe')
+  assert.equal(parsePreConfirm('{"verdict":"skip","reason":"x"}').reason, 'x')
 })
 
 let passed = 0

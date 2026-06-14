@@ -6,6 +6,33 @@ All notable changes to Jobdar are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.21.0] — 2026-06-14
+
+**Phase 8c — document understanding — + the light AI pre-confirm (the Search-tab queue thinner).**
+Verified end-to-end on-device (winc / Qwen3.5-4B) with two real résumés.
+
+### Added
+- **`lib/docparse.mjs` (8c.1):** deterministic text extraction — DOCX via the system `unzip`
+  (word/document.xml, macOS `textutil` fallback), PDF via `pdftotext` when present (else an honest
+  DOCX/text hint), `.txt`/`.md` passthrough; near-empty/image PDFs fail honestly (8c.4). No new npm
+  deps; the web/serverless path swaps unpdf/mammoth in behind `extractText()`.
+- **`jobdar import <file>` (8c.2):** extract locally → the inference backend structures the PROFILE
+  (name / metro / level / skills) → writes `data/cv.md` (the real extracted text — the model NEVER
+  rewrites the résumé) + a prefilled `config/profile.yml`; confirm summary, saves on `--write`. Falls
+  back to a deterministic heuristic with no backend. `jobdar eval <file.pdf|docx>` (8c.3) reads a local JD too.
+- **Light AI pre-confirm (`eval --auto --confirm`):** a cheap on-device yes/maybe/no triage between the
+  zero-token `prescreen` and the heavy decomposed `eval` — skips clearly-wrong roles (with a quoted
+  reason, never silently) to cut full-eval passes. This is the Phase 9 Search-tab thinner, shared by CLI + app.
+- 4 new offline tests (91 → 95). EN/ES parity maintained.
+
+### Verified on-device
+Imported `Dotson_Samuel_Project_Manager.docx` and `Jacob_Homer_HR_Resume.docx` on winc — each parsed to a
+distinct structured profile. On a Creative & Design Operations Lead role: Sam's PM résumé scored 2.1
+(Don't); Jacob's HR résumé was pre-confirm-skipped ("HR vs Ops/Design mismatch") with no wasted eval —
+the queue-thinning working as designed. Zero external network on the eval path.
+
+Remaining Phase 8: 8a.9 (escalation, optional), 8d (offer + keyless BLS pay), 8e (engine contract).
+
 ## [1.20.0] — 2026-06-14
 
 **Phase 8a — automated evaluation (the daily-use unlock); Phase 8 is now feature-complete (8a + 8b).**

@@ -9,6 +9,7 @@ cli:
   options_header: "Options"
   command_desc:
     init: "Interactive setup wizard (region, level, profile, language)"
+    import: "Upload a résumé → parse it locally + prefill your profile (DOCX/PDF/TXT)"
     scan: "Scan configured career portals for new roles (no model needed)"
     seed: "Materialize portals from the region employer catalog"
     prescreen: "Gate + rank pending roles by likelihood before any eval (no model needed)"
@@ -128,6 +129,27 @@ init:
   next: "Next: run `jobdar scan` to see roles, then `jobdar eval <url>` to score one."
   resume_saved: "Saved your résumé to {file} and prefilled your profile."
   resume_manual: "{file} looks like a {kind} — open it in your AI CLI (the onboard mode reads it) to build cv.md."
+import:
+  title: "Import a résumé"
+  usage: "Usage: jobdar import <file.docx|file.pdf|file.txt> [--write]"
+  extracted: "Read {chars} characters from your {kind}."
+  summary: "Profile Jobdar will write:"
+  f_name: "Name"
+  f_location: "Metro"
+  f_level: "Level"
+  f_skills: "Skills"
+  f_cv: "Résumé"
+  chars: "characters"
+  backend: "structured by: {backend}"
+  heuristic: "heuristic (no model)"
+  dry: "Preview only — re-run with --write to save config/profile.yml + data/cv.md."
+  saved: "Saved {profile} + {cv}. Run `jobdar scan` next."
+  err_not-found: "File not found: {file}"
+  err_empty: "Couldn't read any text from {file} — is it empty?"
+  err_pdf-no-extractor: "PDF extraction needs pdftotext (poppler) here — or export the résumé as DOCX/TXT."
+  err_image-pdf: "{file} looks like a scanned/image PDF (no text layer) — export it as text or DOCX."
+  err_unsupported: "Unsupported file type: {file}. Use DOCX, PDF, TXT, or MD."
+
 
 dashboard:
   title: "Jobdar dashboard"
@@ -199,6 +221,8 @@ eval:
   auto_clamped: "clamped"
   auto_done: "Auto-eval done — {evaluated} scored, {failed} skipped."
   batch_skipped: "--batch needs the api backend and more than one role — running live instead."
+  preconfirm_skip: "pre-confirm skipped {role} — {reason}"
+  preconfirm_thinned: "{skipped} role(s) skipped by AI pre-confirm before the scoring pass."
 
 backend:
   title: "Inference backend"

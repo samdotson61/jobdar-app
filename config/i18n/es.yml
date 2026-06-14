@@ -9,6 +9,7 @@ cli:
   options_header: "Opciones"
   command_desc:
     init: "Asistente de configuración interactivo (región, nivel, perfil, idioma)"
+    import: "Sube un currículum → analízalo localmente y prellena tu perfil (DOCX/PDF/TXT)"
     scan: "Escanea los portales de empleo configurados (no requiere modelo)"
     seed: "Materializa portales desde el catálogo de empleadores por región"
     prescreen: "Filtra y ordena los puestos pendientes por probabilidad antes de cualquier evaluación (no requiere modelo)"
@@ -128,6 +129,27 @@ init:
   next: "Siguiente: ejecuta `jobdar scan` para ver puestos, luego `jobdar eval <url>` para puntuar uno."
   resume_saved: "Se guardó tu currículum en {file} y se prellenó tu perfil."
   resume_manual: "{file} parece un {kind} — ábrelo en tu CLI de IA (el modo onboard lo lee) para crear cv.md."
+import:
+  title: "Importar un currículum"
+  usage: "Uso: jobdar import <archivo.docx|archivo.pdf|archivo.txt> [--write]"
+  extracted: "Se leyeron {chars} caracteres de tu {kind}."
+  summary: "Perfil que Jobdar va a escribir:"
+  f_name: "Nombre"
+  f_location: "Área metro"
+  f_level: "Nivel"
+  f_skills: "Habilidades"
+  f_cv: "Currículum"
+  chars: "caracteres"
+  backend: "estructurado por: {backend}"
+  heuristic: "heurística (sin modelo)"
+  dry: "Solo vista previa — vuelve a ejecutar con --write para guardar config/profile.yml + data/cv.md."
+  saved: "Se guardó {profile} + {cv}. Ejecuta `jobdar scan` a continuación."
+  err_not-found: "Archivo no encontrado: {file}"
+  err_empty: "No se pudo leer texto de {file} — ¿está vacío?"
+  err_pdf-no-extractor: "La extracción de PDF requiere pdftotext (poppler) aquí — o exporta el currículum como DOCX/TXT."
+  err_image-pdf: "{file} parece un PDF escaneado/imagen (sin capa de texto) — expórtalo como texto o DOCX."
+  err_unsupported: "Tipo de archivo no admitido: {file}. Usa DOCX, PDF, TXT o MD."
+
 
 dashboard:
   title: "Panel de Jobdar"
@@ -199,6 +221,8 @@ eval:
   auto_clamped: "ajustado"
   auto_done: "Evaluación automática terminada — {evaluated} puntuados, {failed} omitidos."
   batch_skipped: "--batch requiere el backend api y más de un puesto — ejecutando en vivo."
+  preconfirm_skip: "el pre-confirm omitió {role} — {reason}"
+  preconfirm_thinned: "{skipped} puesto(s) omitidos por el pre-confirm de IA antes de puntuar."
 
 backend:
   title: "Backend de inferencia"
