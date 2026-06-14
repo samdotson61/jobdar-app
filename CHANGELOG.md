@@ -6,6 +6,26 @@ All notable changes to Jobdar are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.23.0] — 2026-06-14
+
+**Phase 8d (core) — the keyless pay resolver + offer rubric.** The de-skew engine: a role's pay is never
+blank and never model-produced.
+
+### Added
+- **`lib/pay.mjs` `resolvePay` (8d.2a):** three layers, highest-confidence first — STATED (from the JD) →
+  COMPARABLE (median of same-SOC/metro in-scan roles, n ≥ 3) → BLS (wage-cache percentile by seniority:
+  entry→p25 / mid→median / senior→p75). Always returns `{ annualMin, annualMax, source, confidence, band,
+  label }` with a mandatory source label; never blank. `socForTitle` is the deterministic title→SOC router.
+- **National wage seed floor** `data/seed/wages-national.yml` + `data/seed/soc-map.yml` — keeps pay fully
+  offline; the model routes SOC + seniority, software owns every number.
+- **`modes/offer.md` (8d.3, EN + ES):** the offer rubric — comp-vs-market (cite the source label),
+  benefits, growth, entry-level factors → strong/fair/below + negotiation levers + questions; the model
+  never invents pay. `resolvePay` is exposed on the engine contract.
+- 2 new offline tests (97 → 99). EN/ES + modes parity maintained.
+
+Deferred (Phase 8d remainder): `jobdar offer` interactive capture (8d.1), the live BLS bulk-download
+(`lib/bls.mjs`, 8d.2b — the seed floor substitutes offline), and multi-offer `--compare` (8d.4).
+
 ## [1.22.0] — 2026-06-14
 
 **Phase 8e — the engine contract — + 8a.9 escalation ladder.** Freezes the headless pipeline behind one

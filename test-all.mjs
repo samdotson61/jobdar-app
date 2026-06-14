@@ -40,6 +40,7 @@ import { bandAgreement, buildBatchRequests, parseBatchResults, clampLogEntry } f
 import { extractText, isExtractable } from './lib/docparse.mjs'
 import { importDocument, evaluate as engineEvaluate, recordVerdict, advanceStatus, buildCv, ENGINE_VERSION } from './lib/engine.mjs'
 import { parsePreConfirm, isBorderline } from './lib/eval_engine.mjs'
+import { resolvePay, socForTitle, loadWages, loadSocMap } from './lib/pay.mjs'
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url))
 const tests = []
@@ -1202,6 +1203,29 @@ test('8e: engine contract drives import → evaluate → record → track with N
   assert.equal(rows.find((r) => r.url === 'u1').status, 'applied')
   // build
   assert.ok(buildCv('# Jane Doe\n## Skills\n- SQL').includes('<h1>Jane Doe</h1>'))
+})
+
+test('8d: resolvePay — three layers (stated → comparable → BLS), source label mandatory, never blank', () => {
+  const wages = loadWages()
+  const socMap = loadSocMap()
+  const stated = resolvePay('The salary range is $90,000 - $110,000 per year.', { target: 80000 })
+  assert.equal(stated.source, 'stated'); assert.equal(stated.band, 'above'); assert.ok(stated.label.startsWith('stated'))
+  const comp = resolvePay('No pay listed here.', { target: 80000, comps: [{ annualMin: 80000, annualMax: 100000 }, { annualMin: 90000, annualMax: 110000 }, { annualMin: 85000, annualMax: 105000 }] })
+  assert.equal(comp.source, 'comparable'); assert.ok(comp.label.includes('3 comparable'))
+  const soc = socForTitle('Project Coordinator', socMap)
+  assert.equal(soc, '13-1082')
+  const bls = resolvePay('No pay.', { target: 80000, seniority: 'mid', wages, soc, occ: wages[soc].occ })
+  assert.equal(bls.source, 'bls'); assert.ok(bls.label.includes('median') && bls.annualMin > 0)
+  assert.equal(resolvePay('No pay.', { target: 80000 }).label, 'pay not stated') // never blank
+})
+
+test('8d: socForTitle routes titles to SOC — specific occupations before the generic catch-all', () => {
+  const m = loadSocMap()
+  assert.equal(socForTitle('Business Systems Analyst', m), '15-1211')
+  assert.equal(socForTitle('Senior Software Engineer', m), '15-1252')
+  assert.equal(socForTitle('Recruiting Coordinator', m), '13-1071') // HR wins over the coordinator catch-all
+  assert.equal(socForTitle('Marketing Coordinator', m), '43-9061')
+  assert.equal(socForTitle('Astronaut', m), null)
 })
 
 let passed = 0

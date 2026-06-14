@@ -1,0 +1,14 @@
+# Jobdar — deterministic title → SOC router (Phase 8d.2b fallback). The model routes title→SOC when a
+# backend is up; this keyword map is the offline / no-model path (local-first). First match wins, so list
+# the more specific occupations before the generic coordinator/assistant catch-all. Keys are SOC codes
+# matching data/seed/wages-national.yml.
+"15-1211": [systems analyst, business systems analyst, it analyst, bsa]
+"15-1232": [support specialist, help desk, it support, desktop support, technical support, service desk]
+"15-1252": [software engineer, software developer, developer, programmer, full stack, backend engineer, frontend]
+"15-2051": [data scientist, machine learning, ml engineer, data science]
+"13-1082": [project manager, project coordinator, program manager, program coordinator, pmo, delivery lead, scrum]
+"13-1111": [management analyst, business analyst, operations analyst, strategy, consultant]
+"13-1071": [human resources, "hr ", people operations, talent acquisition, recruiter, recruiting, onboarding]
+"13-2011": [accountant, accounting, financial analyst, finance associate, auditor]
+"43-6011": [executive assistant, administrative assistant, office manager]
+"43-9061": [coordinator, assistant, administrative, office associate, clerk]

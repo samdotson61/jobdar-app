@@ -1,0 +1,14 @@
+# Jobdar — national wage SEED floor (Phase 8d.2). Keyless OEWS-style national annual figures by SOC,
+# so a role's pay is NEVER blank offline. This is the always-available floor; `jobdar pay --refresh`
+# (lib/bls.mjs, 8d.2b) grows data/cache/wages.yml from the keyless OEWS bulk download and overrides
+# these per (area, soc). Approximate national values — treat as a floor, not a quote. p25 / median / p75.
+13-1082: { occ: "Project Management Specialists", p25: 75000, median: 98000, p75: 128000 }
+13-1111: { occ: "Management Analysts", p25: 70000, median: 99000, p75: 135000 }
+15-1211: { occ: "Computer Systems Analysts", p25: 78000, median: 103000, p75: 132000 }
+15-1232: { occ: "Computer User Support Specialists", p25: 44000, median: 59000, p75: 77000 }
+15-1252: { occ: "Software Developers", p25: 90000, median: 124000, p75: 160000 }
+15-2051: { occ: "Data Scientists", p25: 85000, median: 108000, p75: 140000 }
+13-1071: { occ: "Human Resources Specialists", p25: 50000, median: 67000, p75: 89000 }
+13-2011: { occ: "Accountants & Auditors", p25: 60000, median: 79000, p75: 102000 }
+43-6011: { occ: "Executive Assistants", p25: 50000, median: 66000, p75: 84000 }
+43-9061: { occ: "Office & Administrative Coordinators", p25: 38000, median: 49000, p75: 62000 }

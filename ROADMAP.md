@@ -7,7 +7,7 @@
 > fit against your résumé, **tailors** an ATS-friendly CV/cover letter, and **tracks** every application —
 > with your data kept **local**, processed by a **private on-device model by default** or your own cloud API.
 >
-> **Status:** Phases 0–7, **5.5, 7.7, 7.8, 8b, 8a, 8c and 8e** complete — **Jobdar CLI `1.22.0`**. Bilingual core; **six scanner
+> **Status:** Phases 0–7, **5.5, 7.7, 7.8, 8b, 8a, 8c and 8e** complete — **Jobdar CLI `1.23.0`**. Bilingual core; **six scanner
 > providers** (Greenhouse, Workday, iCIMS, Lever, Ashby + an opt-in JSON-LD reader), all live-verified,
 > all with eval-time JD fetch; level + region toggles; the `jobdar init` wizard; the full
 > **discover→prescreen→evaluate→track→build pipeline** — `scan` finds + filters (it never scores),
@@ -213,8 +213,8 @@ on-device inference**, which is why winc.cpp comes first below.
 | ✅ | **BYO-key automated eval** | 8a.1–8a.3 | ✅ shipped 1.20.0 (2026-06-14) | the opt-in accuracy upgrade; small build |
 | ✅ | **Eval tuning + calibration + fairness + economics** | 8a.4–8a.9 | ✅ shipped 1.20.0 (8a.9 optional, deferred) | scores must be trustworthy before they're the product; research done → [docs/eval-tuning-research.md](docs/eval-tuning-research.md) — incl. the measured requirements-check win + grammar-constrained JSON |
 | ✅ | **PDF/document understanding (+ light AI pre-confirm)** | 8c.1–8c.5 | ✅ shipped 1.21.0 (2026-06-14) | "upload a résumé → go" for init; PDF JDs in eval |
-| 7 | **Offer evaluation + on-demand BLS pay resolver** | 8d.1–8d.5 | ⬜ **NEXT BUILD** | completes discover → evaluate → **decide**; revised 8d.2 = a growing wage cache, not a static pack |
-| 8 | **The engine contract** | 8e.1–8e.4 | ✅ shipped 1.22.0 | freezes the seam web/mobile build against |
+| 🔶 | **Offer evaluation + on-demand BLS pay resolver** | 8d.1–8d.5 | 🔶 core shipped 1.23.0 (resolver+rubric; capture/fetch/compare deferred) | completes discover → evaluate → **decide**; revised 8d.2 = a growing wage cache, not a static pack |
+| 8 | **The engine contract** | 8e.1–8e.4 | ✅ shipped 1.23.0 | freezes the seam web/mobile build against |
 | 9 | **npm publish + marketplace → 1.0** | 7.5 | 🔶 blocked on Step 0.2 (org/trademark) only | distribution, not function |
 | 10 | **Workday quirk tenants; new ATS readers** | 5.5.4 / 5.5.5 | 🔶 / ⬜ demand-driven | parallel track, paced by beta demand |
 | 11 | **Web app, then mobile app** | 9.1–9.8 | ⬜ post-1.0 | thin front-ends over the 8e engine, with 8b inference embedded |
@@ -577,7 +577,7 @@ library survey in [docs/eval-tuning-research.md](docs/eval-tuning-research.md) �
 
 ## Phase 8d — Offer evaluation
 
-> **Status: ⬜ not started** (milestone 6).
+> **Status: 🔶 core shipped 1.23.0** (2026-06-14) — `lib/pay.mjs resolvePay` (STATED→COMPARABLE→BLS, mandatory source label) + national wage seed floor + `socForTitle` router + `modes/offer.md` rubric (EN/ES). Deferred: `jobdar offer` capture (8d.1), live BLS bulk-download (8d.2b — seed floor substitutes), multi-offer compare (8d.4).
 
 **Goal:** when applications turn into offers, evaluate the offer the way we evaluate fit — against the
 user's profile, region, and **real wage data** — on the same swappable backends. The model never invents
@@ -588,9 +588,9 @@ numbers: deterministic code supplies market context; the model interprets it. (D
 |---|---|---|
 | 8d.1 | **`jobdar offer <company>`** — bilingual interactive capture: base, bonus, benefits, PTO, metro/remote, start date → stored on the tracker row (new `offer` fields + an `offer` state in `templates/states.yml`, EN canonical / ES alias per 1.4). | capture first |
 | 8d.2 | **Wage cache from the KEYLESS OEWS bulk download (rec-spec §2 — REVISED; BLS-source DECIDED 2026-06-13):** **no API key, no account, works out of the box.** Ship a small **national-by-SOC seed** (`data/seed/wages-national.yml`, sliced from the OEWS national release) as the always-offline floor so coverage is never blank; `data/cache/wages.yml` then **grows on demand** — on a region change / a new metro surfacing, download the keyless OEWS metro table(s) once and append only the needed `(area, soc)` rows, offline thereafter (`jobdar pay --refresh` re-pulls the annual release). **KEEP the metro cost-of-living index 8d.3/8d.4/4.7 depend on** — relocate it into the seed, do NOT drop it. (Pay sparsity is real — only 23/79 study postings stated pay, worst on the target roles, IT Support 0/8 — so an external anchor is required, not optional.) | facts from data, keyless |
-| 8d.2a | **`lib/pay.mjs` — three-layer `resolvePay(jd, role, metro, target)`:** STATED (`lib/salary.mjs extractPay`, high) → COMPARABLE (in-scan median {soc, seniority, metro}, n≥3, reusing `cv_render matchedKeywords`, med) → BLS (`wages.yml` percentile by seniority: entry→p25 / mid→median / senior→p75, base). Always returns `{annualMin, annualMax, source, confidence, band}`; **the source label is mandatory UI text** ("stated $X" / "est. $Y (N comparable)" / "est. $Z (BLS median, [occ], [metro])"); never blank, never model-produced. | the de-skew engine |
+| 8d.2a ✅ | **`lib/pay.mjs` — three-layer `resolvePay(jd, role, metro, target)`:** STATED (`lib/salary.mjs extractPay`, high) → COMPARABLE (in-scan median {soc, seniority, metro}, n≥3, reusing `cv_render matchedKeywords`, med) → BLS (`wages.yml` percentile by seniority: entry→p25 / mid→median / senior→p75, base). Always returns `{annualMin, annualMax, source, confidence, band}`; **the source label is mandatory UI text** ("stated $X" / "est. $Y (N comparable)" / "est. $Z (BLS median, [occ], [metro])"); never blank, never model-produced. | the de-skew engine |
 | 8d.2b | **`lib/bls.mjs` (keyless bulk) + the hard split (§2b/§2c):** `ensureWages(regions, socCodes)` (idempotent, resumable) downloads the relevant **OEWS annual release table(s)** — keyless HTTPS from `download.bls.gov` / `bls.gov/oes` (XLSX/TXT flat files; set a descriptive User-Agent per BLS guidance) — and slices the needed `(area, soc)` rows into the cache; `lookupWage(...)` is a pure cache read; `nationalAdjusted(soc, metro)` (national row × metro pay-differential, `source:'bls-national-adj'`) covers rural/unreachable. **No API key** — the v2 API needs per-user registration (not out-of-the-box) and keyless v1 caps at ~10 req/day, so we take the bulk download. SSRF-guarded via `lib/http.mjs` (`download.bls.gov` + `www.bls.gov` allowlist, HTTPS, `redirect:'error'`). **Hard split:** the **model is the SOC + seniority router ONLY** (deterministic `data/seed/soc-map.yml` fallback for offline/no-model — local-first); **software owns every number** (download, slice, area-code lookup, percentile + hourly↔annual, cache). **SECURITY.md (lockstep):** add `download.bls.gov` / `www.bls.gov` as permitted outbound hosts — public reference data, no PII, no key. | model routes, software calculates |
-| 8d.3 | **Offer rubric** `modes/offer.md` (EN + ES): the model weighs comp-vs-market (from 8d.2), benefits completeness, growth trajectory, commute/remote — plus entry-level-specific factors (training, mentorship, first-role résumé value) → structured verdict `{ assessment: strong/fair/below, negotiation_levers[], questions_to_ask[] }` under the same 8a.4 consistency guardrails. | judgment on top of facts |
+| 8d.3 ✅ | **Offer rubric** `modes/offer.md` (EN + ES): the model weighs comp-vs-market (from 8d.2), benefits completeness, growth trajectory, commute/remote — plus entry-level-specific factors (training, mentorship, first-role résumé value) → structured verdict `{ assessment: strong/fair/below, negotiation_levers[], questions_to_ask[] }` under the same 8a.4 consistency guardrails. | judgment on top of facts |
 | 8d.4 | **Multi-offer compare:** `jobdar offer --compare` — a COL-adjusted side-by-side of every recorded offer. | the real decision moment |
 | 8d.5 | **Tests:** wage-math fixtures + verdict-shape checks on both backends in `test-all.mjs`. | parity |
 
@@ -601,7 +601,7 @@ identical structured shape on `inference: api` and `inference: local`; a Spanish
 
 ## Phase 8e — The engine contract (CLI, web, mobile plug in here)
 
-> **Status: ✅ shipped 1.22.0** (2026-06-14) — `lib/engine.mjs` (no-console verbs + onProgress) + `jobdar serve` (localhost JSON façade) + `docs/engine.md` + a conformance test driving the full pipeline via the engine only. Phase 9 builds against this seam.
+> **Status: ✅ shipped 1.23.0** (2026-06-14) — `lib/engine.mjs` (no-console verbs + onProgress) + `jobdar serve` (localhost JSON façade) + `docs/engine.md` + a conformance test driving the full pipeline via the engine only. Phase 9 builds against this seam.
 
 **Goal:** freeze the headless pipeline — **import → scan → eval → track → build** — behind ONE documented
 programmatic seam, so the CLI, the web app, and the mobile app are thin front-ends over the **same engine**.
