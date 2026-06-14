@@ -1089,6 +1089,26 @@ test('8a: clampVerdict forces Don\'t on unmet requirements / hard gates; no_degr
   assert.equal(clampVerdict({ score: 4.5, judgments: { required: { candidate_meets_all: 'no' } }, gates: {}, decision: { screened: false }, profile: {} }).band, 'dont') // stringy negative still clamps
 })
 
+test('1.24.1: clampVerdict is transferable-aware — a years-in-field shortfall no longer auto-clamps; hard credentials + prescreen gates still do', () => {
+  const J = (note) => ({ required: { candidate_meets_all: false, note } })
+  // OFF (default): a "2+ years in [field]" shortfall clamps to Don't (backward compatible)
+  const off = clampVerdict({ score: 3.6, judgments: J('2+ years HR generalist experience'), gates: {}, decision: { screened: false }, profile: { transferable_skills: false } })
+  assert.equal(off.clamped, true); assert.equal(off.band, 'dont')
+  // ON: the same years-in-field shortfall does NOT clamp → 3.6 stays Research (the toggle can now promote a band)
+  const on = clampVerdict({ score: 3.6, judgments: J('2+ years HR generalist experience'), gates: {}, decision: { screened: false }, profile: { transferable_skills: true } })
+  assert.equal(on.clamped, false); assert.equal(on.band, 'research')
+  // an explicit `transferable` param (the `--transferable` flag) overrides the profile
+  assert.equal(clampVerdict({ score: 3.6, judgments: J('1+ year customer-facing role'), gates: {}, decision: { screened: false }, profile: {}, transferable: true }).clamped, false)
+  // a genuine hard credential still clamps with the toggle on, even when the note mentions a year count
+  const lic = clampVerdict({ score: 3.9, judgments: J('3+ years and an active RN license'), gates: {}, decision: { screened: false }, profile: { transferable_skills: true } })
+  assert.equal(lic.clamped, true); assert.equal(lic.band, 'dont')
+  // a deterministic prescreen gate (over-experience) still clamps regardless of the toggle
+  assert.equal(clampVerdict({ score: 4.6, judgments: { required: { candidate_meets_all: true } }, gates: {}, decision: { screened: true, reasons: [{ kind: 'years', quote: '8+ years' }] }, profile: { transferable_skills: true } }).band, 'dont')
+  // buildVerdict threads `transferable` end-to-end (years shortfall + toggle on → not clamped)
+  const built = buildVerdict({ text: JSON.stringify({ required: { candidate_meets_all: false, note: '2+ years in analytics' }, skills: { rating: 'strong' }, experience: { rating: 'partial' }, level_fit: { rating: 'strong' }, logistics: { rating: 'strong' }, education: { rating: 'partial' }, recommendation: 'bridge' }), jd: 'Analytics role', gates: {}, decision: { screened: false }, profile: { transferable_skills: true } })
+  assert.equal(built.ok, true); assert.equal(built.clamped, false)
+})
+
 test('8a: buildEvalUser injects the verified gate facts + today, and the JD/CV', () => {
   const gates = { years: { years: 5, quote: '5+ years' }, degree: { gate: 'yes' }, clearance: { gate: 'none' }, license: { flagged: false } }
   const u = buildEvalUser({ jd: 'Need SQL', cv: 'I know SQL', profile: { target_levels: ['entry'] }, gates, today: '2026-06-14' })

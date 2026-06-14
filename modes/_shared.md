@@ -117,8 +117,16 @@ impact, and people or technical leadership.
 
 When the candidate has `transferable_skills: true` (a new grad or career changer), CREDIT transferable
 and adjacent skills that genuinely map to a role — cite the résumé item and the requirement it bridges.
-This changes WHAT counts as a fit, not how many roles pass: stay strongly targeted, a transferable (not
-direct) skill is at most a partial match, and skip aspirational stretches with no real bridge.
+Rate each skill on the **strength of its bridge**, not on whether the prior title matched: a clear,
+well-evidenced adjacent skill counts as much as a direct one ("strong"); a real-but-partial bridge is
+"partial"; a fabricated or aspirational stretch is "none". This changes WHAT counts as a fit, not how
+many roles pass — never invent a bridge, never credit a buzzword, and skip stretches with no real bridge.
+
+With the toggle on, an "`X+ years in [field]`" requirement is a **soft signal that adjacent experience
+can bridge** — the same way `no_degree` treats "Bachelor's required." It no longer forces a Don't on
+its own (the deterministic clamp skips it, 1.24.1), so a genuinely-bridged role can land in Research or
+Apply on the merits. Genuine hard credentials (an active license, certification, or clearance) still
+gate — those never bend.
 
 ## The no-degree path (first-class)
 

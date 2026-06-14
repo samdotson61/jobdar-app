@@ -103,9 +103,17 @@ encabeza con alcance, impacto y liderazgo técnico o de personas.
 
 Cuando la persona tiene `transferable_skills: true` (recién graduada o en cambio de carrera), ACREDITA
 las habilidades transferibles y adyacentes que realmente mapean a un puesto — cita el elemento del
-currículum y el requisito que cubre. Esto cambia QUÉ cuenta como buen encaje, no cuántos puestos pasan:
-mantente muy enfocado, una habilidad transferible (no directa) es como mucho parcial, y descarta saltos
-aspiracionales sin un puente real.
+currículum y el requisito que cubre. Califica cada habilidad por la **fuerza de su puente**, no por si
+el título anterior coincidía: una habilidad adyacente clara y bien evidenciada cuenta igual que una
+directa ("strong"); un puente real pero parcial es "partial"; un salto inventado o aspiracional es
+"none". Esto cambia QUÉ cuenta como buen encaje, no cuántos puestos pasan — nunca inventes un puente,
+nunca acredites una palabra de moda, y descarta saltos sin un puente real.
+
+Con el interruptor activado, un requisito de "`X+ años en [campo]`" es una **señal suave que la
+experiencia adyacente puede cubrir** — igual que `no_degree` trata "se requiere licenciatura". Por sí
+solo ya no fuerza un Descartar (el clamp determinista lo omite, 1.24.1), así que un puesto realmente
+cubierto puede quedar en Investigar o Postular por sus méritos. Las credenciales duras reales (una
+licencia, certificación o habilitación de seguridad vigente) siguen filtrando — esas no ceden.
 
 ## La vía sin título (de primera clase)
 

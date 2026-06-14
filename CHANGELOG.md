@@ -6,6 +6,38 @@ All notable changes to Jobdar are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.24.1] — 2026-06-14
+
+**Make the transferable toggle actually deliver** — two fixes found by an on-device, multi-run audit of
+1.24.0. The toggle steered the prompts but its effect was being erased downstream, and on the strongest
+adjacent fit it was *lowering* the score. Both are corrected; the bar is unchanged.
+
+### Fixed
+- **The clamp is now transferable-aware.** The deterministic clamp (forces Don't on an unmet HARD
+  requirement) was the real gatekeeper and ignored the toggle — it floored career-changers to Don't on
+  `"X+ years in [field]"` even with strong adjacent experience (it clamped an HR candidate on *his own
+  field*). Now, when transferable mode is on, a years-in-field shortfall **no longer drives the clamp**
+  (exact parity with how `no_degree` already exempts the degree gate). Genuine hard credentials — an
+  active license, certification, or clearance — still gate, even when the note mentions a year count.
+  Threaded `transferable` through `clampVerdict` ← `buildVerdict` ← `evalRole` + the batch path.
+- **Reworked the eval prompt so it lifts instead of caps.** The 1.24.0 wording (*"a transferable skill
+  is at most 'partial'"*) made the local 4B model down-rate legitimately strong bridges — on-device it
+  *demoted* a genuine fit (Sam's PM résumé vs an entry BI Analyst role: OFF mean 4.02 → ON 3.36, Δ −0.66
+  over 5 runs). The note now rates each skill on the **strength of the bridge** (a clear, evidenced
+  adjacent skill earns the same rating a direct one would; no genuine bridge → "none"). Anti-inflation
+  intent preserved ("never invent a bridge", "quality over quantity").
+
+### Verified on-device (winc / Qwen3.5-4B, N=5 means)
+- Sam/BI Analyst (strong adjacent): OFF 3.82 → **ON 4.06** (+0.24) — the −0.66 demotion is gone.
+- Jacob/Customer Success (adjacent): OFF 2.36 → **ON 2.98** (+0.62 lift; 1/5 ON runs promoted to Research).
+- Sam/Consumer Insights (genuine non-fit): flat (~−0.04), stays Don't — correctly not forced.
+- Stretch guard intact: Data Scientist roles stay firmly Don't ON (0.3–0.8), no inflation.
+- **Caveat:** the 4B model is noisy (±~1 pt run-to-run); the *mean* behavior is now correct, but any
+  single eval is unreliable near a band edge — a calibration note for the local-AI-default architecture.
+
+### Added
+- 1 new offline test (101 total) covering the transferable-aware clamp end-to-end through `buildVerdict`.
+
 ## [1.24.0] — 2026-06-14
 
 **Transferable-skills toggle** — strongly-targeted cross-field matching for new grads & career changers.
