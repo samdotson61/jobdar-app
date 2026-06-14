@@ -20,6 +20,7 @@ cli:
     tracker: "View and update your application tracker"
     dashboard: "Launch the pipeline dashboard (web)"
     tui: "Interactive terminal dashboard"
+    serve: "Run the engine API on localhost (web/mobile front-ends plug in here)"
     backend: "Set up / check the on-device inference backend (winc.cpp)"
     calibrate: "Calibrate the evaluator against a hand-banded set (live, opt-in)"
     doctor: "Check that your setup is ready"
@@ -150,6 +151,12 @@ import:
   err_image-pdf: "{file} looks like a scanned/image PDF (no text layer) — export it as text or DOCX."
   err_unsupported: "Unsupported file type: {file}. Use DOCX, PDF, TXT, or MD."
 
+serve:
+  title: "Jobdar engine server"
+  up: "Engine API on {url} — POST /evaluate, /import; GET /health."
+  endpoints: "The web/mobile front-ends talk to this one socket (localhost only)."
+  stop: "Press Ctrl-C to stop."
+
 
 dashboard:
   title: "Jobdar dashboard"
@@ -223,6 +230,7 @@ eval:
   batch_skipped: "--batch needs the api backend and more than one role — running live instead."
   preconfirm_skip: "pre-confirm skipped {role} — {reason}"
   preconfirm_thinned: "{skipped} role(s) skipped by AI pre-confirm before the scoring pass."
+  escalated: "escalated borderline {from} → {to} on the api backend"
 
 backend:
   title: "Inference backend"

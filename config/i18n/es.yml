@@ -20,6 +20,7 @@ cli:
     tracker: "Consulta y actualiza tu registro de solicitudes"
     dashboard: "Abre el panel del flujo de trabajo (web)"
     tui: "Panel interactivo en la terminal"
+    serve: "Ejecuta la API del motor en localhost (las apps web/móvil se conectan aquí)"
     backend: "Configura / revisa el backend de inferencia en el dispositivo (winc.cpp)"
     calibrate: "Calibra el evaluador contra un conjunto con banda asignada (en vivo, opcional)"
     doctor: "Verifica que tu configuración esté lista"
@@ -150,6 +151,12 @@ import:
   err_image-pdf: "{file} parece un PDF escaneado/imagen (sin capa de texto) — expórtalo como texto o DOCX."
   err_unsupported: "Tipo de archivo no admitido: {file}. Usa DOCX, PDF, TXT o MD."
 
+serve:
+  title: "Servidor del motor de Jobdar"
+  up: "API del motor en {url} — POST /evaluate, /import; GET /health."
+  endpoints: "Las apps web/móvil hablan con este único socket (solo localhost)."
+  stop: "Pulsa Ctrl-C para detener."
+
 
 dashboard:
   title: "Panel de Jobdar"
@@ -223,6 +230,7 @@ eval:
   batch_skipped: "--batch requiere el backend api y más de un puesto — ejecutando en vivo."
   preconfirm_skip: "el pre-confirm omitió {role} — {reason}"
   preconfirm_thinned: "{skipped} puesto(s) omitidos por el pre-confirm de IA antes de puntuar."
+  escalated: "escalado limítrofe {from} → {to} en el backend api"
 
 backend:
   title: "Backend de inferencia"

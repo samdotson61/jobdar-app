@@ -6,6 +6,28 @@ All notable changes to Jobdar are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.22.0] — 2026-06-14
+
+**Phase 8e — the engine contract — + 8a.9 escalation ladder.** Freezes the headless pipeline behind one
+programmatic seam so the CLI, web, and mobile are thin callers — readying Phase 9.
+
+### Added
+- **`lib/engine.mjs` (8e.1) — the engine contract:** import → scan → evaluate → track → build as
+  no-console-I/O functions (structured returns + `onProgress`). `importDocument`, `scan`, `evaluate`
+  (with optional pre-confirm + escalate), `preConfirm`, track verbs (`recordVerdict` / `advanceStatus` /
+  `prune`), `buildCv`, backend selection. `jobdar import` is now a thin caller over it (extract, not rewrite).
+- **`jobdar serve` (8e.2):** the verbs as JSON over localhost (default `127.0.0.1:4320`; CORS localhost) —
+  `GET /health`, `POST /evaluate`, `POST /import`. The one socket the web/mobile front-ends talk to.
+- **`docs/engine.md` (8e.3):** the versioned contract — verb signatures + the Job/Verdict/Import shapes;
+  `ENGINE_VERSION` bumps on a breaking change. Phase 9 builds against this doc, never internals.
+- **Conformance test (8e.4):** a full pipeline (import → evaluate → record → track → build) driven through
+  `lib/engine.mjs` only — no CLI — asserting every shape.
+- **8a.9 escalation ladder (`eval --auto --escalate`):** re-scores a borderline local verdict on the api
+  backend (the accuracy upgrade); `isBorderline` flags near-band, never-clamped verdicts; api-key gated.
+- 3 new offline tests (95 → 97). EN/ES parity maintained.
+
+Remaining Phase 8: 8d (offer evaluation + keyless BLS pay resolver) — the offer-stage feature.
+
 ## [1.21.0] — 2026-06-14
 
 **Phase 8c — document understanding — + the light AI pre-confirm (the Search-tab queue thinner).**

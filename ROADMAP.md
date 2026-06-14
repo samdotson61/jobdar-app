@@ -7,7 +7,7 @@
 > fit against your résumé, **tailors** an ATS-friendly CV/cover letter, and **tracks** every application —
 > with your data kept **local**, processed by a **private on-device model by default** or your own cloud API.
 >
-> **Status:** Phases 0–7, **5.5, 7.7, 7.8, 8b, 8a and 8c** complete — **Jobdar CLI `1.21.0`**. Bilingual core; **six scanner
+> **Status:** Phases 0–7, **5.5, 7.7, 7.8, 8b, 8a, 8c and 8e** complete — **Jobdar CLI `1.22.0`**. Bilingual core; **six scanner
 > providers** (Greenhouse, Workday, iCIMS, Lever, Ashby + an opt-in JSON-LD reader), all live-verified,
 > all with eval-time JD fetch; level + region toggles; the `jobdar init` wizard; the full
 > **discover→prescreen→evaluate→track→build pipeline** — `scan` finds + filters (it never scores),
@@ -214,7 +214,7 @@ on-device inference**, which is why winc.cpp comes first below.
 | ✅ | **Eval tuning + calibration + fairness + economics** | 8a.4–8a.9 | ✅ shipped 1.20.0 (8a.9 optional, deferred) | scores must be trustworthy before they're the product; research done → [docs/eval-tuning-research.md](docs/eval-tuning-research.md) — incl. the measured requirements-check win + grammar-constrained JSON |
 | ✅ | **PDF/document understanding (+ light AI pre-confirm)** | 8c.1–8c.5 | ✅ shipped 1.21.0 (2026-06-14) | "upload a résumé → go" for init; PDF JDs in eval |
 | 7 | **Offer evaluation + on-demand BLS pay resolver** | 8d.1–8d.5 | ⬜ **NEXT BUILD** | completes discover → evaluate → **decide**; revised 8d.2 = a growing wage cache, not a static pack |
-| 8 | **The engine contract** | 8e.1–8e.4 | ⬜ | freezes the seam web/mobile build against |
+| 8 | **The engine contract** | 8e.1–8e.4 | ✅ shipped 1.22.0 | freezes the seam web/mobile build against |
 | 9 | **npm publish + marketplace → 1.0** | 7.5 | 🔶 blocked on Step 0.2 (org/trademark) only | distribution, not function |
 | 10 | **Workday quirk tenants; new ATS readers** | 5.5.4 / 5.5.5 | 🔶 / ⬜ demand-driven | parallel track, paced by beta demand |
 | 11 | **Web app, then mobile app** | 9.1–9.8 | ⬜ post-1.0 | thin front-ends over the 8e engine, with 8b inference embedded |
@@ -506,7 +506,7 @@ rest; we never receive or store résumés.
 | 8a.6 ✅ | **Fairness guards:** strip name/contact lines from the CV slice before the prompt is built (smaller bias surface AND less PII out the door — off-the-shelf LLMs measurably carry demographic bias in hiring contexts); under `no_degree`, a degree requirement can flag a role but never auto-zero it, and the calibration set makes a regression here a **test failure**, not a vibe. | fairness |
 | 8a.7 ✅ | **Bulk-eval economics — the Message Batches API:** `--all-pending` on the API backend submits one Batches-API job (one role per request) instead of N live calls — **50% of standard price**, up to 100k requests per batch, usually done within the hour; results polled and recorded via the same `--save` path. Interactive evals (`--next`, single URL) stay on the live Messages API. | half-price overnight runs |
 | 8a.8 ✅ | **Prompt caching for the shared prefix:** rubric + `cv.md` are byte-identical across every eval in a run — mark them with `cache_control` so each call pays full price only for the JD (~0.1× input price on the cached prefix; 5-min TTL that a paced sequential queue keeps warm). Requires a byte-stable prefix: no timestamps or per-run IDs ahead of the JD. | each eval pays only for the JD |
-| 8a.9 ⬜ | **Targeted escalation ladder (optional cost/quality, §3f).** Run the fast low-end model (gemma4-e2b — safe on rejects, occasionally over-strict) on EVERY role, then **re-score only the borderline / negative verdicts on Qwen-4B** (via winc team mode or a second profile) — recovers gemma's over-strict misses without paying 4B latency on every job. Measured: gemma+reqcheck 3/3 rejects but over-strict; Qwen-4B+reqcheck 6/6. | pay 4B only where it matters |
+| 8a.9 ✅ | **Targeted escalation ladder (optional cost/quality, §3f).** Run the fast low-end model (gemma4-e2b — safe on rejects, occasionally over-strict) on EVERY role, then **re-score only the borderline / negative verdicts on Qwen-4B** (via winc team mode or a second profile) — recovers gemma's over-strict misses without paying 4B latency on every job. Measured: gemma+reqcheck 3/3 rejects but over-strict; Qwen-4B+reqcheck 6/6. | pay 4B only where it matters |
 
 ### Phase 8b — on-device backend: winc.cpp primary (private, no key, no cost) — **✅ SHIPPED 1.19.0**
 
@@ -601,7 +601,7 @@ identical structured shape on `inference: api` and `inference: local`; a Spanish
 
 ## Phase 8e — The engine contract (CLI, web, mobile plug in here)
 
-> **Status: ⬜ not started** (milestone 7).
+> **Status: ✅ shipped 1.22.0** (2026-06-14) — `lib/engine.mjs` (no-console verbs + onProgress) + `jobdar serve` (localhost JSON façade) + `docs/engine.md` + a conformance test driving the full pipeline via the engine only. Phase 9 builds against this seam.
 
 **Goal:** freeze the headless pipeline — **import → scan → eval → track → build** — behind ONE documented
 programmatic seam, so the CLI, the web app, and the mobile app are thin front-ends over the **same engine**.
@@ -609,10 +609,10 @@ This is the phase that makes Phase 9 a UI project instead of a rewrite.
 
 | Step | What | Detail |
 |---|---|---|
-| 8e.1 | **`lib/engine.mjs`** — export the verbs as functions with **no console I/O** (structured returns + progress callbacks): `importDocument()`, `scan()`, `evaluate()`, tracker verbs, `buildCv()`. The CLI subcommands become thin callers — behavior identical, seam explicit. | extract, don't rewrite |
-| 8e.2 | **Local HTTP façade** `jobdar serve` — the same verbs as JSON endpoints on localhost (the dashboard already proves the pattern); CORS locked to localhost; no secrets in responses. This is what a dev-build web front-end — or a phone on the LAN — talks to. | the plug socket |
-| 8e.3 | **Contract doc** `docs/engine.md` — verb signatures, the `Job` / `Verdict` / `Offer` shapes, progress events; versioned. **Phase 9 builds against this doc, never against internals.** | the promise |
-| 8e.4 | **Conformance test:** one script in `test-all.mjs` drives a full pipeline run through `lib/engine.mjs` only — no CLI — and asserts every shape. | keeps the seam honest |
+| 8e.1 ✅ | **`lib/engine.mjs`** — export the verbs as functions with **no console I/O** (structured returns + progress callbacks): `importDocument()`, `scan()`, `evaluate()`, tracker verbs, `buildCv()`. The CLI subcommands become thin callers — behavior identical, seam explicit. | extract, don't rewrite |
+| 8e.2 ✅ | **Local HTTP façade** `jobdar serve` — the same verbs as JSON endpoints on localhost (the dashboard already proves the pattern); CORS locked to localhost; no secrets in responses. This is what a dev-build web front-end — or a phone on the LAN — talks to. | the plug socket |
+| 8e.3 ✅ | **Contract doc** `docs/engine.md` — verb signatures, the `Job` / `Verdict` / `Offer` shapes, progress events; versioned. **Phase 9 builds against this doc, never against internals.** | the promise |
+| 8e.4 ✅ | **Conformance test:** one script in `test-all.mjs` drives a full pipeline run through `lib/engine.mjs` only — no CLI — and asserts every shape. | keeps the seam honest |
 
 **Verification gate:** a single script (no CLI) goes résumé-PDF → scanned → evaluated → tracked via
 `lib/engine.mjs`; `jobdar serve` does the same over HTTP from a browser `fetch`.

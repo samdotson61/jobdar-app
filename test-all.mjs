@@ -38,7 +38,8 @@ import { resolveBackend, isLoopbackUrl, parseVerdict, selectActive, backendHealt
 import { scoreFromJudgments, parseEvalJson, stripPII, clampVerdict, buildEvalUser, evalRole, buildVerdict, prepEval } from './lib/eval_engine.mjs'
 import { bandAgreement, buildBatchRequests, parseBatchResults, clampLogEntry } from './lib/eval_ops.mjs'
 import { extractText, isExtractable } from './lib/docparse.mjs'
-import { parsePreConfirm } from './lib/eval_engine.mjs'
+import { importDocument, evaluate as engineEvaluate, recordVerdict, advanceStatus, buildCv, ENGINE_VERSION } from './lib/engine.mjs'
+import { parsePreConfirm, isBorderline } from './lib/eval_engine.mjs'
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url))
 const tests = []
@@ -1165,6 +1166,42 @@ test('8c/pre-confirm: parsePreConfirm reads the triage verdict; unknown → mayb
   assert.equal(parsePreConfirm('garbage, no json').verdict, 'maybe')
   assert.equal(parsePreConfirm('{"verdict":"weird"}').verdict, 'maybe')
   assert.equal(parsePreConfirm('{"verdict":"skip","reason":"x"}').reason, 'x')
+})
+
+test('8a.9: isBorderline flags near-band verdicts for escalation, never clamped/clear ones', () => {
+  assert.equal(isBorderline({ ok: true, score: 3.6 }), true) // near Research (3.5)
+  assert.equal(isBorderline({ ok: true, score: 3.9 }), true) // near Apply (4.0)
+  assert.equal(isBorderline({ ok: true, score: 4.8 }), false) // clearly Apply
+  assert.equal(isBorderline({ ok: true, score: 1.5 }), false) // clearly Don't
+  assert.equal(isBorderline({ ok: true, score: 3.5, clamped: true }), false) // clamps are deterministic — don't escalate
+  assert.equal(isBorderline({ ok: false }), false)
+})
+
+test('8e: engine contract drives import → evaluate → record → track with NO CLI; shapes hold', async () => {
+  assert.ok(ENGINE_VERSION)
+  // import (heuristic, no backend) over a real text file
+  const imp = await importDocument(path.join(ROOT, 'CLAUDE.md'), { active: null })
+  assert.equal(imp.ok, true)
+  assert.ok(imp.cv.length > 50 && imp.fields && Array.isArray(imp.fields.skills))
+  assert.equal(imp.structuredBy, 'heuristic')
+  // evaluate via the engine over a mock backend (the §3 pipeline)
+  const m = await mockBackend({ reply: JSON.stringify({ required: { candidate_meets_all: true }, ...ALL('strong'), recommendation: 'fit' }) })
+  const v = await engineEvaluate({ active: { kind: 'local', protocol: 'messages', baseUrl: m.url }, jd: 'Analyst. SQL. Salary $90,000-$110,000.', cv: 'SQL analyst', profile: { target_salary: 80000 }, today: '2026-06-14' })
+  assert.equal(v.ok, true)
+  assert.equal(v.band, 'apply')
+  assert.ok('pay' in v)
+  // pre-confirm gate routes through the engine too
+  const mSkip = await mockBackend({ reply: '{"verdict":"skip","reason":"x"}' })
+  const sk = await engineEvaluate({ active: { kind: 'local', protocol: 'messages', baseUrl: mSkip.url }, jd: 'x', cv: 'y', profile: {}, confirm: true })
+  assert.equal(sk.skipped, true)
+  await m.close(); await mSkip.close()
+  // record + track (pure rows in/out)
+  let rows = recordVerdict([], { url: 'u1', score: v.score, band: v.band, company: 'C', role: 'R' }, '2026-06-14')
+  assert.equal(rows.find((r) => r.url === 'u1').band, 'apply')
+  rows = advanceStatus(rows, 'u1', 'applied', '2026-06-15')
+  assert.equal(rows.find((r) => r.url === 'u1').status, 'applied')
+  // build
+  assert.ok(buildCv('# Jane Doe\n## Skills\n- SQL').includes('<h1>Jane Doe</h1>'))
 })
 
 let passed = 0
