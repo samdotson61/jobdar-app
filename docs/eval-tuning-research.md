@@ -21,6 +21,17 @@
 >   Qwen3.5-4B swings **~±1 point run-to-run**, enough to flip a band near an edge — so transferable
 >   behavior must be judged on the **mean of N ≥ 5 runs, never one**, and §1's "2–3-sample ensemble,
 >   majority band" should be treated as **load-bearing for production** on a 4B local backend, not optional.
+> - **Low-end floor validated — `gemma4-e2b` (Gemma Effective-2B, the nano tier).** Doubled JD set
+>   (12 roles × OFF/ON × N = 5 = 120 evals on the 2B): the toggle stays directionally correct at the very
+>   low end — direct fits neutral (3/3 in-band), clean-gate adjacent roles lift-or-hold and **all reach
+>   Research/Apply when ON (5/5, meanΔ +0.12)**, years-clamped roles not demoted (2/2), and stretches
+>   **never inflate (10/10 ON runs stayed Don't)**. The 1.24.1 anti-inversion fix holds on 2B (no demotion
+>   of strong adjacent fits). Two low-end caveats: a **~1.7% parse-failure rate** (2/120 — the 2B
+>   occasionally emits invalid JSON; the pipeline drops that run via `ok:false`, so `eval --auto` leaves
+>   the role unscored / retries rather than recording a wrong score), and the 2B runs **slightly more
+>   generous** (more Apply bands) and noisy near band edges, so the same N ≥ 5 averaging applies. Net:
+>   e2b is a viable lowest default for the transferable feature; production should retry/skip on a parse
+>   miss and prefer a ≥ 4B backend where accuracy matters.
 
 ## 1. What the literature says about LLM job-fit scoring
 

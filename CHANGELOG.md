@@ -6,6 +6,26 @@ All notable changes to Jobdar are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.24.3] — 2026-06-14
+
+**Low-end verification:** confirmed the transferable toggle stays consistent on the lowest-tier default
+model. No code change — a verification pass + the resulting doc note.
+
+### Verified on-device — `gemma4-e2b` (Gemma Effective-2B, the nano tier)
+Doubled JD set (12 roles × OFF/ON × N = 5 = **120 evals** on the 2B). The toggle is directionally
+correct at the very low end:
+- **Direct fits** — neutral, 3/3 stay in-band (meanΔ +0.06).
+- **Clean-gate adjacent** — lift-or-hold, **5/5 reach Research/Apply when ON** (meanΔ +0.12). The 1.24.1
+  anti-inversion fix holds on 2B — no demotion of strong adjacent fits.
+- **Years-clamped adjacent** — 2/2 not demoted (the transferable-aware clamp works on 2B).
+- **Stretches** — **10/10 ON runs stayed Don't** (no inflation; meanΔ −0.52, more decisive refusal).
+
+Two low-end caveats (now documented in [`docs/eval-tuning-research.md`](docs/eval-tuning-research.md)):
+a **~1.7% parse-failure rate** (2/120 — the 2B occasionally emits invalid JSON; the pipeline drops that
+run via `ok:false`, never recording a wrong score), and the 2B runs **slightly more generous** + noisy
+near band edges, so the same N ≥ 5 averaging applies. Net: e2b is a viable lowest default for the toggle;
+production should retry/skip on a parse miss and prefer a ≥ 4B backend where accuracy matters.
+
 ## [1.24.2] — 2026-06-14
 
 **Docs:** bring the whole doc set in line with the transferable-skills toggle (1.24.0/1.24.1) — no code change.
