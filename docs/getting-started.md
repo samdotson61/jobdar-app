@@ -57,6 +57,12 @@ node bin/jobdar eval <job-url>    # or: eval --next for the best pending role
 Inside an AI CLI (like Claude Code), the same actions are slash commands: `/jobdar scan`,
 `/jobdar eval`, and a guided `/jobdar` onboarding.
 
+**Switching fields or fresh out of school?** Turn on transferable-skills matching — `jobdar init` offers
+it (on by default for career-changer / no-degree profiles), or add `--transferable` to any `eval`. It
+credits genuine adjacent skills from your résumé toward a role's requirements, and treats an "X+ years in
+[field]" ask as something your adjacent experience can bridge rather than a hard wall — without lowering
+the bar: strongly-targeted fits, not a flood.
+
 ## 6. Reach out (a warm contact beats a cold application)
 
 ```bash

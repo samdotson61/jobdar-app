@@ -6,6 +6,23 @@ All notable changes to Jobdar are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.24.2] — 2026-06-14
+
+**Docs:** bring the whole doc set in line with the transferable-skills toggle (1.24.0/1.24.1) — no code change.
+
+### Documentation
+- **Engine contract** (`docs/engine.md`): documented the additive `transferable?` param on `evaluate`,
+  `preConfirm`, and the `POST /evaluate` body (no `ENGINE_VERSION` bump — backward-compatible).
+- **README** (EN + ES): added a "Transferable-skills toggle" feature bullet.
+- **Getting Started** (EN + ES): added a "switching fields / fresh out of school?" note under *Evaluate*.
+- **Eval-tuning research** (`docs/eval-tuning-research.md`): dated banner correcting the as-shipped bands
+  (Apply ≥ 4.0 · Research ≥ 3.5 · Don't < 3.5) and verdict schema, plus the two on-device findings —
+  transferable mode and the **measured ~±1-pt 4B variance** (judge transferable behavior on the mean of
+  N ≥ 5 runs; treat sample-ensembling as load-bearing on a 4B local backend).
+- **AGENTS.md**: noted `transferable_skills` in the profile read; refreshed a stale "Next up: Phase 8c"
+  status line (8a/8b/8c/8d/8e all shipped → next is Phase 9).
+- `modes/_shared.md` (EN + ES) wording was aligned with the 1.24.1 credit-forward rubric in that release.
+
 ## [1.24.1] — 2026-06-14
 
 **Make the transferable toggle actually deliver** — two fixes found by an on-device, multi-run audit of

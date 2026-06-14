@@ -11,7 +11,7 @@ Jobdar scans company career pages (with first-class support for **Workday** and 
 dominate US enterprise employers), evaluates each role against your résumé, tailors an ATS-friendly CV and
 cover letter, and tracks every application.
 
-> **Status:** Phases 0–7, 5.5, 7.7, 7.8, 8b, 8a, 8c + 8e **complete** — **Jobdar CLI `1.24.1`**: bilingual core; **six live-verified
+> **Status:** Phases 0–7, 5.5, 7.7, 7.8, 8b, 8a, 8c + 8e **complete** — **Jobdar CLI `1.24.2`**: bilingual core; **six live-verified
 > scanner providers** (Workday, iCIMS, Greenhouse, Lever, Ashby + an opt-in JSON-LD reader); level + region
 > toggles and the `jobdar init` wizard; the full **discover → prescreen → evaluate → track → build** pipeline —
 > `scan` finds and filters roles (it never scores), `jobdar prescreen` **gates + ranks the queue zero-token**
@@ -100,6 +100,7 @@ your first scan — `jobdar init` walks you through it in English or Spanish, no
 - **Region toggle** — Midwest by default; switch to Northeast/Southeast/Southwest/West/nationwide and the seeds, location filters, and search adapt.
 - **Level toggle** — entry by default; mid first-class; senior opt-in (ranks normally when chosen).
 - **A dedicated no-degree path** — surfaces skills-based, apprenticeship, and "or equivalent experience" roles.
+- **Transferable-skills toggle** — for career-changers and new grads: credits genuine adjacent skills toward a role's requirements and treats an "X+ years in [field]" ask as bridgeable, not a hard wall — without lowering the bar (`transferable_skills` / `eval --transferable`).
 - **Private by design** — local data + on-device model by default; no résumé ever hosted by us.
 - **Easy for anyone** — a guided, bilingual setup wizard for the CLI today; a friendly web app for non-technical users later.
 

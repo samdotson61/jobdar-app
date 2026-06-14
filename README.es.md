@@ -13,7 +13,7 @@ Jobdar escanea las páginas de empleo de las empresas (con soporte de primera cl
 puesto frente a tu currículum, adapta un CV y una carta de presentación compatibles con ATS, y
 registra cada postulación.
 
-> **Estado:** Fases 0–7, 5.5, 7.7, 7.8, 8b, 8a, 8c + 8e **completas** — **Jobdar CLI `1.24.1`**: núcleo bilingüe; **seis escáneres
+> **Estado:** Fases 0–7, 5.5, 7.7, 7.8, 8b, 8a, 8c + 8e **completas** — **Jobdar CLI `1.24.2`**: núcleo bilingüe; **seis escáneres
 > verificados en vivo** (Workday, iCIMS, Greenhouse, Lever, Ashby + un lector JSON-LD opcional); selectores
 > de nivel y región y el asistente `jobdar init`; la tubería completa **descubrir → prefiltrar → evaluar →
 > registrar → construir** — `scan` encuentra y filtra puestos (nunca los puntúa), `jobdar prescreen`
@@ -111,6 +111,10 @@ nivel intermedio, o activa senior (que entonces se clasifica con normalidad, sin
   clasifica con normalidad cuando se elige).
 - **Una vía dedicada sin título** — resalta puestos basados en habilidades, de aprendizaje y con
   "o experiencia equivalente".
+- **Interruptor de habilidades transferibles** — para quienes cambian de carrera y recién egresan:
+  acredita habilidades adyacentes reales frente a los requisitos del puesto y trata un requisito de
+  "X+ años en [campo]" como algo que se puede cubrir, no un muro — sin bajar el listón
+  (`transferable_skills` / `eval --transferable`).
 - **Privado por diseño** — datos en local + modelo en el dispositivo por defecto; nunca alojamos
   tu currículum.
 - **Fácil para cualquiera** — un asistente de configuración guiado y bilingüe para la CLI hoy; una

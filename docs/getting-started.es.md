@@ -58,6 +58,13 @@ node bin/jobdar eval <url-del-puesto>    # o: eval --next para el mejor puesto p
 Dentro de una CLI de IA (como Claude Code), las mismas acciones son comandos de barra: `/jobdar scan`,
 `/jobdar eval` y un onboarding guiado `/jobdar`.
 
+**¿Cambias de campo o recién te gradúas?** Activa la coincidencia por habilidades transferibles —
+`jobdar init` te la ofrece (activada por defecto para perfiles de cambio de carrera / sin título), o
+agrega `--transferable` a cualquier `eval`. Acredita las habilidades adyacentes reales de tu currículum
+frente a los requisitos del puesto, y trata un requisito de "X+ años en [campo]" como algo que tu
+experiencia adyacente puede cubrir en vez de un muro infranqueable — sin bajar el listón: encajes muy
+enfocados, no una avalancha.
+
 ## 6. Contacta (un contacto cálido vale más que una solicitud fría)
 
 ```bash

@@ -29,7 +29,9 @@ Deterministic work needs no model; only **evaluation/tailoring** does.
 
 ## How to drive it
 
-- Read `config/profile.yml` for language, region(s), level(s), and tuning profile.
+- Read `config/profile.yml` for language, region(s), level(s), tuning profile, and the
+  transferable-skills toggle (`transferable_skills` — credits adjacent skills for career-changers /
+  new grads without lowering the bar; `eval --transferable` forces it on per-run).
 - For any user-facing string, prefer the i18n tables in `config/i18n/` over inventing copy.
 - Match the user's language (`language:`, or the JD's language) in everything you generate.
 - **Always surface the dashboard.** Whenever you run Jobdar or report results, point the user to it
@@ -51,7 +53,9 @@ Deterministic work needs no model; only **evaluation/tailoring** does.
 
 Each base mode has a full Spanish peer in `modes/es/`.
 
-> Status: Phases 0–7, 5.5, 7.7, 7.8, 8b, 8a, 8c + 8e complete — Jobdar CLI 1.24.1. The brain is authored EN-canonical with full
+> Status: Phases 0–7, 5.5, 7.7, 7.8, 8b, 8a, 8c + 8e complete — Jobdar CLI 1.24.2. The brain is authored EN-canonical with full
 > Spanish parity; level archetypes (Phase 4) and region tuning (Phase 5) are wired into the rubric.
-> On-device inference (Phase 8b) + automated eval (Phase 8a) shipped — `jobdar backend`, `jobdar eval
-> --auto`, `jobdar calibrate`. Next up: Phase 8c (PDF/DOCX résumé + JD understanding). See `CHANGELOG.md`.
+> On-device inference (8b), automated eval (8a), document understanding (8c), the engine contract (8e),
+> offer/pay core (8d), and the **transferable-skills toggle** have all shipped — `jobdar backend`,
+> `jobdar eval --auto [--transferable]`, `jobdar calibrate`, `jobdar import`, `jobdar serve`. Next up:
+> Phase 9 (web + mobile apps over the engine contract). See `CHANGELOG.md`.

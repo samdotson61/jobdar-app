@@ -5,6 +5,23 @@
 > a frontier API model *and* a small local model served by
 > [winc.cpp](https://github.com/samdotson61/winc.cpp). Compiled 2026-06-10.
 
+> **Update (2026-06-14, CLI 1.24.x) — as-shipped deltas + two on-device findings.** This page is the
+> original research; some specifics shifted in implementation. The authoritative current spec is
+> [`engine.md`](engine.md) + [`../modes/_shared.md`](../modes/_shared.md). As shipped: **bands are
+> Apply ≥ 4.0 · Research ≥ 3.5 · Don't < 3.5** (`lib/evaluations.mjs BANDS` — §3 below quotes an earlier
+> draft scale), and the verdict JSON is `{required, skills, experience, level_fit, logistics, education,
+> recommendation}` with deterministic code computing the 0–5.
+>
+> - **Transferable-skills mode (the `transferable_skills` toggle, 1.24.0; hardened 1.24.1).** Credits
+>   genuine adjacent skills — rated on *bridge strength*, not title match — and makes the clamp treat an
+>   unmet "X+ years in [field]" requirement as bridgeable (exact parity with the no-degree degree rule
+>   of §2.2; hard credentials — license/cert/clearance — still gate). It changes *what* counts as a fit,
+>   not the bar.
+> - **Measured local-model variance.** §1 predicted small-model variance; we measured it. The winc
+>   Qwen3.5-4B swings **~±1 point run-to-run**, enough to flip a band near an edge — so transferable
+>   behavior must be judged on the **mean of N ≥ 5 runs, never one**, and §1's "2–3-sample ensemble,
+>   majority band" should be treated as **load-bearing for production** on a 4B local backend, not optional.
+
 ## 1. What the literature says about LLM job-fit scoring
 
 **Decomposed (analytic) rubrics beat holistic scores.** Asking a model for one 0–5 "fit" number
