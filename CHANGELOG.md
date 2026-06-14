@@ -6,6 +6,22 @@ All notable changes to Jobdar are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.18.1] — 2026-06-13
+
+Patch: harden Phase 7.8 against 7 findings from an adversarial multi-agent self-review — all latent at
+shipped defaults (none broke the 1.18.0 tests), now covered by new regression assertions.
+
+### Fixed
+- **`lib/html.mjs decodeEntities` is single-pass** — no double-decode of `&amp;#x…;` (stays `&#x…;`),
+  and capital-`X` hex entities (`&#X2014;`) decode correctly.
+- **`lib/dates.mjs normalizeResumeDates` fires only in a true range context** (right after a dash, or a
+  4-digit year + connector), so résumé prose like "promoted to present role", "to current standards",
+  or "present-day" is no longer rewritten to a date. `monthYear` rejects an out-of-range month (`2026-13`)
+  instead of clamping it.
+- **`lib/prescreen.mjs blendSalary` floors the blend at 1** — a high `score_weights.salary` can no longer
+  push a non-screened, below-target role to score 0 (where 0 means "screened"). The 4.5-honesty
+  invariant — pay nudges rank but never screens a role out — now holds at any weight.
+
 ## [1.18.0] — 2026-06-13
 
 **Phase 7.8 — deterministic data quality (salary, dates, dedup).** The zero-token cleanup pass before

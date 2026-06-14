@@ -807,6 +807,8 @@ test('html: decodeEntities now resolves dash/quote entities so JD pay ranges sur
   assert.equal(decodeEntities('a&ndash;b'), 'a–b')
   assert.equal(decodeEntities('Don&rsquo;t &amp; &lt;tag&gt;'), 'Don’t & <tag>')
   assert.equal(stripTags('<p>Pay: <span>$80,000&mdash;$104,000</span></p>'), 'Pay: $80,000—$104,000')
+  assert.equal(decodeEntities('&#X2014;'), '—') // capital-X hex entity is valid HTML
+  assert.equal(decodeEntities('&amp;#x2014;'), '&#x2014;') // single pass — no double-decode
 })
 
 test('dates: normalizeResumeDates resolves Present in ranges to today, leaves prose alone', () => {
@@ -815,6 +817,11 @@ test('dates: normalizeResumeDates resolves Present in ranges to today, leaves pr
   assert.equal(normalizeResumeDates('Engineer, Mar 2025 – Present', '2026-06-13'), 'Engineer, Mar 2025 – Jun 2026')
   assert.equal(normalizeResumeDates('Analyst, Jan 2023 to current', '2026-06-13'), 'Analyst, Jan 2023 to Jun 2026')
   assert.equal(normalizeResumeDates('I will present my findings to the board.', '2026-06-13'), 'I will present my findings to the board.')
+  assert.equal(monthYear('2026-13'), '') // out-of-range month rejected, not clamped (was Dec 2026)
+  assert.equal(normalizeResumeDates('Dev, 2024-present', '2026-06-13'), 'Dev, 2024-Jun 2026') // dash range still resolves
+  for (const prose of ['Promoted to present role in 2024.', 'Adapted to current standards.', 'Reported to now-retired lead.', 'A present-day example.']) {
+    assert.equal(normalizeResumeDates(prose, '2026-06-13'), prose) // to/through + word in prose is NOT a date range
+  }
 })
 
 test('regions: canonicalLocation collapses a metro to one key, keeps different metros distinct', () => {
@@ -858,6 +865,7 @@ test('prescreen: salary blends into rank but never screens a role out (4.5 hones
   assert.equal(blendSalary(80, 1, 0), 80) // weight 0 → unchanged
   assert.equal(blendSalary(80, 1, 0.05), 81) // above-target nudges up
   assert.equal(blendSalary(80, 0, 0.05), 76) // below-target dips but never to 0
+  assert.ok(blendSalary(50, 0, 1) >= 1) // even at max weight + zero salary, a non-screened role stays > 0
   const cv = 'Analyst with SQL and Python skills.'
   const jd = 'Analyst role using SQL and Python. The annual salary range is $110,000 - $140,000.'
   const hi = prescreenRole({ jdText: jd, cvText: cv, posted: '2026-06-12', today: '2026-06-13', profile: { target_salary: 80000, score_weights: { salary: 0.05 } } })
