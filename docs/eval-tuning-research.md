@@ -153,6 +153,52 @@ understanding is private-by-default on winc.cpp, and accuracy scales with whiche
 the user picked. Image-only/scanned PDFs: detect the empty text layer and fail honestly with
 a bilingual hint (OCR out of scope for now).
 
+## 6. Nano-model bench + low-end tuning (measured on-device 2026-06-14)
+
+Full nano-tier sweep on an M4 Pro (18 GB unified), winc eval profile (16384 ctx, q8 KV,
+reasoning + draft off), default `/v1/messages` path. Candidate = a PM career-changer résumé;
+8 labeled JDs (4 genuine entry/adjacent **accepts**, 4 **rejects** incl. 3 senior/exec/manager
+"dangerous traps"), N=3 → 24 evals/model. "Footprint" = resident RSS post-warmup.
+
+| Model | Disk | Footprint (RSS) | Accuracy* | Parse-fail /24 | Dangerous /9 | Latency/eval | tok/s |
+|---|---|---|---|---|---|---|---|
+| qwen3.5-0.8b | 0.49 GiB | 0.87 GiB | 35% (6/17) | 7 | **3** | 0.93 s | 78.7 |
+| qwen3.5-2b (Q4) | 1.19 GiB | 1.57 GiB | 65% (13/20)† | 4 | 0 | 3.46 s | 76.6 |
+| qwen3.5-2b-q8 | 1.87 GiB | 2.22 GiB | 89.5% (17/19) | 5 | 0 | 3.99 s | 62.1 |
+| **gemma4-e2b** (Q4) | 2.89 GiB | 3.08 GiB | **100% (23/23)** | 1 | 0 | 3.95 s | 70.9 |
+| qwen3.5-4b (Q4) | 2.55 GiB | 3.27 GiB | 100% (24/24) | 0 | 0 | 7.77 s | 45.1 |
+| qwen3.5-4b-q8 | 4.17 GiB | 4.86 GiB | 100% (24/24) | 0 | 0 | 8.88 s | 37.8 |
+
+\* on PARSED evals; the parse-fail column is the other half. † highly run-variable — see below.
+
+**Findings.** (1) Accuracy cliff: e2b/4B/4B-Q8 = 100%; only the **0.8B is unsafe** (35% + accepts
+VP/Staff/Manager as entry). (2) **gemma4-e2b is the sweet spot**: ties the 4B's accuracy + JSON
+reliability at **~2× the speed** — which is why it's winc's low-end default. (3) **Footprint surprise**:
+e2b's RESIDENT memory (3.08 GiB) ≈ the 4B (3.27), despite "E2B" — the Matformer stores ~4B weights,
+activates ~2B; its win is speed, not memory. (4) **Parse-reliability** (default `/v1/messages` path) is
+the hidden axis: 0.8B 29% → 2B ~17–21% → e2b 4% → 4B 0%.
+
+### Low-end tuning — can the 2B-Q4 (½ the e2b footprint) reach parity?
+
+The 2B-Q4's "65%" is not fixed — at the inherited agent sampling (**temp 0.7**) it swings 65%→100%
+run-to-run. Two deterministic levers, tested on qwen3.5-2b (N=3, same 8-JD set):
+
+| Condition | Accuracy | Parse-fail /24 | Dangerous /9 |
+|---|---|---|---|
+| baseline (`/v1/messages`, temp 0.7) | 100% (19/19)‡ | 5 | 0 |
+| temp-0 (`/v1/messages`) | 100% (12/12) | **12** | 0 |
+| json-schema (temp 0.7) | 79.2% (19/24) | 0 | 2 |
+| **temp-0 + json-schema** | **100% (24/24)** | **0** | **0** |
+
+‡ a lucky run (true range 65–100%). **Verdict: feasible.** `temp-0 + guaranteed-JSON`
+(`response_format=json_schema` on winc's `/v1/chat/completions`, the jobdar.4 feature) takes the 2B to a
+**stable 100% / 0 parse-fails / 0 dangerous** — at half the e2b footprint (1.6 vs 3.1 GiB). Neither lever
+works alone: temp-0 on `/v1/messages` *worsens* parse-fails (the model deterministically derails out of
+JSON), and JSON-alone at temp 0.7 still mis-accepts. Shipping needs a **coordinated change**: pin temp-0
+in winc's eval profile (`applyEvalProfile`, currently inherits `FamilySamplingArgs`) AND route Jobdar's
+winc evals through the JSON-schema endpoint (today gated on `protocol === 'openai'`; winc serves
+`/v1/messages`). That would drop the trustworthy-eval floor from ~3 GiB (e2b) to ~1.6 GiB (2B-Q4).
+
 ## Sources
 
 - [Evaluating the Promise and Pitfalls of LLMs in Hiring Decisions (arXiv 2507.02087)](https://arxiv.org/pdf/2507.02087)

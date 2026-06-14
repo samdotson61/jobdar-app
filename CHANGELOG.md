@@ -6,6 +6,20 @@ All notable changes to Jobdar are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.24.4] — 2026-06-14
+
+**Docs:** persist the full nano-model benchmark + the low-end tuning study. No code change.
+
+### Documentation
+- [`docs/eval-tuning-research.md`](docs/eval-tuning-research.md) §6: the 6-model nano sweep
+  (disk / resident footprint / accuracy / parse-fail / dangerous-accepts / speed) and the
+  **low-end tuning study** — `temp-0 + guaranteed-JSON` takes qwen3.5-2b-Q4 to a stable
+  **100% / 0 parse-fails / 0 dangerous** at **half the e2b footprint** (1.6 vs 3.1 GiB), which
+  would drop the trustworthy-eval floor to a 2 GB-class machine. Records that neither lever works
+  alone and that shipping needs a coordinated winc temp-0 pin + Jobdar JSON-schema routing.
+- (winc side, separately: `winc-jobdar` 1.21.4-jobdar.3 corrected two stale eval-picker claims —
+  e2b is not "half the VRAM" of the 4B, and 2B-Q8 is not less accurate than Q4.)
+
 ## [1.24.3] — 2026-06-14
 
 **Low-end verification:** confirmed the transferable toggle stays consistent on the lowest-tier default
