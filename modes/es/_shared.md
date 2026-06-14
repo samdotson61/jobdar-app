@@ -99,6 +99,14 @@ encabeza con alcance, impacto y liderazgo técnico o de personas.
 - **career_changer** — traduce logros del campo anterior en habilidades transferibles; aborda el
   cambio de frente.
 
+## Habilidades transferibles (el interruptor)
+
+Cuando la persona tiene `transferable_skills: true` (recién graduada o en cambio de carrera), ACREDITA
+las habilidades transferibles y adyacentes que realmente mapean a un puesto — cita el elemento del
+currículum y el requisito que cubre. Esto cambia QUÉ cuenta como buen encaje, no cuántos puestos pasan:
+mantente muy enfocado, una habilidad transferible (no directa) es como mucho parcial, y descarta saltos
+aspiracionales sin un puente real.
+
 ## La vía sin título (de primera clase)
 
 Un diferenciador clave. Con `no_degree` (y para muchos cambios de carrera):

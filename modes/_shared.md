@@ -113,6 +113,13 @@ impact, and people or technical leadership.
       meaningful level-fit penalty — mid-level field experience the candidate lacks is a real gap,
       not a formality.
 
+## Transferable skills (the toggle)
+
+When the candidate has `transferable_skills: true` (a new grad or career changer), CREDIT transferable
+and adjacent skills that genuinely map to a role — cite the résumé item and the requirement it bridges.
+This changes WHAT counts as a fit, not how many roles pass: stay strongly targeted, a transferable (not
+direct) skill is at most a partial match, and skip aspirational stretches with no real bridge.
+
 ## The no-degree path (first-class)
 
 A core differentiator. Under `no_degree` (and for many career-changers):

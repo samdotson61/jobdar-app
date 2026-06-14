@@ -7,7 +7,7 @@
 > fit against your résumé, **tailors** an ATS-friendly CV/cover letter, and **tracks** every application —
 > with your data kept **local**, processed by a **private on-device model by default** or your own cloud API.
 >
-> **Status:** Phases 0–7, **5.5, 7.7, 7.8, 8b, 8a, 8c and 8e** complete — **Jobdar CLI `1.23.0`**. Bilingual core; **six scanner
+> **Status:** Phases 0–7, **5.5, 7.7, 7.8, 8b, 8a, 8c and 8e** complete — **Jobdar CLI `1.24.0`**. Bilingual core; **six scanner
 > providers** (Greenhouse, Workday, iCIMS, Lever, Ashby + an opt-in JSON-LD reader), all live-verified,
 > all with eval-time JD fetch; level + region toggles; the `jobdar init` wizard; the full
 > **discover→prescreen→evaluate→track→build pipeline** — `scan` finds + filters (it never scores),
@@ -213,8 +213,8 @@ on-device inference**, which is why winc.cpp comes first below.
 | ✅ | **BYO-key automated eval** | 8a.1–8a.3 | ✅ shipped 1.20.0 (2026-06-14) | the opt-in accuracy upgrade; small build |
 | ✅ | **Eval tuning + calibration + fairness + economics** | 8a.4–8a.9 | ✅ shipped 1.20.0 (8a.9 optional, deferred) | scores must be trustworthy before they're the product; research done → [docs/eval-tuning-research.md](docs/eval-tuning-research.md) — incl. the measured requirements-check win + grammar-constrained JSON |
 | ✅ | **PDF/document understanding (+ light AI pre-confirm)** | 8c.1–8c.5 | ✅ shipped 1.21.0 (2026-06-14) | "upload a résumé → go" for init; PDF JDs in eval |
-| 🔶 | **Offer evaluation + on-demand BLS pay resolver** | 8d.1–8d.5 | 🔶 core shipped 1.23.0 (resolver+rubric; capture/fetch/compare deferred) | completes discover → evaluate → **decide**; revised 8d.2 = a growing wage cache, not a static pack |
-| 8 | **The engine contract** | 8e.1–8e.4 | ✅ shipped 1.23.0 | freezes the seam web/mobile build against |
+| 🔶 | **Offer evaluation + on-demand BLS pay resolver** | 8d.1–8d.5 | 🔶 core shipped 1.24.0 (resolver+rubric; capture/fetch/compare deferred) | completes discover → evaluate → **decide**; revised 8d.2 = a growing wage cache, not a static pack |
+| 8 | **The engine contract** | 8e.1–8e.4 | ✅ shipped 1.24.0 | freezes the seam web/mobile build against |
 | 9 | **npm publish + marketplace → 1.0** | 7.5 | 🔶 blocked on Step 0.2 (org/trademark) only | distribution, not function |
 | 10 | **Workday quirk tenants; new ATS readers** | 5.5.4 / 5.5.5 | 🔶 / ⬜ demand-driven | parallel track, paced by beta demand |
 | 11 | **Web app, then mobile app** | 9.1–9.8 | ⬜ post-1.0 | thin front-ends over the 8e engine, with 8b inference embedded |
@@ -577,7 +577,7 @@ library survey in [docs/eval-tuning-research.md](docs/eval-tuning-research.md) �
 
 ## Phase 8d — Offer evaluation
 
-> **Status: 🔶 core shipped 1.23.0** (2026-06-14) — `lib/pay.mjs resolvePay` (STATED→COMPARABLE→BLS, mandatory source label) + national wage seed floor + `socForTitle` router + `modes/offer.md` rubric (EN/ES). Deferred: `jobdar offer` capture (8d.1), live BLS bulk-download (8d.2b — seed floor substitutes), multi-offer compare (8d.4).
+> **Status: 🔶 core shipped 1.24.0** (2026-06-14) — `lib/pay.mjs resolvePay` (STATED→COMPARABLE→BLS, mandatory source label) + national wage seed floor + `socForTitle` router + `modes/offer.md` rubric (EN/ES). Deferred: `jobdar offer` capture (8d.1), live BLS bulk-download (8d.2b — seed floor substitutes), multi-offer compare (8d.4).
 
 **Goal:** when applications turn into offers, evaluate the offer the way we evaluate fit — against the
 user's profile, region, and **real wage data** — on the same swappable backends. The model never invents
@@ -601,7 +601,7 @@ identical structured shape on `inference: api` and `inference: local`; a Spanish
 
 ## Phase 8e — The engine contract (CLI, web, mobile plug in here)
 
-> **Status: ✅ shipped 1.23.0** (2026-06-14) — `lib/engine.mjs` (no-console verbs + onProgress) + `jobdar serve` (localhost JSON façade) + `docs/engine.md` + a conformance test driving the full pipeline via the engine only. Phase 9 builds against this seam.
+> **Status: ✅ shipped 1.24.0** (2026-06-14) — `lib/engine.mjs` (no-console verbs + onProgress) + `jobdar serve` (localhost JSON façade) + `docs/engine.md` + a conformance test driving the full pipeline via the engine only. Phase 9 builds against this seam.
 
 **Goal:** freeze the headless pipeline — **import → scan → eval → track → build** — behind ONE documented
 programmatic seam, so the CLI, the web app, and the mobile app are thin front-ends over the **same engine**.
@@ -640,7 +640,7 @@ user always knows what happened, what it cost, and what's next.
 
 **The app shell — three tabs that ARE the workflow** (canonical for web + mobile; design intent 2026-06-14). One GUI, three tabs mapping 1:1 onto the shipped pipeline; the bottom bar **1·Search → 2·Apply → 3·Follow-up** is the same spine on phone + web:
 
-1. **Search** — onboarding prompt *“Upload your résumé and tell us what you want”*: parse the résumé locally (9.4) → infer field/title/level/region → server-side zero-token `scan`/`seed` → a **light on-device AI pass** labels each result (“likely fit / worth a look / skip”) to drop obvious misses BEFORE the expensive scoring pass (efficiency: it thins the queue `eval` runs on). Free-form intent works too (“jobs that take me outside”) → the model maps it to a search. = shipped `prescreen` (zero-token gate) + a thin AI confirm.
+1. **Search** — onboarding prompt *“Upload your résumé and tell us what you want”*: parse the résumé locally (9.4) → infer field/title/level/region → server-side zero-token `scan`/`seed` → a **light on-device AI pass** labels each result (“likely fit / worth a look / skip”) to drop obvious misses BEFORE the expensive scoring pass (efficiency: it thins the queue `eval` runs on). Free-form intent works too (“jobs that take me outside”) → the model maps it to a search. = shipped `prescreen` (zero-token gate) + a thin AI confirm. A **“find jobs with transferable skills” toggle** (`transferable_skills`, shipped 1.24.0) makes the pre-confirm + eval credit genuine adjacent/foundational skills for new grads & career changers — strongly targeted, never a flood.
 2. **Apply** — the scoring stage: `eval --auto` (8a decomposed rubric → 0–5 → Apply/Research/Don’t, gate/clamp, pay band) on the pre-thinned set, then one-tap tailored CV + cover letter (`pdf`).
 3. **Follow-up** — `outreach`: warm-contact finder + the code-enforced polite cadence + draft lint.
 

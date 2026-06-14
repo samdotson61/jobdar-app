@@ -6,6 +6,27 @@ All notable changes to Jobdar are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.24.0] — 2026-06-14
+
+**Transferable-skills toggle** — strongly-targeted cross-field matching for new grads & career changers.
+
+### Added
+- **`transferable_skills` profile toggle** (+ `eval --auto --transferable`; `jobdar init` defaults it ON
+  for the `career_changer` / `no_degree` profiles). When on, BOTH AI layers credit transferable/adjacent
+  skills that genuinely map to a role — the Search **pre-confirm** (passes real cross-field bridges, still
+  skips stretches) and the **eval rubric** (skills/experience sub-judgments cite the résumé item and the
+  requirement it bridges). Threaded through `lib/engine.mjs evaluate` + the `jobdar serve /evaluate` body;
+  exposed as the Phase 9 Search-tab toggle.
+- **It does NOT lower the bar** — it changes WHAT counts as a fit, not how many roles pass: a transferable
+  (not direct) skill is at most a partial match, aspirational stretches are still skipped, "quality over
+  quantity" is in both prompts. Documented in `modes/_shared.md` (EN + ES).
+- 1 new offline test (100 total); EN/ES + modes parity maintained.
+
+### Verified on-device
+Jacob's HR résumé vs a Collections Support Specialist role on winc (Qwen3.5-4B): transferable OFF →
+2.1 Don't (clamped); ON → 3.3 Don't — the transfer (conflict-resolution, communication) earns a real
+score lift, yet it stays below the Research band (selective, not inflated to a false Apply).
+
 ## [1.23.0] — 2026-06-14
 
 **Phase 8d (core) — the keyless pay resolver + offer rubric.** The de-skew engine: a role's pay is never

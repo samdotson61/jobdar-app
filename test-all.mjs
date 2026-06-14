@@ -39,7 +39,7 @@ import { scoreFromJudgments, parseEvalJson, stripPII, clampVerdict, buildEvalUse
 import { bandAgreement, buildBatchRequests, parseBatchResults, clampLogEntry } from './lib/eval_ops.mjs'
 import { extractText, isExtractable } from './lib/docparse.mjs'
 import { importDocument, evaluate as engineEvaluate, recordVerdict, advanceStatus, buildCv, ENGINE_VERSION } from './lib/engine.mjs'
-import { parsePreConfirm, isBorderline } from './lib/eval_engine.mjs'
+import { parsePreConfirm, isBorderline, evalSystemFor, preConfirmSystemFor } from './lib/eval_engine.mjs'
 import { resolvePay, socForTitle, loadWages, loadSocMap } from './lib/pay.mjs'
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url))
@@ -1226,6 +1226,16 @@ test('8d: socForTitle routes titles to SOC — specific occupations before the g
   assert.equal(socForTitle('Recruiting Coordinator', m), '13-1071') // HR wins over the coordinator catch-all
   assert.equal(socForTitle('Marketing Coordinator', m), '43-9061')
   assert.equal(socForTitle('Astronaut', m), null)
+})
+
+test('transferable-skills toggle: off by default, steers both AI prompts when on, stays strict', () => {
+  assert.equal(PROFILE_DEFAULTS.transferable_skills, false)
+  assert.ok(!evalSystemFor(false).includes('TRANSFERABLE-SKILLS MODE'))
+  assert.ok(evalSystemFor(true).includes('TRANSFERABLE-SKILLS MODE'))
+  assert.ok(evalSystemFor(true).includes('Do NOT inflate')) // crediting transfer ≠ lowering the bar
+  assert.ok(evalSystemFor(true).includes('quality over quantity'))
+  assert.ok(!preConfirmSystemFor(false).includes('TRANSFERABLE-SKILLS'))
+  assert.ok(preConfirmSystemFor(true).includes('stay strict')) // pre-confirm still skips aspirational stretches
 })
 
 let passed = 0
