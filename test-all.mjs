@@ -39,7 +39,7 @@ import { scoreFromJudgments, parseEvalJson, stripPII, clampVerdict, buildEvalUse
 import { bandAgreement, buildBatchRequests, parseBatchResults, clampLogEntry } from './lib/eval_ops.mjs'
 import { extractText, isExtractable, structureCv } from './lib/docparse.mjs'
 import { importDocument, evaluate as engineEvaluate, recordVerdict, advanceStatus, buildCv, ENGINE_VERSION, tailor as engineTailor } from './lib/engine.mjs'
-import { coverIsComplete, assembleTailoredCv, TAILOR_JSON_SCHEMA, buildTailorUser, directiveBlock, TAILOR_SYSTEM } from './lib/tailor.mjs'
+import { coverIsComplete, assembleTailoredCv, TAILOR_JSON_SCHEMA, buildTailorUser, directiveBlock, TAILOR_SYSTEM, fillSignature } from './lib/tailor.mjs'
 import { effectiveDirectives, contentHash, recordVariant } from './lib/customize_store.mjs'
 import { parsePreConfirm, isBorderline, evalSystemFor, preConfirmSystemFor } from './lib/eval_engine.mjs'
 import { resolvePay, socForTitle, loadWages, loadSocMap } from './lib/pay.mjs'
@@ -1242,6 +1242,25 @@ test('1.26.0: tailor — completeness guard + grounded assembly (pure pieces)', 
   assert.deepEqual(TAILOR_JSON_SCHEMA.schema.required, ['summary', 'cover_letter', 'keywords'])
   assert.ok(buildTailorUser({ jd: 'JD', cv: 'CV', role: 'X', company: 'Y' }).includes('X @ Y'))
   assert.equal(typeof engineTailor, 'function') // engine verb exported
+})
+
+test('1.28.1: fillSignature restores the candidate name into a "[name]" sign-off (stripPII sentinel)', async () => {
+  // pure: the bug case + the common variants small models emit; no-op without a name or a placeholder
+  assert.equal(fillSignature('Sincerely,\n[name]', 'Jane Doe'), 'Sincerely,\nJane Doe')
+  assert.equal(fillSignature('Best,\n[Your Name]', 'Jane Doe'), 'Best,\nJane Doe')
+  assert.equal(fillSignature('Regards,\n[Full Name]', 'Jane Doe'), 'Regards,\nJane Doe')
+  assert.equal(fillSignature("Sincerely,\n[Candidate's Name]", 'Jane Doe'), 'Sincerely,\nJane Doe')
+  assert.equal(fillSignature('Sincerely,\n[name]', ''), 'Sincerely,\n[name]') // no name → cannot fill (left as-is)
+  assert.equal(fillSignature('Sincerely,\nJane Doe', 'Jane Doe'), 'Sincerely,\nJane Doe') // already signed → unchanged
+  // integration: a tailored cover letter that signs with the stripPII sentinel gets the real name filled
+  const cover = Array(140).fill('word').join(' ') + '\n\nSincerely,\n[name]' // ≥130 words + a "[name]" sign-off
+  const m = await mockOpenAI({ content: JSON.stringify({ summary: 'Targeted summary.', cover_letter: cover, keywords: ['sql'] }) })
+  const active = { kind: 'local', protocol: 'openai', runtime: 'ollama', baseUrl: m.url, model: 'm', jsonEval: true }
+  const r = await engineTailor({ active, jd: 'Data Analyst — SQL', cv: '# Jane Doe\nColumbus, OH\n\n## Experience\nIntern', profile: { name: 'Jane Doe' }, role: 'Data Analyst', company: 'Acme' })
+  assert.equal(r.ok, true)
+  assert.ok(r.coverLetter.includes('Sincerely,\nJane Doe')) // name filled into the sign-off
+  assert.ok(!/\[name\]/i.test(r.coverLetter)) // no placeholder survives
+  await m.close()
 })
 
 test('8f: customize — directives layer, hash is deterministic, variants bump per artifact (pure)', () => {

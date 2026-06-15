@@ -1,6 +1,6 @@
 {
   "name": "jobdar",
-  "version": "1.28.0",
+  "version": "1.28.1",
   "description": "Bilingual (American English / Español) US job-search command center for new grads and people breaking into the workforce — region- and level-adaptable, privacy-first.",
   "type": "module",
   "bin": {

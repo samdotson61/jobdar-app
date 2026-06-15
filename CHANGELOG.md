@@ -6,6 +6,25 @@ All notable changes to Jobdar are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.28.1] — 2026-06-15
+
+**Fix (tailor/outreach — placeholder sign-off):** `jobdar tailor` could emit a cover letter that signed off
+with the literal `[name]` placeholder instead of the candidate's name (observed live 2026-06-15:
+`"Sincerely,\n[name]"`). Root cause: the résumé is run through `stripPII` for eval fairness, which replaces
+the candidate's name with the sentinel token `[name]`, so a small model copies that token into the sign-off
+rather than inventing a name. This was a send-blocking UX bug, **not** a groundedness failure.
+
+- **New pure helper `fillSignature(text, name)`** ([`lib/tailor.mjs`](lib/tailor.mjs)) deterministically
+  restores the candidate's name into any leftover `[name]`-style placeholder (the stripPII sentinel + the
+  `[Your Name]`/`[Full Name]`/`[Candidate's Name]` variants small models emit). For **tailoring** the
+  candidate's own name is not a fairness concern (unlike eval scoring), so supplying it is safe.
+- **`tailorRole`** now fills the sign-off before returning, so the engine seam (`engineTailor`) yields a
+  clean cover letter for **every** caller (CLI + the Phase 9 web/mobile apps) — not just the CLI command.
+- **`draftOutreach`** applies the same fill before `lintDraft`, so a slipped sender signature isn't
+  false-flagged as a placeholder; the recipient name and company/role come from the prompt, so any leftover
+  `[name]` is the sender's. `lintDraft` still catches `[company]`/`[role]` and a missing recipient name.
+- One new offline test (111 total, 0 fail/skip).
+
 ## [1.28.0] — 2026-06-15
 
 **Feature (Phase 8f.2 — model-drafted outreach):** `jobdar outreach --draft` generates a **grounded,
