@@ -7,7 +7,7 @@
 > fit against your résumé, **tailors** an ATS-friendly CV/cover letter, and **tracks** every application —
 > with your data kept **local**, processed by a **private on-device model by default** or your own cloud API.
 >
-> **Status:** Phases 0–7, **5.5, 7.7, 7.8, 8b, 8a, 8c, 8e and 8f** complete — **Jobdar CLI `1.28.1`**. Bilingual core; **six scanner
+> **Status:** Phases 0–7, **5.5, 7.7, 7.8, 8b, 8a, 8c, 8e and 8f** complete — **Jobdar CLI `1.28.2`**. Bilingual core; **six scanner
 > providers** (Greenhouse, Workday, iCIMS, Lever, Ashby + an opt-in JSON-LD reader), all live-verified,
 > all with eval-time JD fetch; level + region toggles; the `jobdar init` wizard; the full
 > **discover→prescreen→evaluate→track→build pipeline** — `scan` finds + filters (it never scores),
@@ -641,9 +641,7 @@ directive writes the next `-vN`; an adversarial directive ("claim 10 years of X"
 
 ## Phase 9 — Web and mobile apps (future / post-1.0)
 
-> **Status: ⬜ not started** — post-1.0 (milestone 10). Both apps **embed the 8b on-device inference**
-> (WebLLM in the browser; the native iOS/Android wrapper ships the same local-model functionality) —
-> which is why 8b is the next build: the apps are thin shells around an engine that already exists.
+> **Status: 📐 planned — build plan FINALIZED 2026-06-15** (full spec: [`docs/phase9-architecture.md`](docs/phase9-architecture.md)); **execution awaiting go**. **One Expo codebase (React Native + react-native-web) → web PWA + native iOS/Android**, over one shared **`@jobdar/engine`** package (the CLI consumes it too). The PII-free scanner runs as an always-on Node service (Fly/Render). Both apps **embed on-device inference** — WebLLM/WebGPU on web, `llama.rn`/MLC on native — via a new additive `kind:'local-embedded'` backend (resolves the loopback-URL guard). v1 = **web + native together**.
 
 **Goal:** a hosted, cross-platform, bilingual **web app** — and, after it, a **mobile app** — where a
 non-technical user uploads a résumé and is pointed toward fitting jobs with little effort. **Ease of use
@@ -664,18 +662,20 @@ user always knows what happened, what it cost, and what's next.
 2. **Apply** — the scoring stage: `eval --auto` (8a decomposed rubric → 0–5 → Apply/Research/Don’t, gate/clamp, pay band) on the pre-thinned set, then one-tap tailored CV + cover letter (`pdf`).
 3. **Follow-up** — `outreach`: warm-contact finder + the code-enforced polite cadence + draft lint.
 
-All three run on the **local AI by default** (8b) with the **tiered API-key upgrade** (8a) for premium editions — the same `inference: local|api|auto` backend the CLI already ships. The Search tab’s light-AI pre-confirm is a NEW thin layer between 9.1 (in-browser model) and the heavy `eval` — a cheap yes/maybe/no, not a score.
+All three run on the **local AI by default** (8b) with the **tiered API-key upgrade** (8a) for premium editions — the same `inference: local|api|auto` backend the CLI already ships. The Search tab’s light-AI pre-confirm is a NEW thin layer between the in-browser model and the heavy `eval` — a cheap yes/maybe/no, not a score.
 
-| Step | What | Detail |
+**Finalized milestone ladder** (2026-06-15; full detail + architecture diagrams + verification in [`docs/phase9-architecture.md`](docs/phase9-architecture.md)). The gating task is **9.0**. Locked: Expo one-codebase · always-on Fly/Render scanner · **per-platform quant** (mobile smaller; 9.7 measures accuracy per surface) · native runtime → `llama.rn` (confirm in the 9.0 spike).
+
+| # | Milestone | Deliverable |
 |---|---|---|
-| 9.1 | **In-browser inference (default):** run the Phase 8 local model in the browser via **WebLLM/WebGPU**. The résumé + matching happen client-side; nothing PII goes to the server. | privacy by default |
-| 9.2 | **Server = PII-free scanner only:** the zero-token scanner runs server-side (CORS blocks the browser from fetching arbitrary career sites), returns **public** job listings to the browser, which evaluates them locally. | clean PII boundary |
-| 9.3 | **Frictionless frontend:** cross-platform responsive web (phone/tablet/desktop; PWA-installable), **bilingual EN/ES**, accessible (WCAG). Flow: upload résumé → confirm region + level → ranked matches → one-tap tailored CV/cover letter. | ease-of-use target |
-| 9.4 | **Résumé → everything:** reuse the Phase 6.6 parser **in the browser** → infer profile, skills, suggested level/region → seed the scan + evaluation. Little-to-no manual config. | non-technical users |
-| 9.5 | **API-key upgrade (opt-in):** users who want higher accuracy plug in a key; only the minimal slice is sent, zero-retention, with explicit consent. | accuracy lever |
-| 9.6 | **Fallback for low-end devices/browsers** (no WebGPU): a smaller model, or — with explicit consent — confidential-cloud inference (Phase 8.6). Never silently ship a résumé to a server. | honest fallback |
-| 9.7 | **Accuracy & UX measurement + cost controls:** track match **accuracy** (human-rated) and **ease of use** (task success + time-to-first-match); monitor any server cost (scanner only ⇒ low). | both targets |
-| 9.8 | **Mobile app:** PWA-installable first (9.3 already targets it); then a thin native wrapper (e.g. Capacitor) over the **same in-browser engine + the 8e contract** — no second codebase. New-match notifications land here. | meet job-seekers on their phones |
+| 9.0 | **Foundation + engine extraction + dual-adapter spike** | pnpm monorepo; `lib/*` → `@jobdar/engine` behind injected `Store`/`DocExtract`/`InferenceClient` ports (the 9 fs-bound modules via the `config.mjs` `paths` chokepoint); CLI re-pointed (`test-all.mjs` green = zero behavior change, `ENGINE_VERSION` bumps); **one-eval-per-adapter spike: WebLLM *and* `llama.rn` give an identical Verdict + valid guaranteed-JSON vs winc** (native runtime decided here). |
+| 9.1 | **Scanner-proxy (Fly/Render)** | always-on Node service bundling `@jobdar/scanner` (`/scan` + `/fetch-jd`), Dockerized, CORS-locked + rate-limited, **live-verified vs real Workday/iCIMS/Greenhouse tenants**; `jobdar serve` keeps loopback for power users |
+| 9.2 | **Web adapters + upload→parse** | IndexedDB/OPFS Store + unpdf/mammoth extract; résumé→`importDocument`→`cv.md`+profile fully client-side; clean network trace |
+| 9.3 | **Web PWA** | three-tab `expo-router` shell over the verbs + WebLLM `local-embedded` + the WebGPU→smaller-quant→consent-cloud ladder; installable/offline; EN/ES parity; WCAG |
+| 9.4 | **Native adapters** | expo-sqlite + expo-file-system Store, native document pickers, `llama.rn` `local-embedded` inference |
+| 9.5 | **Native iOS/Android (EAS)** | same Expo source → EAS build → iOS + Android + **new-match push notifications** + store-submission prep |
+| 9.6 | **API tier + consent-cloud** | BYO-key `api` upgrade + explicit-consent confidential-cloud fallback across both surfaces; blocking consent dialog |
+| 9.7 | **Privacy + measurement gates** | CI network-trace privacy gate (no résumé/score egress; only `/scan`+`/fetch-jd`); **per-surface** match accuracy + task success + time-to-first-match + server-cost monitor; end-to-end verification (Spanish-preferring phone persona) |
 
 **Verification gate:** a non-technical, Spanish-preferring user on a phone uploads a résumé and reaches a
 ranked, region-appropriate match list with a tailored CV — and a network trace shows the **résumé never

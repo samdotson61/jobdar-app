@@ -6,6 +6,24 @@ All notable changes to Jobdar are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.28.2] — 2026-06-15
+
+**Docs (Phase 9 plan):** persist the finalized web + mobile app build plan as the canonical spec — no code change.
+
+- New [`docs/phase9-architecture.md`](docs/phase9-architecture.md): the full Phase 9 architecture — one
+  shared `@jobdar/engine` package (CLI + apps), one **Expo** codebase (React Native + react-native-web → web
+  PWA + native iOS/Android), the PII-free scanner as an **always-on Node service (Fly/Render)**, the additive
+  `kind:'local-embedded'` inference backend (WebLLM/WebGPU on web, `llama.rn`/MLC on native) that resolves
+  the loopback-URL guard, the three-tab UX mapped 1:1 to engine verbs, the `Store`/`DocExtract` ports, and
+  the 9.0→9.7 milestone ladder + verification gates. Privacy stays structural: the résumé and every score
+  never leave the device; the proxy's request schema has no résumé field.
+- [`ROADMAP.md`](ROADMAP.md) Phase 9 updated to the finalized ladder (replaces the older Capacitor/PWA-first
+  sketch) and points at the spec. Decisions locked with Sam: **web + native together** in v1, **always-on
+  Fly/Render** host, **per-platform quant** (accuracy measured per surface), native runtime → `llama.rn`
+  (confirmed in the 9.0 spike). Engine extraction (the gating task) is **Milestone 9.0**.
+
+Docs-only; 111 tests green. **Phase 9 execution awaiting go.**
+
 ## [1.28.1] — 2026-06-15
 
 **Fix (tailor/outreach — placeholder sign-off):** `jobdar tailor` could emit a cover letter that signed off
