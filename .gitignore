@@ -6,6 +6,7 @@ data/*
 !data/seed/
 output/
 reports/
+batch_analysis.json   # scratch scan output — not part of the package
 
 # Personal config — NEVER commit. profile.yml carries PII (name, metro, target salary) and
 # portals.yml reveals your job-search targets. `jobdar init` creates both locally; the repo
