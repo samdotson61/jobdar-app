@@ -283,6 +283,19 @@ pdf:
   pdf_written: "Wrote {file}"
   no_playwright: "HTML written. For an automatic PDF run `npm i playwright`, or open the HTML and Print → Save as PDF."
 
+tailor:
+  title: "Tailor — CV summary + cover letter"
+  no_cv: "No résumé yet. Add one with `jobdar init --resume <file>`."
+  no_target: "Name a role: `jobdar tailor <company|url>`, or pass `--jd <jd-file>`."
+  no_jd: "Couldn't get the job description for that role."
+  backend_down: "Inference backend not ready ({reason}). Start it: `winc serve --eval`."
+  running: "Tailoring to {role} on {backend}…"
+  failed: "Tailoring failed — the model reply didn't parse. Try again, or a larger local model."
+  summary_label: "Tailored summary:"
+  written: "Wrote {cv} and {cover}"
+  cover_short: "Note: the cover letter came back short — review it before sending."
+  pdf_hint: "Render it: copy the tailored CV over data/cv.md, then `jobdar pdf`."
+
 prescreen:
   title: "Prescreen — gate + rank before eval"
   no_cv: "No résumé (cv.md) yet — skill overlap will read neutral. Add one with `jobdar init --resume <file>`."

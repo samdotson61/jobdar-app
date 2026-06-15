@@ -37,8 +37,9 @@ import http from 'node:http'
 import { resolveBackend, isLoopbackUrl, parseVerdict, selectActive, backendHealth, callMessages, callOpenAI, callBackend, evaluate, WINC_DEFAULT_URL, LOCAL_RUNTIMES } from './lib/inference.mjs'
 import { scoreFromJudgments, parseEvalJson, stripPII, clampVerdict, buildEvalUser, evalRole, buildVerdict, prepEval } from './lib/eval_engine.mjs'
 import { bandAgreement, buildBatchRequests, parseBatchResults, clampLogEntry } from './lib/eval_ops.mjs'
-import { extractText, isExtractable } from './lib/docparse.mjs'
-import { importDocument, evaluate as engineEvaluate, recordVerdict, advanceStatus, buildCv, ENGINE_VERSION } from './lib/engine.mjs'
+import { extractText, isExtractable, structureCv } from './lib/docparse.mjs'
+import { importDocument, evaluate as engineEvaluate, recordVerdict, advanceStatus, buildCv, ENGINE_VERSION, tailor as engineTailor } from './lib/engine.mjs'
+import { coverIsComplete, assembleTailoredCv, TAILOR_JSON_SCHEMA, buildTailorUser } from './lib/tailor.mjs'
 import { parsePreConfirm, isBorderline, evalSystemFor, preConfirmSystemFor } from './lib/eval_engine.mjs'
 import { resolvePay, socForTitle, loadWages, loadSocMap } from './lib/pay.mjs'
 
@@ -1186,6 +1187,33 @@ test('8c: extractText reads text, flags missing/unsupported; isExtractable gates
   assert.equal(extractText(path.join(ROOT, 'package.json')).error, 'unsupported') // .json not a doc type
   assert.ok(isExtractable('resume.docx') && isExtractable('jd.pdf') && isExtractable('notes.txt'))
   assert.ok(!isExtractable('photo.png') && !isExtractable('data.csv'))
+})
+
+test('1.26.0: structureCv adds markdown markers (name #, sections ##, bullets -) without changing words', () => {
+  const raw = 'Jen Doe\nColumbus, OH\n\nEDUCATION\nB.S. Business Administration\n\nEXPERIENCE\n• Built dashboards\nSKILLS\nExcel, SQL'
+  const s = structureCv(raw)
+  assert.ok(s.startsWith('# Jen Doe')) // name → H1
+  assert.ok(s.includes('## EDUCATION') && s.includes('## EXPERIENCE') && s.includes('## SKILLS')) // sections → H2
+  assert.ok(s.includes('- Built dashboards')) // bullet → markdown
+  assert.ok(s.includes('B.S. Business Administration')) // body words unchanged
+  assert.ok(!structureCv('Plain line\nanother line').includes('## ')) // no false section headings
+})
+
+test('1.26.0: tailor — completeness guard + grounded assembly (pure pieces)', () => {
+  // coverIsComplete: a real letter with a sign-off passes; a short truncated one fails (the 4B case)
+  const full = Array(140).fill('word').join(' ') + '\n\nSincerely,\nJen Doe' // ≥130 words + sign-off
+  assert.equal(coverIsComplete(full), true)
+  assert.equal(coverIsComplete('I am excited about this role and my dashboard experience fits well.'), false) // short, no sign-off
+  // assembleTailoredCv inserts a Summary section AFTER the name, BEFORE the first section heading
+  const cv = '# Jen Doe\nColumbus, OH\n\n## Education\nB.S.\n\n## Experience\nIntern'
+  const out = assembleTailoredCv(cv, 'Marketing grad with dashboard + A/B testing experience.')
+  assert.ok(out.indexOf('## Summary') < out.indexOf('## Education')) // summary leads the body
+  assert.ok(out.indexOf('# Jen Doe') < out.indexOf('## Summary')) // name still first
+  assert.equal(assembleTailoredCv(cv, ''), cv) // empty summary → unchanged
+  // schema + prompt shape
+  assert.deepEqual(TAILOR_JSON_SCHEMA.schema.required, ['summary', 'cover_letter', 'keywords'])
+  assert.ok(buildTailorUser({ jd: 'JD', cv: 'CV', role: 'X', company: 'Y' }).includes('X @ Y'))
+  assert.equal(typeof engineTailor, 'function') // engine verb exported
 })
 
 test('8c/pre-confirm: parsePreConfirm reads the triage verdict; unknown → maybe (never drops a role)', () => {

@@ -283,6 +283,19 @@ pdf:
   pdf_written: "Se escribió {file}"
   no_playwright: "HTML creado. Para un PDF automático ejecuta `npm i playwright`, o abre el HTML e Imprime → Guardar como PDF."
 
+tailor:
+  title: "Adaptar — resumen del CV + carta de presentación"
+  no_cv: "Aún no hay currículum. Agrega uno con `jobdar init --resume <archivo>`."
+  no_target: "Indica un puesto: `jobdar tailor <empresa|url>`, o pasa `--jd <archivo-jd>`."
+  no_jd: "No se pudo obtener la descripción del puesto para ese rol."
+  backend_down: "El backend de inferencia no está listo ({reason}). Inícialo: `winc serve --eval`."
+  running: "Adaptando a {role} en {backend}…"
+  failed: "La adaptación falló — la respuesta del modelo no se pudo interpretar. Reinténtalo, o usa un modelo local más grande."
+  summary_label: "Resumen adaptado:"
+  written: "Se escribió {cv} y {cover}"
+  cover_short: "Nota: la carta salió corta — revísala antes de enviarla."
+  pdf_hint: "Renderízala: copia el CV adaptado sobre data/cv.md, luego `jobdar pdf`."
+
 prescreen:
   title: "Prescreen — filtra y ordena antes de evaluar"
   no_cv: "Aún no hay currículum (cv.md) — la coincidencia de habilidades quedará neutral. Agrega uno con `jobdar init --resume <archivo>`."

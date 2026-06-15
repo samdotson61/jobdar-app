@@ -11,7 +11,7 @@ Jobdar scans company career pages (with first-class support for **Workday** and 
 dominate US enterprise employers), evaluates each role against your résumé, tailors an ATS-friendly CV and
 cover letter, and tracks every application.
 
-> **Status:** Phases 0–7, 5.5, 7.7, 7.8, 8b, 8a, 8c + 8e **complete** — **Jobdar CLI `1.25.0`**: bilingual core; **six live-verified
+> **Status:** Phases 0–7, 5.5, 7.7, 7.8, 8b, 8a, 8c + 8e **complete** — **Jobdar CLI `1.26.0`**: bilingual core; **six live-verified
 > scanner providers** (Workday, iCIMS, Greenhouse, Lever, Ashby + an opt-in JSON-LD reader); level + region
 > toggles and the `jobdar init` wizard; the full **discover → prescreen → evaluate → track → build** pipeline —
 > `scan` finds and filters roles (it never scores), `jobdar prescreen` **gates + ranks the queue zero-token**
@@ -68,6 +68,7 @@ jobdar seed --region midwest --write   # add real employers for your region
 jobdar prescreen      # gate + rank pending roles by likelihood (no model needed)
 jobdar eval <url>     # evaluate a role against your résumé
 jobdar pipeline       # scan -> evaluate -> track, end to end
+jobdar tailor [company] # AI: role-targeted CV summary + cover letter (grounded, local model)
 jobdar pdf [company]  # tailored ATS résumé → output/ (HTML, +PDF with Playwright)
 jobdar outreach <url> # find people to contact about a role; polite follow-ups, enforced
 jobdar tracker        # view your applications

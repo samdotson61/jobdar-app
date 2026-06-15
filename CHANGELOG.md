@@ -6,6 +6,31 @@ All notable changes to Jobdar are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.26.0] — 2026-06-14
+
+**Apply-stage tailoring + web-app-readiness tweaks.** Found while driving the full 3-stage stack on a new
+grad's résumé across all three local tiers: the CV/cover-letter tailoring had no driver, imported `cv.md`
+rendered flat, and the 4B sometimes truncated its cover letter. All three fixed.
+
+### Added
+- **`tailor` engine verb + `jobdar tailor` command** — the Apply-stage "Customize" model step (previously
+  only an AI-CLI prompt with no driver). Produces a grounded, role-targeted CV summary + a complete cover
+  letter + truthful keywords via the guaranteed-JSON path, so even the 2B stays GROUNDED (selects/
+  summarizes from the résumé — never fabricates; verified 0 fabrications across 2b/e2b/4b). Returns
+  `tailoredCv` (summary led in). `lib/tailor.mjs`; engine verb in `docs/engine.md`; i18n EN+ES.
+- **Cover-letter completeness guard** — `coverIsComplete` + one firmer retry when a model returns a
+  truncated letter (the 4B was stopping early at ~96 words / no sign-off); flags `coverComplete:false` if
+  still short rather than shipping a stub.
+
+### Changed
+- **`import` now lightly markdown-structures `cv.md`** (`structureCv`: name → `#`, recognized sections →
+  `##`, bullets → `-`) — deterministic, no model rewrite, no words changed. Fixes flat rendering and lets
+  the tailored summary lead the CV instead of landing at the bottom.
+
+### Tests
+- New offline assertions for `structureCv`, `coverIsComplete`, `assembleTailoredCv`, and the tailor
+  schema/verb export (103 tests, all green). EN/ES i18n parity maintained.
+
 ## [1.25.0] — 2026-06-14
 
 **Guaranteed-JSON evals on local backends** — the Jobdar half of the low-end tuning win (pairs with

@@ -88,6 +88,11 @@ async function main() {
       await runPdf(rest)
       return 0
     }
+    case 'tailor': {
+      const { runTailor } = await import('../lib/commands/tailor.mjs')
+      await runTailor(rest)
+      return 0
+    }
     case 'backend': {
       const { runBackend } = await import('../lib/commands/backend.mjs')
       await runBackend(rest)
