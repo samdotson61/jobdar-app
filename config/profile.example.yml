@@ -11,6 +11,7 @@ inference: local        # local (on-device — default, private, no key) | api (
 inference_runtime: winc # local runtime: winc (default) | ollama | llamafile (OpenAI-compat)
 inference_url: ""       # blank → the runtime's localhost default (winc 127.0.0.1:8080); point it at the server matching inference_runtime
 local_model: ""         # model id for ollama/llamafile; winc --eval auto-picks, so leave blank for winc
+eval_grammar: true      # guaranteed-JSON evals on local backends (0 parse-failures); false = prompt-parse on /v1/messages
 name: ""                # your name — stays local
 location: ""            # your metro, e.g. "Indianapolis, IN" — stays local
 include_degree_required_roles: true

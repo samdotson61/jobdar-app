@@ -6,6 +6,34 @@ All notable changes to Jobdar are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.25.0] — 2026-06-14
+
+**Guaranteed-JSON evals on local backends** — the Jobdar half of the low-end tuning win (pairs with
+winc `1.21.4-jobdar.4`'s greedy eval profile).
+
+### Changed
+- Local eval backends (winc / ollama / llamafile — `active.jsonEval`) now run evals through the
+  **guaranteed-JSON endpoint** (`response_format=json_schema` on `/v1/chat/completions`) **by default**,
+  eliminating parse failures. `callBackend` routes any `responseFormat` call to `callOpenAI` (so winc's
+  Messages-protocol backend still reaches its JSON endpoint); `evalRole` auto-selects it with a graceful
+  fallback to `/v1/messages` on error. The Anthropic api stays on Messages (no `/v1/chat/completions`).
+  Opt out with `eval_grammar: false`. Centralized in `evalRole`, so the CLI, `jobdar serve`, and the
+  engine contract all benefit. No engine-contract signature change (`ENGINE_VERSION` stays 1.0).
+- New `eval_grammar` profile default (`true`); `active.jsonEval` capability on backends.
+
+### Verified on-device (end-to-end through Jobdar's real pipeline, N=3)
+With winc's greedy eval profile, **qwen3.5-2b-Q4: 100% / 0 parse-fails / 0 dangerous** (24 evals, was
+65% / 4-fails) — at **half the e2b footprint** (1.6 vs 3.1 GiB); **e2b + 4B held 100% / 0-fails** (no
+regression); greedy confirmed (`--temp 0 --top-k 1`) on the server. **Caveat (per adversarial review):**
+this is one 8-JD set (24 evals) — promising, not production-proof. Before making the 2B-Q4 the eval floor,
+validate on a larger diverse JD set + human spot-check + a temp>0 comparison (see
+[`docs/eval-tuning-research.md`](docs/eval-tuning-research.md) §6).
+
+### Added
+- New offline assertions in the existing inference tests (101 tests, all green): `jsonEval` capability
+  (local true / api false), `callBackend` routes `responseFormat` to `/v1/chat/completions` even on a
+  Messages backend, and the `eval_grammar` default.
+
 ## [1.24.4] — 2026-06-14
 
 **Docs:** persist the full nano-model benchmark + the low-end tuning study. No code change.

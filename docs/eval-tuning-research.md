@@ -191,13 +191,23 @@ run-to-run. Two deterministic levers, tested on qwen3.5-2b (N=3, same 8-JD set):
 | **temp-0 + json-schema** | **100% (24/24)** | **0** | **0** |
 
 ‡ a lucky run (true range 65–100%). **Verdict: feasible.** `temp-0 + guaranteed-JSON`
-(`response_format=json_schema` on winc's `/v1/chat/completions`, the jobdar.4 feature) takes the 2B to a
-**stable 100% / 0 parse-fails / 0 dangerous** — at half the e2b footprint (1.6 vs 3.1 GiB). Neither lever
+(`response_format=json_schema` on winc's `/v1/chat/completions`, the jobdar.4 feature) takes the 2B to
+**100% / 0 parse-fails / 0 dangerous on this set** — at half the e2b footprint (1.6 vs 3.1 GiB). Neither lever
 works alone: temp-0 on `/v1/messages` *worsens* parse-fails (the model deterministically derails out of
-JSON), and JSON-alone at temp 0.7 still mis-accepts. Shipping needs a **coordinated change**: pin temp-0
-in winc's eval profile (`applyEvalProfile`, currently inherits `FamilySamplingArgs`) AND route Jobdar's
-winc evals through the JSON-schema endpoint (today gated on `protocol === 'openai'`; winc serves
-`/v1/messages`). That would drop the trustworthy-eval floor from ~3 GiB (e2b) to ~1.6 GiB (2B-Q4).
+JSON), and JSON-alone at temp 0.7 still mis-accepts. **Shipped** (winc 1.21.4-jobdar.4 + Jobdar 1.25.0): the eval profile decodes greedy (`--temp 0 --top-k 1`,
+`applyEvalProfile` → `GreedySampling`) and Jobdar auto-routes local-backend evals through the JSON-schema
+endpoint (`active.jsonEval`, default-on; opt out with `eval_grammar: false`; graceful fallback to
+`/v1/messages` on error). End-to-end re-verify through Jobdar's real pipeline: qwen3.5-2b-Q4 **100% / 0
+parse-fails / 0 dangerous** (24 evals), e2b + 4B held 100%, greedy confirmed on the server.
+
+**Validation status — promising, NOT yet production-proof.** This is one 8-JD policy-boundary set (24
+deterministic evals) on one résumé; a clean 100% is encouraging but small. Open caveats: a JSON *schema*
+guarantees parseable output, NOT correct reasoning (format ≠ judgment); greedy could in principle hurt
+borderline Research-band cases vs. sampling; the 65% baseline was itself one noisy run. **Before treating
+the 2B-Q4 as the production eval floor, validate on:** (1) a larger, diverse JD set (N ≥ 100) hand-banded
+as ground truth; (2) a human spot-check of 2B verdicts vs. the 4B; (3) a temp>0-vs-greedy comparison to
+confirm greedy isn't masking brittleness; (4) hard edge-band cases. Until then it is a strong low-end
+*candidate* that would drop the trustworthy-eval floor toward ~1.6 GiB (2B-Q4) from ~3 GiB (e2b).
 
 ## Sources
 

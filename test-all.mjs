@@ -69,6 +69,7 @@ test('defaults: Midwest region, entry level, English', () => {
   assert.deepEqual(PROFILE_DEFAULTS.target_regions, ['midwest'])
   assert.deepEqual(PROFILE_DEFAULTS.target_levels, ['entry'])
   assert.equal(PROFILE_DEFAULTS.language, 'en')
+  assert.equal(PROFILE_DEFAULTS.eval_grammar, true) // guaranteed-JSON evals default-on for local backends
 })
 
 test('greenhouse: detect parses the board token from a careers_url', () => {
@@ -957,12 +958,14 @@ test('inference: selectActive resolves local/api/auto; auto falls back to api wh
   const up = await selectActive(localProfile)
   assert.equal(up.kind, 'local')
   assert.equal(up.up, true)
+  assert.equal(up.jsonEval, true) // local backends serve guaranteed-JSON evals
   const prevKey = process.env.JOBDAR_API_KEY
   process.env.JOBDAR_API_KEY = 'sk-test'
   try {
     const api = await selectActive({ inference: 'api' })
     assert.equal(api.kind, 'api')
     assert.equal(api.up, true)
+    assert.equal(api.jsonEval, false) // Anthropic api is Messages-only (no /v1/chat/completions)
     const auto = await selectActive({ inference: 'auto', inference_url: m.url })
     assert.equal(auto.kind, 'local') // winc up → auto picks local
     await m.close()
@@ -1036,6 +1039,10 @@ test('inference: 8b.3 callBackend routes by protocol; callOpenAI enforces the lo
   assert.ok(viaMessages.text.includes('Fit score')) // routed to /v1/messages (would 404→throw if misrouted)
   const viaOpenAI = await callBackend({ kind: 'local', protocol: 'openai', runtime: 'ollama', baseUrl: mo.url, model: 'm' }, { user: 'u' })
   assert.ok(viaOpenAI.text.includes('Fit score')) // routed to /v1/chat/completions
+  // low-end tuning: a responseFormat (guaranteed-JSON) call routes to /v1/chat/completions even on a
+  // Messages backend (the winc JSON-eval path) — mo answers ONLY chat/completions, so a misroute 404→throws.
+  const viaJson = await callBackend({ kind: 'local', protocol: 'messages', baseUrl: mo.url, model: 'm' }, { user: 'u', responseFormat: { type: 'json_schema', json_schema: { name: 'x', schema: {} } } })
+  assert.ok(viaJson.text.includes('Fit score'))
   await mm.close(); await mo.close()
 })
 
