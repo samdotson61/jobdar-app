@@ -7,7 +7,7 @@
 > fit against your résumé, **tailors** an ATS-friendly CV/cover letter, and **tracks** every application —
 > with your data kept **local**, processed by a **private on-device model by default** or your own cloud API.
 >
-> **Status:** Phases 0–7, **5.5, 7.7, 7.8, 8b, 8a, 8c, 8e and 8f** complete — **Jobdar CLI `1.28.2`**. Bilingual core; **six scanner
+> **Status:** Phases 0–7, **5.5, 7.7, 7.8, 8b, 8a, 8c, 8e and 8f** complete — **Jobdar CLI `1.29.0`**. Bilingual core; **six scanner
 > providers** (Greenhouse, Workday, iCIMS, Lever, Ashby + an opt-in JSON-LD reader), all live-verified,
 > all with eval-time JD fetch; level + region toggles; the `jobdar init` wizard; the full
 > **discover→prescreen→evaluate→track→build pipeline** — `scan` finds + filters (it never scores),
@@ -641,7 +641,7 @@ directive writes the next `-vN`; an adversarial directive ("claim 10 years of X"
 
 ## Phase 9 — Web and mobile apps (future / post-1.0)
 
-> **Status: 📐 planned — build plan FINALIZED 2026-06-15** (full spec: [`docs/phase9-architecture.md`](docs/phase9-architecture.md)); **execution awaiting go**. **One Expo codebase (React Native + react-native-web) → web PWA + native iOS/Android**, over one shared **`@jobdar/engine`** package (the CLI consumes it too). The PII-free scanner runs as an always-on Node service (Fly/Render). Both apps **embed on-device inference** — WebLLM/WebGPU on web, `llama.rn`/MLC on native — via a new additive `kind:'local-embedded'` backend (resolves the loopback-URL guard). v1 = **web + native together**.
+> **Status: 📐 planned — build plan FINALIZED 2026-06-15** (full spec: [`docs/phase9-architecture.md`](docs/phase9-architecture.md)); **increment 1 landed (v1.29.0)** — a runnable three-tab Expo app (`apps/jobdar`; web on Mac + iPhone via Expo Go) on a faithful deterministic engine + sample data, plus the PII-free scanner-proxy (`apps/server`) reusing the real providers (run guide: [`apps/README.md`](apps/README.md)). Remaining: the `@jobdar/engine` fs-extraction (9.0), WebLLM/native on-device inference (9.3/9.4), live scan + résumé upload + EAS native. **One Expo codebase (React Native + react-native-web) → web PWA + native iOS/Android**, over one shared **`@jobdar/engine`** package (the CLI consumes it too). The PII-free scanner runs as an always-on Node service (Fly/Render). Both apps **embed on-device inference** — WebLLM/WebGPU on web, `llama.rn`/MLC on native — via a new additive `kind:'local-embedded'` backend (resolves the loopback-URL guard). v1 = **web + native together**.
 
 **Goal:** a hosted, cross-platform, bilingual **web app** — and, after it, a **mobile app** — where a
 non-technical user uploads a résumé and is pointed toward fitting jobs with little effort. **Ease of use

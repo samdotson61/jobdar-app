@@ -6,6 +6,25 @@ All notable changes to Jobdar are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.29.0] — 2026-06-15
+
+**Phase 9 — apps, increment 1.** The web + mobile app surfaces enter the repo. (CLI code unchanged; this
+minor marks Phase 9 execution starting.)
+
+- New **`apps/jobdar`** — an Expo (React Native + react-native-web) three-tab app (**Search → Apply →
+  Follow-up**), one codebase for web PWA + native iOS/Android. Runs on Mac (`pnpm web`) and iPhone
+  (`pnpm start` → Expo Go). Increment 1 uses a faithful TypeScript port of the **deterministic contracts** —
+  band thresholds (Apply ≥4.0 / Research ≥3.5), the decomposed-rubric weights, prescreen gates, cadence
+  rules, grounded tailoring — over **bundled sample data**, so the whole UX is clickable with no model and
+  no network. EN/ES toggle, dark UI. Compiles + exports cleanly (`expo export -p web`).
+- New **`apps/server`** — the PII-free scanner-proxy (Phase 9.1, local form): a zero-dependency Node
+  service reusing `providers/*.mjs` **unchanged**; `GET /health` lists the live providers, `POST /fetch-jd`
+  + `POST /scan` carry **no résumé/score field** (privacy by structure). Deploys to Fly/Render in prod.
+- Run guide: [`apps/README.md`](apps/README.md); architecture: [`docs/phase9-architecture.md`](docs/phase9-architecture.md).
+- **Remaining (next milestones):** the `@jobdar/engine` fs-extraction so the apps share the *real* engine
+  (9.0), WebLLM/WebGPU + `llama.rn` on-device inference (9.3/9.4), live scan wiring + résumé upload→parse,
+  EAS native builds + push (9.5). CLI `test-all.mjs` still green (111).
+
 ## [1.28.2] — 2026-06-15
 
 **Docs (Phase 9 plan):** persist the finalized web + mobile app build plan as the canonical spec — no code change.
