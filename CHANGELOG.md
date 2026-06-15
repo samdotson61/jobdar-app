@@ -6,6 +6,18 @@ All notable changes to Jobdar are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.29.1] — 2026-06-15
+
+**Phase 9 app — UX (increment 1 follow-up).** App-only; CLI unchanged (`test-all.mjs` green, 111).
+
+- `apps/jobdar`: NEW **Upload résumé** button (`expo-document-picker`) — reads `.txt`/`.md` résumés on web
+  and loads them into the pipeline. PDF/DOCX (binary) files are detected and the user is told the
+  deterministic parse (unpdf/mammoth) arrives in Milestone 9.2 — paste text or use a `.txt` for now.
+- **Load a sample** now **cycles through 5 distinct personas** (data / marketing / customer-success /
+  finance / IT) on each click — so you can see how scoring shifts across backgrounds.
+- Loading a new résumé (upload or sample) **clears stale scores**; the loaded persona's name is shown. The
+  job set grew to 6 (added a Junior Accountant role) for more variety across personas.
+
 ## [1.29.0] — 2026-06-15
 
 **Phase 9 — apps, increment 1.** The web + mobile app surfaces enter the repo. (CLI code unchanged; this

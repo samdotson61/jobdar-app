@@ -3,23 +3,25 @@ import {
   type Job, type Scored, type Verdict, type Tailored, type Draft, type Profile, type Lang,
   prescreen, preConfirm, evaluate, tailor, draftOutreach, CADENCE,
 } from './engine';
-import { SAMPLE_CV, SAMPLE_JOBS } from './data';
+import { SAMPLE_CV, SAMPLE_JOBS, SAMPLE_RESUMES } from './data';
 
 export interface Contact { url: string; person: string; date: string; kind: 'contact' | 'followup' }
 
 interface State {
   profile: Profile;
   cv: string;
-  scored: Scored[];                       // Search results (prescreen + pre-confirm)
-  verdicts: Record<string, Verdict>;      // Apply: url → verdict
-  tailored: Record<string, Tailored>;     // Apply: url → tailored CV/cover
-  drafts: Record<string, Draft>;          // Follow-up: url → outreach draft
-  ledger: Contact[];                      // Follow-up cadence ledger
+  sampleIdx: number;
+  scored: Scored[];
+  verdicts: Record<string, Verdict>;
+  tailored: Record<string, Tailored>;
+  drafts: Record<string, Draft>;
+  ledger: Contact[];
   // actions
   setLang: (l: Lang) => void;
   toggleTransferable: () => void;
   setCv: (t: string) => void;
-  loadSampleCv: () => void;
+  loadResume: (text: string, name?: string) => void;   // upload or paste: replaces résumé, clears results
+  loadSampleCv: () => void;                             // cycles to the NEXT sample persona each click
   runScan: () => void;
   scoreOne: (url: string) => void;
   tailorOne: (url: string, directives: string[]) => void;
@@ -29,10 +31,12 @@ interface State {
 
 const today = () => new Date().toISOString().slice(0, 10);
 const find = (jobs: Job[], url: string) => jobs.find((j) => j.url === url);
+const firstLine = (t: string) => (t.split('\n').map((l) => l.trim()).find(Boolean) || '').slice(0, 60);
 
 export const useStore = create<State>((set, get) => ({
-  profile: { name: 'Jordan Rivera', language: 'en', regions: ['midwest'], levels: ['entry'], transferable: false },
+  profile: { name: '', language: 'en', regions: ['midwest'], levels: ['entry'], transferable: false },
   cv: '',
+  sampleIdx: -1,
   scored: [],
   verdicts: {},
   tailored: {},
@@ -42,7 +46,25 @@ export const useStore = create<State>((set, get) => ({
   setLang: (language) => set((s) => ({ profile: { ...s.profile, language } })),
   toggleTransferable: () => set((s) => ({ profile: { ...s.profile, transferable: !s.profile.transferable } })),
   setCv: (cv) => set({ cv }),
-  loadSampleCv: () => set({ cv: SAMPLE_CV }),
+
+  // A fresh résumé → clear any prior results so stale scores don't mislead.
+  loadResume: (text, name) =>
+    set((s) => ({
+      cv: text,
+      profile: { ...s.profile, name: (name && name.trim()) || firstLine(text) || s.profile.name },
+      scored: [], verdicts: {}, tailored: {}, drafts: {},
+    })),
+
+  loadSampleCv: () => {
+    const next = (get().sampleIdx + 1) % SAMPLE_RESUMES.length;
+    const r = SAMPLE_RESUMES[next];
+    set((s) => ({
+      sampleIdx: next,
+      cv: r.text,
+      profile: { ...s.profile, name: r.name },
+      scored: [], verdicts: {}, tailored: {}, drafts: {},
+    }));
+  },
 
   runScan: () => {
     const { cv, profile } = get();
@@ -72,7 +94,6 @@ export const useStore = create<State>((set, get) => ({
     set({ drafts: { ...drafts, [url]: draftOutreach(job, cv || SAMPLE_CV, person || 'Alex Kim') } });
   },
 
-  // Cadence enforced in code (mirrors the CLI): max 2 contacts/role, no duplicate person.
   logContact: (url, person) => {
     const { ledger } = get();
     const forRole = ledger.filter((e) => e.url === url && e.kind === 'contact');

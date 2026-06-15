@@ -1,15 +1,49 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
+import * as DocumentPicker from 'expo-document-picker';
 import { useStore } from '@/src/store';
 import { t } from '@/src/engine';
 import { Btn, C, Card, Field, H, Pill, Sub, confirmColor } from '@/src/ui';
 
+const looksBinary = (s: string) => {
+  if (s.startsWith('%PDF') || s.startsWith('PK')) return true; // PDF / DOCX(zip)
+  const head = s.slice(0, 1200);
+  let bad = 0;
+  for (let i = 0; i < head.length; i++) { const c = head.charCodeAt(i); if (c === 0 || (c < 9 && c !== 0)) bad++; }
+  return head.length > 0 && bad > head.length * 0.04;
+};
+
 export default function Search() {
   const profile = useStore((s) => s.profile);
   const scored = useStore((s) => s.scored);
-  const { setCv, loadSampleCv, runScan, toggleTransferable } = useStore.getState();
+  const { setCv, loadSampleCv, loadResume, runScan, toggleTransferable } = useStore.getState();
   const lang = profile.language;
   const [draft, setDraft] = useState(useStore.getState().cv);
+  const [msg, setMsg] = useState('');
+
+  const onUpload = async () => {
+    try {
+      const res = await DocumentPicker.getDocumentAsync({
+        type: ['text/plain', 'text/markdown', 'application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+        copyToCacheDirectory: true,
+      });
+      if (res.canceled || !res.assets?.length) return;
+      const asset = res.assets[0];
+      const text = await (await fetch(asset.uri)).text();
+      if (looksBinary(text)) { setMsg(t(lang, 'common.binary')); return; }
+      loadResume(text);
+      setDraft(text);
+      setMsg(`${t(lang, 'common.loaded')}: ${asset.name}`);
+    } catch (e: any) {
+      setMsg(String(e?.message ?? e));
+    }
+  };
+
+  const onSample = () => {
+    loadSampleCv();
+    setDraft(useStore.getState().cv);
+    setMsg(`${t(lang, 'common.loaded')}: ${useStore.getState().profile.name}`);
+  };
 
   return (
     <ScrollView style={{ backgroundColor: C.bg }} contentContainerStyle={{ padding: 16, paddingBottom: 56 }}>
@@ -24,8 +58,14 @@ export default function Search() {
           onChangeText={(v) => { setDraft(v); setCv(v); }}
           style={{ minHeight: 84 }}
         />
-        <Btn kind="ghost" label={t(lang, 'common.loadSample')} onPress={() => { loadSampleCv(); setDraft(useStore.getState().cv); }} />
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+          <View style={{ flexGrow: 1, flexBasis: 130 }}><Btn label={`📄 ${t(lang, 'common.upload')}`} onPress={onUpload} /></View>
+          <View style={{ flexGrow: 1, flexBasis: 130 }}><Btn kind="ghost" label={`🔁 ${t(lang, 'common.loadSample')}`} onPress={onSample} /></View>
+        </View>
+        {msg ? <Text style={{ color: C.dim, fontSize: 12, marginTop: 6 }}>{msg}</Text> : null}
+
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center' }}>
+          {profile.name ? <Pill label={`👤 ${profile.name}`} color={C.tint} text={C.tint} /> : null}
           <Pill label={`${t(lang, 'common.region')}: ${profile.regions.join(', ')}`} />
           <Pill label={`${t(lang, 'common.level')}: ${profile.levels.join(', ')}`} />
           <Pressable onPress={toggleTransferable}>

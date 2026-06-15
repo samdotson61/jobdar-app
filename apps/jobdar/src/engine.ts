@@ -207,7 +207,9 @@ const STR: Record<Lang, Dict> = {
     'followup.lint.ok': 'Passes checks — review, then send it yourself.',
     'common.region': 'Region', 'common.level': 'Level', 'common.lang': 'Idioma: ES',
     'common.demo': 'Demo data + on-device deterministic engine. Live scan + model = next milestone.',
-    'common.loadSample': 'Load sample résumé', 'common.pay': 'Pay',
+    'common.loadSample': 'Load a sample', 'common.upload': 'Upload résumé',
+    'common.binary': 'PDF/DOCX parsing arrives in 9.2 — paste your text or use a .txt for now.',
+    'common.loaded': 'Loaded', 'common.pay': 'Pay',
   },
   es: {
     'tab.search': 'Buscar', 'tab.apply': 'Postular', 'tab.followup': 'Seguimiento',
@@ -222,7 +224,9 @@ const STR: Record<Lang, Dict> = {
     'followup.lint.ok': 'Pasa las verificaciones — revísala y envíala tú mismo.',
     'common.region': 'Región', 'common.level': 'Nivel', 'common.lang': 'Language: EN',
     'common.demo': 'Datos de muestra + motor determinista en el dispositivo. Escaneo en vivo + modelo = próximo hito.',
-    'common.loadSample': 'Cargar currículum de muestra', 'common.pay': 'Salario',
+    'common.loadSample': 'Cargar una muestra', 'common.upload': 'Subir currículum',
+    'common.binary': 'La lectura de PDF/DOCX llega en 9.2 — pega tu texto o usa un .txt por ahora.',
+    'common.loaded': 'Cargado', 'common.pay': 'Salario',
   },
 };
 export const t = (lang: Lang, key: string): string => STR[lang][key] ?? STR.en[key] ?? key;
