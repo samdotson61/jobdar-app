@@ -3,13 +3,13 @@
 // the provider registry / Greenhouse detect(), EN<->ES modes parity, and state aliases.
 
 import { strict as assert } from 'node:assert'
-import { readdirSync, existsSync, readFileSync } from 'node:fs'
+import { readdirSync, existsSync, readFileSync, writeFileSync, mkdtempSync, rmSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { execFileSync } from 'node:child_process'
 import { tmpdir, homedir } from 'node:os'
 import { getStrings, listKeys, getT } from './lib/i18n.mjs'
-import { PROFILE_DEFAULTS, SUPPORTED_LANGUAGES, paths, ROOT as PKG_ROOT } from './lib/config.mjs'
+import { PROFILE_DEFAULTS, SUPPORTED_LANGUAGES, paths, ROOT as PKG_ROOT, atomicWrite } from './lib/config.mjs'
 import { resolveProvider, providerIds } from './providers/_contract.mjs'
 import greenhouse, { parseJobUrl as parseGhJobUrl } from './providers/greenhouse.mjs'
 import workday, { HOST_ALLOWLIST as WORKDAY_HOSTS, parseWorkdayUrl, parseWorkdayJobUrl } from './providers/workday.mjs'
@@ -39,7 +39,8 @@ import { scoreFromJudgments, parseEvalJson, stripPII, clampVerdict, buildEvalUse
 import { bandAgreement, buildBatchRequests, parseBatchResults, clampLogEntry } from './lib/eval_ops.mjs'
 import { extractText, isExtractable, structureCv } from './lib/docparse.mjs'
 import { importDocument, evaluate as engineEvaluate, recordVerdict, advanceStatus, buildCv, ENGINE_VERSION, tailor as engineTailor } from './lib/engine.mjs'
-import { coverIsComplete, assembleTailoredCv, TAILOR_JSON_SCHEMA, buildTailorUser } from './lib/tailor.mjs'
+import { coverIsComplete, assembleTailoredCv, TAILOR_JSON_SCHEMA, buildTailorUser, directiveBlock, TAILOR_SYSTEM } from './lib/tailor.mjs'
+import { effectiveDirectives, contentHash, recordVariant } from './lib/customize_store.mjs'
 import { parsePreConfirm, isBorderline, evalSystemFor, preConfirmSystemFor } from './lib/eval_engine.mjs'
 import { resolvePay, socForTitle, loadWages, loadSocMap } from './lib/pay.mjs'
 
@@ -364,6 +365,33 @@ test('portability: i18n renders real strings even when the user config dir is el
   })
   assert.ok(out.includes('Usage: jobdar <command>'), 'help must render real strings')
   assert.ok(!out.includes('cli.usage'), 'raw i18n keys must not leak')
+})
+
+test('safety: atomicWrite writes, overwrites in place, and leaves no orphan .tmp on success', () => {
+  const dir = mkdtempSync(path.join(tmpdir(), 'jobdar-atomic-'))
+  const f = path.join(dir, 'store.tsv')
+  atomicWrite(f, 'one\n')
+  assert.equal(readFileSync(f, 'utf8'), 'one\n')
+  atomicWrite(f, 'two\n') // overwrite an existing store — the crash-safe path must replace, not append
+  assert.equal(readFileSync(f, 'utf8'), 'two\n')
+  // crash-safety contract: the temp file is renamed onto the target, never left behind on a clean write
+  assert.ok(!readdirSync(dir).some((n) => n.endsWith('.tmp')), 'no orphan .tmp after a successful write')
+  rmSync(dir, { recursive: true, force: true })
+})
+
+test('safety: a malformed profile.yml raises a clean userFacing error, not a raw YAMLException', () => {
+  const dir = mkdtempSync(path.join(tmpdir(), 'jobdar-badyaml-'))
+  writeFileSync(path.join(dir, 'profile.yml'), 'name: ok\nname: dup\n') // duplicate mapping key → invalid YAML
+  const out = execFileSync(
+    process.execPath,
+    ['-e', "import('./lib/config.mjs').then((m) => { try { m.loadProfile(); console.log('NO_THROW') } catch (e) { console.log(JSON.stringify({ userFacing: !!e.userFacing, msg: e.message })) } })"],
+    { cwd: ROOT, env: { ...process.env, JOBDAR_CONFIG_DIR: dir }, encoding: 'utf8' },
+  )
+  const r = JSON.parse(out.trim())
+  assert.equal(r.userFacing, true, 'malformed YAML must be flagged userFacing so the CLI prints a clean message')
+  assert.ok(/not valid YAML/.test(r.msg), 'the message must explain the profile is invalid')
+  assert.ok(!/YAMLException/.test(r.msg), 'the user message must not leak the raw exception class')
+  rmSync(dir, { recursive: true, force: true })
 })
 
 test('privacy: personal config is gitignored and never shipped to npm', () => {
@@ -1214,6 +1242,62 @@ test('1.26.0: tailor — completeness guard + grounded assembly (pure pieces)', 
   assert.deepEqual(TAILOR_JSON_SCHEMA.schema.required, ['summary', 'cover_letter', 'keywords'])
   assert.ok(buildTailorUser({ jd: 'JD', cv: 'CV', role: 'X', company: 'Y' }).includes('X @ Y'))
   assert.equal(typeof engineTailor, 'function') // engine verb exported
+})
+
+test('8f: customize — directives layer, hash is deterministic, variants bump per artifact (pure)', () => {
+  // effectiveDirectives: layering + reset + skip-exact-repeat-of-last + plain re-run reuses
+  assert.deepEqual(effectiveDirectives(null, { directive: 'warmer' }), ['warmer'])
+  assert.deepEqual(effectiveDirectives({ directives: ['warmer'] }, { directive: 'shorter' }), ['warmer', 'shorter'])
+  assert.deepEqual(effectiveDirectives({ directives: ['warmer'] }, { directive: 'warmer' }), ['warmer']) // no dup of the last
+  assert.deepEqual(effectiveDirectives({ directives: ['warmer'] }, { directive: 'shorter', reset: true }), ['shorter']) // reset clears first
+  assert.deepEqual(effectiveDirectives({ directives: ['warmer'] }, {}), ['warmer']) // plain re-run reuses stored
+  // contentHash: same inputs → same hash (idempotent re-run); any input change → different hash (new variant)
+  const h1 = contentHash('CV', 'JD', ['warmer'])
+  assert.equal(h1, contentHash('CV', 'JD', ['warmer']))
+  assert.notEqual(h1, contentHash('CV', 'JD', ['warmer', 'shorter'])) // directive changed
+  assert.notEqual(h1, contentHash('CV2', 'JD', ['warmer'])) // résumé changed
+  // recordVariant: bumps from prev, preserves role + sibling artifacts
+  const r1 = recordVariant({}, { key: 'k', role: 'R', company: 'C', artifact: 'tailor', directives: ['warmer'], hash: h1, dateStr: '2026-06-15' })
+  assert.equal(r1.variant, 1)
+  const r2 = recordVariant(r1.store, { key: 'k', artifact: 'tailor', directives: ['warmer', 'shorter'], hash: 'h2', dateStr: '2026-06-15' })
+  assert.equal(r2.variant, 2)
+  assert.equal(r2.store.k.role, 'R') // role survives the bump
+  const r3 = recordVariant(r2.store, { key: 'k', artifact: 'outreach', directives: [], hash: 'h3', dateStr: '2026-06-15' })
+  assert.equal(r3.variant, 1) // outreach has its own counter
+  assert.equal(r3.store.k.artifacts.tailor.variant, 2) // tailor untouched
+})
+
+test('8f: customize — user directives steer output but stay subordinate to grounding (prompt order)', () => {
+  assert.equal(directiveBlock([]), '') // no directives → no block (backward compatible)
+  const b = directiveBlock(['warmer tone', 'one paragraph shorter'])
+  assert.ok(b.includes('MUST NOT add or change')) // the grounding-guard clause is present
+  assert.ok(b.includes('1. warmer tone') && b.includes('2. one paragraph shorter')) // applied in order
+  const system = TAILOR_SYSTEM + b
+  assert.ok(system.indexOf('NEVER invent') < system.indexOf('USER DIRECTIVES')) // base grounding precedes directives
+})
+
+test('8f: customize — the low-temp path forwards temperature into the request body (both protocols)', async () => {
+  let captured = null
+  const srv = await new Promise((resolve) => {
+    const s = http.createServer((req, res) => {
+      let buf = ''
+      req.on('data', (c) => (buf += c))
+      req.on('end', () => {
+        captured = JSON.parse(buf || '{}')
+        const json = req.url === '/v1/chat/completions'
+        res.writeHead(200, { 'content-type': 'application/json' })
+        res.end(JSON.stringify(json ? { model: 'm', choices: [{ message: { content: '{}' } }], usage: {} } : { content: [{ type: 'text', text: '{}' }], usage: {} }))
+      })
+    })
+    s.listen(0, '127.0.0.1', () => resolve({ url: `http://127.0.0.1:${s.address().port}`, close: () => new Promise((r) => s.close(r)) }))
+  })
+  await callBackend({ kind: 'local', protocol: 'openai', runtime: 'ollama', baseUrl: srv.url, model: 'm' }, { user: 'u', temperature: 0 })
+  assert.equal(captured.temperature, 0) // OpenAI-compat path (ollama/llamafile)
+  await callBackend({ kind: 'local', protocol: 'messages', baseUrl: srv.url }, { user: 'u', temperature: 0 })
+  assert.equal(captured.temperature, 0) // Messages path (winc/api)
+  await callBackend({ kind: 'local', protocol: 'openai', runtime: 'ollama', baseUrl: srv.url, model: 'm' }, { user: 'u' })
+  assert.equal('temperature' in captured, false) // omitted by default — normal eval/agent calls are untouched
+  await srv.close()
 })
 
 test('8c/pre-confirm: parsePreConfirm reads the triage verdict; unknown → maybe (never drops a role)', () => {

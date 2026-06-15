@@ -7,7 +7,7 @@
 > fit against your résumé, **tailors** an ATS-friendly CV/cover letter, and **tracks** every application —
 > with your data kept **local**, processed by a **private on-device model by default** or your own cloud API.
 >
-> **Status:** Phases 0–7, **5.5, 7.7, 7.8, 8b, 8a, 8c and 8e** complete — **Jobdar CLI `1.26.1`**. Bilingual core; **six scanner
+> **Status:** Phases 0–7, **5.5, 7.7, 7.8, 8b, 8a, 8c and 8e** complete — **Jobdar CLI `1.27.0`**. Bilingual core; **six scanner
 > providers** (Greenhouse, Workday, iCIMS, Lever, Ashby + an opt-in JSON-LD reader), all live-verified,
 > all with eval-time JD fetch; level + region toggles; the `jobdar init` wizard; the full
 > **discover→prescreen→evaluate→track→build pipeline** — `scan` finds + filters (it never scores),
@@ -176,6 +176,7 @@ on-device model once [Phase 8](#phase-8--pluggable-inference-8b-on-device-via-wi
 - [Phase 8c — Document understanding (PDFs in, structured data out)](#phase-8c--document-understanding-pdfs-in-structured-data-out)
 - [Phase 8d — Offer evaluation](#phase-8d--offer-evaluation)
 - [Phase 8e — The engine contract (CLI, web, mobile plug in here)](#phase-8e--the-engine-contract-cli-web-mobile-plug-in-here)
+- [Phase 8f — Steerable customization (re-runnable, directive-driven materials)](#phase-8f--steerable-customization-re-runnable-directive-driven-materials)
 - [Phase 9 — Web and mobile apps (future / post-1.0)](#phase-9--web-and-mobile-apps-future--post-10)
 - [MVP cut line](#mvp-cut-line-fastest-path-to-something-real)
 - [Risks & mitigations](#risks--mitigations)
@@ -616,6 +617,25 @@ This is the phase that makes Phase 9 a UI project instead of a rewrite.
 
 **Verification gate:** a single script (no CLI) goes résumé-PDF → scanned → evaluated → tracked via
 `lib/engine.mjs`; `jobdar serve` does the same over HTTP from a browser `fetch`.
+
+---
+
+## Phase 8f — Steerable customization (re-runnable, directive-driven materials)
+
+> **Status: 8f.1 ✅ shipped 1.27.0** (2026-06-14) — `jobdar tailor --instruct` (CV summary + cover letter). **8f.2 ⬜ planned (1.28.0)** — a grounded `draftOutreach` verb behind `jobdar outreach --draft`. _Supersedes the cut Phase 8d offer-capture remainder._
+
+**Goal:** let the user **steer** their application materials with natural-language directives and
+**re-run** to refine — **grounded** (directives never add facts) and at **low temperature** so a re-run is
+deterministic. The directive is the lever, not a dice-roll: a re-run only changes the artifact when a
+directive (or the résumé) changes. This is the CLI foundation for the Phase 9 Apply-tab "Customize."
+
+| Step | What | Detail |
+|---|---|---|
+| 8f.1 ✅ | **`jobdar tailor` customization** — `--instruct "<directive>"` layers per-role directives, re-derives from résumé+JD at `temperature: 0`, writes versioned `-vN` variants; `--list` / `--reset` / `--revise`; idempotent (unchanged content hash = no-op). New `lib/customize_store.mjs` (`data/customize.yml`), a `temperature` passthrough in `lib/inference.mjs`, and a grounding-guard `directiveBlock` in `lib/tailor.mjs`. | the lever, not the dice |
+| 8f.2 ⬜ | **`jobdar outreach --draft`** — a NEW grounded `draftOutreach` engine verb (mirrors `tailorRole`): one real fit reason + one ask, gated through the existing `lintDraft` + cadence; `--instruct` / `--channel` / `--person`. Drafting ≠ sending — never auto-logs to the cadence ledger. | model-drafted outreach |
+
+**Verification gate:** re-running `jobdar tailor <role> --instruct "<same>"` is a no-op; a changed
+directive writes the next `-vN`; an adversarial directive ("claim 10 years of X") does not fabricate.
 
 ---
 

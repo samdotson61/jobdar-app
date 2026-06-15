@@ -41,13 +41,19 @@ The fast triage that thins the queue before `evaluate` (the Search-tab pre-confi
 `transferable` (defaults to `profile.transferable_skills`) lets it pass genuine cross-field bridges while
 still skipping aspirational stretches.
 
-### `tailor({ active, jd, cv?, profile?, role?, company? }) → TailorResult`
+### `tailor({ active, jd, cv?, profile?, role?, company?, directives? }) → TailorResult`
 The Apply-stage "Customize" model step. Returns `{ ok, summary, coverLetter, keywords[], coverComplete,
 tailoredCv, model, usage }` — a role-targeted summary, a complete cover letter, truthful keywords, and
 `tailoredCv` (the CV with the summary led in). Uses the guaranteed-JSON path on capable local backends so
 even a 2B stays GROUNDED (selects/summarizes from the résumé — never fabricates); a **completeness guard**
 retries once if the cover letter comes back truncated (sets `coverComplete:false` if still short). `{ ok:false }`
 when the reply doesn't parse. Pair with `buildCv`/`jobdar pdf` to render `tailoredCv`.
+
+`directives?` (Phase 8f) — an ordered array of user instructions that steer tone, emphasis, length, and
+structure ONLY. They are appended **after** the grounding rules (a fixed clause forbids adding facts not in
+the résumé) and the call runs at **`temperature: 0`**, so the same `(cv, jd, directives)` reproduce the same
+letter. Additive + optional — the engine contract version is unchanged. (`jobdar tailor --instruct` layers
+these per role and writes versioned `-vN` variants; see `data/customize.yml`.)
 
 ### Track (pure — rows in, rows out)
 - `recordVerdict(rows, { url, score, band, company?, role?, location?, recommendation? }, dateStr) → rows`

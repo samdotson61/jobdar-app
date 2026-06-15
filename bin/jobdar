@@ -143,6 +143,8 @@ main()
   // Respect a command's process.exitCode (refusals set it) — exit(0) would clobber it.
   .then((code) => process.exit(code || process.exitCode || 0))
   .catch((err) => {
-    console.error(err && err.stack ? err.stack : String(err))
+    // userFacing errors (e.g. a malformed profile.yml) get a clean one-line message, not a stack trace.
+    if (err && err.userFacing) console.error(err.message)
+    else console.error(err && err.stack ? err.stack : String(err))
     process.exit(1)
   })

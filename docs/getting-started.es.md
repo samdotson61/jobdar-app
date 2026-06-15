@@ -79,12 +79,20 @@ hilo se cierra).
 
 ```bash
 node bin/jobdar tailor Enova  # IA: resumen de CV + carta para el puesto (fundamentado en tu currículum)
+node bin/jobdar tailor Enova --instruct "tono más cálido, un párrafo más corto"  # guíalo; reejecuta para afinar
 node bin/jobdar pdf Enova     # renderiza un currículum compatible con ATS → output/*.html
 ```
 `jobdar tailor` usa tu modelo local para escribir un resumen y una carta específicos del puesto en
 `output/` — reordena y destaca tu experiencia **real** y nunca inventa nada. Primero agrega tu currículum
-con `jobdar init --resume <archivo>`. Luego `jobdar pdf` renderiza el HTML compatible con ATS; instala
-Playwright (`npm i playwright`) para un PDF automático, o abre el HTML e Imprime → Guardar como PDF.
+con `jobdar init --resume <archivo>`.
+
+**Guíalo (`--instruct`).** Pasa una directiva — `"tono más cálido"`, `"empieza con mi trabajo de datos"`,
+`"un párrafo más corto"` — para moldear el tono, el énfasis y la extensión (nunca los hechos). Las
+directivas se **acumulan** por puesto y se ejecutan a baja temperatura, así que reejecutar con la misma
+directiva reproduce la misma carta, y una directiva nueva escribe la siguiente variante (`…-cv-v2.md`).
+`--list` muestra tus directivas guardadas, `--reset` las borra. Luego `jobdar pdf` renderiza el HTML
+compatible con ATS; instala Playwright (`npm i playwright`) para un PDF automático, o abre el HTML e
+Imprime → Guardar como PDF.
 
 ## Tus datos se quedan en local
 

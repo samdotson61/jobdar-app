@@ -6,6 +6,63 @@ All notable changes to Jobdar are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.27.0] — 2026-06-14
+
+**Feature (Phase 8f.1 — steerable customization):** `jobdar tailor` is now **re-runnable and steerable
+with natural-language directives**, at low temperature so re-running is deterministic.
+
+- **`--instruct "<directive>"`** — shape tone, emphasis, length, or structure ("warmer," "one paragraph
+  shorter," "lead with my data work"). Directives **accumulate per role** and each run **re-derives from
+  the résumé + JD + the full directive stack** — the draft is never fed back, so grounding can't erode.
+- **Grounded by construction.** Directives are appended *after* the grounding rules with a fixed clause:
+  they may only shape the writing, never add employers/titles/dates/degrees/skills/metrics absent from the
+  résumé (`directiveBlock` in [`lib/tailor.mjs`](lib/tailor.mjs)).
+- **Low temperature.** The tailor path now pins `temperature: 0` across **all** backends — Jobdar
+  previously sent no sampling param, so ollama/llamafile/API ran at provider defaults. New `temperature`
+  passthrough in `callMessages`/`callOpenAI` ([`lib/inference.mjs`](lib/inference.mjs)); normal eval/agent
+  calls are unchanged.
+- **Versioned variants + idempotency.** Each meaningfully-changed run writes `…-cv-vN.md` /
+  `…-cover-letter-vN.md`; an unchanged `(résumé + JD + directives)` hash is a **no-op** (prints "no change
+  — vN is current"), so a re-run only produces a new variant when you actually steer it. Directives + the
+  latest variant persist per role/artifact in the gitignored `data/customize.yml` (new
+  [`lib/customize_store.mjs`](lib/customize_store.mjs), crash-safe via `atomicWrite`).
+- **New flags:** `--instruct`, `--list` (show stored directives + current variant), `--reset` (clear and
+  start clean), `--revise` (re-emit the current variant). No flags ⇒ today's behavior — **backward
+  compatible** (directives `[]`, v1). EN/ES strings at parity; engine `tailor` gains an optional
+  `directives` param (additive — engine contract stays 1.0).
+- **Tests:** +3 (directive layering / deterministic hash / per-artifact variant bump; grounding stays
+  authoritative over directives in the assembled prompt; the low-temp path forwards `temperature` into
+  both request bodies). **108 passing, 0 failing.** Verified end-to-end against a mock backend (layer →
+  no-op re-run → new variant → `--list`); a live-model adversarial-groundedness check is pending a
+  running backend.
+
+_Next: Phase 8f.2 (`1.28.0`) — a grounded `draftOutreach` verb behind `jobdar outreach --draft`._
+
+## [1.26.2] — 2026-06-14
+
+**Fix (durability + robustness):** make every persistent write crash-safe and stop a malformed
+`profile.yml` from taking down the CLI.
+
+- **Atomic writes.** New `atomicWrite(file, data, opts)` in [`lib/config.mjs`](lib/config.mjs) renders to a
+  sibling `<file>.<pid>.tmp` and `rename`s it over the target, so a crash mid-write leaves the previous
+  file intact (worst case, an orphan `.tmp`) instead of truncating it. Every store/config writer now uses
+  it: the pipeline store ([`lib/evaluations.mjs`](lib/evaluations.mjs)), the outreach ledger
+  ([`lib/outreach.mjs`](lib/outreach.mjs)), and the `profile.yml` / `portals.yml` / `cv.md` /
+  `credentials.env` writers in [`init`](lib/commands/init.mjs), [`import`](lib/commands/import.mjs),
+  [`seed`](lib/commands/seed.mjs), and [`resume`](lib/resume.mjs). The pid in the temp name keeps
+  concurrent sessions (this repo is shared) from clobbering each other's temp file. Regenerable render
+  outputs (`pdf`, `tailor`) are left as-is by design.
+- **Friendly invalid-YAML error.** `readYaml` ([`lib/config.mjs`](lib/config.mjs)) now wraps `yaml.load`
+  and throws a `userFacing` error (`<file> is not valid YAML — <reason>. … re-run \`jobdar init\``); the
+  top-level handler in [`bin/jobdar`](bin/jobdar) prints `userFacing` messages as a clean one-liner
+  instead of a raw `YAMLException` stack trace. Previously a single typo in `profile.yml` crashed every
+  command with a stack trace.
+- **Tests:** +2 (`atomicWrite` overwrites in place / leaves no orphan `.tmp`; a malformed `profile.yml`
+  raises a clean `userFacing` error, not a `YAMLException`). **105 passing, 0 failing.**
+
+No behavior change to the data plane — `import`/`scan`/`prescreen`/`eval` remain idempotent (upsert by
+stable URL key through the alias map); this hardens *how* the bytes hit disk.
+
 ## [1.26.1] — 2026-06-14
 
 **Docs:** an adversarial cross-repo doc audit found the Getting Started guides still omitted the new

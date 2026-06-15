@@ -295,6 +295,13 @@ tailor:
   written: "Wrote {cv} and {cover}"
   cover_short: "Note: the cover letter came back short — review it before sending."
   pdf_hint: "Render it: copy the tailored CV over data/cv.md, then `jobdar pdf`."
+  directives_applied: "Applying {count} directive(s) at low temperature…"
+  directives_list_header: "Directives applied:"
+  variant_written: "Wrote {variant}: {cv} and {cover}"
+  no_change: "No change — {variant} is already current. Edit the résumé or pass --instruct \"…\" to make a new variant."
+  list_header: "Customization for {role}:"
+  list_none: "No directives yet — add one with --instruct \"make it warmer\"."
+  list_variant: "Current variant: {variant}"
 
 prescreen:
   title: "Prescreen — gate + rank before eval"

@@ -76,12 +76,19 @@ when the one polite follow-up is ripe (5+ business days; then the thread closes)
 
 ```bash
 node bin/jobdar tailor Enova  # AI: a role-targeted CV summary + cover letter (grounded in your résumé)
+node bin/jobdar tailor Enova --instruct "warmer tone, one paragraph shorter"  # steer it; re-run to refine
 node bin/jobdar pdf Enova     # render an ATS-friendly résumé → output/*.html
 ```
 `jobdar tailor` uses your local model to write a grounded, role-specific summary + cover letter into
 `output/` — it reorders and emphasizes your **real** experience and never invents anything. Add your
-résumé first with `jobdar init --resume <file>`. Then `jobdar pdf` renders the ATS-friendly HTML; install
-Playwright (`npm i playwright`) for an automatic PDF, or open the HTML and Print → Save as PDF.
+résumé first with `jobdar init --resume <file>`.
+
+**Steer it (`--instruct`).** Pass a directive — `"warmer tone"`, `"lead with my data work"`, `"one
+paragraph shorter"` — to shape tone, emphasis, and length (never the facts). Directives **stack** per
+role and run at low temperature, so re-running with the same directive reproduces the same letter, and a
+new directive writes the next variant (`…-cv-v2.md`). `--list` shows your stored directives, `--reset`
+clears them. Then `jobdar pdf` renders the ATS-friendly HTML; install Playwright (`npm i playwright`) for
+an automatic PDF, or open the HTML and Print → Save as PDF.
 
 ## Your data stays local
 

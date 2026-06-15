@@ -295,6 +295,13 @@ tailor:
   written: "Se escribió {cv} y {cover}"
   cover_short: "Nota: la carta salió corta — revísala antes de enviarla."
   pdf_hint: "Renderízala: copia el CV adaptado sobre data/cv.md, luego `jobdar pdf`."
+  directives_applied: "Aplicando {count} directiva(s) a baja temperatura…"
+  directives_list_header: "Directivas aplicadas:"
+  variant_written: "Se escribió {variant}: {cv} y {cover}"
+  no_change: "Sin cambios — {variant} ya está al día. Edita el currículum o pasa --instruct \"…\" para crear una nueva variante."
+  list_header: "Personalización para {role}:"
+  list_none: "Aún no hay directivas — agrega una con --instruct \"hazla más cálida\"."
+  list_variant: "Variante actual: {variant}"
 
 prescreen:
   title: "Prescreen — filtra y ordena antes de evaluar"
