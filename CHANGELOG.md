@@ -6,6 +6,29 @@ All notable changes to Jobdar are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.30.0] — 2026-06-15
+
+**Phase 9.0 — engine decoupled (extraction foundation) + native dev-build setup.**
+
+Engine (CLI behavior-neutral — `test-all.mjs` green, 111):
+- The scoring path is now **config-free**. Band thresholds extracted to a new pure
+  [`lib/bands.mjs`](lib/bands.mjs); [`lib/inference.mjs`](lib/inference.mjs) no longer imports `config.mjs`
+  (the API key reads from env; `bin/jobdar` seeds it from the gitignored `data/credentials.env` at startup
+  so `jobdar init`'s saved key still works); `eval_engine` imports `band`/`BANDS` from `bands.mjs`;
+  `evaluations.mjs` re-exports them for back-compat. Result: `eval_engine` / `prescreen` / `salary` /
+  `dates` / `tailor` / `inference` import **zero** config — the whole scoring closure is now
+  **browser-bundle-ready**. This is the unblock for the apps to run the *real* engine; the remaining wiring
+  needs the pnpm-workspace packaging (Metro blocks relative-escape imports), so the app currently mirrors
+  the engine contracts 1:1 (identical band thresholds + rubric keys/weights).
+
+App (`apps/jobdar`):
+- **Native development build** configured: `expo-dev-client` + `eas.json` (development /
+  development-simulator / preview / production profiles) + iOS/Android bundle id `com.jobdar.app`. Build on
+  a real iPhone via EAS (cloud, no local Xcode) — guide in [`apps/README.md`](apps/README.md); works around
+  the Expo Go SDK mismatch. Web output switched to a client-rendered SPA (`single`) — right for a PWA.
+
+`ENGINE_VERSION` unchanged (1.0 — verb signatures/shapes unchanged; internal refactor only).
+
 ## [1.29.1] — 2026-06-15
 
 **Phase 9 app — UX (increment 1 follow-up).** App-only; CLI unchanged (`test-all.mjs` green, 111).

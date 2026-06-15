@@ -53,7 +53,7 @@ Deterministic work needs no model; only **evaluation/tailoring** does.
 
 Each base mode has a full Spanish peer in `modes/es/`.
 
-> Status: Phases 0–7, 5.5, 7.7, 7.8, 8b, 8a, 8c, 8e + 8f complete — Jobdar CLI 1.29.1. The brain is authored EN-canonical with full
+> Status: Phases 0–7, 5.5, 7.7, 7.8, 8b, 8a, 8c, 8e + 8f complete — Jobdar CLI 1.30.0. The brain is authored EN-canonical with full
 > Spanish parity; level archetypes (Phase 4) and region tuning (Phase 5) are wired into the rubric.
 > On-device inference (8b), automated eval (8a), document understanding (8c), the engine contract (8e),
 > offer/pay core (8d), and the **transferable-skills toggle** have all shipped — `jobdar backend`,

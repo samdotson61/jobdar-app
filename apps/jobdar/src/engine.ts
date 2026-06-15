@@ -58,11 +58,12 @@ export function band(score: number): Band {
   return 'dont';
 }
 export const CADENCE = { maxContactsPerRole: 2, followupAfterBusinessDays: 5, maxFollowupsPerPerson: 1 } as const;
-// Decomposed rubric — skills 35 / experience 25 / level-fit 20 / logistics 10 / education-gate 10
+// Mirrors the shipped engine's rubric (eval_engine.SUBCRITERIA) 1:1 — same keys + weights so behavior
+// matches. Becomes a direct `@jobdar/engine` import once the pnpm-workspace packaging lands (9.0 cont.).
 const RUBRIC: { key: string; weight: number }[] = [
   { key: 'skills', weight: 0.35 },
   { key: 'experience', weight: 0.25 },
-  { key: 'level', weight: 0.2 },
+  { key: 'level_fit', weight: 0.2 },
   { key: 'logistics', weight: 0.1 },
   { key: 'education', weight: 0.1 },
 ];
@@ -128,7 +129,7 @@ export function evaluate(job: Job, cvText: string, profile: Profile): Verdict {
   const sections: Record<string, string> = {
     skills: job.jd,
     experience: job.jd,
-    level: `${job.role} ${profile.levels.join(' ')}`,
+    level_fit: `${job.role} ${profile.levels.join(' ')}`,
     logistics: `${job.location} ${profile.regions.join(' ')}`,
     education: job.jd,
   };

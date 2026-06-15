@@ -4,7 +4,7 @@
 // commands (eval, pipeline's eval step, pdf tailoring) use the configured
 // inference backend — your API key now, the on-device model in Phase 8.
 
-import { loadProfile } from '../lib/config.mjs'
+import { loadProfile, loadApiKey } from '../lib/config.mjs'
 import { getT } from '../lib/i18n.mjs'
 import { parseFlags, resolveLang, readVersion } from '../lib/cli.mjs'
 
@@ -138,6 +138,10 @@ async function main() {
     }
   }
 }
+
+// Phase 9.0: the inference client is now config-free and reads the key from env. Seed it from the
+// gitignored data/credentials.env (where `jobdar init` saves it) so the CLI's `api` backend still works.
+if (!process.env.JOBDAR_API_KEY) { const k = loadApiKey(); if (k) process.env.JOBDAR_API_KEY = k }
 
 main()
   // Respect a command's process.exitCode (refusals set it) — exit(0) would clobber it.
