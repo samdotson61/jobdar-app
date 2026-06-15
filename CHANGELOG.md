@@ -6,6 +6,33 @@ All notable changes to Jobdar are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.31.0] — 2026-06-15
+
+**Hard entry-requirement gating + real-job seeding** (fixes "an IT-support résumé got recommended a Junior
+Accountant role"). Engine + app; CLI `test-all.mjs` green (**115**, +4).
+
+Engine (`lib/prescreen.mjs` — deterministic, code-owned, NEVER bridged by the `transferable_skills` toggle):
+- **Credential gate** (`extractCredential`) — a named license/cert in *required*-context (CPA / RN / PE /
+  bar / CDL / series / DEA / medical) that's absent from the résumé → **screened**. "preferred" / "a plus"
+  / "ability to obtain" never gates.
+- **Field gate** (`extractField` + `cvHasField`) — a hard-identity occupation by TITLE (Accountant /
+  Auditor / Controller; Nurse / RN; Attorney / Paralegal) where the résumé shows **<2 distinct field
+  signals** → screened. Software / data / marketing / sales / ops are deliberately NOT hard-identity, so
+  genuine transferable fits stay open. The ≥2-signal threshold stops one stray "Excel" from faking
+  accounting.
+- Reasons flow through the existing `clampVerdict` → forced to "dont"; `prepEval` now threads the
+  job title + résumé so the eval path gates identically. `extractGates(jd, title)` / `prescreenRole({…,
+  title})` gain an optional title (additive — `ENGINE_VERSION` unchanged).
+- **+4 tests** including a NEGATIVE (a real accountant still passes a plain accountant role — no
+  over-gating) and "transferable cannot bypass a required CPA".
+
+App (`apps/jobdar`):
+- Mirrors the same hard gate in `src/engine.ts` (prescreen + the evaluate clamp).
+- **Seeds real jobs**: `SAMPLE_JOBS` is now **20 real public postings** (from the validated salary corpus —
+  Relativity, Enova, Sprout Social, 84.51°, Carvana, Censys… spanning finance / IT / engineering / data /
+  sales / marketing, entry→senior) **+ one CPA-required role**, replacing the handful of fakes. Live scan
+  via the proxy remains the 9.1/9.2 path.
+
 ## [1.30.0] — 2026-06-15
 
 **Phase 9.0 — engine decoupled (extraction foundation) + native dev-build setup.**

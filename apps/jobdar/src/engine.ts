@@ -83,6 +83,60 @@ const DEGREE_RE = /\b(bachelor'?s?|b\.?s\.?|b\.?a\.?|degree required|master'?s?)
 const CLEAR_RE = /\b(security clearance|active clearance|ts\/sci|secret clearance)\b/i;
 const levelCap: Record<string, number> = { entry: 2, mid: 5, senior: 10 };
 
+// HARD entry-requirement gates — mirror of lib/prescreen.mjs (named credentials + hard-identity fields).
+// Code-owned, deterministic, and NEVER bypassed by the transferable toggle (you can't transfer into a CPA).
+const CRED: { id: string; jd: RegExp; cv: RegExp }[] = [
+  { id: 'CPA', jd: /\bcpa\b|certified public accountant/i, cv: /\bcpa\b|certified public accountant/i },
+  { id: 'RN', jd: /\brn\b|registered nurse|nursing license/i, cv: /\brn\b|registered nurse|\bbsn\b/i },
+  { id: 'PE', jd: /\bp\.?e\.?\b\s*licen|professional engineer/i, cv: /\bp\.?e\.?\b|professional engineer/i },
+  { id: 'bar', jd: /bar admission|admitted to the (?:state )?bar|licensed attorney/i, cv: /bar (?:admission|number)|\bj\.?d\.?\b|\battorney\b/i },
+  { id: 'CDL', jd: /\bcdl\b|commercial driver'?s license/i, cv: /\bcdl\b/i },
+];
+const REQ_CTX = /required|must (?:have|hold|possess|be)|active|current|valid/i;
+const SOFT_CTX = /preferred|a plus|nice[- ]to[- ]have|bonus|ability to obtain|or equivalent/i;
+const FIELD_TITLE: { field: string; re: RegExp }[] = [
+  { field: 'accounting', re: /\b(accountant|accounting|auditor|controller|bookkeeper|tax (?:associate|accountant|preparer|manager|analyst)|accounts (?:payable|receivable) (?:specialist|clerk|manager|associate))\b/i },
+  { field: 'nursing', re: /\b(registered nurse|\brn\b|nurse practitioner|clinical nurse|staff nurse|charge nurse)\b/i },
+  { field: 'legal', re: /\b(attorney|lawyer|paralegal|legal counsel|general counsel|litigation associate)\b/i },
+];
+const FIELD_SIGNALS: Record<string, RegExp[]> = {
+  accounting: [/accounting/i, /accountant/i, /bookkeep/i, /reconcil(?:e|iation|ing)/i, /accounts payable/i, /accounts receivable/i, /\bledger\b/i, /\bgaap\b/i, /\baudit/i, /month[- ]end/i, /quickbooks/i, /\bcpa\b/i, /b\.?b\.?a\.?\s*(?:in\s*)?account/i, /financial statements/i, /budget(?:ing| tracker)/i, /\bpayroll\b/i],
+  nursing: [/\bnurse\b/i, /nursing/i, /\brn\b/i, /\bbsn\b/i, /patient care/i, /\bclinical\b/i, /charting/i, /triage/i],
+  legal: [/attorney/i, /paralegal/i, /\blaw\b/i, /\bj\.?d\.?\b/i, /\bbar\b/i, /litigation/i, /contract review/i, /legal research/i],
+};
+const HARD_IDENTITY = new Set(['accounting', 'nursing', 'legal']);
+function credentialRequired(jd: string): string | null {
+  for (const c of CRED) {
+    const m = jd.match(c.jd);
+    if (!m) continue;
+    const i = m.index ?? 0;
+    const around = jd.slice(Math.max(0, i - 70), i + m[0].length + 70);
+    if (SOFT_CTX.test(around)) continue;
+    if (REQ_CTX.test(around)) return c.id;
+  }
+  return null;
+}
+const cvHasCred = (cv: string, id: string) => { const c = CRED.find((x) => x.id === id); return c ? c.cv.test(cv) : false; };
+function jobField(role: string): string | null {
+  for (const f of FIELD_TITLE) if (f.re.test(role)) return f.field;
+  return null;
+}
+function cvHasField(cv: string, field: string): boolean {
+  const sigs = FIELD_SIGNALS[field];
+  if (!sigs) return true;
+  let hits = 0;
+  for (const re of sigs) if (re.test(cv) && ++hits >= 2) return true;
+  return false;
+}
+// One call → the hard-requirement reason for a role given the résumé, or null. NOT exempted by transferable.
+export function hardGate(role: string, jd: string, cvText: string): string | null {
+  const cred = credentialRequired(jd);
+  if (cred && !cvHasCred(cvText, cred)) return `needs ${cred} (not on résumé)`;
+  const fld = jobField(role);
+  if (fld && HARD_IDENTITY.has(fld) && !cvHasField(cvText, fld)) return `field mismatch: not ${fld}`;
+  return null;
+}
+
 export function prescreen(jobs: Job[], cvText: string, profile: Profile): Scored[] {
   const cv = new Set(toks(cvText));
   const cap = Math.max(...profile.levels.map((l) => levelCap[l] ?? 2));
@@ -95,6 +149,8 @@ export function prescreen(jobs: Job[], cvText: string, profile: Profile): Scored
       if (ym && Number(ym[1]) > cap && !profile.transferable) gate = `needs ${ym[1]}+ yrs (cap ${cap})`;
       if (CLEAR_RE.test(job.jd)) gate = 'active clearance required';
       if (DEGREE_RE.test(job.jd) && !profile.transferable && !cv.has('bachelor') && !cv.has('degree')) gate = gate ?? 'degree required';
+      const hard = hardGate(job.role, job.jd, cvText); // credential/field — overrides; transferable can't bypass
+      if (hard) gate = hard;
       const fresh = freshness(job.postedOn);
       const score = Math.round(Math.min(100, ratio * 320 + fresh) - (gate ? 45 : 0));
       const reason = gate
@@ -147,6 +203,8 @@ export function evaluate(job: Job, cvText: string, profile: Profile): Verdict {
   // gate clamp: a hard education/clearance gate floors to Don't (unless transferable exempts degree)
   let clamped: string | undefined;
   if (CLEAR_RE.test(job.jd)) { score = Math.min(score, 2.0); clamped = 'clearance gate'; }
+  const hard = hardGate(job.role, job.jd, cvText); // credential/field hard gate → floor to Don't
+  if (hard) { score = Math.min(score, 2.0); clamped = clamped ?? `gate: ${hard}`; }
   score = Math.round(score * 10) / 10;
   return { score, band: band(score), criteria, pay: resolvePay(job), clamped };
 }

@@ -26,7 +26,7 @@ import { parseResumeText } from './lib/resume.mjs'
 import { renderDashboard, analyze } from './lib/commands/dashboard.mjs'
 import { renderTui, pipelineView } from './lib/commands/tui.mjs'
 import { mergeScanned, recordEval, serializePipeline, band, isEvaluated, isTracked, setStatus, pruneScanned, PIPELINE_COLS, recordPrescreen, pendingQueue, roleKey, resolveAlias } from './lib/evaluations.mjs'
-import { extractYearsRequired, extractDegreeGate, extractGates, screenDecision, prescreenRole, freshnessPoints, reasonLine, blendSalary } from './lib/prescreen.mjs'
+import { extractYearsRequired, extractDegreeGate, extractGates, screenDecision, prescreenRole, freshnessPoints, reasonLine, blendSalary, extractCredential, extractField, cvHasField, cvHasCredential, isHardIdentity } from './lib/prescreen.mjs'
 import { extractPay, bandVsTarget, formatPay, paySummary, SALARY_TOLERANCE, SALARY_FLOOR } from './lib/salary.mjs'
 import { normalizeResumeDates, monthYear } from './lib/dates.mjs'
 import { decodeEntities, stripTags } from './lib/html.mjs'
@@ -705,6 +705,53 @@ test('prescreen: score blends skill overlap + freshness; flags subtract; screene
   const screened = prescreenRole({ jdText: 'Requires 9+ years of experience.', cvText: cv, today, profile: { target_levels: ['entry'] } })
   assert.equal(screened.score, 0)
   assert.ok(reasonLine(screened.reasons).includes('9+ years'), 'reason carries the quote')
+})
+
+test('prescreen: hard FIELD gate — an IT résumé is screened OUT of a hard-identity accounting role', () => {
+  const itCv = 'A.S. Information Technology. Python, JavaScript, SQL, PowerShell, REST APIs, troubleshooting, asset tracking, imaging, dashboards.'
+  const jd = 'Junior Accountant to support month-end close, reconcile accounts, and maintain budget trackers. Entry level welcome.'
+  const r = prescreenRole({ jdText: jd, cvText: itCv, title: 'Junior Accountant', today: '2026-06-15', profile: { target_levels: ['entry'] } })
+  assert.ok(r.screened && r.score === 0, 'an IT résumé must be screened out of an accounting role')
+  assert.equal(r.reasons.find((x) => x.kind === 'field')?.detail, 'accounting')
+  // field detection is TITLE-driven; non-hard-identity titles (software/data/ops) never field-gate
+  assert.equal(extractField('Operations Analyst'), null)
+  assert.equal(extractField('Junior Accountant').field, 'accounting')
+  assert.ok(!isHardIdentity('software') && isHardIdentity('accounting'))
+})
+
+test('prescreen: hard CREDENTIAL gate — a required CPA/RN gates whoever lacks it; transferable can NOT bypass', () => {
+  const itCv = 'A.S. Information Technology. Python, SQL, troubleshooting.'
+  const acctCv = 'B.B.A. Accounting. Reconciled vendor accounts, month-end close, accounts payable, QuickBooks, budget tracker.'
+  const cpaJd = 'Senior Accountant. CPA license required. Own the close and audits.'
+  // A genuine accountant who lacks the CPA is still gated by the hard credential
+  const sofia = prescreenRole({ jdText: cpaJd, cvText: acctCv, title: 'Senior Accountant', today: '2026-06-15', profile: { target_levels: ['mid'] } })
+  assert.equal(sofia.reasons.find((x) => x.kind === 'credential')?.detail, 'CPA')
+  // transferable_skills must NEVER bridge a hard credential
+  const it = prescreenRole({ jdText: cpaJd, cvText: itCv, title: 'Senior Accountant', today: '2026-06-15', profile: { target_levels: ['mid'], transferable_skills: true } })
+  assert.ok(it.screened && it.reasons.some((x) => x.kind === 'credential'), 'transferable cannot bypass a required CPA')
+  // required-context conservatism: "preferred" / "ability to obtain" never gates
+  assert.equal(extractCredential('Must hold an active RN license.').credential, 'RN')
+  assert.equal(extractCredential('RN preferred but not required.').gate, 'none')
+  assert.equal(extractCredential('Ability to obtain a CPA is a plus.').gate, 'none')
+})
+
+test('prescreen: NEGATIVE — a real accountant is NOT over-gated on a plain accountant role', () => {
+  const acctCv = 'B.B.A. Accounting. Reconciled vendor accounts, month-end close, accounts payable, QuickBooks, budget tracker, Excel.'
+  const jd = 'Junior Accountant to support month-end close, reconcile accounts, maintain budget trackers. QuickBooks a plus. Entry level.'
+  const r = prescreenRole({ jdText: jd, cvText: acctCv, title: 'Junior Accountant', today: '2026-06-15', profile: { target_levels: ['entry'] } })
+  assert.ok(!r.screened && r.score > 0, 'a genuine accountant must pass a plain accountant role (no over-gating)')
+  // cvHasField needs >=2 distinct field signals — one stray keyword is not enough
+  assert.equal(cvHasField('I once used Excel for a budget.', 'accounting'), false)
+  assert.equal(cvHasField(acctCv, 'accounting'), true)
+  assert.equal(cvHasCredential(acctCv, 'CPA'), false)
+})
+
+test('8a: clampVerdict forces Don\'t on a prescreen credential/field gate; transferable cannot lift it', () => {
+  const cred = { screened: true, reasons: [{ kind: 'credential', detail: 'CPA', quote: 'CPA license required' }] }
+  const v = clampVerdict({ score: 4.7, judgments: { required: { candidate_meets_all: true } }, decision: cred, profile: { transferable_skills: true }, transferable: true })
+  assert.equal(v.band, 'dont'); assert.ok(v.clamped)
+  const fld = { screened: true, reasons: [{ kind: 'field', detail: 'accounting', quote: 'Accountant' }] }
+  assert.equal(clampVerdict({ score: 4.2, judgments: {}, decision: fld }).band, 'dont')
 })
 
 test('pipeline: prescreen columns persist, recordPrescreen annotates, old files read clean', () => {
