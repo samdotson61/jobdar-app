@@ -69,11 +69,14 @@ enfocados, no una avalancha.
 
 ```bash
 node bin/jobdar outreach <url-del-puesto>
+node bin/jobdar outreach --draft <url-del-puesto> --person "Alex Kim" --instruct "que sea informal"
 ```
 Obtienes enlaces de búsqueda en LinkedIn de reclutadores y posibles gerentes de contratación — tú
-navegas y eliges a la persona; Jobdar nunca extrae datos ni envía nada. Registra lo que envíes
-(`--log`), y `--due` te dice cuándo madura el único seguimiento cortés (5+ días hábiles; después el
-hilo se cierra).
+navegas y eliges a la persona; Jobdar nunca extrae datos ni envía nada. **`--draft`** escribe una nota
+inicial fundamentada para esa persona (una razón real de tu currículum + una petición), ajustable con
+`--instruct` y verificada contra las reglas de longitud/marcadores/nombre de LinkedIn — revísala y **tú**
+la envías. Registra lo que envíes (`--log`), y `--due` te dice cuándo madura el único seguimiento cortés
+(5+ días hábiles; después el hilo se cierra).
 
 ## 7. Adapta y crea tu currículum
 

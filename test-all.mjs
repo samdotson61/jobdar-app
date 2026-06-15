@@ -30,7 +30,7 @@ import { extractYearsRequired, extractDegreeGate, extractGates, screenDecision, 
 import { extractPay, bandVsTarget, formatPay, paySummary, SALARY_TOLERANCE, SALARY_FLOOR } from './lib/salary.mjs'
 import { normalizeResumeDates, monthYear } from './lib/dates.mjs'
 import { decodeEntities, stripTags } from './lib/html.mjs'
-import { baseRoleTitle, peopleFinderLinks, businessDaysBetween, canContact, canFollowup, dueFollowups, lintDraft } from './lib/outreach.mjs'
+import { baseRoleTitle, peopleFinderLinks, businessDaysBetween, canContact, canFollowup, dueFollowups, lintDraft, draftOutreach, buildOutreachUser, OUTREACH_SYSTEM } from './lib/outreach.mjs'
 import { trackerRowsFrom } from './lib/tracker.mjs'
 import { cvToHtml, matchedKeywords } from './lib/cv_render.mjs'
 import http from 'node:http'
@@ -1298,6 +1298,33 @@ test('8f: customize — the low-temp path forwards temperature into the request 
   await callBackend({ kind: 'local', protocol: 'openai', runtime: 'ollama', baseUrl: srv.url, model: 'm' }, { user: 'u' })
   assert.equal('temperature' in captured, false) // omitted by default — normal eval/agent calls are untouched
   await srv.close()
+})
+
+test('8f.2: draftOutreach — grounded prompt, JSON message, lint gate (mock backend)', async () => {
+  // prompt assembly: recipient + role + company present; base grounding precedes any user directives
+  const u = buildOutreachUser({ jd: 'JD', cv: 'CV', role: 'Data Analyst', company: 'Acme', person: 'Alex Kim', channel: 'linkedin' })
+  assert.ok(u.includes('Alex Kim') && u.includes('Data Analyst') && u.includes('Acme'))
+  const sys = OUTREACH_SYSTEM + directiveBlock(['casual'])
+  assert.ok(sys.indexOf('NEVER invent') < sys.indexOf('USER DIRECTIVES'))
+  // a good JSON message → ok + lint passes
+  const good = await mockOpenAI({ content: JSON.stringify({ message: 'Hi Alex, I admire Acme data work. As an analyst with SQL and dashboards, I would value a brief chat — could you point me to the right person?' }) })
+  const active = { kind: 'local', protocol: 'openai', runtime: 'ollama', baseUrl: good.url, model: 'm', jsonEval: true }
+  const r = await draftOutreach({ active, jd: 'Data Analyst — SQL', cv: 'Analyst with SQL + dashboards.', role: 'Data Analyst', company: 'Acme', person: 'Alex Kim' })
+  assert.equal(r.ok, true); assert.ok(r.message.includes('Alex')); assert.equal(r.lint.ok, true)
+  await good.close()
+  // a too-long message → still ok:true, but the lint gate SURFACES too_long (the note is never silently "good")
+  const bad = await mockOpenAI({ content: JSON.stringify({ message: 'Hi Alex, ' + 'x'.repeat(400) }) })
+  const r2 = await draftOutreach({ active: { ...active, baseUrl: bad.url }, jd: 'JD', cv: 'CV', role: 'R', company: 'C', person: 'Alex Kim' })
+  assert.equal(r2.ok, true); assert.equal(r2.lint.ok, false)
+  assert.ok(r2.lint.problems.some((p) => p.kind === 'too_long'))
+  await bad.close()
+})
+
+test('8f.2: contentHash extra — outreach recipient/channel change the hash; tailor hashes unchanged', () => {
+  const h = contentHash('CV', 'JD', ['warm'])
+  assert.equal(h, contentHash('CV', 'JD', ['warm'], '')) // empty extra ≡ no extra → tailor hashes stay stable across the upgrade
+  assert.notEqual(contentHash('CV', 'JD', ['warm'], 'linkedin|Alex'), contentHash('CV', 'JD', ['warm'], 'linkedin|Sam')) // recipient matters
+  assert.notEqual(contentHash('CV', 'JD', ['warm'], 'linkedin|Alex'), contentHash('CV', 'JD', ['warm'], 'email|Alex')) // channel matters
 })
 
 test('8c/pre-confirm: parsePreConfirm reads the triage verdict; unknown → maybe (never drops a role)', () => {

@@ -349,6 +349,15 @@ outreach:
   lint_too_long: "Demasiado largo para una nota de LinkedIn: {length} caracteres (máx {max}). Recórtalo a un gancho, un ajuste y una petición."
   lint_placeholder: "Quedó un marcador de plantilla: {quote}"
   lint_missing_name: "El nombre del destinatario ({person}) nunca aparece — una nota sin su nombre se lee como envío masivo."
+  no_cv: "Aún no hay currículum. Agrega uno con `jobdar init --resume <archivo>`."
+  draft_no_target: "Indica un puesto: `jobdar outreach --draft <empresa|url>` (o `--jd <archivo>`); agrega `--person \"Nombre\"`."
+  draft_no_jd: "No se pudo obtener la descripción del puesto para ese rol."
+  draft_backend_down: "El backend de inferencia no está listo ({reason}). Inícialo: `winc serve --eval`."
+  draft_running: "Redactando el mensaje para {role} en {backend}…"
+  draft_failed: "La redacción falló — la respuesta del modelo no se pudo interpretar. Reinténtalo, o usa un modelo local más grande."
+  draft_no_change: "Sin cambios — {variant} ya está al día. Cambia --person/--instruct o edita el currículum para una nueva variante."
+  draft_written: "Se escribió {variant}: {file}"
+  draft_send_hint: "Revísalo, envíalo tú mismo y luego regístralo: `jobdar outreach --log --url <urlDelPuesto> --person \"Nombre\"`."
 
 common:
   none: "ninguno"

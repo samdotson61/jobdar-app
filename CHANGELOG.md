@@ -6,6 +6,31 @@ All notable changes to Jobdar are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.28.0] — 2026-06-15
+
+**Feature (Phase 8f.2 — model-drafted outreach):** `jobdar outreach --draft` generates a **grounded,
+steerable** networking note via the same engine as `tailor`, completing Phase 8f. Outreach previously had
+no model draft — only people-finder links, a `lintDraft` validator, and the AI-CLI brain prompt.
+
+- **`jobdar outreach --draft <company|url|--jd file> --person "Name" [--channel linkedin|email]`** — a new
+  grounded `draftOutreach` engine verb ([`lib/outreach.mjs`](lib/outreach.mjs)) mirrors `tailorRole`:
+  guaranteed-JSON on capable local backends, ONE real fit reason drawn from the résumé + ONE low-pressure
+  ask, addresses the recipient by first name, at `temperature: 0`.
+- **`--instruct "<directive>"`** steers it (warmer/casual/shorter), layered per role like `tailor`; writes
+  versioned `…-outreach-vN.md`; idempotent (unchanged résumé + JD + directives + recipient/channel = a
+  no-op). Directives + variant persist under the `outreach` artifact in `data/customize.yml`.
+- **Gated through the existing `lintDraft`** — one firmer retry on a length/placeholder/missing-name
+  failure, and any remaining problems are surfaced (never a silent "looks good"). Cadence (`canContact`)
+  **warns** when the role's contact cap is used but never blocks: **drafting ≠ sending**, so `--draft`
+  never touches the cadence ledger (you still send it yourself and `jobdar outreach --log`).
+- `contentHash` gains an optional `extra` arg (folds recipient + channel into the outreach hash; tailor
+  hashes unchanged). `draftOutreach` is exported on the engine contract (additive — engine stays 1.0).
+- **Tests:** +2 (grounded prompt + JSON message + lint gate via a mock backend; `contentHash` extra
+  distinguishes recipient/channel). **110 passing, 0 failing.** Verified end-to-end against a mock backend
+  (draft → no-op re-run → `--instruct` new variant); a live-model groundedness check is pending a backend.
+
+_Phase 8f complete (8f.1 + 8f.2). Next: Phase 9 (the three-tab app) over the 8e engine + these verbs._
+
 ## [1.27.0] — 2026-06-14
 
 **Feature (Phase 8f.1 — steerable customization):** `jobdar tailor` is now **re-runnable and steerable

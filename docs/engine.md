@@ -55,6 +55,17 @@ the résumé) and the call runs at **`temperature: 0`**, so the same `(cv, jd, d
 letter. Additive + optional — the engine contract version is unchanged. (`jobdar tailor --instruct` layers
 these per role and writes versioned `-vN` variants; see `data/customize.yml`.)
 
+### `draftOutreach({ active, jd?, cv?, profile?, role?, company?, person?, channel?, directives? }) → OutreachResult`
+The Apply/Follow-up-stage outreach drafter (Phase 8f.2). Returns `{ ok, message, lint, channel, person,
+model, usage }` — ONE short, grounded note (one real fit reason from the résumé + one ask, addresses the
+recipient by first name), using the guaranteed-JSON path so even a 2B stays grounded (never fabricates).
+`directives?` steer tone/length the same way as `tailor` (and may not add facts); the call runs at
+**`temperature: 0`**. The result is gated through `lintDraft` (one firmer retry on a length/placeholder/
+missing-name failure); `lint` carries any remaining problems so the caller never treats an unchecked note
+as send-ready. `{ ok:false }` when the reply doesn't parse. **Drafting is not sending** — this verb never
+writes to the cadence ledger (`appendOutreach`/`jobdar outreach --log` remain the only way a contact is
+recorded). Additive — engine contract version unchanged.
+
 ### Track (pure — rows in, rows out)
 - `recordVerdict(rows, { url, score, band, company?, role?, location?, recommendation? }, dateStr) → rows`
 - `recordPrescreenVerdict(rows, url, { score, reason, pay }, dateStr) → rows | null`

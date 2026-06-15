@@ -67,10 +67,13 @@ the bar: strongly-targeted fits, not a flood.
 
 ```bash
 node bin/jobdar outreach <job-url>
+node bin/jobdar outreach --draft <job-url> --person "Alex Kim" --instruct "keep it casual"
 ```
 You get LinkedIn search links for recruiters and likely hiring managers — you browse and pick the
-person; Jobdar never scrapes or sends anything. Log what you send (`--log`), and `--due` tells you
-when the one polite follow-up is ripe (5+ business days; then the thread closes).
+person; Jobdar never scrapes or sends anything. **`--draft`** writes a grounded starting note for that
+person (one real fit reason from your résumé + one ask), steerable with `--instruct` and checked against
+the LinkedIn length/placeholder/name rules — review it, then **you** send it. Log what you send (`--log`),
+and `--due` tells you when the one polite follow-up is ripe (5+ business days; then the thread closes).
 
 ## 7. Tailor & build your résumé
 
