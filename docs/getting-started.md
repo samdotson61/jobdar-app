@@ -72,14 +72,16 @@ You get LinkedIn search links for recruiters and likely hiring managers — you 
 person; Jobdar never scrapes or sends anything. Log what you send (`--log`), and `--due` tells you
 when the one polite follow-up is ripe (5+ business days; then the thread closes).
 
-## 7. Build a tailored résumé
+## 7. Tailor & build your résumé
 
 ```bash
-node bin/jobdar pdf Enova    # tailors your résumé to that role → output/*.html
+node bin/jobdar tailor Enova  # AI: a role-targeted CV summary + cover letter (grounded in your résumé)
+node bin/jobdar pdf Enova     # render an ATS-friendly résumé → output/*.html
 ```
-Add your résumé first with `jobdar init --resume <file>`. You get an ATS-friendly HTML résumé in
-`output/`; install Playwright (`npm i playwright`) for an automatic PDF, or open the HTML and
-Print → Save as PDF.
+`jobdar tailor` uses your local model to write a grounded, role-specific summary + cover letter into
+`output/` — it reorders and emphasizes your **real** experience and never invents anything. Add your
+résumé first with `jobdar init --resume <file>`. Then `jobdar pdf` renders the ATS-friendly HTML; install
+Playwright (`npm i playwright`) for an automatic PDF, or open the HTML and Print → Save as PDF.
 
 ## Your data stays local
 

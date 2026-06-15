@@ -75,14 +75,16 @@ navegas y eliges a la persona; Jobdar nunca extrae datos ni envía nada. Registr
 (`--log`), y `--due` te dice cuándo madura el único seguimiento cortés (5+ días hábiles; después el
 hilo se cierra).
 
-## 7. Crea un currículum adaptado
+## 7. Adapta y crea tu currículum
 
 ```bash
-node bin/jobdar pdf Enova    # adapta tu currículum a ese puesto → output/*.html
+node bin/jobdar tailor Enova  # IA: resumen de CV + carta para el puesto (fundamentado en tu currículum)
+node bin/jobdar pdf Enova     # renderiza un currículum compatible con ATS → output/*.html
 ```
-Primero agrega tu currículum con `jobdar init --resume <archivo>`. Obtienes un currículum HTML
-compatible con ATS en `output/`; instala Playwright (`npm i playwright`) para un PDF automático, o
-abre el HTML e Imprime → Guardar como PDF.
+`jobdar tailor` usa tu modelo local para escribir un resumen y una carta específicos del puesto en
+`output/` — reordena y destaca tu experiencia **real** y nunca inventa nada. Primero agrega tu currículum
+con `jobdar init --resume <archivo>`. Luego `jobdar pdf` renderiza el HTML compatible con ATS; instala
+Playwright (`npm i playwright`) para un PDF automático, o abre el HTML e Imprime → Guardar como PDF.
 
 ## Tus datos se quedan en local
 

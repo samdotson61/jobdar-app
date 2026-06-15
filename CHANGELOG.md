@@ -6,6 +6,14 @@ All notable changes to Jobdar are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.26.1] — 2026-06-14
+
+**Docs:** an adversarial cross-repo doc audit found the Getting Started guides still omitted the new
+`jobdar tailor` command (shipped 1.26.0). Step 7 of [`docs/getting-started.md`](docs/getting-started.md)
+and [`.es.md`](docs/getting-started.es.md) now cover `jobdar tailor` (AI summary + cover letter) → `jobdar
+pdf` (render), EN/ES at parity. Everything else (version lockstep, engine/eval/tailor docs, READMEs,
+CHANGELOG, ROADMAP, and winc-jobdar docs) audited current.
+
 ## [1.26.0] — 2026-06-14
 
 **Apply-stage tailoring + web-app-readiness tweaks.** Found while driving the full 3-stage stack on a new
