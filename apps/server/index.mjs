@@ -41,10 +41,11 @@ const server = http.createServer(async (req, res) => {
   // is the seam the web/native apps call instead of fetching ATS endpoints directly — CORS blocks that.)
   if (req.method === 'POST' && req.url === '/scan') {
     const { portal } = await body(req);
-    const provider = portal && resolveProvider(portal);
-    if (!provider) return send(res, 400, { error: 'unrecognized portal', providers: providerIds() });
+    // resolveProvider returns { provider, match }; the fetch method lives on .provider and takes .match.
+    const hit = portal && resolveProvider(portal);
+    if (!hit) return send(res, 400, { error: 'unrecognized portal', providers: providerIds() });
     try {
-      const jobs = await provider.fetch(portal, {});
+      const jobs = await hit.provider.fetch(hit.match, {});
       return send(res, 200, { jobs: Array.isArray(jobs) ? jobs : [] });
     } catch (e) { return send(res, 502, { error: String(e.message || e) }); }
   }

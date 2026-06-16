@@ -1,26 +1,32 @@
 # Jobdar apps (Phase 9)
 
-Two surfaces over the engine. **Increment 1** (this commit): a runnable three-tab Expo app + the PII-free
-scanner-proxy. The full `@jobdar/engine` fs-extraction, WebLLM/native on-device inference, live scan
-wiring, and EAS native builds are the next milestones (see [`docs/phase9-architecture.md`](../docs/phase9-architecture.md)).
+Two surfaces over the engine. The app is now **driven by the real `@jobdar/engine`** (pnpm workspace, 9.0
+partially landed) — not a re-implementation. Remaining: WebLLM/native on-device inference, live scan
+wiring, and EAS native builds (see [`docs/phase9-architecture.md`](../docs/phase9-architecture.md)).
 
 ## `apps/jobdar` — the app (web PWA + native, one Expo codebase)
 
-The three tabs are the workflow: **Search → Apply → Follow-up**. Increment 1 runs a faithful
-deterministic engine (real band thresholds, rubric weights, prescreen gates, cadence, grounded tailoring)
-on **bundled sample data**, so the whole UX is clickable with no model and no network. EN/ES toggle in the
-header.
+The three tabs are the workflow: **Search → Apply → Follow-up**. The app runs the **real engine** — the
+exact level filter, prescreen gates, 0–5 score/clamp, band thresholds, and pay resolution the CLI runs,
+imported from `@jobdar/engine` — on **bundled sample data**, so the whole UX is clickable with no network.
+The rubric "judge" + tailor/outreach text are transparent keyword stand-ins until on-device WebLLM (9.3).
+EN/ES toggle in the header.
 
 ```bash
+# install ONCE at the repo root — it's a pnpm workspace (sets up @jobdar/engine for the app)
+cd ../..        # repo root
+pnpm install
+
 cd apps/jobdar
-pnpm install            # first time only
 pnpm web                # → http://localhost:8081  (test on your Mac browser)
-pnpm start              # → QR code: open in Expo Go on your iPhone (same Wi-Fi)
 ```
 
 - **Mac:** `pnpm web`, then open the printed URL.
-- **iPhone:** install **Expo Go** (App Store), run `pnpm start`, scan the QR with the iPhone Camera. No
-  build/signing needed for this dev workflow.
+- **iPhone / iOS Simulator (no Apple account):** the scaffold's Expo SDK is newer than the App Store
+  **Expo Go** ("requires a newer version of Expo Go"), so use the **Safari PWA** path —
+  `pnpm exec expo export -p web`, serve `dist/` (`cd dist && python3 -m http.server 8799`), then open it
+  in Safari on the phone (`http://<mac-LAN-ip>:8799`) or the simulator
+  (`xcrun simctl openurl "iPhone 14" http://localhost:8799`). For true native, build a dev build (below).
 
 ## `apps/server` — the scanner-proxy (Phase 9.1, local form)
 
@@ -50,11 +56,17 @@ Profiles live in `eas.json` (`development` = device, `development-simulator` = i
 `preview`/`production` for distribution). Bundle id: `com.jobdar.app`. No-build path for quick testing
 stays the **Safari PWA** above (`pnpm web` → `http://<mac-LAN-ip>:8081` on the phone).
 
-## Engine status (Phase 9.0)
+## Engine status (Phase 9.0 — partially landed)
 
-The lib scoring path (`eval_engine`/`prescreen`/`salary`/`dates`/`tailor`/`inference` + new pure
-`bands.mjs`) is now **decoupled from `node:fs`/`config.mjs`** — it imports zero config, so it's
-**browser-bundle-ready** (CLI `test-all.mjs` stays green). The app currently mirrors the engine's
-contracts (identical band thresholds + rubric keys/weights); wiring it to import the shared
-`@jobdar/engine` directly is the remaining 9.0 step (needs the pnpm-workspace packaging — Metro blocks
-relative-escape imports without it).
+**The app imports the real engine — there is no mirror.** The repo is a pnpm workspace; the private
+**`@jobdar/engine`** package re-exports the pure (fs-free) `lib/` modules (`bands`/`levels`/`prescreen`/
+`eval_engine`/`salary`/`dates`/`tailor`/`inference`/…), and `apps/jobdar/src/engine.ts` is a thin adapter
+over it. So the app's Search runs the real `filterByLevel` + `prescreenRole` (level filter + every hard
+gate), and Apply runs the real `prepEval` + `buildVerdict` (score math + clamp + band + pay). Fix a rule
+in `lib/` once and the app inherits it (CLI `test-all.mjs` stays green — both consume the same code).
+
+Metro bundles it via the standard Expo-monorepo setup (`apps/jobdar/metro.config.js`: `watchFolders` =
+workspace root + `nodeModulesPaths`) — which is why the workspace was needed (a bare relative-escape
+import is blocked). Still a stand-in until 9.3/9.4: the model "judge" + tailor/outreach generation (no
+on-device model yet). Config/fs-coupled modules (the pipeline/outreach ledger stores) stay in `lib/` and
+will be reached through injected `Store`/`InferenceClient` ports — the remainder of 9.0.

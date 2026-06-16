@@ -61,7 +61,9 @@ function titleFrom(innerHtml) {
 // Location from a job card: iCIMS usually renders "Job Location" as US-{ST}-{City}; some tenants
 // show a plain "City, ST". Return a form lib/regions.mjs parseLocation() understands.
 function locationFrom(block) {
-  const us = block.match(/\bUS-([A-Z]{2})-([\w .'\-]+?)\s*<\//)
+  // [^<>]{1,80}? (not a space-greedy class with a trailing \s*) so a hostile card with a long run of
+  // spaces after "US-XX-" and no closing "</" can't trigger quadratic backtracking.
+  const us = block.match(/\bUS-([A-Z]{2})-([^<>]{1,80}?)\s*<\//)
   if (us) return `${us[2].trim()}, ${us[1]}`
   const cs = block.match(/>\s*([A-Z][A-Za-z.\-' ]+,\s*[A-Z]{2})\b/)
   return cs ? cs[1].trim() : ''

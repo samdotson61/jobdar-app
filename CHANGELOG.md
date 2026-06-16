@@ -4,7 +4,129 @@ All notable changes to Jobdar are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and Jobdar adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.34.0] — 2026-06-16
+
+**Phase 9.3 — intent-driven search.** The Search tab now leads with *"Tell us what you're looking for"*
+instead of a résumé box, and uses winc + the scanner to find and rank matching roles. Lands as
+`@jobdar/app` **1.4.0**; `test-all.mjs` **124** (+2 search tests; serve test covers `/search/parse`).
+
+- **New `lib/search.mjs`** (re-exported via `@jobdar/engine`): `parseIntent` turns the free-text request
+  into `{titles, keywords, exclude, level?, regions?}` with **one winc call** (expands "PM" → product
+  manager / product owner / program manager / associate PM …), degrading to a deterministic keyword parse
+  when winc is down — search never 503s. `relevanceScore`/`expandQueryTerms` are pure + instant.
+- **`serve`:** new `POST /search/parse {intent}`; `POST /prescreen` accepts parsed `terms` and spends its
+  limited budget on the **intent-relevant** roles first (and skips roles the intent excludes).
+- **App (`apps/jobdar`):**
+  - The top of Search is now a *"Tell us what you're looking for…"* field + an **Upload résumé** button
+    (the editable résumé box and the **Refresh** button are removed).
+  - **Progress on "Find matching roles":** the button fills 0→100% as the staged search runs (parse intent
+    → scan → prescreen in batches). It **validates incrementally** — re-running the same intent skips the
+    scan and only prescreens what's left, and a changed intent re-ranks the list instantly client-side.
+  - **More relevant, fewer irrelevant:** the list is ranked by relevance to the intent and roles that don't
+    match it are cut from the Search tab (an explicit "Likely fit" is always kept); the uploaded résumé is
+    persisted to serve so it sharpens ranking and enables scoring.
+
+## [1.33.0] — 2026-06-16
+
+**Security + correctness hardening pass** (from a full multi-agent bug audit of the 9.x surface). The
+`serve` HTTP façade and a handful of pure-logic gates got fixed; `test-all.mjs` **122** (+6 regression
+tests; the serve subprocess test now also covers the security fixes). App lands as **`@jobdar/app` 1.3.0**.
+
+### Security — `lib/commands/serve.mjs`
+- **`POST /import` is now path-confined.** It passed the request-body `file` straight to `readFileSync`,
+  so any reachable local file (`~/.ssh/id_rsa`, `~/.aws/credentials`, …) could be read over HTTP. It now
+  rejects (403) any path outside the jobdar data home.
+- **CORS no longer reflects arbitrary Origins.** The Origin is echoed only for private/loopback/LAN hosts,
+  so a public website the user has open can't read `/cv·/profile·/pipeline` cross-origin on the default
+  loopback bind. (The header comment claimed this was already the case — now it actually is.)
+- **`POST /tracker/set` validates the status** through `resolveState` (mirrors the CLI). An arbitrary
+  status could demote a row to `scanned` → eligible for prune **deletion** of an applied/interviewing role.
+- **`POST /eval/save` requires a finite numeric score**, and `readBody` caps the body (2 MB) + settles on
+  a mid-stream abort (no OOM / hung request).
+- **New `POST /cv`** persists the GUI's résumé to `data/cv.md`, and `/tailor`·`/outreach/draft` accept an
+  in-band `cv` — so scan/prescreen/eval all judge against the résumé the user actually uploaded.
+- SSRF: `assertAllowedUrl` (`lib/http.mjs`) now refuses IP-literal loopback/private/link-local + cloud
+  metadata hosts even when a provider's allowlist matches (closes the JSON-LD same-host SSRF).
+
+### Correctness
+- **prescreen:** a "N years experience **preferred**/a plus/ideally" ask no longer hard-screens an
+  applicable entry/mid role (soft-context aware, like the credential gate); bare "Controller" titles
+  (Quality/Document/Air-Traffic) are no longer mis-gated as accounting (now `financial controller`/
+  `comptroller`); a leading "CPA preferred" no longer masks a later "active CPA license **required**".
+- **regions:** "Washington, DC" files to the Northeast (was Washington-state/West); two-letter words that
+  double as state codes (`ONSITE OR HYBRID`, `IN-PERSON`) aren't misread as Oregon/Indiana;
+  `canonicalLocation` is state-qualified so same-named cities (Columbus OH vs GA) don't collapse in dedup.
+- **pipeline:** alias URLs are space-delimited (a URL with a comma — `?locations=us,ca` — no longer
+  fragments dedup/lookups); `recordEval` never writes a literal `NaN` score / wrongly-`evaluated` row.
+- **outreach:** `businessDaysBetween` steps in UTC (a follow-up no longer fires a day early across the
+  spring-forward DST week); `lintDraft` also catches leftover `[email]`/`[phone]`/`[url]` PII sentinels.
+- **docparse:** entity decode reuses the single-pass, codepoint-guarded `decodeEntities` (a `.docx` with a
+  numeric entity > U+10FFFF no longer throws `RangeError`; literal entities aren't double-decoded).
+- **ReDoS:** bounded the salary comma-group, the iCIMS location, and the `parseVerdict` regexes.
+- **app:** the uploaded résumé reaches serve; a failed scan no longer blanks the list; the per-op spinner
+  no longer clears for a still-running action; a server-rejected outreach log reverts the optimistic entry.
+- **CLI:** `jobdar init --transferable=no` is honored (was coerced to `true`).
+- **`apps/server`** `/scan` calls the provider correctly (`resolveProvider` returns `{provider, match}`).
+- Docs: ROADMAP status banner corrected to the real CLI version (was drifted at 1.31.0).
+
 ## [Unreleased]
+
+### Phase 9.0 — the apps now run the REAL engine (no mirror) — `@jobdar/app` 1.1.0
+
+The repo is now a **pnpm workspace**. A new private **`@jobdar/engine`** package re-exports the pure
+(fs-free) `lib/` modules, and the Expo app (`apps/jobdar`) imports it — so the web/native app is driven by
+the **exact** level filter, prescreen gates, decomposed-rubric weights, 0–5 score math, band thresholds,
+clamp, and pay resolution the CLI runs. The app's hand-written engine *mirror* is **deleted**; `src/engine.ts`
+is now a thin adapter over `@jobdar/engine`. A rule fixed in `lib/` is inherited by the app for free.
+
+- **Fixes the level mismatch** an entry/mid candidate was shown senior/director roles. The app's Search
+  now calls the real `filterByLevel` → "Director Data Science", "Senior Director, FP&A", "Sr. Applied
+  AI/ML Scientist", etc. are dropped (6 of 21 seeded roles); the app defaults to `levels: ['entry','mid']`
+  (mid is first-class per scope) so "Specialist"/"Analyst" roles stay while senior/exec are excluded.
+- **Hard gates are single-source.** Credential (CPA/RN/PE/bar/CDL) + hard-identity field (accounting/
+  nursing/legal) gates now come from the real `prescreenRole`/`screenDecision`/`clampVerdict` — never
+  bypassed by the transferable toggle. The duplicated gate maps in the app are gone.
+- **Apply scoring uses the real math.** `prepEval` + `buildVerdict` (real `scoreFromJudgments` + clamp +
+  band + `paySummary`); only the rubric "judge" remains a transparent keyword stand-in until on-device
+  WebLLM (9.3). Nothing fabricates; the gates can't be bypassed.
+- CLI runtime unchanged — `lib/`, `bin/`, `commands/` byte-identical; `test-all.mjs` green (**115**).
+  CLI semver stays **1.31.0** (no CLI runtime change); the change lands as `@jobdar/app` **1.1.0**.
+- Infra: `pnpm-workspace.yaml`, `packages/engine/`, `apps/jobdar/metro.config.js` (workspace-aware Metro),
+  `apps/jobdar/types/jobdar-engine.d.ts`. Config/fs-coupled modules (pipeline/outreach stores) stay in
+  `lib/` and are reached through the app's own Store adapter — they are not part of the engine surface yet.
+
+## [1.32.0] — 2026-06-15
+
+**Phase 9.1 — `jobdar serve` becomes the full pipeline façade (the GUI backend), + LAN access.** The
+locked Phase 9 architecture: all surfaces (web, desktop, mobile) are thin GUIs that point **by default at
+the local jobdar CLI + winc engine as the entire full stack** — the model is always server-side; cloud
+model API keys become a pluggable **Pro-tier** upgrade later (see ROADMAP). `serve` (the HTTP façade over
+`lib/engine.mjs`) grew from 3 endpoints to the whole pipeline so the apps just call it:
+
+- **New endpoints** (all JSON, reusing the real engine verbs + pipeline.tsv): `GET /pipeline`
+  (`?status=`/`?pending=true`), `GET /profile` (secrets redacted — never the API key or `inference_url`),
+  `GET /cv`, `GET /outreach/due`; `POST /scan` (live discovery → `upsertScanned`), `POST /prescreen`
+  (zero-token gate + rank via `prescreenRole`/`upsertPrescreen`, polite paced JD fetches), `POST /eval/next`
+  + `POST /eval/save` (`pendingQueue` → real-model score → `upsertEval`, status→evaluated), `POST
+  /tracker/set` (`updateStatusByUrl`), `POST /outreach/log` (cadence-checked `canContact`/`canFollowup` →
+  `appendOutreach`). Existing `/health`, `/evaluate`, `/import` unchanged.
+- **LAN access for the phone:** `jobdar serve --host 0.0.0.0` flips on a **required bearer token**
+  (auto-minted and printed, or `--token <x>`); CORS reflects the caller's Origin and allows `Authorization`.
+  Default stays **loopback 127.0.0.1** (open, localhost-pinned) — opening the LAN is a deliberate, gated act.
+  Prints the Mac's LAN URL so the iPhone on the same Wi-Fi can drive it.
+- **Tests:** `test-all.mjs` **116** (+1: a subprocess, `JOBDAR_HOME`-isolated serve integration test —
+  auth gate 401/200, pipeline/profile/cv reads, a real `pipeline.tsv` status mutation, 404; no external net).
+- **Model-generation endpoints added** (`POST /tailor`, `POST /outreach/draft`) — real-model grounded CV/
+  cover + outreach note, `503 {reason}` when winc is down. CORS now reflects the caller's Origin (the GUI is
+  served from a different port than serve) so the app can actually reach it.
+- **App repointed onto serve (`@jobdar/app` 1.2.0):** `apps/jobdar/src/serve.ts` (typed client) + `store.ts`
+  rewired so every action calls serve — Search hydrates from `/pipeline·/profile·/cv`, scan→`/scan`+`/prescreen`,
+  score→`/evaluate`+`/eval/save`, tailor→`/tailor`, draft→`/outreach/draft`, log→`/outreach/log`. Verified in
+  the iPhone 14 simulator: Search renders the **746 real pipeline roles** + the real profile/résumé from serve.
+  `@jobdar/engine` is now used only for derived UI. Then cleaned up: **deleted the dead stand-ins**
+  (`engine.ts` trimmed to types + band + cadence + i18n; `data.ts`/`SAMPLE_*` removed), fixed the stale
+  "demo data" banner, and gave the Search tab a **search bar + sort (Score default / Newest / A–Z) +
+  filter chips (All/Fit/Maybe/Skip)** — auto-sorts by score, stays searchable/filterable.
 
 ## [1.31.0] — 2026-06-15
 

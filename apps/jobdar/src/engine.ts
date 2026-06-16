@@ -1,263 +1,36 @@
-// @jobdar/app — in-app engine (Phase 9 increment 1).
-//
-// HONEST STATUS: this is a faithful TypeScript port of Jobdar's DETERMINISTIC contracts — the band
-// thresholds, the decomposed-rubric criteria + weights, the prescreen gates, the cadence rules, and the
-// grounded-tailoring shape. It runs with NO model so the three-tab UX is fully clickable today. The model
-// verbs (eval/tailor/outreach drafting) use a transparent keyword-overlap scorer as a STAND-IN; the real
-// on-device model (WebLLM web / llama.rn native) and the shared `@jobdar/engine` package (after the 9.0
-// fs-decoupling of lib/) swap in behind these same signatures. Nothing here fabricates: scoring is derived
-// only from the résumé + JD text, exactly like the real pipeline.
+// @jobdar/app — UI types + derived-UI helpers (Phase 9.2). The app holds NO engine logic: it renders what
+// `jobdar serve` (the real CLI + winc) returns via src/serve.ts + src/store.ts. This file is only the shared
+// types, the band thresholds/colors (from the real @jobdar/engine — used purely for instant UI coloring),
+// the cadence labels, and the bundled EN/ES strings. The old in-app scoring/tailoring stand-ins are gone.
+import { band as engineBand, BANDS as ENGINE_BANDS } from '@jobdar/engine';
 
 export type Lang = 'en' | 'es';
 export type Band = 'apply' | 'research' | 'dont';
 
-export interface Profile {
-  name: string;
-  language: Lang;
-  regions: string[];
-  levels: string[];
-  transferable: boolean;
-}
-
-export interface Job {
-  company: string;
-  role: string;
-  url: string;
-  location: string;
-  postedOn?: string;
-  jd: string;
-}
-
-export interface Scored extends Job {
-  prescreen: number;        // 0–100 zero-token likelihood
-  screenReason: string;
-  gate?: string;            // a hard gate that fired (years/degree/clearance) — kept, not hidden
-  confirm?: 'fit' | 'maybe' | 'skip';
-}
-
-export interface Criterion {
-  key: string;
-  weight: number;           // sums to 1.0
-  judgment: 'strong' | 'partial' | 'none';
-  evidence: string;
-}
-
-export interface Verdict {
-  score: number;            // 0–5, code-computed
-  band: Band;
-  criteria: Criterion[];
-  pay: string;              // source-labeled, never fabricated
-  clamped?: string;
-}
-
-// ── Locked contracts (mirror the shipped CLI) ────────────────────────────────
-export const BANDS = { apply: 4.0, research: 3.5 } as const;
-export function band(score: number): Band {
-  if (score >= BANDS.apply) return 'apply';
-  if (score >= BANDS.research) return 'research';
-  return 'dont';
-}
-export const CADENCE = { maxContactsPerRole: 2, followupAfterBusinessDays: 5, maxFollowupsPerPerson: 1 } as const;
-// Mirrors the shipped engine's rubric (eval_engine.SUBCRITERIA) 1:1 — same keys + weights so behavior
-// matches. Becomes a direct `@jobdar/engine` import once the pnpm-workspace packaging lands (9.0 cont.).
-const RUBRIC: { key: string; weight: number }[] = [
-  { key: 'skills', weight: 0.35 },
-  { key: 'experience', weight: 0.25 },
-  { key: 'level_fit', weight: 0.2 },
-  { key: 'logistics', weight: 0.1 },
-  { key: 'education', weight: 0.1 },
-];
-
-const STOP = new Set('a an the and or for to of in on with at by from as is are be we you your our role team work years experience strong ability skills'.split(' '));
-const toks = (s: string) => (s.toLowerCase().match(/[a-z][a-z+.#]{2,}/g) || []).filter((w) => !STOP.has(w));
-const overlap = (a: Set<string>, bToks: string[]) => {
-  const hit = bToks.filter((w) => a.has(w));
-  return { ratio: bToks.length ? hit.length / new Set(bToks).size : 0, hits: [...new Set(hit)] };
-};
-const judge = (ratio: number): Criterion['judgment'] => (ratio >= 0.18 ? 'strong' : ratio >= 0.07 ? 'partial' : 'none');
-const points = (j: Criterion['judgment']) => (j === 'strong' ? 5 : j === 'partial' ? 3.2 : 1.2);
-
-// ── Prescreen (zero-token gate + likelihood) ─────────────────────────────────
-const YEARS_RE = /(\d{1,2})\+?\s*(?:years|yrs)/i;
-const DEGREE_RE = /\b(bachelor'?s?|b\.?s\.?|b\.?a\.?|degree required|master'?s?)\b/i;
-const CLEAR_RE = /\b(security clearance|active clearance|ts\/sci|secret clearance)\b/i;
-const levelCap: Record<string, number> = { entry: 2, mid: 5, senior: 10 };
-
-// HARD entry-requirement gates — mirror of lib/prescreen.mjs (named credentials + hard-identity fields).
-// Code-owned, deterministic, and NEVER bypassed by the transferable toggle (you can't transfer into a CPA).
-const CRED: { id: string; jd: RegExp; cv: RegExp }[] = [
-  { id: 'CPA', jd: /\bcpa\b|certified public accountant/i, cv: /\bcpa\b|certified public accountant/i },
-  { id: 'RN', jd: /\brn\b|registered nurse|nursing license/i, cv: /\brn\b|registered nurse|\bbsn\b/i },
-  { id: 'PE', jd: /\bp\.?e\.?\b\s*licen|professional engineer/i, cv: /\bp\.?e\.?\b|professional engineer/i },
-  { id: 'bar', jd: /bar admission|admitted to the (?:state )?bar|licensed attorney/i, cv: /bar (?:admission|number)|\bj\.?d\.?\b|\battorney\b/i },
-  { id: 'CDL', jd: /\bcdl\b|commercial driver'?s license/i, cv: /\bcdl\b/i },
-];
-const REQ_CTX = /required|must (?:have|hold|possess|be)|active|current|valid/i;
-const SOFT_CTX = /preferred|a plus|nice[- ]to[- ]have|bonus|ability to obtain|or equivalent/i;
-const FIELD_TITLE: { field: string; re: RegExp }[] = [
-  { field: 'accounting', re: /\b(accountant|accounting|auditor|controller|bookkeeper|tax (?:associate|accountant|preparer|manager|analyst)|accounts (?:payable|receivable) (?:specialist|clerk|manager|associate))\b/i },
-  { field: 'nursing', re: /\b(registered nurse|\brn\b|nurse practitioner|clinical nurse|staff nurse|charge nurse)\b/i },
-  { field: 'legal', re: /\b(attorney|lawyer|paralegal|legal counsel|general counsel|litigation associate)\b/i },
-];
-const FIELD_SIGNALS: Record<string, RegExp[]> = {
-  accounting: [/accounting/i, /accountant/i, /bookkeep/i, /reconcil(?:e|iation|ing)/i, /accounts payable/i, /accounts receivable/i, /\bledger\b/i, /\bgaap\b/i, /\baudit/i, /month[- ]end/i, /quickbooks/i, /\bcpa\b/i, /b\.?b\.?a\.?\s*(?:in\s*)?account/i, /financial statements/i, /budget(?:ing| tracker)/i, /\bpayroll\b/i],
-  nursing: [/\bnurse\b/i, /nursing/i, /\brn\b/i, /\bbsn\b/i, /patient care/i, /\bclinical\b/i, /charting/i, /triage/i],
-  legal: [/attorney/i, /paralegal/i, /\blaw\b/i, /\bj\.?d\.?\b/i, /\bbar\b/i, /litigation/i, /contract review/i, /legal research/i],
-};
-const HARD_IDENTITY = new Set(['accounting', 'nursing', 'legal']);
-function credentialRequired(jd: string): string | null {
-  for (const c of CRED) {
-    const m = jd.match(c.jd);
-    if (!m) continue;
-    const i = m.index ?? 0;
-    const around = jd.slice(Math.max(0, i - 70), i + m[0].length + 70);
-    if (SOFT_CTX.test(around)) continue;
-    if (REQ_CTX.test(around)) return c.id;
-  }
-  return null;
-}
-const cvHasCred = (cv: string, id: string) => { const c = CRED.find((x) => x.id === id); return c ? c.cv.test(cv) : false; };
-function jobField(role: string): string | null {
-  for (const f of FIELD_TITLE) if (f.re.test(role)) return f.field;
-  return null;
-}
-function cvHasField(cv: string, field: string): boolean {
-  const sigs = FIELD_SIGNALS[field];
-  if (!sigs) return true;
-  let hits = 0;
-  for (const re of sigs) if (re.test(cv) && ++hits >= 2) return true;
-  return false;
-}
-// One call → the hard-requirement reason for a role given the résumé, or null. NOT exempted by transferable.
-export function hardGate(role: string, jd: string, cvText: string): string | null {
-  const cred = credentialRequired(jd);
-  if (cred && !cvHasCred(cvText, cred)) return `needs ${cred} (not on résumé)`;
-  const fld = jobField(role);
-  if (fld && HARD_IDENTITY.has(fld) && !cvHasField(cvText, fld)) return `field mismatch: not ${fld}`;
-  return null;
-}
-
-export function prescreen(jobs: Job[], cvText: string, profile: Profile): Scored[] {
-  const cv = new Set(toks(cvText));
-  const cap = Math.max(...profile.levels.map((l) => levelCap[l] ?? 2));
-  return jobs
-    .map((job) => {
-      const jdToks = toks(`${job.role} ${job.jd}`);
-      const { ratio, hits } = overlap(cv, jdToks);
-      let gate: string | undefined;
-      const ym = job.jd.match(YEARS_RE);
-      if (ym && Number(ym[1]) > cap && !profile.transferable) gate = `needs ${ym[1]}+ yrs (cap ${cap})`;
-      if (CLEAR_RE.test(job.jd)) gate = 'active clearance required';
-      if (DEGREE_RE.test(job.jd) && !profile.transferable && !cv.has('bachelor') && !cv.has('degree')) gate = gate ?? 'degree required';
-      const hard = hardGate(job.role, job.jd, cvText); // credential/field — overrides; transferable can't bypass
-      if (hard) gate = hard;
-      const fresh = freshness(job.postedOn);
-      const score = Math.round(Math.min(100, ratio * 320 + fresh) - (gate ? 45 : 0));
-      const reason = gate
-        ? `gate: ${gate}`
-        : hits.length
-          ? `matches ${hits.slice(0, 4).join(', ')}`
-          : 'scored on freshness only';
-      return { ...job, prescreen: Math.max(1, score), screenReason: reason, gate };
-    })
-    .sort((a, b) => b.prescreen - a.prescreen);
-}
-function freshness(postedOn?: string): number {
-  if (!postedOn) return 8;
-  const m = /(\d+)\s*(day|week|month)/i.exec(postedOn);
-  if (!m) return 8;
-  const n = Number(m[1]);
-  const days = m[2].toLowerCase().startsWith('day') ? n : m[2].toLowerCase().startsWith('week') ? n * 7 : n * 30;
-  return Math.max(0, 18 - days * 0.5);
-}
-
-// ── Light-AI pre-confirm (yes/maybe/no triage — NOT a score) ─────────────────
-export function preConfirm(job: Scored): 'fit' | 'maybe' | 'skip' {
-  if (job.gate) return 'skip';
-  if (job.prescreen >= 55) return 'fit';
-  if (job.prescreen >= 28) return 'maybe';
-  return 'skip';
-}
-
-// ── Evaluate (decomposed rubric → code-computed 0–5 → band) ───────────────────
-export function evaluate(job: Job, cvText: string, profile: Profile): Verdict {
-  const cv = new Set(toks(cvText));
-  const sections: Record<string, string> = {
-    skills: job.jd,
-    experience: job.jd,
-    level_fit: `${job.role} ${profile.levels.join(' ')}`,
-    logistics: `${job.location} ${profile.regions.join(' ')}`,
-    education: job.jd,
-  };
-  const criteria: Criterion[] = RUBRIC.map(({ key, weight }) => {
-    const { ratio, hits } = overlap(cv, toks(sections[key]));
-    const j = judge(ratio + (profile.transferable ? 0.03 : 0));
-    return {
-      key,
-      weight,
-      judgment: j,
-      evidence: hits.length ? `“${hits.slice(0, 3).join(', ')}” in the JD` : 'no clear signal in the JD',
-    };
-  });
-  let score = criteria.reduce((s, c) => s + points(c.judgment) * c.weight, 0);
-  // gate clamp: a hard education/clearance gate floors to Don't (unless transferable exempts degree)
-  let clamped: string | undefined;
-  if (CLEAR_RE.test(job.jd)) { score = Math.min(score, 2.0); clamped = 'clearance gate'; }
-  const hard = hardGate(job.role, job.jd, cvText); // credential/field hard gate → floor to Don't
-  if (hard) { score = Math.min(score, 2.0); clamped = clamped ?? `gate: ${hard}`; }
-  score = Math.round(score * 10) / 10;
-  return { score, band: band(score), criteria, pay: resolvePay(job), clamped };
-}
-
-// pay: STATED → else labeled estimate. Never a bare invented number.
-function resolvePay(job: Job): string {
-  const m = job.jd.match(/\$\s?(\d{2,3}(?:,\d{3})?)(?:\s?[–-]\s?\$?\s?(\d{2,3}(?:,\d{3})?))?\s?(?:k|,000)?/i);
-  if (m) return `stated ${m[0].trim()}`;
-  return 'est. — (no posted pay)';
-}
-
-// ── Tailor (grounded: directives steer tone/length, never facts) ──────────────
+export interface Profile { name: string; language: Lang; regions: string[]; levels: string[]; transferable: boolean }
+export interface Job { company: string; role: string; url: string; location: string; postedOn?: string; jd: string }
+export interface Scored extends Job { prescreen: number; screenReason: string; gate?: string; confirm?: 'fit' | 'maybe' | 'skip'; level?: string }
+export interface Criterion { key: string; weight: number; judgment: 'strong' | 'partial' | 'none'; evidence: string }
+export interface Verdict { score: number; band: Band; criteria: Criterion[]; pay: string; clamped?: string }
 export interface Tailored { summary: string; coverLetter: string; keywords: string[] }
-export function tailor(job: Job, cvText: string, profile: Profile, directives: string[]): Tailored {
-  const cv = new Set(toks(cvText));
-  const kw = [...new Set(toks(job.jd))].filter((w) => cv.has(w)).slice(0, 8);
-  const tone = directives.join('; ');
-  const lead = cvText.split('\n').find((l) => l.trim().length > 30)?.trim() || `${profile.name}.`;
-  const summary = `${profile.name} — targeting ${job.role} at ${job.company}. ${lead.slice(0, 180)}${directives.length ? `  [steered: ${tone}]` : ''}`;
-  const coverLetter =
-    `Dear ${job.company} Hiring Team,\n\n` +
-    `I'm applying for the ${job.role} role. My background maps directly to your needs` +
-    (kw.length ? ` — particularly ${kw.slice(0, 4).join(', ')}.` : '.') +
-    ` I'd welcome the chance to contribute and grow with the role.\n\n` +
-    (directives.length ? `(Steering applied: ${tone} — tone/emphasis only, never invented facts.)\n\n` : '') +
-    `Sincerely,\n${profile.name}`;
-  return { summary, coverLetter, keywords: kw };
-}
-
-// ── Outreach (one real fit reason + one ask; cadence enforced by code) ────────
 export interface Draft { message: string; problems: string[] }
-export function draftOutreach(job: Job, cvText: string, person: string): Draft {
-  const cv = new Set(toks(cvText));
-  const reason = [...new Set(toks(job.jd))].find((w) => cv.has(w)) || 'a strong fit for this role';
-  const first = person.trim().split(/\s+/)[0] || 'there';
-  const message =
-    `Hi ${first}, I admire ${job.company}'s work and I'm exploring the ${job.role} role. ` +
-    `My experience with ${reason} lines up well — could you point me to the right person or share a quick perspective? Thank you!`;
-  const problems: string[] = [];
-  if (message.length > 300) problems.push('too_long');
-  if (/\[(?:name|company|role)/i.test(message)) problems.push('placeholder');
-  if (!message.toLowerCase().includes(first.toLowerCase())) problems.push('missing_name');
-  return { message, problems };
-}
+
+export const BANDS = ENGINE_BANDS as { apply: number; research: number };
+export const band = (score: number): Band => (engineBand(score) || 'dont') as Band;
+export const CADENCE = { maxContactsPerRole: 2, followupAfterBusinessDays: 5, maxFollowupsPerPerson: 1 } as const;
 
 // ── i18n (EN/ES parity, bundled) ─────────────────────────────────────────────
 type Dict = Record<string, string>;
 const STR: Record<Lang, Dict> = {
   en: {
     'tab.search': 'Search', 'tab.apply': 'Apply', 'tab.followup': 'Follow-up',
-    'search.title': 'Find roles that fit', 'search.intro': 'Upload your résumé and tell us what you want.',
+    'search.title': 'Find roles that fit', 'search.intro': 'Describe what you want — winc + the scanner find and rank matching roles.',
+    'search.intentPlaceholder': "Tell us what you're looking for (e.g. entry-level product manager, remote or Midwest)…",
+    'search.resumeLoaded': 'Résumé loaded — used to rank, score & tailor.', 'search.resumeNone': 'No résumé yet — upload one to sharpen ranking & enable scoring.',
     'search.scan': 'Find matching roles', 'search.transferable': 'Credit transferable skills',
     'search.confirm.fit': 'Likely fit', 'search.confirm.maybe': 'Worth a look', 'search.confirm.skip': 'Skip',
+    'search.searchPlaceholder': 'Search company or role…', 'search.sort': 'Sort', 'filter.all': 'All',
+    'sort.score': 'Score', 'sort.fresh': 'Newest', 'sort.company': 'A–Z',
     'apply.title': 'Score & tailor', 'apply.score': 'Score this role', 'apply.tailor': 'Tailor CV + cover letter',
     'apply.band.apply': 'Apply', 'apply.band.research': 'Research', 'apply.band.dont': "Don't",
     'apply.directive': 'Steer it (e.g. warmer, shorter)…', 'apply.summary': 'Tailored summary',
@@ -265,16 +38,20 @@ const STR: Record<Lang, Dict> = {
     'followup.cadence': 'Cadence: 2 contacts/role · 1 follow-up after 5 business days · hard stop',
     'followup.lint.ok': 'Passes checks — review, then send it yourself.',
     'common.region': 'Region', 'common.level': 'Level', 'common.lang': 'Idioma: ES',
-    'common.demo': 'Demo data + on-device deterministic engine. Live scan + model = next milestone.',
-    'common.loadSample': 'Load a sample', 'common.upload': 'Upload résumé',
-    'common.binary': 'PDF/DOCX parsing arrives in 9.2 — paste your text or use a .txt for now.',
+    'common.demo': 'Live from your local jobdar serve — the CLI + winc are the engine.',
+    'common.loadSample': 'Refresh', 'common.upload': 'Upload résumé',
+    'common.binary': 'Paste your text or use a .txt for now.',
     'common.loaded': 'Loaded', 'common.pay': 'Pay',
   },
   es: {
     'tab.search': 'Buscar', 'tab.apply': 'Postular', 'tab.followup': 'Seguimiento',
-    'search.title': 'Encuentra empleos que encajan', 'search.intro': 'Sube tu currículum y dinos qué buscas.',
+    'search.title': 'Encuentra empleos que encajan', 'search.intro': 'Describe lo que buscas — winc + el escáner encuentran y ordenan empleos que encajan.',
+    'search.intentPlaceholder': 'Cuéntanos qué buscas (p. ej. gerente de producto nivel inicial, remoto o Midwest)…',
+    'search.resumeLoaded': 'Currículum cargado — se usa para ordenar, evaluar y adaptar.', 'search.resumeNone': 'Aún sin currículum — sube uno para afinar el orden y habilitar la evaluación.',
     'search.scan': 'Buscar empleos', 'search.transferable': 'Acreditar habilidades transferibles',
     'search.confirm.fit': 'Buen encaje', 'search.confirm.maybe': 'Vale la pena', 'search.confirm.skip': 'Omitir',
+    'search.searchPlaceholder': 'Buscar empresa o puesto…', 'search.sort': 'Orden', 'filter.all': 'Todos',
+    'sort.score': 'Puntaje', 'sort.fresh': 'Recientes', 'sort.company': 'A–Z',
     'apply.title': 'Evaluar y adaptar', 'apply.score': 'Evaluar este puesto', 'apply.tailor': 'Adaptar CV + carta',
     'apply.band.apply': 'Postula', 'apply.band.research': 'Investiga', 'apply.band.dont': 'No',
     'apply.directive': 'Guíalo (p. ej. más cálido, más corto)…', 'apply.summary': 'Resumen adaptado',
@@ -282,9 +59,9 @@ const STR: Record<Lang, Dict> = {
     'followup.cadence': 'Cadencia: 2 contactos/puesto · 1 seguimiento tras 5 días hábiles · alto definitivo',
     'followup.lint.ok': 'Pasa las verificaciones — revísala y envíala tú mismo.',
     'common.region': 'Región', 'common.level': 'Nivel', 'common.lang': 'Language: EN',
-    'common.demo': 'Datos de muestra + motor determinista en el dispositivo. Escaneo en vivo + modelo = próximo hito.',
-    'common.loadSample': 'Cargar una muestra', 'common.upload': 'Subir currículum',
-    'common.binary': 'La lectura de PDF/DOCX llega en 9.2 — pega tu texto o usa un .txt por ahora.',
+    'common.demo': 'En vivo desde tu jobdar serve local — el CLI + winc son el motor.',
+    'common.loadSample': 'Actualizar', 'common.upload': 'Subir currículum',
+    'common.binary': 'Pega tu texto o usa un .txt por ahora.',
     'common.loaded': 'Cargado', 'common.pay': 'Salario',
   },
 };

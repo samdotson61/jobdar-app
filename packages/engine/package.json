@@ -1,0 +1,11 @@
+{
+  "name": "@jobdar/engine",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Jobdar engine — the single source of truth. Re-exports the pure (fs-free) lib modules so the CLI and the apps run identical scoring/gating/leveling.",
+  "main": "index.mjs",
+  "exports": {
+    ".": "./index.mjs"
+  }
+}

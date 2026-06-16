@@ -3,7 +3,7 @@
 // the provider registry / Greenhouse detect(), EN<->ES modes parity, and state aliases.
 
 import { strict as assert } from 'node:assert'
-import { readdirSync, existsSync, readFileSync, writeFileSync, mkdtempSync, rmSync } from 'node:fs'
+import { readdirSync, existsSync, readFileSync, writeFileSync, mkdtempSync, mkdirSync, rmSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { execFileSync } from 'node:child_process'
@@ -37,6 +37,7 @@ import http from 'node:http'
 import { resolveBackend, isLoopbackUrl, parseVerdict, selectActive, backendHealth, callMessages, callOpenAI, callBackend, evaluate, WINC_DEFAULT_URL, LOCAL_RUNTIMES } from './lib/inference.mjs'
 import { scoreFromJudgments, parseEvalJson, stripPII, clampVerdict, buildEvalUser, evalRole, buildVerdict, prepEval } from './lib/eval_engine.mjs'
 import { bandAgreement, buildBatchRequests, parseBatchResults, clampLogEntry } from './lib/eval_ops.mjs'
+import { expandQueryTerms, relevanceScore, parseIntent } from './lib/search.mjs'
 import { extractText, isExtractable, structureCv } from './lib/docparse.mjs'
 import { importDocument, evaluate as engineEvaluate, recordVerdict, advanceStatus, buildCv, ENGINE_VERSION, tailor as engineTailor } from './lib/engine.mjs'
 import { coverIsComplete, assembleTailoredCv, TAILOR_JSON_SCHEMA, buildTailorUser, directiveBlock, TAILOR_SYSTEM, fillSignature } from './lib/tailor.mjs'
@@ -667,8 +668,11 @@ test('prescreen: years gate parses "N+ years experience" and screens above the s
   assert.ok(entry.screened && entry.reasons[0].kind === 'years')
   const senior = screenDecision(extractGates(jd), { target_levels: ['entry', 'senior'] })
   assert.ok(!senior.screened) // senior ceiling (10) clears a 5-year ask
-  const range = extractYearsRequired('1-2 years of experience preferred; 7 years experience is a plus')
-  assert.equal(range.years, 1) // the LOWEST stated floor is the requirement
+  // A years ask in a SOFT context ("preferred"/"a plus") is NOT a hard floor → it must not screen.
+  assert.equal(extractYearsRequired('1-2 years of experience preferred; 7 years experience is a plus'), null)
+  assert.equal(extractYearsRequired('Minimum 5 years of experience required.').years, 5) // a required ask still gates
+  const softYears = screenDecision(extractGates('5 years experience preferred but not required.'), { target_levels: ['entry'] })
+  assert.ok(!softYears.screened, 'a "preferred" years ask must not screen an entry candidate')
 })
 
 test('prescreen: degree gate is yes/no/unclear; no_degree flags a stretch but NEVER screens', () => {
@@ -910,11 +914,13 @@ test('dates: normalizeResumeDates resolves Present in ranges to today, leaves pr
 })
 
 test('regions: canonicalLocation collapses a metro to one key, keeps different metros distinct', () => {
-  assert.equal(canonicalLocation('Cincinnati, OH'), 'cincinnati')
-  assert.equal(canonicalLocation("Cincinnati Children's Hospital, Cincinnati, OH"), 'cincinnati') // campus collapses
-  assert.equal(canonicalLocation('Cleveland, OH'), 'cleveland') // same state, different metro → distinct
+  // Keys are state-qualified (metro|state) so same-named cities in different states don't collapse.
+  assert.equal(canonicalLocation('Cincinnati, OH'), 'cincinnati|OH')
+  assert.equal(canonicalLocation("Cincinnati Children's Hospital, Cincinnati, OH"), 'cincinnati|OH') // campus collapses
+  assert.equal(canonicalLocation('Cleveland, OH'), 'cleveland|OH') // same state, different metro → distinct
   assert.equal(canonicalLocation('Remote - US'), 'remote')
   assert.notEqual(canonicalLocation('Chicago, IL'), canonicalLocation('Detroit, MI'))
+  assert.notEqual(canonicalLocation('Columbus, OH'), canonicalLocation('Columbus, GA')) // same name, different state → distinct
 })
 
 test('pipeline: near-duplicate postings collapse into a survivor alias; writes resolve through it', () => {
@@ -926,7 +932,7 @@ test('pipeline: near-duplicate postings collapse into a survivor alias; writes r
   assert.equal(rows.length, 2) // k2 absorbed into k1; k3 stays
   assert.equal(roleKey('Kettering', 'PM Oper Excellence', 'Dayton, OH'), roleKey('Kettering', 'PM  Oper  Excellence', 'Dayton OH'))
   const survivor = rows.find((r) => r.url === 'k1')
-  assert.ok(survivor.aliases.split(',').includes('k2'))
+  assert.ok(survivor.aliases.split(/\s+/).includes('k2'))
   assert.equal(resolveAlias(rows, 'k2'), 'k1') // a write to the dup lands on the survivor
   rows = recordEval(rows, { url: 'k2', score: 4.2 }, '2026-06-14')
   assert.equal(rows.length, 2) // no resurrected row
@@ -1468,6 +1474,139 @@ test('transferable-skills toggle: off by default, steers both AI prompts when on
   assert.ok(evalSystemFor(true).includes('quality over quantity'))
   assert.ok(!preConfirmSystemFor(false).includes('TRANSFERABLE-SKILLS'))
   assert.ok(preConfirmSystemFor(true).includes('stay strict')) // pre-confirm still skips aspirational stretches
+})
+
+test('serve: HTTP façade — auth gate, pipeline/profile/cv reads, tracker write, 404 (subprocess, env-isolated, no external net)', async () => {
+  const { spawn } = await import('node:child_process')
+  const home = mkdtempSync(path.join(tmpdir(), 'jobdar-serve-'))
+  const dataDir = path.join(home, 'data')
+  const cfgDir = path.join(home, 'config')
+  mkdirSync(dataDir, { recursive: true })
+  mkdirSync(cfgDir, { recursive: true })
+  writeFileSync(path.join(cfgDir, 'profile.yml'), 'name: Test User\ntarget_levels:\n  - entry\n  - mid\ntarget_regions:\n  - midwest\ninference: local\ninference_url: http://127.0.0.1:8080\n')
+  const row = { company: 'Acme', role: 'Junior Analyst', url: 'https://acme.test/j/1', location: 'Chicago, IL', score: '', band: '', recommendation: '', status: 'scanned', posted: '2026-06-10', first_seen: '2026-06-12', updated: '2026-06-12', prescreen: '', screen_reason: '', pay: '', aliases: '' }
+  writeFileSync(path.join(dataDir, 'pipeline.tsv'), serializePipeline([row]))
+  writeFileSync(path.join(dataDir, 'cv.md'), '# Test User\n\nIT support specialist. Help desk, ticketing.\n')
+  const PORT = 40000 + (process.pid % 20000)
+  const TOKEN = 'test-tok-123'
+  const base = `http://127.0.0.1:${PORT}`
+  const child = spawn(process.execPath, [path.join(PKG_ROOT, 'bin', 'jobdar'), 'serve', '--port', String(PORT), '--token', TOKEN], { env: { ...process.env, JOBDAR_HOME: home }, stdio: 'ignore' })
+  try {
+    let up = false
+    for (let i = 0; i < 60 && !up; i++) {
+      try {
+        if ((await fetch(`${base}/profile?token=${TOKEN}`)).status === 200) up = true
+      } catch {
+        /* not listening yet */
+      }
+      if (!up) await new Promise((r) => setTimeout(r, 150))
+    }
+    assert.ok(up, 'serve did not come up')
+    assert.equal((await fetch(`${base}/pipeline`)).status, 401) // token required, none sent
+    const pj = await (await fetch(`${base}/pipeline?token=${TOKEN}`)).json()
+    assert.equal(pj.count, 1)
+    assert.equal(pj.rows[0].url, 'https://acme.test/j/1')
+    assert.equal(pj.rows[0].status, 'scanned')
+    const prof = await (await fetch(`${base}/profile?token=${TOKEN}`)).json()
+    assert.deepEqual(prof.target_levels, ['entry', 'mid'])
+    assert.equal(prof.inference_url, undefined) // secrets/impl details never leave
+    const cvj = await (await fetch(`${base}/cv?token=${TOKEN}`)).json()
+    assert.ok(cvj.loaded && cvj.content.includes('IT support'))
+    const ts = await (await fetch(`${base}/tracker/set?token=${TOKEN}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ url: 'https://acme.test/j/1', status: 'applied' }) })).json()
+    assert.equal(ts.ok, true)
+    const after = await (await fetch(`${base}/pipeline?token=${TOKEN}`)).json()
+    assert.equal(after.rows[0].status, 'applied') // real pipeline.tsv mutation persisted
+    // security: /import refuses a path outside the jobdar home (arbitrary-file-read fix)
+    assert.equal((await fetch(`${base}/import?token=${TOKEN}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ file: '/etc/passwd' }) })).status, 403)
+    // security: CORS is NOT reflected for a public origin, but IS for a localhost origin (reflective-CORS fix)
+    assert.equal((await fetch(`${base}/pipeline?token=${TOKEN}`, { headers: { origin: 'https://evil.example.com' } })).headers.get('access-control-allow-origin'), null)
+    assert.equal((await fetch(`${base}/pipeline?token=${TOKEN}`, { headers: { origin: 'http://localhost:8799' } })).headers.get('access-control-allow-origin'), 'http://localhost:8799')
+    // /tracker/set rejects an unknown status (taxonomy validation → no demote-to-scanned data loss)
+    assert.equal((await fetch(`${base}/tracker/set?token=${TOKEN}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ url: 'https://acme.test/j/1', status: 'not-a-real-status' }) })).status, 400)
+    // POST /cv persists the GUI's résumé so scan/prescreen/eval judge against the same text
+    assert.equal((await (await fetch(`${base}/cv?token=${TOKEN}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ content: '# New CV\n\nMarketing coordinator, campaigns and analytics.' }) })).json()).ok, true)
+    assert.ok((await (await fetch(`${base}/cv?token=${TOKEN}`)).json()).content.includes('Marketing coordinator'))
+    // /search/parse works without a backend (deterministic keyword fallback) — search must never 503
+    const sp = await (await fetch(`${base}/search/parse?token=${TOKEN}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ intent: 'junior data analyst, midwest' }) })).json()
+    assert.equal(sp.ok, true)
+    assert.ok(Array.isArray(sp.keywords) && sp.keywords.includes('analyst'))
+    assert.equal((await fetch(`${base}/nope?token=${TOKEN}`)).status, 404)
+  } finally {
+    child.kill('SIGKILL')
+    rmSync(home, { recursive: true, force: true })
+  }
+})
+
+test('fix: prescreen — "controller" alone is not accounting; a soft-then-required credential still gates', () => {
+  assert.equal(extractField('Quality Controller'), null) // not a hard-identity accounting role
+  assert.equal(extractField('Air Traffic Controller'), null)
+  assert.equal(extractField('Financial Controller').field, 'accounting') // genuine accounting still gated
+  assert.equal(extractField('Comptroller').field, 'accounting')
+  // first-mention "preferred" must NOT mask a later "required" credential ask
+  assert.equal(extractCredential('CPA preferred but not necessary. An active CPA license is required for this role.').gate, 'required')
+  assert.equal(extractCredential('CPA is a plus.').gate, 'none') // soft-only never gates
+})
+
+test('fix: regions — Washington DC is Northeast not West; ambiguous OR/IN aren\'t misread as states', () => {
+  assert.equal(locationMatches('Washington, DC', ['northeast']), true)
+  assert.equal(locationMatches('Washington, DC', ['west']), false) // not Washington state
+  assert.equal(locationMatches('ONSITE OR HYBRID, Dallas', ['southwest']), true) // OR≠Oregon; Dallas→TX
+  assert.equal(locationMatches('IN-PERSON role, Phoenix', ['southwest']), true) // IN≠Indiana; Phoenix→AZ
+  assert.equal(locationMatches('IN-PERSON role, Phoenix', ['midwest']), false) // proves IN wasn't read as Indiana
+})
+
+test('fix: outreach — businessDaysBetween is DST-immune (UTC); lintDraft catches [email] sentinel', () => {
+  assert.equal(businessDaysBetween('2026-03-05', '2026-03-11'), 4) // spring-forward week: Fri,Mon,Tue,Wed = 4 (was 5)
+  assert.equal(businessDaysBetween('2026-06-01', '2026-06-08'), 5) // a normal Mon→Mon week
+  assert.equal(lintDraft('Hi Ana, reach me at [email] to chat.', { person: 'Ana' }).ok, false)
+})
+
+test('fix: http — assertAllowedUrl refuses private/loopback/metadata hosts even if the allowlist matches', () => {
+  assert.throws(() => assertAllowedUrl('https://169.254.169.254/latest/meta-data/', { hostAllowlist: [/^169\.254\.169\.254$/] }))
+  assert.throws(() => assertAllowedUrl('https://127.0.0.1/x', { hostAllowlist: [/^127\.0\.0\.1$/] }))
+  assert.throws(() => assertAllowedUrl('https://10.0.0.5/x', { hostAllowlist: [/.*/] }))
+  assert.ok(assertAllowedUrl('https://boards.greenhouse.io/acme', { hostAllowlist: [/greenhouse\.io$/] })) // public host still allowed
+})
+
+test('fix: pipeline — comma-containing alias URLs resolve; recordEval guards a non-numeric score', () => {
+  const rows = mergeScanned([], [
+    { company: 'Acme', title: 'Analyst', url: 'https://x.test/clean', location: 'Chicago, IL' },
+    { company: 'Acme', title: 'Analyst', url: 'https://x.test/j?loc=us,ca,tx', location: 'Chicago, IL' }, // alias w/ commas
+  ], '2026-06-16')
+  const survivor = rows.find((r) => r.url === 'https://x.test/clean')
+  assert.equal(survivor.aliases, 'https://x.test/j?loc=us,ca,tx') // stored intact (space delimiter, not split on comma)
+  assert.equal(resolveAlias(rows, 'https://x.test/j?loc=us,ca,tx'), 'https://x.test/clean') // resolves despite commas
+  const base = [{ url: 'u1', company: 'A', role: 'R', location: '', status: 'scanned', score: '', band: '', recommendation: '', first_seen: '2026-06-16' }]
+  const bad = recordEval(base, { url: 'u1', score: undefined }, '2026-06-16').find((r) => r.url === 'u1')
+  assert.equal(bad.score, '') // never the literal "NaN"
+  assert.notEqual(bad.status, 'evaluated') // an invalid score leaves the row un-evaluated
+  const good = recordEval(base, { url: 'u1', score: 4.2 }, '2026-06-16').find((r) => r.url === 'u1')
+  assert.equal(good.score, 4.2)
+  assert.equal(good.status, 'evaluated')
+})
+
+test('search: expandQueryTerms drops stopwords; relevanceScore ranks + cuts by intent', () => {
+  const terms = expandQueryTerms('entry-level product manager roles, remote')
+  assert.ok(terms.keywords.includes('product') && terms.keywords.includes('manager'))
+  assert.ok(!terms.keywords.includes('entry') && !terms.keywords.includes('remote') && !terms.keywords.includes('roles')) // stopwords gone
+  const t2 = { keywords: ['product', 'manager'], titles: ['product manager'], exclude: ['electrical'] }
+  assert.ok(relevanceScore('Product Manager', t2) > relevanceScore('Product Marketing Specialist', t2)) // title phrase + both keywords wins
+  assert.ok(relevanceScore('Product Marketing Specialist', t2) > 0) // partial keyword match is still relevant
+  assert.equal(relevanceScore('Software Engineer', t2), 0) // no overlap → cut from the intent view
+  assert.ok(relevanceScore('Electrical Hardware Engineer', t2) < 0) // an exclude hit → hard cut
+})
+
+test('search: parseIntent falls back to keywords when the backend is down (never throws)', async () => {
+  const r = await parseIntent({ active: { up: false }, intent: 'data analyst jobs' })
+  assert.equal(r.source, 'keywords')
+  assert.ok(r.keywords.includes('data') && r.keywords.includes('analyst'))
+  assert.deepEqual((await parseIntent({ active: { up: false }, intent: '' })).keywords, []) // empty intent → empty terms
+})
+
+test('fix: salary — extractPay is bounded against a degenerate comma run (no quadratic hang)', () => {
+  const t0 = Date.now()
+  extractPay('Compensation: $1' + ',000'.repeat(20000) + ' and benefits.')
+  assert.ok(Date.now() - t0 < 1000, 'extractPay must not backtrack super-linearly on a hostile money run')
 })
 
 let passed = 0

@@ -1,0 +1,18 @@
+// Phase 9.0: pnpm-workspace Metro config so the app bundles @jobdar/engine (the real lib/ engine) which
+// lives outside the app dir. Standard Expo monorepo setup: watch the workspace root + resolve its
+// node_modules (where pnpm symlinks @jobdar/engine → packages/engine → re-exports ../../lib).
+const { getDefaultConfig } = require('expo/metro-config');
+const path = require('path');
+
+const projectRoot = __dirname;
+const workspaceRoot = path.resolve(projectRoot, '../..');
+
+const config = getDefaultConfig(projectRoot);
+config.watchFolders = [workspaceRoot];
+config.resolver.nodeModulesPaths = [
+  path.resolve(projectRoot, 'node_modules'),
+  path.resolve(workspaceRoot, 'node_modules'),
+];
+if (!config.resolver.sourceExts.includes('mjs')) config.resolver.sourceExts.push('mjs');
+
+module.exports = config;

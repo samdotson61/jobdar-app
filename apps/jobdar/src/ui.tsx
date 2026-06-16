@@ -19,13 +19,18 @@ export function Sub({ children }: { children: React.ReactNode }) {
 export function Pill({ label, color = C.chip, text = C.text }: { label: string; color?: string; text?: string }) {
   return <Text style={[s.pill, { backgroundColor: color + '22', color: text, borderColor: color + '66' }]}>{label}</Text>;
 }
-export function Btn({ label, onPress, kind = 'primary', disabled }: { label: string; onPress: () => void; kind?: 'primary' | 'ghost'; disabled?: boolean }) {
+export function Btn({ label, onPress, kind = 'primary', disabled, progress }: { label: string; onPress: () => void; kind?: 'primary' | 'ghost'; disabled?: boolean; progress?: number }) {
+  const showProg = typeof progress === 'number' && progress > 0 && progress < 1;
+  const pct = showProg ? Math.round(progress * 100) : 0;
   return (
     <Pressable onPress={onPress} disabled={disabled} style={({ pressed }) => [
-      s.btn, kind === 'ghost' ? s.btnGhost : s.btnPrimary,
-      { opacity: disabled ? 0.4 : pressed ? 0.8 : 1 },
+      s.btn, kind === 'ghost' ? s.btnGhost : s.btnPrimary, { overflow: 'hidden' },
+      { opacity: disabled && !showProg ? 0.4 : pressed ? 0.8 : 1 },
     ]}>
-      <Text style={[s.btnText, kind === 'ghost' && { color: C.tint }]}>{label}</Text>
+      {showProg ? (
+        <View pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${pct}%`, backgroundColor: 'rgba(255,255,255,0.30)' }} />
+      ) : null}
+      <Text style={[s.btnText, kind === 'ghost' && { color: C.tint }]}>{showProg ? `${pct}%  ${label}` : label}</Text>
     </Pressable>
   );
 }
