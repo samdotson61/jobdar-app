@@ -20,7 +20,7 @@ import jsonldProvider, { parseJsonLdJobs } from './providers/jsonld.mjs'
 import { assertAllowedUrl } from './lib/http.mjs'
 import { resolveState, stateLabel, allStates } from './lib/states.mjs'
 import { classifyTitle, levelDecision, filterByLevel } from './lib/levels.mjs'
-import { regionStateSet, locationMatches, filterByLocation, canonicalLocation } from './lib/regions.mjs'
+import { regionStateSet, locationMatches, filterByLocation, canonicalLocation, regionPriority } from './lib/regions.mjs'
 import { selectEmployers, toPortals } from './lib/seed.mjs'
 import { parseResumeText } from './lib/resume.mjs'
 import { renderDashboard, analyze } from './lib/commands/dashboard.mjs'
@@ -924,6 +924,15 @@ test('regions: canonicalLocation collapses a metro to one key, keeps different m
   assert.notEqual(canonicalLocation('Columbus, OH'), canonicalLocation('Columbus, GA')) // same name, different state → distinct
 })
 
+test('regions: regionPriority ranks in-region first and deprioritizes out-of-timezone remote roles', () => {
+  assert.equal(regionPriority('Denver, CO', ['west']), 2) // physically in West
+  assert.equal(regionPriority('Phoenix, AZ', ['west']), 1) // Mountain tz overlaps West (not in-region)
+  assert.equal(regionPriority('Columbus, Ohio or Remote', ['west']), 0) // Eastern remote → deprioritized for West
+  assert.equal(regionPriority('Remote - US', ['west']), 1) // region-agnostic remote → neutral
+  assert.equal(regionPriority('Columbus, OH', ['midwest']), 2) // in-region
+  assert.equal(regionPriority('Anywhere', ['nationwide']), 2) // no region preference → neutral-high
+})
+
 test('pipeline: near-duplicate postings collapse into a survivor alias; writes resolve through it', () => {
   let rows = mergeScanned([], [
     { company: 'Kettering', title: 'PM Oper Excellence', url: 'k1', location: 'Dayton, OH' },
@@ -1531,6 +1540,12 @@ test('serve: HTTP façade — auth gate, pipeline/profile/cv reads, tracker writ
     const sp = await (await fetch(`${base}/search/parse?token=${TOKEN}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ intent: 'junior data analyst, midwest' }) })).json()
     assert.equal(sp.ok, true)
     assert.ok(Array.isArray(sp.keywords) && sp.keywords.includes('analyst'))
+    // /import/upload parses uploaded bytes, sanitizes the name (no path traversal), and persists the text
+    const upRes = await (await fetch(`${base}/import/upload?token=${TOKEN}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: '../../evil name.txt', base64: Buffer.from('# Uploaded Person\n\nMarketing analyst with SQL and dashboards.').toString('base64') }) })).json()
+    assert.equal(upRes.ok, true)
+    assert.ok(upRes.name && !upRes.name.includes('/') && !upRes.name.includes('..')) // file name sanitized
+    assert.ok(upRes.text.includes('Marketing analyst'))
+    assert.ok((await (await fetch(`${base}/cv?token=${TOKEN}`)).json()).content.includes('Marketing analyst')) // persisted as the active résumé
     assert.equal((await fetch(`${base}/nope?token=${TOKEN}`)).status, 404)
   } finally {
     child.kill('SIGKILL')

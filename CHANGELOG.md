@@ -4,6 +4,41 @@ All notable changes to Jobdar are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and Jobdar adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.37.0] — 2026-06-16
+
+**Résumé upload actually handles .docx and .pdf.** The app previously read uploads as text and rejected
+anything binary ("Paste your text or use a .txt"). Now the GUI reads the picked file's bytes and serve
+parses them with the real `docparse` extractor. App `@jobdar/app` **1.7.0**.
+- **New serve `POST /import/upload {name, base64}`** — writes the bytes to the confined `data/uploads/` dir
+  (sanitized name), runs `importDocument` (docx via `unzip`, pdf via `pdftotext`, txt/md direct), persists
+  the extracted text as the active résumé, and returns it. A file it can't read returns an honest error
+  (e.g. a scanned/image PDF → "couldn't read that file").
+- **App upload rewired:** the Search tab's Upload button now reads the file → base64 → `/import/upload` →
+  shows "✓ <filename>" green and re-ranks the list against the new résumé. (PDF needs `pdftotext`/poppler on
+  the serve host; `.docx` needs `unzip` — both standard.)
+
+## [1.36.1] — 2026-06-16
+
+**Honest résumé status (no fake "loaded").** The Search tab showed a green "✓ Résumé loaded" whenever any
+résumé existed on disk — even if the user hadn't loaded one this session. Now the green ✓ + file name shows
+**only for a résumé the user actually uploaded this session**; a pre-existing saved résumé is disclosed
+neutrally ("Using your saved résumé"); and when there's genuinely none it prompts to upload. App **1.6.1**.
+
+## [1.36.0] — 2026-06-16
+
+**Search-tab refinements.** App `@jobdar/app` **1.6.0**; `test-all.mjs` **127** (+1 regionPriority test).
+- **The 0–100 score is gone from the Search tab** — each role shows only its **fit indicator** (Likely
+  fit / Worth a look / Skip). The numeric score is reserved for the evaluation (Apply) stage; the prescreen
+  score is still computed internally (it drives the fit tier + a hidden ranking tiebreak). The "Score" sort
+  is relabeled **"Best match."**
+- **Region selection now changes priority by timezone.** New `regionPriority` (engine) ranks roles
+  physically in the selected region first, then timezone-aligned roles, and **deprioritizes remote roles
+  anchored outside the region's timezone** — e.g. a "Columbus, OH (remote)" Machine-Learning role no longer
+  floats to the top when **West** is selected. (It's a re-rank, not a cut — remote roles stay reachable.)
+- **The uploaded résumé file name is shown in green** under the Upload button (e.g. "✓ Jen_Doe_Resume.pdf")
+  instead of the previous uninformative "Résumé loaded" text. `loadResume` now records the file name (it no
+  longer mis-assigns it to the candidate's profile name).
+
 ## [1.35.1] — 2026-06-16
 
 **Search speed.** Finding jobs was slow; the dominant cost was the scan re-fetching every company board.

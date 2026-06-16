@@ -14,6 +14,7 @@ export interface SearchTerms { keywords: string[]; titles: string[]; exclude: st
 interface State {
   profile: Profile;
   cv: string;
+  resumeFile: string;           // uploaded résumé file name (shown in green under the upload button)
   intent: string;               // free-text "what are you looking for?"
   searchTerms: SearchTerms | null; // parsed intent (winc/keywords) — drives relevance ranking + cutting
   serveUp: boolean;
@@ -33,7 +34,8 @@ interface State {
   toggleLevel: (l: string) => void;
   setCv: (t: string) => void;
   setIntent: (t: string) => void;
-  loadResume: (text: string, name?: string) => void;
+  loadResume: (text: string, fileName?: string) => void;
+  uploadResume: (fileName: string, base64: string) => Promise<{ ok: boolean; error?: string }>; // parse docx/pdf/txt bytes via serve
   loadSampleCv: () => void;     // repurposed: re-pull live state from serve
   hydrate: () => void;
   runSearch: () => void;        // parse intent → scan → prescreen (intent-relevant first), with progress
@@ -91,6 +93,7 @@ const verdictFromServe = (v: any): Verdict => ({
 export const useStore = create<State>((set, get) => ({
   profile: { name: '', language: 'en', regions: ['midwest'], levels: ['entry', 'mid'], transferable: false },
   cv: '',
+  resumeFile: '',
   intent: '',
   searchTerms: null,
   serveUp: false,
@@ -122,9 +125,45 @@ export const useStore = create<State>((set, get) => ({
   setIntent: (intent) => set({ intent }),
   // Persist the uploaded résumé to serve (data/cv.md) so scan/prescreen/eval all judge against THIS text,
   // not a stale on-disk résumé. Model actions below also send the live cv in-band as a belt-and-suspenders.
-  loadResume: (text, name) => {
-    set((s) => ({ cv: text, profile: { ...s.profile, name: (name && name.trim()) || s.profile.name } }));
+  loadResume: (text, fileName) => {
+    set((s) => ({ cv: text, resumeFile: (fileName && fileName.trim()) || s.resumeFile }));
     servePost('/cv', { content: text }).catch(() => {});
+  },
+
+  // Upload a résumé FILE (docx/pdf/txt): serve parses the bytes (docparse) → extracted text becomes the
+  // active résumé, then we re-rank the relevant roles against it. Returns {ok,error} so the UI can be honest.
+  uploadResume: async (fileName, base64) => {
+    set({ busy: 'scan', progress: 0.12 });
+    const stopTick = startTicker(set, get);
+    const bump = (p: number) => set((s) => ({ progress: Math.max(s.progress, p) }));
+    let result: { ok: boolean; error?: string } = { ok: false };
+    try {
+      const r = await servePost('/import/upload', { name: fileName, base64 });
+      if (r && r.ok && typeof r.text === 'string') {
+        set({ cv: r.text, resumeFile: r.name || fileName });
+        result = { ok: true };
+        bump(0.4);
+        // re-rank the relevant roles against the new résumé (its skill overlap changes the prescreen).
+        const terms = get().searchTerms || undefined;
+        const TARGET = 30, BATCH = 6; let processed = 0;
+        for (let i = 0; i < Math.ceil(TARGET / BATCH); i++) {
+          const pre = await servePost('/prescreen', { limit: BATCH, terms, rescore: true });
+          if (!pre || pre.ok === false) break;
+          if (Array.isArray(pre.rows)) set({ scored: rowsToScored(pre.rows) });
+          processed += Number(pre.checked) || 0;
+          bump(Math.min(0.94, 0.4 + 0.54 * Math.min(1, processed / TARGET)));
+          if (!pre.checked || pre.checked < BATCH) break;
+        }
+        bump(1);
+      } else {
+        result = { ok: false, error: (r && r.error) || 'could not read this file' };
+      }
+    } catch {
+      result = { ok: false, error: 'upload failed' };
+    }
+    stopTick();
+    set((s) => (s.busy === 'scan' ? { busy: null, progress: 0 } : { progress: 0 }));
+    return result;
   },
   loadSampleCv: () => get().hydrate(),
 

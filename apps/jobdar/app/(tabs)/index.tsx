@@ -3,19 +3,11 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { useStore } from '@/src/store';
 import { t } from '@/src/engine';
-import { relevanceScore, levelDecision, locationMatches } from '@jobdar/engine';
+import { relevanceScore, levelDecision, locationMatches, regionPriority } from '@jobdar/engine';
 import { Btn, C, Card, Field, H, Pill, Sub, confirmColor } from '@/src/ui';
 
 const REGION_OPTS = ['midwest', 'northeast', 'southeast', 'southwest', 'west', 'nationwide'];
 const LEVEL_OPTS = ['entry', 'mid', 'senior'];
-
-const looksBinary = (s: string) => {
-  if (s.startsWith('%PDF') || s.startsWith('PK')) return true; // PDF / DOCX(zip)
-  const head = s.slice(0, 1200);
-  let bad = 0;
-  for (let i = 0; i < head.length; i++) { const c = head.charCodeAt(i); if (c === 0 || (c < 9 && c !== 0)) bad++; }
-  return head.length > 0 && bad > head.length * 0.04;
-};
 
 type SortKey = 'score' | 'fresh' | 'company';
 type FilterKey = 'all' | 'fit' | 'maybe' | 'skip';
@@ -28,7 +20,8 @@ export default function Search() {
   const intent = useStore((s) => s.intent);
   const terms = useStore((s) => s.searchTerms);
   const cv = useStore((s) => s.cv);
-  const { loadResume, runSearch, rescore, discover, toggleTransferable, toggleRegion, toggleLevel, setIntent } = useStore.getState();
+  const resumeFile = useStore((s) => s.resumeFile);
+  const { uploadResume, runSearch, discover, toggleTransferable, toggleRegion, toggleLevel, setIntent } = useStore.getState();
   const lang = profile.language;
   const [msg, setMsg] = useState('');
   const [query, setQuery] = useState('');
@@ -47,26 +40,41 @@ export default function Search() {
     rows = rows.filter((j) => levelDecision(j.role, profile.levels).include && locationMatches(j.location, profile.regions));
     if (active) rows = rows.filter((j) => rel(j) > 0 || j.confirm === 'fit'); // cut roles irrelevant to the intent
     if (filter !== 'all') rows = rows.filter((j) => (j.confirm ?? 'skip') === filter);
+    // Best-match order leads with region timezone priority (in-region first, out-of-timezone remote last —
+    // a "remote out of Columbus" role no longer floats to the top when "West" is selected), then intent
+    // relevance, then the fit tier (the prescreen score stays internal — it's only a hidden tiebreak now).
+    const pr = (j: any) => regionPriority(j.location, profile.regions);
+    const fitRank = (j: any) => (j.confirm === 'fit' ? 2 : j.confirm === 'maybe' ? 1 : 0);
     const out = [...rows];
     if (sortBy === 'fresh') out.sort((a, b) => String(b.postedOn || '').localeCompare(String(a.postedOn || '')));
     else if (sortBy === 'company') out.sort((a, b) => a.company.localeCompare(b.company));
-    else out.sort((a, b) => (active ? rel(b) - rel(a) : 0) || Number(Boolean(a.gate)) - Number(Boolean(b.gate)) || b.prescreen - a.prescreen);
+    else out.sort((a, b) =>
+      pr(b) - pr(a) ||
+      (active ? rel(b) - rel(a) : 0) ||
+      Number(Boolean(a.gate)) - Number(Boolean(b.gate)) ||
+      fitRank(b) - fitRank(a) ||
+      b.prescreen - a.prescreen);
     return out;
   }, [scored, query, sortBy, filter, terms, profile.regions, profile.levels]);
 
   const onUpload = async () => {
     try {
       const res = await DocumentPicker.getDocumentAsync({
-        type: ['text/plain', 'text/markdown', 'application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+        type: ['text/plain', 'text/markdown', 'application/pdf',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/msword', 'application/rtf'],
         copyToCacheDirectory: true,
       });
       if (res.canceled || !res.assets?.length) return;
       const asset = res.assets[0];
-      const text = await (await fetch(asset.uri)).text();
-      if (looksBinary(text)) { setMsg(t(lang, 'common.binary')); return; }
-      loadResume(text);      // persists to serve (data/cv.md) so scan/prescreen/eval use it
-      setMsg(`${t(lang, 'common.loaded')}: ${asset.name}`);
-      rescore();             // re-rank the current results against the new résumé so the list changes
+      setMsg('');
+      // Read the picked file's BYTES → base64 and let serve parse it (docx via unzip, pdf via pdftotext, txt direct).
+      const buf = await (await fetch(asset.uri)).arrayBuffer();
+      const bytes = new Uint8Array(buf);
+      if (typeof btoa !== 'function') { setMsg(t(lang, 'common.binary')); return; }
+      let bin = '';
+      for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + 0x8000)));
+      const r = await uploadResume(asset.name, btoa(bin)); // persists the extracted text + re-ranks
+      if (!r.ok) setMsg(t(lang, 'common.uploadFailed'));   // honest: say it couldn't be read (e.g. scanned PDF)
     } catch (e: any) {
       setMsg(String(e?.message ?? e));
     }
@@ -94,8 +102,10 @@ export default function Search() {
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
           <View style={{ flexGrow: 1, flexBasis: 130 }}><Btn kind="ghost" label={`📄 ${t(lang, 'common.upload')}`} onPress={onUpload} /></View>
         </View>
-        <Text style={{ color: msg ? C.dim : cv ? C.good : C.dim, fontSize: 12, marginTop: 6 }}>
-          {msg || (cv ? t(lang, 'search.resumeLoaded') : t(lang, 'search.resumeNone'))}
+        {/* Honest status: green ✓ ONLY for a résumé the user actually uploaded this session; a pre-existing
+            saved résumé is disclosed neutrally (not a green "loaded" the user didn't trigger); else prompt. */}
+        <Text style={{ color: msg ? C.dim : resumeFile ? C.good : C.dim, fontSize: 12, marginTop: 6 }}>
+          {msg || (resumeFile ? `✓ ${resumeFile}` : cv ? t(lang, 'search.resumeSaved') : t(lang, 'search.resumeNone'))}
         </Text>
 
         {/* Tune the search scope — selectable regions + level; the list filters live, Find re-scans. */}
@@ -154,7 +164,7 @@ export default function Search() {
           <Text style={{ color: C.text, fontWeight: '700', fontSize: 15 }}>{j.role}</Text>
           <Text style={{ color: C.dim, marginBottom: 2 }}>{j.company} · {j.location}{j.postedOn ? ` · ${j.postedOn}` : ''}</Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-            <Pill label={`${j.prescreen}/100`} color={C.tint} text={C.tint} />
+            {/* Score is reserved for the evaluation (Apply) stage — Search shows only the fit indicator. */}
             <Pill label={t(lang, `search.confirm.${j.confirm}`)} color={confirmColor(j.confirm)} text={confirmColor(j.confirm)} />
             {j.gate ? <Pill label={`⛔ ${j.gate}`} color={C.bad} text={C.bad} /> : null}
           </View>
