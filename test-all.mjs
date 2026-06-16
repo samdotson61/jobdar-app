@@ -20,7 +20,7 @@ import jsonldProvider, { parseJsonLdJobs } from './providers/jsonld.mjs'
 import { assertAllowedUrl } from './lib/http.mjs'
 import { resolveState, stateLabel, allStates } from './lib/states.mjs'
 import { classifyTitle, levelDecision, filterByLevel } from './lib/levels.mjs'
-import { regionStateSet, locationMatches, filterByLocation, canonicalLocation, regionPriority } from './lib/regions.mjs'
+import { regionStateSet, locationMatches, filterByLocation, canonicalLocation, regionPriority, regionForLocation } from './lib/regions.mjs'
 import { selectEmployers, toPortals } from './lib/seed.mjs'
 import { parseResumeText } from './lib/resume.mjs'
 import { renderDashboard, analyze } from './lib/commands/dashboard.mjs'
@@ -933,6 +933,13 @@ test('regions: regionPriority ranks in-region first and deprioritizes out-of-tim
   assert.equal(regionPriority('Anywhere', ['nationwide']), 2) // no region preference → neutral-high
 })
 
+test('regions: regionForLocation maps a résumé location to its region (to seed the search)', () => {
+  assert.equal(regionForLocation('Cincinnati, OH'), 'midwest')
+  assert.equal(regionForLocation('Denver, CO'), 'west')
+  assert.equal(regionForLocation('Austin, TX'), 'southwest')
+  assert.equal(regionForLocation('Remote'), '') // no resolvable US state → caller keeps the current region
+})
+
 test('pipeline: near-duplicate postings collapse into a survivor alias; writes resolve through it', () => {
   let rows = mergeScanned([], [
     { company: 'Kettering', title: 'PM Oper Excellence', url: 'k1', location: 'Dayton, OH' },
@@ -1545,6 +1552,7 @@ test('serve: HTTP façade — auth gate, pipeline/profile/cv reads, tracker writ
     assert.equal(upRes.ok, true)
     assert.ok(upRes.name && !upRes.name.includes('/') && !upRes.name.includes('..')) // file name sanitized
     assert.ok(upRes.text.includes('Marketing analyst'))
+    assert.ok(upRes.fields && typeof upRes.fields === 'object') // identity fields returned so the app can seed the profile
     assert.ok((await (await fetch(`${base}/cv?token=${TOKEN}`)).json()).content.includes('Marketing analyst')) // persisted as the active résumé
     assert.equal((await fetch(`${base}/nope?token=${TOKEN}`)).status, 404)
   } finally {

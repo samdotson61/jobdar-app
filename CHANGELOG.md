@@ -4,6 +4,33 @@ All notable changes to Jobdar are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and Jobdar adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.39.0] — 2026-06-16
+
+**Blank-start app + target-salary selector.** App `@jobdar/app` **1.9.0**; `test-all.mjs` **128**.
+- **The app no longer seeds any user identity on load.** It previously hydrated the local `config/profile.yml`
+  (name/region/level) and `data/cv.md`, so it opened as "Sam Dotson." Now it starts **blank** — no name, no
+  region/level selected, no résumé, no roles — and `hydrate()` only checks that serve is reachable. The
+  profile is filled solely by an uploaded résumé or the user's own choices. (A real onboarding screen comes
+  before any public release; this is the interim blank slate.)
+- **The app holds its own state and sends it to serve.** Prescreen/evaluate now receive the app's résumé and
+  target salary, so results reflect the user — not the server's saved `cv.md`/config. A blank search defaults
+  to nationwide / all-levels rather than the saved config.
+- **Target-salary selector** (Any / $40k / $60k / $80k / $100k / $120k) — a new `salary` profile field threaded
+  into prescreen + evaluate (nudges rank + the pay band via the existing `target_salary` weighting).
+- Empty Search list now shows a prompt instead of "—".
+
+## [1.38.0] — 2026-06-16
+
+**Uploading a résumé now updates the profile, not just the cv.** Previously an upload set the résumé text
+but left the displayed identity unchanged — so after uploading "Alex Rivera" the app still showed jobs for
+"Sam Dotson." Now `POST /import/upload` also extracts identity fields (name, location, level) via the
+backend and returns them, and the app **seeds the profile from the résumé**: the name always updates; the
+**region** (derived from the résumé's location via new `regionForLocation`) and **level** update too — but
+only when the user hasn't manually chosen them, so a chip the user toggled always wins. If the résumé moves
+the region/level, the search re-scans for the new scope; either way the roles are re-fit to the new résumé.
+App `@jobdar/app` **1.8.0**; `test-all.mjs` **128**. (Profile changes are session-scoped — a reload re-reads
+the saved `config/profile.yml`; persisting an uploaded identity back to config is a future option.)
+
 ## [1.37.0] — 2026-06-16
 
 **Résumé upload actually handles .docx and .pdf.** The app previously read uploads as text and rejected

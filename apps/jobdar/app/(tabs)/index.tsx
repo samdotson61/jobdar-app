@@ -8,6 +8,7 @@ import { Btn, C, Card, Field, H, Pill, Sub, confirmColor } from '@/src/ui';
 
 const REGION_OPTS = ['midwest', 'northeast', 'southeast', 'southwest', 'west', 'nationwide'];
 const LEVEL_OPTS = ['entry', 'mid', 'senior'];
+const SALARY_OPTS = [0, 40000, 60000, 80000, 100000, 120000]; // 0 = Any
 
 type SortKey = 'score' | 'fresh' | 'company';
 type FilterKey = 'all' | 'fit' | 'maybe' | 'skip';
@@ -21,7 +22,7 @@ export default function Search() {
   const terms = useStore((s) => s.searchTerms);
   const cv = useStore((s) => s.cv);
   const resumeFile = useStore((s) => s.resumeFile);
-  const { uploadResume, runSearch, discover, toggleTransferable, toggleRegion, toggleLevel, setIntent } = useStore.getState();
+  const { uploadResume, runSearch, discover, toggleTransferable, toggleRegion, toggleLevel, setSalary, setIntent } = useStore.getState();
   const lang = profile.language;
   const [msg, setMsg] = useState('');
   const [query, setQuery] = useState('');
@@ -37,7 +38,9 @@ export default function Search() {
     let rows = scored.filter((j) => !q || `${j.role} ${j.company} ${j.location}`.toLowerCase().includes(q));
     // Honor the selected region + level live (the same engine filters the scan uses), so tuning the scope
     // narrows the list instantly; the next "Find matching roles" re-scans to pull in more for that scope.
-    rows = rows.filter((j) => levelDecision(j.role, profile.levels).include && locationMatches(j.location, profile.regions));
+    rows = rows.filter((j) =>
+      (profile.levels.length === 0 || levelDecision(j.role, profile.levels).include) &&
+      (profile.regions.length === 0 || locationMatches(j.location, profile.regions)));
     if (active) rows = rows.filter((j) => rel(j) > 0 || j.confirm === 'fit'); // cut roles irrelevant to the intent
     if (filter !== 'all') rows = rows.filter((j) => (j.confirm ?? 'skip') === filter);
     // Best-match order leads with region timezone priority (in-region first, out-of-timezone remote last —
@@ -128,6 +131,12 @@ export default function Search() {
             />
           </Pressable>
         </View>
+        <Text style={{ color: C.dim, fontSize: 12, marginTop: 6 }}>{t(lang, 'common.salary')}</Text>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 2 }}>
+          {SALARY_OPTS.map((n) => (
+            <Chip key={n} label={n === 0 ? t(lang, 'salary.any') : `$${Math.round(n / 1000)}k`} active={(profile.salary || 0) === n} on={() => setSalary(n)} color={C.tint} />
+          ))}
+        </View>
         {profile.name ? <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 2 }}><Pill label={`👤 ${profile.name}`} color={C.tint} text={C.tint} /></View> : null}
         <Btn
           label={t(lang, 'search.scan')}
@@ -171,7 +180,7 @@ export default function Search() {
           <Text style={{ color: C.dim, marginTop: 6, fontSize: 12 }}>{j.screenReason}</Text>
         </Card>
       ))}
-      {visible.length === 0 ? <Sub>—</Sub> : null}
+      {visible.length === 0 ? <Sub>{t(lang, 'search.emptyPrompt')}</Sub> : null}
     </ScrollView>
   );
 }

@@ -4,6 +4,7 @@ import {
   CADENCE,
 } from './engine';
 import { serveGet, servePost, serveHealth } from './serve';
+import { regionForLocation } from '@jobdar/engine';
 
 // The app holds NO engine logic — it renders what `jobdar serve` (the real CLI + winc) returns. Every
 // action is a thin call to serve; `@jobdar/engine` is used only for derived UI (band colors, cadence labels).
@@ -22,6 +23,8 @@ interface State {
   progress: number;             // 0..1 for the "Find matching roles" search; 0 = idle
   lastIntent: string;           // the intent the last search ran with (to avoid re-running the same scan)
   lastScope: string;            // region+level signature the last scan ran with (re-scan when it changes)
+  regionsUserSet: boolean;      // the user manually chose regions → a résumé upload won't override them
+  levelsUserSet: boolean;       // the user manually chose levels  → a résumé upload won't override them
   scored: Scored[];
   verdicts: Record<string, Verdict>;
   tailored: Record<string, Tailored>;
@@ -32,6 +35,7 @@ interface State {
   toggleTransferable: () => void;
   toggleRegion: (r: string) => void;   // tune the search scope — re-scans on the next "Find matching roles"
   toggleLevel: (l: string) => void;
+  setSalary: (n: number) => void;      // preferred target salary (0 = any) — nudges prescreen rank + pay band
   setCv: (t: string) => void;
   setIntent: (t: string) => void;
   loadResume: (text: string, fileName?: string) => void;
@@ -91,7 +95,8 @@ const verdictFromServe = (v: any): Verdict => ({
 });
 
 export const useStore = create<State>((set, get) => ({
-  profile: { name: '', language: 'en', regions: ['midwest'], levels: ['entry', 'mid'], transferable: false },
+  // Starts BLANK — no identity is seeded. Profile is filled only by an uploaded résumé or the user's choices.
+  profile: { name: '', language: 'en', regions: [], levels: [], transferable: false, salary: 0 },
   cv: '',
   resumeFile: '',
   intent: '',
@@ -101,6 +106,8 @@ export const useStore = create<State>((set, get) => ({
   progress: 0,
   lastIntent: '',
   lastScope: '',
+  regionsUserSet: false,
+  levelsUserSet: false,
   scored: [],
   verdicts: {},
   tailored: {},
@@ -114,14 +121,15 @@ export const useStore = create<State>((set, get) => ({
   toggleRegion: (r) => set((s) => {
     const has = s.profile.regions.includes(r);
     const regions = has ? s.profile.regions.filter((x) => x !== r) : [...s.profile.regions, r];
-    return { profile: { ...s.profile, regions: regions.length ? regions : s.profile.regions } };
+    return { profile: { ...s.profile, regions: regions.length ? regions : s.profile.regions }, regionsUserSet: true };
   }),
   toggleLevel: (l) => set((s) => {
     const has = s.profile.levels.includes(l);
     const levels = has ? s.profile.levels.filter((x) => x !== l) : [...s.profile.levels, l];
-    return { profile: { ...s.profile, levels: levels.length ? levels : s.profile.levels } };
+    return { profile: { ...s.profile, levels: levels.length ? levels : s.profile.levels }, levelsUserSet: true };
   }),
   setCv: (cv) => set({ cv }),
+  setSalary: (n) => set((s) => ({ profile: { ...s.profile, salary: Number(n) || 0 } })),
   setIntent: (intent) => set({ intent }),
   // Persist the uploaded résumé to serve (data/cv.md) so scan/prescreen/eval all judge against THIS text,
   // not a stale on-disk résumé. Model actions below also send the live cv in-band as a belt-and-suspenders.
@@ -140,18 +148,36 @@ export const useStore = create<State>((set, get) => ({
     try {
       const r = await servePost('/import/upload', { name: fileName, base64 });
       if (r && r.ok && typeof r.text === 'string') {
-        set({ cv: r.text, resumeFile: r.name || fileName });
+        // Seed the profile FROM the résumé so the UI reflects whose search this is — name always; region
+        // (from the résumé's location) and level only when the user hasn't manually chosen them (their
+        // choice wins). The chips + name pill render from profile, so the UI updates immediately.
+        const f = (r.fields || {}) as { name?: string; location?: string; level?: string };
+        const s0 = get();
+        const newProfile = { ...s0.profile };
+        if (f.name && f.name.trim()) newProfile.name = f.name.trim();
+        if (!s0.regionsUserSet && f.location) { const reg = regionForLocation(f.location); if (reg) newProfile.regions = [reg]; }
+        if (!s0.levelsUserSet && f.level && ['entry', 'mid', 'senior'].includes(f.level)) newProfile.levels = [f.level];
+        const scopeSig = (p: any) => `${[...p.regions].sort().join(',')}|${[...p.levels].sort().join(',')}`;
+        const scopeChanged = scopeSig(newProfile) !== scopeSig(s0.profile);
+        set({ cv: r.text, resumeFile: r.name || fileName, profile: newProfile });
         result = { ok: true };
-        bump(0.4);
-        // re-rank the relevant roles against the new résumé (its skill overlap changes the prescreen).
+        bump(0.35);
+        // If the résumé moved the region/level, re-scan so the roles match the new profile (not the old one).
+        if (scopeChanged) {
+          const sr = await servePost('/scan', { levels: newProfile.levels, regions: newProfile.regions });
+          if (sr && sr.ok !== false && Array.isArray(sr.rows)) set({ scored: rowsToScored(sr.rows) });
+          set({ lastScope: scopeSig(newProfile) });
+        }
+        bump(0.5);
+        // Re-fit the roles against the new résumé (skill overlap changed → fit indicators change).
         const terms = get().searchTerms || undefined;
         const TARGET = 30, BATCH = 6; let processed = 0;
         for (let i = 0; i < Math.ceil(TARGET / BATCH); i++) {
-          const pre = await servePost('/prescreen', { limit: BATCH, terms, rescore: true });
+          const pre = await servePost('/prescreen', { limit: BATCH, terms, rescore: true, cv: get().cv, targetSalary: get().profile.salary });
           if (!pre || pre.ok === false) break;
           if (Array.isArray(pre.rows)) set({ scored: rowsToScored(pre.rows) });
           processed += Number(pre.checked) || 0;
-          bump(Math.min(0.94, 0.4 + 0.54 * Math.min(1, processed / TARGET)));
+          bump(Math.min(0.94, 0.5 + 0.44 * Math.min(1, processed / TARGET)));
           if (!pre.checked || pre.checked < BATCH) break;
         }
         bump(1);
@@ -167,43 +193,12 @@ export const useStore = create<State>((set, get) => ({
   },
   loadSampleCv: () => get().hydrate(),
 
-  // Pull the live state from serve: the real profile (regions/levels/transferable), the real résumé
-  // (data/cv.md), and the real pipeline rows. No-op (serveUp:false) if serve isn't running yet.
+  // BLANK START: the app does NOT seed identity from the local config/profile.yml or data/cv.md. We only
+  // check that serve is reachable; the profile, résumé, and roles are filled by an uploaded résumé or the
+  // user's own choices (region/level/salary/intent → "Find matching roles"). A real onboarding lands later.
   hydrate: async () => {
     const h = await serveHealth();
     set({ serveUp: h.ok });
-    if (!h.ok) return;
-    try {
-      const [pipe, prof, cv] = await Promise.all([serveGet('/pipeline'), serveGet('/profile'), serveGet('/cv')]);
-      const rows = (pipe && pipe.rows) || [];
-      set((s) => ({
-        scored: rowsToScored(rows),
-        cv: (cv && cv.content) || s.cv,
-        profile: {
-          ...s.profile,
-          name: (prof && prof.name) || s.profile.name,
-          language: (prof && prof.language) || s.profile.language,
-          regions: (prof && prof.target_regions) || s.profile.regions,
-          levels: (prof && prof.target_levels) || s.profile.levels,
-          transferable: Boolean(prof && prof.transferable_skills),
-        },
-      }));
-      // Auto-prescreen on first load: if the pipeline is all discovered (no scores), score a first batch
-      // so the list ranks meaningfully the moment Search opens — instead of an all-grey "0/100" wall.
-      const anyScored = rows.some((r: any) => String(r.prescreen || '').trim());
-      if (!anyScored && rows.some((r: any) => r && r.url)) {
-        set({ busy: 'scan' });
-        try {
-          const pre = await servePost('/prescreen', { limit: 15 });
-          if (pre && pre.ok !== false && Array.isArray(pre.rows)) set({ scored: rowsToScored(pre.rows) });
-        } catch {
-          /* live JD fetch flaked → keep the discovered list */
-        }
-        set((s) => (s.busy === 'scan' ? { busy: null } : {}));
-      }
-    } catch {
-      /* leave prior state */
-    }
   },
 
   // Intent-driven search with a live progress bar. Stages: parse the intent (winc, once) → scan (only when
@@ -236,17 +231,19 @@ export const useStore = create<State>((set, get) => ({
       //    company board (slow). Refining the intent does NOT re-scan: the discovered roles are already in the
       //    pipeline, so we just re-rank + prescreen them (fast). Show scan results immediately when we do scan.
       if (scopeChanged || get().scored.length === 0) {
-        const levels = terms && terms.level ? [terms.level] : get().profile.levels;
-        const regions = terms && terms.regions && terms.regions.length ? terms.regions : get().profile.regions;
+        // Blank profile → search broadly (nationwide, all levels) rather than the server's saved config.
+        const levels = terms && terms.level ? [terms.level] : (get().profile.levels.length ? get().profile.levels : ['entry', 'mid', 'senior']);
+        const regions = terms && terms.regions && terms.regions.length ? terms.regions : (get().profile.regions.length ? get().profile.regions : ['nationwide']);
         const sr = await servePost('/scan', { levels, regions });
         if (sr && sr.ok !== false && Array.isArray(sr.rows)) set({ scored: rowsToScored(sr.rows) });
       }
       bump(0.45);
-      // 3) Prescreen the most relevant pending roles, in batches, with a live percentage.
+      // 3) Prescreen the most relevant pending roles, in batches, with a live percentage. Send the app's own
+      //    cv + target salary so results reflect the user's state (not the server's saved config/cv.md).
       const TARGET = 30, BATCH = 6;
       let processed = 0;
       for (let i = 0; i < Math.ceil(TARGET / BATCH); i++) {
-        const pre = await servePost('/prescreen', { limit: BATCH, terms: terms || undefined });
+        const pre = await servePost('/prescreen', { limit: BATCH, terms: terms || undefined, cv: get().cv, targetSalary: get().profile.salary });
         if (!pre || pre.ok === false) break;
         if (Array.isArray(pre.rows)) set({ scored: rowsToScored(pre.rows) });
         processed += Number(pre.checked) || 0;
@@ -273,7 +270,7 @@ export const useStore = create<State>((set, get) => ({
       const TARGET = 30, BATCH = 6;
       let processed = 0;
       for (let i = 0; i < Math.ceil(TARGET / BATCH); i++) {
-        const pre = await servePost('/prescreen', { limit: BATCH, terms, rescore: true });
+        const pre = await servePost('/prescreen', { limit: BATCH, terms, rescore: true, cv: get().cv, targetSalary: get().profile.salary });
         if (!pre || pre.ok === false) break;
         if (Array.isArray(pre.rows)) set({ scored: rowsToScored(pre.rows) });
         processed += Number(pre.checked) || 0;
@@ -301,7 +298,7 @@ export const useStore = create<State>((set, get) => ({
       bump(0.5);
       const terms = get().searchTerms || undefined;
       for (let i = 0; i < 3; i++) {
-        const pre = await servePost('/prescreen', { limit: 6, terms });
+        const pre = await servePost('/prescreen', { limit: 6, terms, cv: get().cv, targetSalary: get().profile.salary });
         if (!pre || pre.ok === false) break;
         if (Array.isArray(pre.rows)) set({ scored: rowsToScored(pre.rows) });
         bump(Math.min(0.94, 0.5 + 0.15 * (i + 1)));
@@ -319,7 +316,7 @@ export const useStore = create<State>((set, get) => ({
     set({ busy: url });
     try {
       const cv = get().cv;
-      const v = await servePost('/evaluate', { url, cv: cv || undefined, transferable: get().profile.transferable });
+      const v = await servePost('/evaluate', { url, cv: cv || undefined, transferable: get().profile.transferable, targetSalary: get().profile.salary });
       if (v && v.ok !== false && v.score != null) {
         set((s) => ({ verdicts: { ...s.verdicts, [url]: verdictFromServe(v) } }));
         const row = get().scored.find((r) => r.url === url);

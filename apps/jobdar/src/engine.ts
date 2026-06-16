@@ -7,7 +7,7 @@ import { band as engineBand, BANDS as ENGINE_BANDS } from '@jobdar/engine';
 export type Lang = 'en' | 'es';
 export type Band = 'apply' | 'research' | 'dont';
 
-export interface Profile { name: string; language: Lang; regions: string[]; levels: string[]; transferable: boolean }
+export interface Profile { name: string; language: Lang; regions: string[]; levels: string[]; transferable: boolean; salary: number }
 export interface Job { company: string; role: string; url: string; location: string; postedOn?: string; jd: string }
 export interface Scored extends Job { prescreen: number; screenReason: string; gate?: string; confirm?: 'fit' | 'maybe' | 'skip'; level?: string }
 export interface Criterion { key: string; weight: number; judgment: 'strong' | 'partial' | 'none'; evidence: string }
@@ -27,6 +27,7 @@ const STR: Record<Lang, Dict> = {
     'search.title': 'Find roles that fit', 'search.intro': 'Describe what you want — winc + the scanner find and rank matching roles.',
     'search.intentPlaceholder': "Tell us what you're looking for (e.g. entry-level product manager, remote or Midwest)…",
     'search.resumeSaved': 'Using your saved résumé.', 'search.resumeNone': 'No résumé yet — upload one to sharpen ranking & enable scoring.',
+    'search.emptyPrompt': 'Upload your résumé (or set filters) and tap "Find matching roles" to start.',
     'search.scan': 'Find matching roles', 'search.discover': '🧭 Discover more companies (winc)',
     'search.transferable': 'Credit transferable skills',
     'search.confirm.fit': 'Likely fit', 'search.confirm.maybe': 'Worth a look', 'search.confirm.skip': 'Skip',
@@ -38,7 +39,7 @@ const STR: Record<Lang, Dict> = {
     'followup.title': 'Reach out', 'followup.person': 'Recipient name', 'followup.draft': 'Draft a note',
     'followup.cadence': 'Cadence: 2 contacts/role · 1 follow-up after 5 business days · hard stop',
     'followup.lint.ok': 'Passes checks — review, then send it yourself.',
-    'common.region': 'Regions', 'common.level': 'Level', 'common.lang': 'Idioma: ES',
+    'common.region': 'Regions', 'common.level': 'Level', 'common.salary': 'Target salary', 'salary.any': 'Any', 'common.lang': 'Idioma: ES',
     'region.midwest': 'Midwest', 'region.northeast': 'Northeast', 'region.southeast': 'Southeast',
     'region.southwest': 'Southwest', 'region.west': 'West', 'region.nationwide': 'Nationwide',
     'level.entry': 'Entry', 'level.mid': 'Mid', 'level.senior': 'Senior',
@@ -53,6 +54,7 @@ const STR: Record<Lang, Dict> = {
     'search.title': 'Encuentra empleos que encajan', 'search.intro': 'Describe lo que buscas — winc + el escáner encuentran y ordenan empleos que encajan.',
     'search.intentPlaceholder': 'Cuéntanos qué buscas (p. ej. gerente de producto nivel inicial, remoto o Midwest)…',
     'search.resumeSaved': 'Usando tu currículum guardado.', 'search.resumeNone': 'Aún sin currículum — sube uno para afinar el orden y habilitar la evaluación.',
+    'search.emptyPrompt': 'Sube tu currículum (o elige filtros) y toca "Buscar empleos" para empezar.',
     'search.scan': 'Buscar empleos', 'search.discover': '🧭 Descubrir más empresas (winc)',
     'search.transferable': 'Acreditar habilidades transferibles',
     'search.confirm.fit': 'Buen encaje', 'search.confirm.maybe': 'Vale la pena', 'search.confirm.skip': 'Omitir',
@@ -64,7 +66,7 @@ const STR: Record<Lang, Dict> = {
     'followup.title': 'Contacta', 'followup.person': 'Nombre del destinatario', 'followup.draft': 'Redactar nota',
     'followup.cadence': 'Cadencia: 2 contactos/puesto · 1 seguimiento tras 5 días hábiles · alto definitivo',
     'followup.lint.ok': 'Pasa las verificaciones — revísala y envíala tú mismo.',
-    'common.region': 'Regiones', 'common.level': 'Nivel', 'common.lang': 'Language: EN',
+    'common.region': 'Regiones', 'common.level': 'Nivel', 'common.salary': 'Salario objetivo', 'salary.any': 'Cualquiera', 'common.lang': 'Language: EN',
     'region.midwest': 'Medio Oeste', 'region.northeast': 'Noreste', 'region.southeast': 'Sureste',
     'region.southwest': 'Suroeste', 'region.west': 'Oeste', 'region.nationwide': 'Todo EE. UU.',
     'level.entry': 'Inicial', 'level.mid': 'Medio', 'level.senior': 'Senior',
