@@ -1,7 +1,7 @@
 {
   "name": "@jobdar/app",
   "main": "expo-router/entry",
-  "version": "1.4.0",
+  "version": "1.5.1",
   "dependencies": {
     "@jobdar/engine": "workspace:*",
     "expo": "~56.0.12",

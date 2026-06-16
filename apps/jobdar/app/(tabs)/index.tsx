@@ -3,8 +3,11 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { useStore } from '@/src/store';
 import { t } from '@/src/engine';
-import { relevanceScore } from '@jobdar/engine';
+import { relevanceScore, levelDecision, locationMatches } from '@jobdar/engine';
 import { Btn, C, Card, Field, H, Pill, Sub, confirmColor } from '@/src/ui';
+
+const REGION_OPTS = ['midwest', 'northeast', 'southeast', 'southwest', 'west', 'nationwide'];
+const LEVEL_OPTS = ['entry', 'mid', 'senior'];
 
 const looksBinary = (s: string) => {
   if (s.startsWith('%PDF') || s.startsWith('PK')) return true; // PDF / DOCX(zip)
@@ -25,7 +28,7 @@ export default function Search() {
   const intent = useStore((s) => s.intent);
   const terms = useStore((s) => s.searchTerms);
   const cv = useStore((s) => s.cv);
-  const { loadResume, runSearch, toggleTransferable, setIntent } = useStore.getState();
+  const { loadResume, runSearch, rescore, discover, toggleTransferable, toggleRegion, toggleLevel, setIntent } = useStore.getState();
   const lang = profile.language;
   const [msg, setMsg] = useState('');
   const [query, setQuery] = useState('');
@@ -39,6 +42,9 @@ export default function Search() {
     const active = !!terms && (((terms.keywords?.length ?? 0) > 0) || ((terms.titles?.length ?? 0) > 0));
     const rel = (j: any) => (active ? relevanceScore(`${j.role} ${j.company} ${j.location}`, terms) : 0);
     let rows = scored.filter((j) => !q || `${j.role} ${j.company} ${j.location}`.toLowerCase().includes(q));
+    // Honor the selected region + level live (the same engine filters the scan uses), so tuning the scope
+    // narrows the list instantly; the next "Find matching roles" re-scans to pull in more for that scope.
+    rows = rows.filter((j) => levelDecision(j.role, profile.levels).include && locationMatches(j.location, profile.regions));
     if (active) rows = rows.filter((j) => rel(j) > 0 || j.confirm === 'fit'); // cut roles irrelevant to the intent
     if (filter !== 'all') rows = rows.filter((j) => (j.confirm ?? 'skip') === filter);
     const out = [...rows];
@@ -46,7 +52,7 @@ export default function Search() {
     else if (sortBy === 'company') out.sort((a, b) => a.company.localeCompare(b.company));
     else out.sort((a, b) => (active ? rel(b) - rel(a) : 0) || Number(Boolean(a.gate)) - Number(Boolean(b.gate)) || b.prescreen - a.prescreen);
     return out;
-  }, [scored, query, sortBy, filter, terms]);
+  }, [scored, query, sortBy, filter, terms, profile.regions, profile.levels]);
 
   const onUpload = async () => {
     try {
@@ -58,8 +64,9 @@ export default function Search() {
       const asset = res.assets[0];
       const text = await (await fetch(asset.uri)).text();
       if (looksBinary(text)) { setMsg(t(lang, 'common.binary')); return; }
-      loadResume(text); // persists to serve (data/cv.md) so scan/prescreen/eval use it
+      loadResume(text);      // persists to serve (data/cv.md) so scan/prescreen/eval use it
       setMsg(`${t(lang, 'common.loaded')}: ${asset.name}`);
+      rescore();             // re-rank the current results against the new résumé so the list changes
     } catch (e: any) {
       setMsg(String(e?.message ?? e));
     }
@@ -91,10 +98,18 @@ export default function Search() {
           {msg || (cv ? t(lang, 'search.resumeLoaded') : t(lang, 'search.resumeNone'))}
         </Text>
 
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center' }}>
-          {profile.name ? <Pill label={`👤 ${profile.name}`} color={C.tint} text={C.tint} /> : null}
-          <Pill label={`${t(lang, 'common.region')}: ${profile.regions.join(', ')}`} />
-          <Pill label={`${t(lang, 'common.level')}: ${profile.levels.join(', ')}`} />
+        {/* Tune the search scope — selectable regions + level; the list filters live, Find re-scans. */}
+        <Text style={{ color: C.dim, fontSize: 12, marginTop: 8 }}>{t(lang, 'common.region')}</Text>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 2 }}>
+          {REGION_OPTS.map((r) => (
+            <Chip key={r} label={t(lang, `region.${r}`)} active={profile.regions.includes(r)} on={() => toggleRegion(r)} color={C.tint} />
+          ))}
+        </View>
+        <Text style={{ color: C.dim, fontSize: 12, marginTop: 6 }}>{t(lang, 'common.level')}</Text>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', marginTop: 2 }}>
+          {LEVEL_OPTS.map((l) => (
+            <Chip key={l} label={t(lang, `level.${l}`)} active={profile.levels.includes(l)} on={() => toggleLevel(l)} color={C.tint} />
+          ))}
           <Pressable onPress={toggleTransferable}>
             <Pill
               label={`${t(lang, 'search.transferable')} ${profile.transferable ? '✓' : '○'}`}
@@ -103,11 +118,19 @@ export default function Search() {
             />
           </Pressable>
         </View>
+        {profile.name ? <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 2 }}><Pill label={`👤 ${profile.name}`} color={C.tint} text={C.tint} /></View> : null}
         <Btn
           label={t(lang, 'search.scan')}
           onPress={runSearch}
           disabled={busy === 'scan'}
           progress={busy === 'scan' ? Math.max(0.04, progress) : undefined}
+        />
+        <Btn
+          kind="ghost"
+          label={t(lang, 'search.discover')}
+          onPress={discover}
+          disabled={!intent.trim() || busy != null}
+          progress={busy === 'discover' ? Math.max(0.08, progress) : undefined}
         />
       </Card>
 

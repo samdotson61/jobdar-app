@@ -4,6 +4,46 @@ All notable changes to Jobdar are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and Jobdar adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.35.1] — 2026-06-16
+
+**Search speed.** Finding jobs was slow; the dominant cost was the scan re-fetching every company board.
+- **`/prescreen` fetches JDs concurrently** (pool of 8) and writes the pipeline **once** per batch
+  (`upsertPrescreenMany`) instead of a 200 ms-paced one-at-a-time fetch + a full-file rewrite per row — a
+  batch dropped from ~7 s to ~1 s.
+- **`/scan` parallelism 4→12 + a 12 s per-portal timeout** so one slow board can't stall a wave — a 50-board
+  scan dropped from ~58 s to ~15 s.
+- **Refining the search no longer re-scans.** The scan (the slow part) now runs only when the **scope**
+  (region/level) changes or the pipeline is empty; editing the intent just re-ranks + prescreens the
+  already-discovered roles. Scan results also render immediately (relevance-ranked) before prescreen enriches.
+- **Smoother progress.** The "Find matching roles" bar now advances continuously (a 250 ms ticker, monotonic)
+  between server round-trips instead of jumping per batch. App `@jobdar/app` **1.5.1**.
+
+## [1.35.0] — 2026-06-16
+
+**Phases 9.3+/9.4 — tunable search, BM25-lite relevance, and intelligent company discovery.** Builds on
+the LinkedIn/Indeed retrieve-then-rank methodology, adapted to local-first + winc. Lands as `@jobdar/app`
+**1.5.0**; `test-all.mjs` **126** (+2 discovery tests).
+
+### Tunable controls (Search tab)
+- **Selectable regions** (Midwest/Northeast/Southeast/Southwest/West/Nationwide) and **adjustable level**
+  (entry/mid/senior) as multi-select chips. They filter the visible list **live** (same `levelDecision` +
+  `locationMatches` the scan uses) and the next "Find matching roles" **re-scans** the new scope.
+- **Résumé re-upload now changes results:** the upload re-prescreens the relevant roles against the new
+  résumé (new `rescore` path; serve `/prescreen {rescore:true}` re-scores already-scored rows).
+
+### Relevance tuning
+- `relevanceScore` is now **BM25-lite**: a title-phrase match dominates, keyword hits weigh by specificity
+  (longer ≈ rarer, a cheap IDF proxy), and matching multiple distinct intent terms earns a coverage bonus —
+  so a real "Product Manager" clearly outranks a generic "Manager, Workforce Management."
+
+### Intelligent discovery — `lib/discover.mjs` + serve `POST /discover`
+- The local model **suggests real employers** for the intent + region; Jobdar deterministically probes their
+  **Greenhouse/Lever/Ashby** slug patterns and keeps **only boards that actually return jobs** (live-verified
+  via the real provider fetch — a hallucinated company simply never resolves). Verified boards are added to
+  the portal seed (`savePortals`) and scanned. Keyless, local, privacy-preserving — no crawler, no API key.
+- App: a **"Discover more companies (winc)"** button runs discovery + ranks the newcomers, with the same
+  progress bar. (An opt-in aggregator/USAJobs provider can plug into this same seam later as a Pro feature.)
+
 ## [1.34.0] — 2026-06-16
 
 **Phase 9.3 — intent-driven search.** The Search tab now leads with *"Tell us what you're looking for"*

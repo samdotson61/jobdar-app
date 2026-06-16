@@ -20,6 +20,7 @@ interface State {
   busy: string | null;          // url/operation currently in flight (for spinners)
   progress: number;             // 0..1 for the "Find matching roles" search; 0 = idle
   lastIntent: string;           // the intent the last search ran with (to avoid re-running the same scan)
+  lastScope: string;            // region+level signature the last scan ran with (re-scan when it changes)
   scored: Scored[];
   verdicts: Record<string, Verdict>;
   tailored: Record<string, Tailored>;
@@ -28,12 +29,16 @@ interface State {
   // actions (existing signatures unchanged so the other tabs are untouched)
   setLang: (l: Lang) => void;
   toggleTransferable: () => void;
+  toggleRegion: (r: string) => void;   // tune the search scope — re-scans on the next "Find matching roles"
+  toggleLevel: (l: string) => void;
   setCv: (t: string) => void;
   setIntent: (t: string) => void;
   loadResume: (text: string, name?: string) => void;
   loadSampleCv: () => void;     // repurposed: re-pull live state from serve
   hydrate: () => void;
   runSearch: () => void;        // parse intent → scan → prescreen (intent-relevant first), with progress
+  rescore: () => void;          // re-prescreen the relevant rows against the current résumé (re-upload)
+  discover: () => void;         // winc suggests companies for the intent → probe ATS → scan the new boards
   scoreOne: (url: string) => void;
   tailorOne: (url: string, directives: string[]) => void;
   draftOne: (url: string, person: string) => void;
@@ -42,6 +47,16 @@ interface State {
 
 const today = () => new Date().toISOString().slice(0, 10);
 const num = (x: any) => Number(x) || 0;
+
+// A smooth progress ticker: nudges the bar forward between server round-trips so it never looks frozen
+// during a long scan/prescreen, capped below 1 (real milestones jump it up via Math.max — never backward).
+const startTicker = (set: any, get: any) => {
+  const id = setInterval(() => {
+    const s = get();
+    if (s.busy && s.progress > 0 && s.progress < 0.95) set({ progress: Math.min(0.95, s.progress + 0.015) });
+  }, 250);
+  return () => clearInterval(id);
+};
 const WEIGHTS: Record<string, number> = { skills: 0.35, experience: 0.25, level_fit: 0.2, logistics: 0.1, education: 0.1 };
 
 // Map a real pipeline.tsv row (from serve) → the app's Scored shape the Search tab renders.
@@ -82,6 +97,7 @@ export const useStore = create<State>((set, get) => ({
   busy: null,
   progress: 0,
   lastIntent: '',
+  lastScope: '',
   scored: [],
   verdicts: {},
   tailored: {},
@@ -90,6 +106,18 @@ export const useStore = create<State>((set, get) => ({
 
   setLang: (language) => set((s) => ({ profile: { ...s.profile, language } })),
   toggleTransferable: () => set((s) => ({ profile: { ...s.profile, transferable: !s.profile.transferable } })),
+  // Region/level are the search SCOPE. Toggling keeps at least one selected; the next "Find matching
+  // roles" re-scans with the new scope (lastScope mismatch forces it), and the visible list filters live.
+  toggleRegion: (r) => set((s) => {
+    const has = s.profile.regions.includes(r);
+    const regions = has ? s.profile.regions.filter((x) => x !== r) : [...s.profile.regions, r];
+    return { profile: { ...s.profile, regions: regions.length ? regions : s.profile.regions } };
+  }),
+  toggleLevel: (l) => set((s) => {
+    const has = s.profile.levels.includes(l);
+    const levels = has ? s.profile.levels.filter((x) => x !== l) : [...s.profile.levels, l];
+    return { profile: { ...s.profile, levels: levels.length ? levels : s.profile.levels } };
+  }),
   setCv: (cv) => set({ cv }),
   setIntent: (intent) => set({ intent }),
   // Persist the uploaded résumé to serve (data/cv.md) so scan/prescreen/eval all judge against THIS text,
@@ -147,7 +175,11 @@ export const useStore = create<State>((set, get) => ({
     const intent = get().intent.trim();
     const prevIntent = get().lastIntent;
     const intentChanged = intent !== prevIntent;
+    const scopeSig = `${[...get().profile.regions].sort().join(',')}|${[...get().profile.levels].sort().join(',')}`;
+    const scopeChanged = scopeSig !== get().lastScope;
     set({ busy: 'scan', progress: 0.04 });
+    const stopTick = startTicker(set, get);
+    const bump = (p: number) => set((s) => ({ progress: Math.max(s.progress, p) }));
     try {
       // 1) Parse intent → search terms (winc when up; deterministic keywords otherwise). Re-parse only on change.
       let terms = get().searchTerms;
@@ -160,30 +192,88 @@ export const useStore = create<State>((set, get) => ({
       } else if (!intent) {
         terms = null; set({ searchTerms: null });
       }
-      set({ progress: 0.12 });
-      // 2) Scan — only when the intent changed or we have no roles yet (avoids re-running an identical scan).
-      if (intentChanged || get().scored.length === 0) {
+      bump(0.15);
+      // 2) Scan ONLY when the scope (region/level) changed or we have nothing yet — a scan re-fetches every
+      //    company board (slow). Refining the intent does NOT re-scan: the discovered roles are already in the
+      //    pipeline, so we just re-rank + prescreen them (fast). Show scan results immediately when we do scan.
+      if (scopeChanged || get().scored.length === 0) {
         const levels = terms && terms.level ? [terms.level] : get().profile.levels;
         const regions = terms && terms.regions && terms.regions.length ? terms.regions : get().profile.regions;
-        await servePost('/scan', { levels, regions });
+        const sr = await servePost('/scan', { levels, regions });
+        if (sr && sr.ok !== false && Array.isArray(sr.rows)) set({ scored: rowsToScored(sr.rows) });
       }
-      set({ progress: 0.4 });
+      bump(0.45);
       // 3) Prescreen the most relevant pending roles, in batches, with a live percentage.
-      const TARGET = 40, BATCH = 8;
+      const TARGET = 30, BATCH = 6;
       let processed = 0;
       for (let i = 0; i < Math.ceil(TARGET / BATCH); i++) {
         const pre = await servePost('/prescreen', { limit: BATCH, terms: terms || undefined });
         if (!pre || pre.ok === false) break;
         if (Array.isArray(pre.rows)) set({ scored: rowsToScored(pre.rows) });
         processed += Number(pre.checked) || 0;
-        set({ progress: Math.min(0.98, 0.4 + 0.58 * Math.min(1, processed / TARGET)) });
+        bump(Math.min(0.94, 0.45 + 0.49 * Math.min(1, processed / TARGET)));
         if (!pre.checked || pre.checked < BATCH) break; // pending exhausted
       }
-      set({ progress: 1, lastIntent: intent });
+      bump(1);
+      set({ lastIntent: intent, lastScope: scopeSig });
     } catch {
       /* network/serve error → keep prior rows */
     }
+    stopTick();
     set((s) => (s.busy === 'scan' ? { busy: null, progress: 0 } : {}));
+  },
+
+  // Re-prescreen the relevant rows against the CURRENT résumé (called after a re-upload) so scores/ranking
+  // reflect the new résumé. No scan — just re-scores what's already discovered, intent-relevant first.
+  rescore: async () => {
+    set({ busy: 'scan', progress: 0.1 });
+    const stopTick = startTicker(set, get);
+    const bump = (p: number) => set((s) => ({ progress: Math.max(s.progress, p) }));
+    try {
+      const terms = get().searchTerms || undefined;
+      const TARGET = 30, BATCH = 6;
+      let processed = 0;
+      for (let i = 0; i < Math.ceil(TARGET / BATCH); i++) {
+        const pre = await servePost('/prescreen', { limit: BATCH, terms, rescore: true });
+        if (!pre || pre.ok === false) break;
+        if (Array.isArray(pre.rows)) set({ scored: rowsToScored(pre.rows) });
+        processed += Number(pre.checked) || 0;
+        bump(Math.min(0.94, 0.1 + 0.84 * Math.min(1, processed / TARGET)));
+        if (!pre.checked || pre.checked < BATCH) break;
+      }
+      bump(1);
+    } catch {
+      /* keep prior rows */
+    }
+    stopTick();
+    set((s) => (s.busy === 'scan' ? { busy: null, progress: 0 } : {}));
+  },
+
+  // Intelligently grow the corpus: winc names companies for the intent, serve probes their ATS boards and
+  // scans the verified ones; then we prescreen the newcomers (intent-relevant first) so they rank in place.
+  discover: async () => {
+    if (!get().intent.trim()) return;
+    set({ busy: 'discover', progress: 0.08 });
+    const stopTick = startTicker(set, get);
+    const bump = (p: number) => set((s) => ({ progress: Math.max(s.progress, p) }));
+    try {
+      const r = await servePost('/discover', { intent: get().intent, regions: get().profile.regions, levels: get().profile.levels });
+      if (r && r.ok && Array.isArray(r.rows)) set({ scored: rowsToScored(r.rows) });
+      bump(0.5);
+      const terms = get().searchTerms || undefined;
+      for (let i = 0; i < 3; i++) {
+        const pre = await servePost('/prescreen', { limit: 6, terms });
+        if (!pre || pre.ok === false) break;
+        if (Array.isArray(pre.rows)) set({ scored: rowsToScored(pre.rows) });
+        bump(Math.min(0.94, 0.5 + 0.15 * (i + 1)));
+        if (!pre.checked || pre.checked < 6) break;
+      }
+      bump(1);
+    } catch {
+      /* discovery is best-effort (winc may be down) → keep prior rows */
+    }
+    stopTick();
+    set((s) => (s.busy === 'discover' ? { busy: null, progress: 0 } : {}));
   },
 
   scoreOne: async (url) => {

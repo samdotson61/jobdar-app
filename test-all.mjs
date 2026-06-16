@@ -38,6 +38,7 @@ import { resolveBackend, isLoopbackUrl, parseVerdict, selectActive, backendHealt
 import { scoreFromJudgments, parseEvalJson, stripPII, clampVerdict, buildEvalUser, evalRole, buildVerdict, prepEval } from './lib/eval_engine.mjs'
 import { bandAgreement, buildBatchRequests, parseBatchResults, clampLogEntry } from './lib/eval_ops.mjs'
 import { expandQueryTerms, relevanceScore, parseIntent } from './lib/search.mjs'
+import { slugVariants, atsCandidates, discoverCompanies } from './lib/discover.mjs'
 import { extractText, isExtractable, structureCv } from './lib/docparse.mjs'
 import { importDocument, evaluate as engineEvaluate, recordVerdict, advanceStatus, buildCv, ENGINE_VERSION, tailor as engineTailor } from './lib/engine.mjs'
 import { coverIsComplete, assembleTailoredCv, TAILOR_JSON_SCHEMA, buildTailorUser, directiveBlock, TAILOR_SYSTEM, fillSignature } from './lib/tailor.mjs'
@@ -1594,6 +1595,20 @@ test('search: expandQueryTerms drops stopwords; relevanceScore ranks + cuts by i
   assert.ok(relevanceScore('Product Marketing Specialist', t2) > 0) // partial keyword match is still relevant
   assert.equal(relevanceScore('Software Engineer', t2), 0) // no overlap → cut from the intent view
   assert.ok(relevanceScore('Electrical Hardware Engineer', t2) < 0) // an exclude hit → hard cut
+})
+
+test('discover: slugVariants + atsCandidates build the right ATS probe URLs', () => {
+  assert.deepEqual(slugVariants('May Mobility'), ['maymobility', 'may-mobility'])
+  assert.ok(slugVariants('AT&T').includes('at-and-t')) // & → and
+  const cands = atsCandidates('Stripe')
+  assert.ok(cands.some((c) => c.careers_url === 'https://boards.greenhouse.io/stripe'))
+  assert.ok(cands.some((c) => c.careers_url === 'https://jobs.lever.co/stripe'))
+  assert.ok(cands.some((c) => c.careers_url === 'https://jobs.ashbyhq.com/stripe'))
+})
+
+test('discover: discoverCompanies is a no-op when winc is down or the intent is empty (never throws)', async () => {
+  assert.deepEqual(await discoverCompanies({ active: { up: false }, intent: 'product manager' }), { suggested: 0, portals: [], jobs: [] })
+  assert.deepEqual(await discoverCompanies({ active: { up: true, jsonEval: false }, intent: '' }), { suggested: 0, portals: [], jobs: [] })
 })
 
 test('search: parseIntent falls back to keywords when the backend is down (never throws)', async () => {
