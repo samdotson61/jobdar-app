@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import {
   type Job, type Scored, type Verdict, type Tailored, type Draft, type Profile, type Lang, type Band, type Criterion,
   CADENCE,
@@ -56,6 +57,15 @@ const num = (x: any) => Number(x) || 0;
 
 // A smooth progress ticker: nudges the bar forward between server round-trips so it never looks frozen
 // during a long scan/prescreen, capped below 1 (real milestones jump it up via Math.max — never backward).
+// Persist the user's own state to the browser. First boot has NO stored key → the app starts blank; once
+// the user uploads a résumé or makes a selection, the change is saved and restored on the next load. (Web
+// localStorage; a no-op on native until AsyncStorage is wired — the app currently runs as a web PWA.)
+const stateStorage = {
+  getItem: (k: string) => { try { return typeof localStorage !== 'undefined' ? localStorage.getItem(k) : null; } catch { return null; } },
+  setItem: (k: string, v: string) => { try { if (typeof localStorage !== 'undefined') localStorage.setItem(k, v); } catch { /* private mode / no storage */ } },
+  removeItem: (k: string) => { try { if (typeof localStorage !== 'undefined') localStorage.removeItem(k); } catch { /* ignore */ } },
+};
+
 const startTicker = (set: any, get: any) => {
   const id = setInterval(() => {
     const s = get();
@@ -94,7 +104,7 @@ const verdictFromServe = (v: any): Verdict => ({
   clamped: v.clamped ? v.recommendation || 'hard gate' : undefined,
 });
 
-export const useStore = create<State>((set, get) => ({
+export const useStore = create<State>()(persist((set, get) => ({
   // Starts BLANK — no identity is seeded. Profile is filled only by an uploaded résumé or the user's choices.
   profile: { name: '', language: 'en', regions: [], levels: [], transferable: false, salary: 0 },
   cv: '',
@@ -367,6 +377,17 @@ export const useStore = create<State>((set, get) => ({
     }).catch(() => {});
     return { ok: true };
   },
+}), {
+  name: 'jobdar-app-v1',
+  storage: createJSONStorage(() => stateStorage),
+  // Persist only the user's own state (identity, choices, results) — NOT transient runtime flags. First
+  // boot (no stored key) → the blank initial state; after a résumé/selection it's saved and restored.
+  partialize: (s) => ({
+    profile: s.profile, cv: s.cv, resumeFile: s.resumeFile,
+    intent: s.intent, searchTerms: s.searchTerms, lastIntent: s.lastIntent, lastScope: s.lastScope,
+    regionsUserSet: s.regionsUserSet, levelsUserSet: s.levelsUserSet,
+    scored: s.scored, verdicts: s.verdicts, tailored: s.tailored, drafts: s.drafts, ledger: s.ledger,
+  }),
 }));
 
 // Auto-pull live state from serve on launch (no-op if serve isn't up yet — the user can retry via scan).

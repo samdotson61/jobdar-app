@@ -4,6 +4,15 @@ All notable changes to Jobdar are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and Jobdar adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.40.0] — 2026-06-16
+
+**State persists after first use (still blank on a true first boot).** The blank-start app was session-only
+— a reload always returned to empty. Now the app's own state (profile, résumé text + file name, salary,
+region/level choices, intent, results, verdicts, drafts, outreach ledger) is persisted to the browser via
+zustand's `persist` middleware. A genuine **first boot has no stored key → blank**; once the user uploads a
+résumé or makes a selection, it's saved and **restored on the next load**. Only durable user state is
+persisted — transient runtime flags (serve-up, busy, progress) are not. App `@jobdar/app` **1.10.0**.
+
 ## [1.39.0] — 2026-06-16
 
 **Blank-start app + target-salary selector.** App `@jobdar/app` **1.9.0**; `test-all.mjs` **128**.
