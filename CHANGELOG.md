@@ -4,6 +4,17 @@ All notable changes to Jobdar are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and Jobdar adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.40.1] — 2026-06-16
+
+**Docs — known gaps & limitations documented.** Marked and elaborated the current known gaps so they aren't
+mistaken for bugs: a consolidated **"Known gaps & current limitations"** section in `ROADMAP.md` (and an
+elaborated app-side version in `docs/phase9-architecture.md`), the **poppler/`pdftotext` prerequisite** for
+PDF résumé upload/import in `docs/getting-started.md` + `docs/troubleshooting.md`, plus troubleshooting rows
+for "couldn't read that file" and the blank-on-first-boot/browser-local-persistence behavior. Covers: no
+onboarding screen yet; app profile persistence is browser-local (no `POST /profile`); PDF needs poppler;
+discovery is keyless ATS-probing (aggregator/USAJobs = future Pro); 1.0 ship items (npm publish + closed
+beta) still open. Docs only — no code change. (CLI banner also caught up from a 1.39.0→1.40.0 drift.)
+
 ## [1.40.0] — 2026-06-16
 
 **State persists after first use (still blank on a true first boot).** The blank-start app was session-only

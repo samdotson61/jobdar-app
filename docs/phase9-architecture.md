@@ -215,6 +215,35 @@ conformance/lint test keeps the scanner provider-pure so the same code stays por
 - **i18n parity:** key-mirror test + lint for hardcoded JSX literals.
 - **A11y:** axe-core on web + manual VoiceOver/TalkBack on the Spanish phone persona.
 
+## Known gaps & current limitations
+
+Current as of `@jobdar/app` 1.10.0 / CLI 1.40.1 — intentional/known, mirrored in
+[ROADMAP.md](../ROADMAP.md#known-gaps--current-limitations).
+
+- **Onboarding is deferred — the Search tab is the de-facto onboarding.** The app boots blank and the user
+  fills the profile by uploading a résumé (which seeds name, region-from-location, and level) or by tapping
+  the region / level / salary chips. A dedicated first-run flow (welcome → résumé/goals → first search) is
+  planned before a public or beta release; until then the blank Search tab stands in.
+- **Profile/state persistence is client-side only (no server profile write).** The app holds its own state
+  and persists it via zustand `persist` → browser `localStorage` (web). A genuine first boot has no stored
+  key → blank; after a résumé upload or a selection it's saved and restored on the next load. Only durable
+  user state is persisted (profile incl. salary, résumé text + filename, intent/terms, results, verdicts,
+  drafts, outreach ledger); transient flags (serve-up, busy, progress) are not. **There is no `POST /profile`
+  on serve**, so the chosen identity is *not* written back to the CLI's `config/profile.yml` — the CLI config
+  stays the CLI's own baseline. Consequences to know: a cleared browser store or a different browser/device
+  starts blank, and the app's persisted profile can drift from the CLI config. The résumé *text* IS persisted
+  server-side as `data/cv.md` (so scan/prescreen/eval use it); the rest of the profile is browser-only. The
+  future fix is an explicit `POST /profile` + a "save to this machine" affordance.
+- **PDF upload depends on `pdftotext` (poppler) on the serve host.** `POST /import/upload` writes the bytes
+  to the confined `data/uploads/` dir and runs the deterministic `docparse` extractor — `.docx` via `unzip`,
+  `.pdf` via `pdftotext`, `.txt/.md` direct. The host needs poppler for PDF (`brew install poppler` /
+  `apt-get install poppler-utils`); otherwise the upload returns an honest error. Add to setup docs + a
+  `jobdar doctor` check. Scanned/image-only PDFs have no embedded text and cannot be parsed.
+- **Discovery is keyless ATS-probing, not an aggregator.** Company discovery (winc suggests → probe
+  Greenhouse/Lever/Ashby slugs → keep boards that resolve) finds companies whose ATS handle is guessable;
+  it is not a global posting index. The same `/discover` seam is where an opt-in **aggregator / USAJobs Pro
+  provider** would plug in later, keeping the default keyless/local (LinkedIn/Indeed expose no open search API).
+
 ## Top risks → mitigations
 
 - **Engine extraction is the gate** (9 fs-modules behind ports before any app). → Do it at 9.0 through the

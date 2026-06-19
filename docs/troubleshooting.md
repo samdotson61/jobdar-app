@@ -10,6 +10,8 @@ optional.
 | `jobdar scan` shows 0 portals | Run `jobdar init`, or `jobdar seed --region <region> --write` to add employers. |
 | Scan returns few or no roles | Your level/region filters may be narrow. Try `jobdar scan --levels entry,mid,senior` or `--regions nationwide`. |
 | One employer returns nothing | iCIMS is best-effort; some sites are JS-rendered — try `jobdar scan --playwright` (needs Playwright). Workday may need the right `site:` in the portal. |
+| Résumé upload/import says "couldn't read that file" (PDF) | PDF text extraction needs `pdftotext` from **poppler**: `brew install poppler` (macOS) or `apt-get install poppler-utils` (Debian/Ubuntu). `.docx` only needs `unzip`. A **scanned/image-only PDF** has no embedded text — export a text PDF, or upload `.docx`/`.txt`. |
+| App opens blank after I'd set things up | Expected on a first boot / new browser / cleared storage — the app starts blank and persists your state (profile, résumé, selections) to **this browser** only. There's no server-side profile write yet, so a different device/browser starts fresh. Re-upload your résumé or set the chips. |
 | Output is in the wrong language | Set `language: en` or `es` in `config/profile.yml`, or pass `--lang es` per run. |
 
 Still stuck? Open an issue and include your `jobdar doctor` output.

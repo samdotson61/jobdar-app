@@ -20,6 +20,13 @@ No installer? You just need [Node.js 20+](https://nodejs.org), then:
 git clone https://github.com/getjobdar/jobdar && cd jobdar && npm install && node bin/jobdar init
 ```
 
+**Optional tools** (Jobdar tells you when a feature needs one — run `node bin/jobdar doctor`):
+- **Résumé import/upload:** `.docx` uses the system `unzip` (already present almost everywhere); **`.pdf`
+  needs `pdftotext` from poppler** — `brew install poppler` (macOS) or `apt-get install poppler-utils`
+  (Debian/Ubuntu). Without it, a PDF upload returns an honest "couldn't read that file." Scanned/image-only
+  PDFs have no embedded text and can't be parsed — export a text PDF or use `.docx`/`.txt`.
+- **PDF résumé export** (`jobdar pdf`) and some JS-rendered iCIMS sites: `npm i playwright`.
+
 ## 2. Set up (the wizard)
 
 ```bash
