@@ -26,6 +26,8 @@ interface State {
   lastScope: string;            // region+level signature the last scan ran with (re-scan when it changes)
   regionsUserSet: boolean;      // the user manually chose regions → a résumé upload won't override them
   levelsUserSet: boolean;       // the user manually chose levels  → a résumé upload won't override them
+  onboarded: boolean;           // false on a true first boot → the onboarding screen shows (persisted)
+  savedProfileName: string;     // peek of config/profile.yml's name (for a "continue as <name>" offer); not persisted
   scored: Scored[];
   verdicts: Record<string, Verdict>;
   tailored: Record<string, Tailored>;
@@ -41,6 +43,9 @@ interface State {
   setIntent: (t: string) => void;
   loadResume: (text: string, fileName?: string) => void;
   uploadResume: (fileName: string, base64: string) => Promise<{ ok: boolean; error?: string }>; // parse docx/pdf/txt bytes via serve
+  saveProfileToCli: () => void;        // persist the chosen identity to config/profile.yml (durable across devices/reloads)
+  setOnboarded: (v: boolean) => void;
+  continueAsSaved: () => void;         // load a saved CLI profile (config/profile.yml + cv.md) into the app
   loadSampleCv: () => void;     // repurposed: re-pull live state from serve
   hydrate: () => void;
   runSearch: () => void;        // parse intent → scan → prescreen (intent-relevant first), with progress
@@ -106,7 +111,9 @@ const verdictFromServe = (v: any): Verdict => ({
 
 export const useStore = create<State>()(persist((set, get) => ({
   // Starts BLANK — no identity is seeded. Profile is filled only by an uploaded résumé or the user's choices.
-  profile: { name: '', language: 'en', regions: [], levels: [], transferable: false, salary: 0 },
+  // transferable defaults ON: the app's users are new grads / early-career / career-changers, exactly who
+  // need adjacent-skill credit (it changes what counts as a fit, not how many pass). The user can toggle off.
+  profile: { name: '', language: 'en', regions: [], levels: [], transferable: true, salary: 0 },
   cv: '',
   resumeFile: '',
   intent: '',
@@ -118,6 +125,8 @@ export const useStore = create<State>()(persist((set, get) => ({
   lastScope: '',
   regionsUserSet: false,
   levelsUserSet: false,
+  onboarded: false,
+  savedProfileName: '',
   scored: [],
   verdicts: {},
   tailored: {},
@@ -140,6 +149,15 @@ export const useStore = create<State>()(persist((set, get) => ({
   }),
   setCv: (cv) => set({ cv }),
   setSalary: (n) => set((s) => ({ profile: { ...s.profile, salary: Number(n) || 0 } })),
+  // Save the chosen identity to the CLI config (this machine) so it survives a cleared browser / new device.
+  saveProfileToCli: () => {
+    const p = get().profile;
+    servePost('/profile', {
+      name: p.name, language: p.language,
+      target_regions: p.regions, target_levels: p.levels,
+      target_salary: p.salary, transferable_skills: p.transferable,
+    }).catch(() => {});
+  },
   setIntent: (intent) => set({ intent }),
   // Persist the uploaded résumé to serve (data/cv.md) so scan/prescreen/eval all judge against THIS text,
   // not a stale on-disk résumé. Model actions below also send the live cv in-band as a belt-and-suspenders.
@@ -170,6 +188,7 @@ export const useStore = create<State>()(persist((set, get) => ({
         const scopeSig = (p: any) => `${[...p.regions].sort().join(',')}|${[...p.levels].sort().join(',')}`;
         const scopeChanged = scopeSig(newProfile) !== scopeSig(s0.profile);
         set({ cv: r.text, resumeFile: r.name || fileName, profile: newProfile });
+        get().saveProfileToCli(); // an uploaded identity persists to config/profile.yml (durable)
         result = { ok: true };
         bump(0.35);
         // If the résumé moved the region/level, re-scan so the roles match the new profile (not the old one).
@@ -209,6 +228,36 @@ export const useStore = create<State>()(persist((set, get) => ({
   hydrate: async () => {
     const h = await serveHealth();
     set({ serveUp: h.ok });
+    // Peek (don't apply) any saved CLI profile so onboarding can offer "continue as <name>". The app stays
+    // blank until the user uploads, makes a choice, or explicitly taps continue — blank-start is preserved.
+    if (h.ok) {
+      try { const prof = await serveGet('/profile'); if (prof && prof.name) set({ savedProfileName: String(prof.name) }); } catch { /* none */ }
+    }
+  },
+
+  setOnboarded: (v) => set({ onboarded: v }),
+  // "Continue as <name>": load the saved CLI profile (config/profile.yml + cv.md) into the app and finish.
+  continueAsSaved: async () => {
+    try {
+      const [prof, cv] = await Promise.all([serveGet('/profile'), serveGet('/cv')]);
+      if (prof && prof.name) {
+        set((s) => ({
+          profile: {
+            ...s.profile,
+            name: prof.name,
+            language: prof.language || s.profile.language,
+            regions: Array.isArray(prof.target_regions) ? prof.target_regions : s.profile.regions,
+            levels: Array.isArray(prof.target_levels) ? prof.target_levels : s.profile.levels,
+            transferable: Boolean(prof.transferable_skills),
+            salary: Number(prof.target_salary) || 0,
+          },
+          cv: (cv && cv.content) || s.cv,
+          resumeFile: (cv && cv.content) ? (s.resumeFile || 'saved résumé') : s.resumeFile,
+          regionsUserSet: true, levelsUserSet: true,
+        }));
+      }
+    } catch { /* keep blank */ }
+    set({ onboarded: true });
   },
 
   // Intent-driven search with a live progress bar. Stages: parse the intent (winc, once) → scan (only when
@@ -385,7 +434,7 @@ export const useStore = create<State>()(persist((set, get) => ({
   partialize: (s) => ({
     profile: s.profile, cv: s.cv, resumeFile: s.resumeFile,
     intent: s.intent, searchTerms: s.searchTerms, lastIntent: s.lastIntent, lastScope: s.lastScope,
-    regionsUserSet: s.regionsUserSet, levelsUserSet: s.levelsUserSet,
+    regionsUserSet: s.regionsUserSet, levelsUserSet: s.levelsUserSet, onboarded: s.onboarded,
     scored: s.scored, verdicts: s.verdicts, tailored: s.tailored, drafts: s.drafts, ledger: s.ledger,
   }),
 }));

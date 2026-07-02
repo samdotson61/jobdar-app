@@ -64,6 +64,9 @@ doctor:
   providers_ok: "Scanner providers loaded: {providers}"
   pdf_optional: "PDF export not set up (optional — only needed for `jobdar pdf`)"
   playwright_optional: "Playwright not installed (optional — only some JS-heavy iCIMS sites need it)"
+  resume_import_ok: "Résumé import tools present (unzip for .docx, pdftotext for .pdf)"
+  pdftotext_optional: "pdftotext (poppler) not found — PDF résumé import/upload needs it: `brew install poppler` or `apt-get install poppler-utils` (.docx still works)"
+  unzip_optional: "unzip not found — .docx résumé import needs it (install via your package manager)"
   summary_ok: "All good — you're ready to scan."
   summary_warn: "{count} optional item(s) not set up. You can still scan, evaluate, and track."
   summary_fail: "{count} problem(s) found. Fix the items marked with an x above, then re-run `jobdar doctor`."
@@ -275,6 +278,7 @@ calibrate:
   running: "Scoring {count} calibration role(s) via the {backend} backend…"
   result: "Band agreement: {overall}% over {n} roles."
   tier: "{tier}: {correct}/{total}"
+  dist: "Score distribution — Apply {apply} · Research {research} · Don't {dont} (of {n}). A healthy set uses all three bands; an empty Research band means the eval is bimodal."
 
 pdf:
   title: "Build résumé"

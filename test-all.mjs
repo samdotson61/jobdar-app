@@ -1171,6 +1171,10 @@ test('8a: scoreFromJudgments computes the weighted 0–5 (code owns the number, 
   // skills strong .35 + exp partial .125 + level strong .20 + logistics none 0 + edu partial .05 = .725 → 3.6
   assert.equal(scoreFromJudgments({ skills: { rating: 'strong' }, experience: { rating: 'partial' }, level_fit: { rating: 'strong' }, logistics: { rating: 'none' }, education: { rating: 'partial' } }), 3.6)
   assert.equal(scoreFromJudgments({}), 0.0) // missing → none
+  // 5-level granularity (1.41.x): good=.75, weak=.25 fill the middle so realistic fits reach the Research band
+  assert.equal(scoreFromJudgments(ALL('good')), 3.8) // 0.75 * 5 = 3.75 → 3.8
+  // skills good + exp weak + level strong + log strong + edu good = 0.70 → 3.5 (a genuine early-career fit lands in Research)
+  assert.equal(scoreFromJudgments({ skills: { rating: 'good' }, experience: { rating: 'weak' }, level_fit: { rating: 'strong' }, logistics: { rating: 'strong' }, education: { rating: 'good' } }), 3.5)
 })
 
 test('8a: parseEvalJson extracts the verdict object; stripPII scrubs the CV slice', () => {
@@ -1181,37 +1185,37 @@ test('8a: parseEvalJson extracts the verdict object; stripPII scrubs the CV slic
   assert.deepEqual(parseEvalJson('{"a":1} then a stray } brace'), { a: 1 }) // balanced-brace fallback past trailing prose
 })
 
-test('8a: clampVerdict forces Don\'t on unmet requirements / hard gates; no_degree exempts the degree', () => {
+test('8a/1.41.x: clampVerdict clamps HARD requirements/gates; a years shortfall shapes but does NOT gate; no_degree exempts the degree', () => {
   const meets = clampVerdict({ score: 4.6, judgments: { required: { candidate_meets_all: true } }, gates: {}, decision: { screened: false }, profile: {} })
   assert.deepEqual([meets.clamped, meets.band], [false, 'apply'])
-  const unmet = clampVerdict({ score: 4.6, judgments: { required: { candidate_meets_all: false, note: '5+ yrs' } }, gates: {}, decision: { screened: false }, profile: {} })
+  // a model requirements-fail with a HARD credential note clamps to Don't
+  const unmet = clampVerdict({ score: 4.6, judgments: { required: { candidate_meets_all: false, note: 'needs an active PE license' } }, gates: {}, decision: { screened: false }, profile: {} })
   assert.equal(unmet.clamped, true); assert.equal(unmet.band, 'dont'); assert.ok(unmet.score <= 3.4)
-  const yearsGate = clampVerdict({ score: 4.6, judgments: { required: { candidate_meets_all: true } }, gates: {}, decision: { screened: true, reasons: [{ kind: 'years', quote: '8+ years' }] }, profile: {} })
-  assert.equal(yearsGate.band, 'dont')
+  // a years-only requirements-fail no longer clamps (calibration 1.41.x — the experience sub-score reflects it)
+  assert.equal(clampVerdict({ score: 4.2, judgments: { required: { candidate_meets_all: false, note: '5+ years of experience' } }, gates: {}, decision: { screened: false }, profile: {} }).clamped, false)
+  // a prescreen YEARS gate no longer hard-clamps either — but a hard prescreen gate (credential) still does
+  assert.equal(clampVerdict({ score: 4.6, judgments: { required: { candidate_meets_all: true } }, gates: {}, decision: { screened: true, reasons: [{ kind: 'years', quote: '8+ years' }] }, profile: {} }).clamped, false)
+  assert.equal(clampVerdict({ score: 4.6, judgments: { required: { candidate_meets_all: true } }, gates: {}, decision: { screened: true, reasons: [{ kind: 'credential', detail: 'CPA', quote: 'active CPA required' }] }, profile: {} }).band, 'dont')
   // no_degree: a degree screen must NOT clamp (4.5 honesty — flag, never auto-zero)
   const degNoDegree = clampVerdict({ score: 4.2, judgments: { required: { candidate_meets_all: true } }, gates: {}, decision: { screened: true, reasons: [{ kind: 'degree', quote: "Bachelor's required" }] }, profile: { tuning_profile: 'no_degree' } })
   assert.equal(degNoDegree.clamped, false)
   assert.doesNotThrow(() => clampVerdict({ score: 4, judgments: {}, gates: {}, decision: { screened: true }, profile: {} })) // reasons missing → no crash
-  assert.equal(clampVerdict({ score: 4.5, judgments: { required: { candidate_meets_all: 'no' } }, gates: {}, decision: { screened: false }, profile: {} }).band, 'dont') // stringy negative still clamps
+  assert.equal(clampVerdict({ score: 4.5, judgments: { required: { candidate_meets_all: 'no' } }, gates: {}, decision: { screened: false }, profile: {} }).band, 'dont') // stringy negative, no note → clamps (unknown reason)
 })
 
-test('1.24.1: clampVerdict is transferable-aware — a years-in-field shortfall no longer auto-clamps; hard credentials + prescreen gates still do', () => {
+test('1.41.x: a years shortfall never hard-clamps (transferable or not); hard credentials + hard prescreen gates still do', () => {
   const J = (note) => ({ required: { candidate_meets_all: false, note } })
-  // OFF (default): a "2+ years in [field]" shortfall clamps to Don't (backward compatible)
-  const off = clampVerdict({ score: 3.6, judgments: J('2+ years HR generalist experience'), gates: {}, decision: { screened: false }, profile: { transferable_skills: false } })
-  assert.equal(off.clamped, true); assert.equal(off.band, 'dont')
-  // ON: the same years-in-field shortfall does NOT clamp → 3.6 stays Research (the toggle can now promote a band)
-  const on = clampVerdict({ score: 3.6, judgments: J('2+ years HR generalist experience'), gates: {}, decision: { screened: false }, profile: { transferable_skills: true } })
-  assert.equal(on.clamped, false); assert.equal(on.band, 'research')
-  // an explicit `transferable` param (the `--transferable` flag) overrides the profile
-  assert.equal(clampVerdict({ score: 3.6, judgments: J('1+ year customer-facing role'), gates: {}, decision: { screened: false }, profile: {}, transferable: true }).clamped, false)
-  // a genuine hard credential still clamps with the toggle on, even when the note mentions a year count
-  const lic = clampVerdict({ score: 3.9, judgments: J('3+ years and an active RN license'), gates: {}, decision: { screened: false }, profile: { transferable_skills: true } })
+  // a "2+ years in [field]" shortfall does NOT clamp — transferable OFF or ON → 3.6 stays Research
+  assert.equal(clampVerdict({ score: 3.6, judgments: J('2+ years HR generalist experience'), gates: {}, decision: { screened: false }, profile: { transferable_skills: false } }).clamped, false)
+  assert.equal(clampVerdict({ score: 3.6, judgments: J('2+ years HR generalist experience'), gates: {}, decision: { screened: false }, profile: { transferable_skills: true } }).band, 'research')
+  // a genuine hard credential still clamps even when the note mentions a year count
+  const lic = clampVerdict({ score: 3.9, judgments: J('3+ years and an active RN license'), gates: {}, decision: { screened: false }, profile: {} })
   assert.equal(lic.clamped, true); assert.equal(lic.band, 'dont')
-  // a deterministic prescreen gate (over-experience) still clamps regardless of the toggle
-  assert.equal(clampVerdict({ score: 4.6, judgments: { required: { candidate_meets_all: true } }, gates: {}, decision: { screened: true, reasons: [{ kind: 'years', quote: '8+ years' }] }, profile: { transferable_skills: true } }).band, 'dont')
-  // buildVerdict threads `transferable` end-to-end (years shortfall + toggle on → not clamped)
-  const built = buildVerdict({ text: JSON.stringify({ required: { candidate_meets_all: false, note: '2+ years in analytics' }, skills: { rating: 'strong' }, experience: { rating: 'partial' }, level_fit: { rating: 'strong' }, logistics: { rating: 'strong' }, education: { rating: 'partial' }, recommendation: 'bridge' }), jd: 'Analytics role', gates: {}, decision: { screened: false }, profile: { transferable_skills: true } })
+  // a hard prescreen gate (credential) still clamps; a prescreen years gate does not
+  assert.equal(clampVerdict({ score: 4.6, judgments: { required: { candidate_meets_all: true } }, gates: {}, decision: { screened: true, reasons: [{ kind: 'credential', detail: 'RN', quote: 'active RN' }] }, profile: {} }).band, 'dont')
+  assert.equal(clampVerdict({ score: 4.6, judgments: { required: { candidate_meets_all: true } }, gates: {}, decision: { screened: true, reasons: [{ kind: 'years', quote: '8+ years' }] }, profile: {} }).clamped, false)
+  // buildVerdict threads it end-to-end (years shortfall → not clamped, strong sub-scores stand)
+  const built = buildVerdict({ text: JSON.stringify({ required: { candidate_meets_all: false, note: '2+ years in analytics' }, skills: { rating: 'strong' }, experience: { rating: 'partial' }, level_fit: { rating: 'strong' }, logistics: { rating: 'strong' }, education: { rating: 'partial' }, recommendation: 'bridge' }), jd: 'Analytics role', gates: {}, decision: { screened: false }, profile: {} })
   assert.equal(built.ok, true); assert.equal(built.clamped, false)
 })
 
@@ -1241,14 +1245,19 @@ test('8a: evalRole runs the full pipeline against a backend (mock) — score, ba
   await m2.close()
 })
 
-test('8a: prepEval + buildVerdict — the batch-shared pure path; a hard gate clamps despite strong scores', () => {
+test('8a/1.41.x: prepEval + buildVerdict — a years gate shapes (no clamp) but a hard credential gate clamps despite strong scores', () => {
   const prep = prepEval({ jd: 'Need 5+ years experience. SQL.', cv: 'SQL analyst.', profile: { target_levels: ['entry'] }, today: '2026-06-14' })
   assert.equal(prep.gates.years.years, 5)
   assert.equal(prep.decision.screened, true) // 5 > entry ceiling (2)
   assert.ok(prep.user.includes('5'))
+  // A years gate no longer hard-clamps (calibration 1.41.x) — the strong sub-scores stand.
   const v = buildVerdict({ text: JSON.stringify({ required: { candidate_meets_all: true }, ...ALL('strong'), recommendation: 'r' }), jd: 'SQL. Salary $90,000-$110,000.', gates: prep.gates, decision: prep.decision, profile: { target_salary: 80000 } })
-  assert.equal(v.clamped, true); assert.equal(v.band, 'dont') // years gate overrides the strong sub-scores
+  assert.equal(v.clamped, false); assert.equal(v.band, 'apply')
   assert.ok(v.pay.includes('above')) // pay still merged
+  // But a HARD credential gate (from prescreen) still clamps despite strong scores.
+  const prepCred = prepEval({ jd: 'Active CPA license required. Month-end close.', cv: 'Analyst, SQL, no license.', title: 'Staff Accountant', profile: { target_levels: ['entry', 'mid'] }, today: '2026-06-14' })
+  const vCred = buildVerdict({ text: JSON.stringify({ required: { candidate_meets_all: true }, ...ALL('strong'), recommendation: 'r' }), jd: 'CPA role.', gates: prepCred.gates, decision: prepCred.decision, profile: {} })
+  assert.equal(vCred.clamped, true); assert.equal(vCred.band, 'dont')
 })
 
 test('8a.5: bandAgreement computes overall + per-tier accuracy; clampLogEntry carries no CV text', () => {
@@ -1527,6 +1536,14 @@ test('serve: HTTP façade — auth gate, pipeline/profile/cv reads, tracker writ
     const prof = await (await fetch(`${base}/profile?token=${TOKEN}`)).json()
     assert.deepEqual(prof.target_levels, ['entry', 'mid'])
     assert.equal(prof.inference_url, undefined) // secrets/impl details never leave
+    // POST /profile persists whitelisted identity fields; secrets in the body are ignored, not written
+    const profPost = await (await fetch(`${base}/profile?token=${TOKEN}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: 'Alex Rivera', target_regions: ['west'], target_levels: ['mid'], target_salary: 90000, inference_url: 'http://evil', api_key: 'sekret' }) })).json()
+    assert.equal(profPost.ok, true)
+    const prof2 = await (await fetch(`${base}/profile?token=${TOKEN}`)).json()
+    assert.equal(prof2.name, 'Alex Rivera')
+    assert.deepEqual(prof2.target_levels, ['mid'])
+    assert.equal(prof2.target_salary, 90000)
+    assert.equal(prof2.inference_url, undefined) // the inference_url in the POST body was NOT accepted/returned
     const cvj = await (await fetch(`${base}/cv?token=${TOKEN}`)).json()
     assert.ok(cvj.loaded && cvj.content.includes('IT support'))
     const ts = await (await fetch(`${base}/tracker/set?token=${TOKEN}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ url: 'https://acme.test/j/1', status: 'applied' }) })).json()

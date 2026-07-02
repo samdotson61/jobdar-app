@@ -24,6 +24,9 @@ type Dict = Record<string, string>;
 const STR: Record<Lang, Dict> = {
   en: {
     'tab.search': 'Search', 'tab.apply': 'Apply', 'tab.followup': 'Follow-up',
+    'onboard.title': 'Welcome to Jobdar', 'onboard.intro': 'Find roles you can actually get. Your résumé and data stay on your machine.',
+    'onboard.continueAs': 'Continue as', 'onboard.upload': '📄 Upload your résumé', 'onboard.manual': 'Or set your search manually:',
+    'onboard.start': 'Start searching', 'onboard.skip': 'Skip for now',
     'search.title': 'Find roles that fit', 'search.intro': 'Describe what you want — winc + the scanner find and rank matching roles.',
     'search.intentPlaceholder': "Tell us what you're looking for (e.g. entry-level product manager, remote or Midwest)…",
     'search.resumeSaved': 'Using your saved résumé.', 'search.resumeNone': 'No résumé yet — upload one to sharpen ranking & enable scoring.',
@@ -51,6 +54,9 @@ const STR: Record<Lang, Dict> = {
   },
   es: {
     'tab.search': 'Buscar', 'tab.apply': 'Postular', 'tab.followup': 'Seguimiento',
+    'onboard.title': 'Bienvenido a Jobdar', 'onboard.intro': 'Encuentra empleos que sí puedes conseguir. Tu currículum y tus datos se quedan en tu equipo.',
+    'onboard.continueAs': 'Continuar como', 'onboard.upload': '📄 Sube tu currículum', 'onboard.manual': 'O configura tu búsqueda manualmente:',
+    'onboard.start': 'Empezar a buscar', 'onboard.skip': 'Omitir por ahora',
     'search.title': 'Encuentra empleos que encajan', 'search.intro': 'Describe lo que buscas — winc + el escáner encuentran y ordenan empleos que encajan.',
     'search.intentPlaceholder': 'Cuéntanos qué buscas (p. ej. gerente de producto nivel inicial, remoto o Midwest)…',
     'search.resumeSaved': 'Usando tu currículum guardado.', 'search.resumeNone': 'Aún sin currículum — sube uno para afinar el orden y habilitar la evaluación.',

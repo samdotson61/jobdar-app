@@ -64,6 +64,9 @@ doctor:
   providers_ok: "Proveedores del escáner cargados: {providers}"
   pdf_optional: "Exportación a PDF no configurada (opcional — solo para `jobdar pdf`)"
   playwright_optional: "Playwright no instalado (opcional — solo algunos sitios iCIMS con mucho JS lo necesitan)"
+  resume_import_ok: "Herramientas de importación de currículum presentes (unzip para .docx, pdftotext para .pdf)"
+  pdftotext_optional: "pdftotext (poppler) no encontrado — la importación/subida de currículum PDF lo necesita: `brew install poppler` o `apt-get install poppler-utils` (.docx sigue funcionando)"
+  unzip_optional: "unzip no encontrado — la importación de currículum .docx lo necesita (instálalo con tu gestor de paquetes)"
   summary_ok: "Todo en orden — listo para escanear."
   summary_warn: "{count} elemento(s) opcional(es) sin configurar. Puedes escanear, evaluar y registrar igualmente."
   summary_fail: "{count} problema(s) encontrado(s). Corrige los elementos marcados con una x arriba y vuelve a ejecutar `jobdar doctor`."
@@ -275,6 +278,7 @@ calibrate:
   running: "Puntuando {count} puesto(s) de calibración vía el backend {backend}…"
   result: "Concordancia de banda: {overall}% sobre {n} puestos."
   tier: "{tier}: {correct}/{total}"
+  dist: "Distribución de puntajes — Postula {apply} · Investiga {research} · No {dont} (de {n}). Un conjunto sano usa las tres bandas; una banda Investiga vacía indica evaluación bimodal."
 
 pdf:
   title: "Crear currículum"

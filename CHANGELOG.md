@@ -4,6 +4,54 @@ All notable changes to Jobdar are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and Jobdar adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.42.0] — 2026-06-16
+
+**Eval-calibration pass** — from an honest evaluation of the scorer against a cross-persona matrix (PM /
+SWE / analyst résumés × PM / ML-eng / marketing / VP roles). App `@jobdar/app` **1.12.0**; `test-all.mjs`
+**128** (clamp/granularity tests updated).
+- **5-level ratings** (`strong/good/partial/weak/none` = 1/.75/.5/.25/0, was 3-level). The extra steps
+  smooth the score lattice so a genuine early-career fit can land in the **Research band (3.5–3.9)** instead
+  of clustering at Apply/Don't. Back-compat: strong/partial/none keep their old values.
+- **The clamp no longer cliffs on years.** A "X+ years" shortfall shapes the score (via the experience
+  sub-criterion) but never force-clamps to Don't — transferable or not — since the prescreen ceiling already
+  screens egregious over-reach. Genuine hard blockers (license / cert / clearance / excluded-degree /
+  hard-identity field) still clamp. (Verified live: a 2-yr engineer vs a 3–6-yr role is now `clamped:false`,
+  not force-zeroed.)
+- **Prompt reserves `none`** for zero relevant signal (not merely below-target).
+- **App defaults transferable-skills ON** — the users (new grads / career-changers) are exactly who need
+  adjacent-skill credit.
+- **`/evaluate` guards an empty JD** (added earlier this cycle) — an unfetchable listing returns an honest
+  "couldn't assess" instead of a résumé-blind false Apply.
+- **`jobdar calibrate` gained a score-distribution report** (Apply/Research/Don't population — surfaces a
+  bimodal evaluator at a glance) and **per-item `cv`** so one calibration set can cover multiple personas.
+
+  *Honest finding:* these fix the code-side calibration (the lattice can now reach Research, the clamp
+  doesn't cliff), and discrimination is correct (right persona → right role; over-level rejected). But on a
+  small live matrix the distribution is still bimodal — the model (qwen3.5-4b) still rates confidently at the
+  extremes and over-uses `none`. Truly reviving the Research band needs a **labeled calibration set** (the
+  `calibrate` distribution report + per-item cv + a future thumbs-up/down feedback loop are the enablers) —
+  it can't be fixed by guessing thresholds.
+
+## [1.41.0] — 2026-06-16
+
+**Onboarding + profile persistence + a doctor check** (closes three documented gaps). App `@jobdar/app`
+**1.11.0**; `test-all.mjs` **128** (+ POST /profile + doctor coverage).
+- **First-run onboarding screen.** On a true first boot the app shows a welcome → upload-résumé (or set
+  region/level/salary manually, or "continue as <name>" if a saved CLI profile exists) → start searching.
+  Persisted `onboarded` flag so it shows once; the blank Search tab is no longer the bare entry point.
+- **`POST /profile`** (serve) — saves the chosen identity (name, target_regions/levels/salary,
+  transferable, language) to `config/profile.yml` (merge + atomic-write; **never** the API key or
+  inference_url). The app calls it after a résumé upload, so an uploaded identity is durable across
+  devices/cleared browser storage, and onboarding can offer "continue as <name>".
+- **`jobdar doctor` now checks résumé-import tools** — detects `unzip` (.docx) and `pdftotext`/poppler
+  (.pdf) and prints the exact install command when poppler is missing (the previously-undetected PDF-upload
+  prerequisite).
+- **`/evaluate` guards an empty JD** — a role whose description can't be fetched (expired / JS-rendered) no
+  longer gets a confident résumé-blind score; it returns an honest "couldn't assess" (mirrors prescreen
+  flooring expired listings). Found during a cross-persona matching validation (PM / SWE / analyst résumés
+  vs PM / ML-eng / marketing / VP roles): the engine correctly tops each persona's appropriate role and
+  rejects mismatches + the over-level VP role — but an unfetchable role's empty JD had scored a false Apply.
+
 ## [1.40.1] — 2026-06-16
 
 **Docs — known gaps & limitations documented.** Marked and elaborated the current known gaps so they aren't

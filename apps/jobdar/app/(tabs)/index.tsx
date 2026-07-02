@@ -22,7 +22,9 @@ export default function Search() {
   const terms = useStore((s) => s.searchTerms);
   const cv = useStore((s) => s.cv);
   const resumeFile = useStore((s) => s.resumeFile);
-  const { uploadResume, runSearch, discover, toggleTransferable, toggleRegion, toggleLevel, setSalary, setIntent } = useStore.getState();
+  const onboarded = useStore((s) => s.onboarded);
+  const savedProfileName = useStore((s) => s.savedProfileName);
+  const { uploadResume, runSearch, discover, toggleTransferable, toggleRegion, toggleLevel, setSalary, setIntent, setOnboarded, continueAsSaved } = useStore.getState();
   const lang = profile.language;
   const [msg, setMsg] = useState('');
   const [query, setQuery] = useState('');
@@ -78,6 +80,7 @@ export default function Search() {
       for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + 0x8000)));
       const r = await uploadResume(asset.name, btoa(bin)); // persists the extracted text + re-ranks
       if (!r.ok) setMsg(t(lang, 'common.uploadFailed'));   // honest: say it couldn't be read (e.g. scanned PDF)
+      else setOnboarded(true);                             // a successful upload completes onboarding → into Search
     } catch (e: any) {
       setMsg(String(e?.message ?? e));
     }
@@ -88,6 +91,42 @@ export default function Search() {
       <Pill label={label} color={active ? color : C.chip} text={active ? color : C.dim} />
     </Pressable>
   );
+
+  // First-run onboarding (shown until the user uploads a résumé, makes a choice, or skips). A genuine first
+  // boot has onboarded:false; it persists once dismissed. Offers "continue as <name>" if a saved CLI profile
+  // exists (cross-device restore), an upload, or a manual region/level/salary setup.
+  if (!onboarded) {
+    return (
+      <ScrollView style={{ backgroundColor: C.bg }} contentContainerStyle={{ padding: 16, paddingBottom: 56 }}>
+        <H>{t(lang, 'onboard.title')}</H>
+        <Sub>{t(lang, 'onboard.intro')}</Sub>
+        <Card>
+          {savedProfileName ? (
+            <Btn label={`${t(lang, 'onboard.continueAs')} ${savedProfileName}`} onPress={continueAsSaved} />
+          ) : null}
+          <Btn kind={savedProfileName ? 'ghost' : 'primary'} label={t(lang, 'onboard.upload')} onPress={onUpload} />
+          {msg ? <Text style={{ color: C.dim, fontSize: 12, marginTop: 6 }}>{msg}</Text> : null}
+
+          <Text style={{ color: C.dim, fontSize: 12, marginTop: 12 }}>{t(lang, 'onboard.manual')}</Text>
+          <Text style={{ color: C.dim, fontSize: 12, marginTop: 6 }}>{t(lang, 'common.region')}</Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 2 }}>
+            {REGION_OPTS.map((r) => (<Chip key={r} label={t(lang, `region.${r}`)} active={profile.regions.includes(r)} on={() => toggleRegion(r)} color={C.tint} />))}
+          </View>
+          <Text style={{ color: C.dim, fontSize: 12, marginTop: 6 }}>{t(lang, 'common.level')}</Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 2 }}>
+            {LEVEL_OPTS.map((l) => (<Chip key={l} label={t(lang, `level.${l}`)} active={profile.levels.includes(l)} on={() => toggleLevel(l)} color={C.tint} />))}
+          </View>
+          <Text style={{ color: C.dim, fontSize: 12, marginTop: 6 }}>{t(lang, 'common.salary')}</Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 2 }}>
+            {SALARY_OPTS.map((n) => (<Chip key={n} label={n === 0 ? t(lang, 'salary.any') : `$${Math.round(n / 1000)}k`} active={(profile.salary || 0) === n} on={() => setSalary(n)} color={C.tint} />))}
+          </View>
+
+          <Btn label={t(lang, 'onboard.start')} onPress={() => { setOnboarded(true); runSearch(); }} />
+          <Btn kind="ghost" label={t(lang, 'onboard.skip')} onPress={() => setOnboarded(true)} />
+        </Card>
+      </ScrollView>
+    );
+  }
 
   return (
     <ScrollView style={{ backgroundColor: C.bg }} contentContainerStyle={{ padding: 16, paddingBottom: 56 }}>

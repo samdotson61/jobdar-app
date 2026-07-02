@@ -6,6 +6,7 @@
 // Or via the CLI: jobdar doctor
 
 import { existsSync } from 'node:fs'
+import { execFileSync } from 'node:child_process'
 import path from 'node:path'
 import { loadProfile, paths, SUPPORTED_LANGUAGES, fileExists } from './lib/config.mjs'
 import { getT } from './lib/i18n.mjs'
@@ -70,6 +71,16 @@ export async function runDoctor(argv = []) {
     warn(t('doctor.playwright_optional'))
   }
   warn(t('doctor.pdf_optional'))
+
+  // Résumé import/upload tools (optional): .docx needs `unzip` (ubiquitous), .pdf needs `pdftotext` (poppler).
+  const hasBin = (cmd, args) => { try { execFileSync(cmd, args, { stdio: 'ignore' }); return true } catch { return false } }
+  const hasUnzip = hasBin('unzip', ['-v'])
+  const hasPdftotext = hasBin('pdftotext', ['-v'])
+  if (hasUnzip && hasPdftotext) ok(t('doctor.resume_import_ok'))
+  else {
+    if (!hasPdftotext) warn(t('doctor.pdftotext_optional'))
+    if (!hasUnzip) warn(t('doctor.unzip_optional'))
+  }
 
   // Summary.
   console.log('')

@@ -222,3 +222,25 @@ confirm greedy isn't masking brittleness; (4) hard edge-band cases. Until then i
 - [LLM as Judge: what engineers get wrong — Vadim](https://vadim.blog/llm-as-judge)
 - [BLS wage data by area & occupation](https://www.bls.gov/bls/blswage.htm) · [BLS data tools](https://www.bls.gov/data/) · [ECI](https://www.bls.gov/eci/)
 - [unpdf (UnJS)](https://github.com/unjs/unpdf) · [unpdf vs pdf-parse vs pdf.js — PkgPulse](https://www.pkgpulse.com/blog/unpdf-vs-pdf-parse-vs-pdfjs-dist-pdf-parsing-extraction-nodejs-2026) · [Strapi: 7 PDF parsing libraries](https://strapi.io/blog/7-best-javascript-pdf-parsing-libraries-nodejs-2025)
+
+## §7 — Calibration pass + the bimodal finding (2026-06-16, v1.42.0)
+
+A cross-persona matrix (PM / SWE / analyst résumés × PM / ML-eng / marketing / VP roles, live winc
+qwen3.5-4b) showed the evaluator **discriminates correctly** (right persona tops its role; over-level VP
+rejected for all) but the score distribution is **bimodal** — clusters at Apply and Don't with an **empty
+Research band (3.5–3.9)**.
+
+Fixes shipped (code-side): (1) **5-level ratings** (strong/good/partial/weak/none) to smooth the score
+lattice so Research is reachable; (2) the **clamp no longer cliffs on a years shortfall** (it shapes the
+score via the experience sub-criterion; hard credentials still clamp) — verified live (a 2-yr engineer vs a
+3–6-yr role is `clamped:false`, not force-zeroed); (3) prompt **reserves `none`** for zero signal; (4)
+**`/evaluate` guards an empty JD** (unfetchable listing → honest "couldn't assess", not a résumé-blind
+Apply); (5) `jobdar calibrate` gained a **score-distribution report** + **per-item cv**.
+
+**What these do NOT fix (needs data, not code):** on the small live matrix the distribution stayed bimodal.
+Two causes — the test set had few genuine *borderline* roles (mostly clear fits / over-reaches / over-level),
+and the model still rates confidently at the extremes (it rated a 2-yr engineer's directly-relevant
+experience `none` despite the prompt). Reviving the Research band for real requires a **labeled calibration
+set (N≥50–100)** to recalibrate the band thresholds from the actual score distribution and/or A/B the sub-
+criteria weights — the `calibrate --file` distribution report + a future thumbs-up/down feedback loop in the
+app are the data collectors that make that possible. Band thresholds must NOT be moved by guesswork.
