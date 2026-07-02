@@ -279,6 +279,8 @@ calibrate:
   result: "Band agreement: {overall}% over {n} roles."
   tier: "{tier}: {correct}/{total}"
   dist: "Score distribution — Apply {apply} · Research {research} · Don't {dont} (of {n}). A healthy set uses all three bands; an empty Research band means the eval is bimodal."
+  fb_none: "No eval feedback yet. Thumbs-rate a few verdicts in the app, then re-run `jobdar calibrate --feedback`."
+  fb_result: "Feedback agreement: {agree}/{n} verdicts you approved ({pct}%). {down} the eval got wrong:"
 
 pdf:
   title: "Build résumé"

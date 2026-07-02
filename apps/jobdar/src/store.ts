@@ -21,6 +21,7 @@ interface State {
   searchTerms: SearchTerms | null; // parsed intent (winc/keywords) — drives relevance ranking + cutting
   serveUp: boolean;
   busy: string | null;          // url/operation currently in flight (for spinners)
+  scoring: boolean;             // a batch score-top-N pass is running
   progress: number;             // 0..1 for the "Find matching roles" search; 0 = idle
   lastIntent: string;           // the intent the last search ran with (to avoid re-running the same scan)
   lastScope: string;            // region+level signature the last scan ran with (re-scan when it changes)
@@ -30,6 +31,7 @@ interface State {
   savedProfileName: string;     // peek of config/profile.yml's name (for a "continue as <name>" offer); not persisted
   scored: Scored[];
   verdicts: Record<string, Verdict>;
+  feedback: Record<string, 'up' | 'down'>;   // thumbs the user gave a verdict (persisted; feeds calibration)
   tailored: Record<string, Tailored>;
   drafts: Record<string, Draft>;
   ledger: Contact[];
@@ -52,6 +54,8 @@ interface State {
   rescore: () => void;          // re-prescreen the relevant rows against the current résumé (re-upload)
   discover: () => void;         // winc suggests companies for the intent → probe ATS → scan the new boards
   scoreOne: (url: string) => void;
+  scoreTopN: (n: number) => void;                         // batch-eval the top relevant unscored roles (pool)
+  rateVerdict: (url: string, thumb: 'up' | 'down') => void; // thumbs feedback → the calibration ledger
   tailorOne: (url: string, directives: string[]) => void;
   draftOne: (url: string, person: string) => void;
   logContact: (url: string, person: string) => { ok: boolean; reason?: string };
@@ -120,6 +124,7 @@ export const useStore = create<State>()(persist((set, get) => ({
   searchTerms: null,
   serveUp: false,
   busy: null,
+  scoring: false,
   progress: 0,
   lastIntent: '',
   lastScope: '',
@@ -129,6 +134,7 @@ export const useStore = create<State>()(persist((set, get) => ({
   savedProfileName: '',
   scored: [],
   verdicts: {},
+  feedback: {},
   tailored: {},
   drafts: {},
   ledger: [],
@@ -388,6 +394,42 @@ export const useStore = create<State>()(persist((set, get) => ({
     set((s) => (s.busy === url ? { busy: null } : {}));
   },
 
+  // Batch-eval the top-N most relevant unscored roles instead of one tap each. Bounded concurrency (pool 3)
+  // keeps winc responsive; each result lands as it finishes so the list fills in progressively.
+  scoreTopN: async (n) => {
+    const queue = get().scored
+      .filter((r) => r.confirm !== 'skip' && !get().verdicts[r.url])
+      .slice(0, Math.max(1, n))
+      .map((r) => r.url);
+    if (!queue.length) return;
+    set({ scoring: true });
+    const POOL = 3;
+    let i = 0;
+    const worker = async () => {
+      while (i < queue.length) {
+        const url = queue[i++];
+        await get().scoreOne(url);
+      }
+    };
+    try {
+      await Promise.all(Array.from({ length: Math.min(POOL, queue.length) }, worker));
+    } finally {
+      set({ scoring: false });
+    }
+  },
+
+  // A thumbs on a verdict is a human label. Persist it locally (survives reload) AND append to the serve
+  // ledger so `jobdar calibrate --feedback` can report where the eval disagrees with real users.
+  rateVerdict: (url, thumb) => {
+    set((s) => ({ feedback: { ...s.feedback, [url]: thumb } }));
+    const v = get().verdicts[url];
+    const row = get().scored.find((r) => r.url === url);
+    servePost('/eval/feedback', {
+      url, thumb, score: v && v.score, band: v && v.band,
+      company: row && row.company, role: row && row.role,
+    }).catch(() => {});
+  },
+
   tailorOne: async (url, directives) => {
     set({ busy: url });
     try {
@@ -435,7 +477,7 @@ export const useStore = create<State>()(persist((set, get) => ({
     profile: s.profile, cv: s.cv, resumeFile: s.resumeFile,
     intent: s.intent, searchTerms: s.searchTerms, lastIntent: s.lastIntent, lastScope: s.lastScope,
     regionsUserSet: s.regionsUserSet, levelsUserSet: s.levelsUserSet, onboarded: s.onboarded,
-    scored: s.scored, verdicts: s.verdicts, tailored: s.tailored, drafts: s.drafts, ledger: s.ledger,
+    scored: s.scored, verdicts: s.verdicts, feedback: s.feedback, tailored: s.tailored, drafts: s.drafts, ledger: s.ledger,
   }),
 }));
 

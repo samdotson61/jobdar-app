@@ -37,6 +37,28 @@ node bin/jobdar scan
 Verás puestos nuevos de los empleadores de tu región, filtrados a tu nivel y zona. Agrega o cambia
 empleadores cuando quieras con `jobdar seed --region <región> --write`.
 
+### Opcional: agregar USAJobs (empleos federales)
+
+USAJobs es el sitio oficial de empleos del gobierno de EE. UU. — una fuente grande, pública y accesible
+para quien empieza (muchos puestos abiertos al público con bandas de grado/salario claras). Es **opcional**
+y requiere una clave de API **gratuita**:
+
+1. Solicita una clave en <https://developer.usajobs.gov/apirequest/> (instantánea, gratis).
+2. Pon la clave y el correo con el que la registraste en `data/credentials.env` (ignorado por git, nunca
+   se sube, nunca se envía a otro lugar que no sea `data.usajobs.gov`):
+   ```
+   USAJOBS_API_KEY=tu-clave-aquí
+   USAJOBS_EMAIL=tu@correo.com
+   ```
+3. Agrega una búsqueda guardada a `config/portals.yml` — la cadena de consulta *es* la búsqueda:
+   ```yaml
+   - company: USAJobs
+     provider: usajobs
+     careers_url: https://data.usajobs.gov/api/search?Keyword=analista+de+datos&LocationName=Ohio
+   ```
+
+Sin clave, el proveedor queda inactivo, así que los escaneos siguen funcionando para los demás.
+
 ## 4. Prefiltrar (sáltate los puestos que no puedes conseguir)
 
 ```bash

@@ -279,6 +279,8 @@ calibrate:
   result: "Concordancia de banda: {overall}% sobre {n} puestos."
   tier: "{tier}: {correct}/{total}"
   dist: "Distribución de puntajes — Postula {apply} · Investiga {research} · No {dont} (de {n}). Un conjunto sano usa las tres bandas; una banda Investiga vacía indica evaluación bimodal."
+  fb_none: "Aún no hay comentarios de evaluación. Califica algunos veredictos en la app y vuelve a ejecutar `jobdar calibrate --feedback`."
+  fb_result: "Concordancia por comentarios: {agree}/{n} veredictos aprobados ({pct}%). {down} que la evaluación falló:"
 
 pdf:
   title: "Crear currículum"

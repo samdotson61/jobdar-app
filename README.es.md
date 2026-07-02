@@ -13,8 +13,9 @@ Jobdar escanea las páginas de empleo de las empresas (con soporte de primera cl
 puesto frente a tu currículum, adapta un CV y una carta de presentación compatibles con ATS, y
 registra cada postulación.
 
-> **Estado:** Fases 0–7, 5.5, 7.7, 7.8, 8b, 8a, 8c, 8e + 8f **completas** — **Jobdar CLI `1.42.0`**: núcleo bilingüe; **seis escáneres
-> verificados en vivo** (Workday, iCIMS, Greenhouse, Lever, Ashby + un lector JSON-LD opcional); selectores
+> **Estado:** Fases 0–7, 5.5, 7.7, 7.8, 8b, 8a, 8c, 8e + 8f **completas** — **Jobdar CLI `1.43.0`**: núcleo bilingüe; **seis escáneres
+> verificados en vivo** (Workday, iCIMS, Greenhouse, Lever, Ashby + un lector JSON-LD opcional) más un
+> agregador federal **USAJobs** opcional (con tu propia clave gratuita); selectores
 > de nivel y región y el asistente `jobdar init`; la tubería completa **descubrir → prefiltrar → evaluar →
 > registrar → construir** — `scan` encuentra y filtra puestos (nunca los puntúa), `jobdar prescreen`
 > **filtra y ordena la cola sin gastar tokens** (los requisitos duros descartan con una razón citada, nunca

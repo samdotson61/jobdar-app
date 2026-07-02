@@ -4,6 +4,34 @@ All notable changes to Jobdar are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and Jobdar adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.43.0] — 2026-07-02
+
+**Recommendations delivery** — closing out the eval-evaluation work: a real feedback loop, batch scoring,
+a new coverage provider, and npm ship-prep. App `@jobdar/app` **1.13.0**; `test-all.mjs` **130** (+ a
+`feedbackStats` unit test, a USAJobs fixture test, and a serve `/eval/feedback` round-trip in the
+subprocess test).
+
+- **Eval-feedback loop → labeled set → recalibration.** A 👍/👎 on any Apply verdict is a human label:
+  the app persists it and `POST /eval/feedback` appends `(url, company, role, score, band, thumb, date)`
+  to the local, gitignored `data/eval_feedback.tsv` (de-duped by url — you can change your mind). New
+  `jobdar calibrate --feedback` reports the evaluator's real agreement rate + the list of roles it got
+  wrong, **with no backend needed**. This is the data path to recalibrating the bimodal band thresholds
+  *from evidence* instead of guessing them. New `lib/feedback.mjs`; serve `POST`/`GET /eval/feedback`.
+- **Batch Apply scoring.** A "⚡ Score top N matches" button in the Apply tab evaluates the top relevant
+  unscored roles with a bounded concurrency pool (3) so winc stays responsive; results land as they
+  finish. Store `scoreTopN(n)` + a `scoring` flag. No more tapping every card.
+- **USAJobs provider (opt-in, BYO free key).** A seventh scanner — the U.S. federal jobs aggregator, a
+  large, public, entry-friendly source covering thousands of agencies in one endpoint. Needs a **free**
+  key from developer.usajobs.gov + the registered email (User-Agent), both in the gitignored
+  `data/credentials.env`; **dormant without a key** so it never breaks a scan. A "portal" is a saved
+  search (`data.usajobs.gov/api/search?Keyword=…&LocationName=…`). New `providers/usajobs.mjs`,
+  `loadUsaJobsCreds()` / `loadCredential()` in `lib/config.mjs`. **Not live-verified in-repo** (requires a
+  real key) — the pure parse/map/assemble helpers are fixture-tested; the network path needs a live key.
+- **npm ship-prep.** `prepublishOnly` gates publish on a green suite; `npm pack --dry-run` audited clean
+  (95 files, no personal data — `eval_feedback.tsv` / `credentials.env` are under the ignored `data/*`).
+  New `RELEASING.md` checklist. Confirmed the unscoped npm name `jobdar` is **available**. Flagged the
+  human-only calls (claim-name-vs-scope, closed-beta timing, license) for Sam.
+
 ## [1.42.0] — 2026-06-16
 
 **Eval-calibration pass** — from an honest evaluation of the scorer against a cross-persona matrix (PM /

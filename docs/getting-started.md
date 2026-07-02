@@ -44,6 +44,27 @@ node bin/jobdar scan
 You'll see fresh roles from your region's employers, filtered to your level and area. Add or change
 employers any time with `jobdar seed --region <region> --write`.
 
+### Optional: add USAJobs (federal jobs)
+
+USAJobs is the U.S. government's official jobs site — a large, public, entry-friendly source (many roles
+open to the public with clear grade/pay bands). It's **opt-in** and needs a **free** API key:
+
+1. Request a key at <https://developer.usajobs.gov/apirequest/> (instant, free).
+2. Put the key and the email you registered it under in `data/credentials.env` (gitignored, never
+   committed, never sent anywhere but `data.usajobs.gov`):
+   ```
+   USAJOBS_API_KEY=your-key-here
+   USAJOBS_EMAIL=you@example.com
+   ```
+3. Add a saved search to `config/portals.yml` — the query string *is* the search:
+   ```yaml
+   - company: USAJobs
+     provider: usajobs
+     careers_url: https://data.usajobs.gov/api/search?Keyword=data+analyst&LocationName=Ohio
+   ```
+
+Without a key the provider stays dormant, so scans keep working for everyone else.
+
 ## 4. Prescreen (skip the jobs you can't get)
 
 ```bash

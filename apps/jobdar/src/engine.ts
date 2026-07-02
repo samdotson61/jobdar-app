@@ -39,6 +39,7 @@ const STR: Record<Lang, Dict> = {
     'apply.title': 'Score & tailor', 'apply.score': 'Score this role', 'apply.tailor': 'Tailor CV + cover letter',
     'apply.band.apply': 'Apply', 'apply.band.research': 'Research', 'apply.band.dont': "Don't",
     'apply.directive': 'Steer it (e.g. warmer, shorter)…', 'apply.summary': 'Tailored summary',
+    'apply.scoreTop': '⚡ Score top {n} matches', 'apply.scoring': 'Scoring…', 'apply.rate': 'Was this fit right?',
     'followup.title': 'Reach out', 'followup.person': 'Recipient name', 'followup.draft': 'Draft a note',
     'followup.cadence': 'Cadence: 2 contacts/role · 1 follow-up after 5 business days · hard stop',
     'followup.lint.ok': 'Passes checks — review, then send it yourself.',
@@ -69,6 +70,7 @@ const STR: Record<Lang, Dict> = {
     'apply.title': 'Evaluar y adaptar', 'apply.score': 'Evaluar este puesto', 'apply.tailor': 'Adaptar CV + carta',
     'apply.band.apply': 'Postula', 'apply.band.research': 'Investiga', 'apply.band.dont': 'No',
     'apply.directive': 'Guíalo (p. ej. más cálido, más corto)…', 'apply.summary': 'Resumen adaptado',
+    'apply.scoreTop': '⚡ Evaluar las {n} mejores', 'apply.scoring': 'Evaluando…', 'apply.rate': '¿El encaje fue correcto?',
     'followup.title': 'Contacta', 'followup.person': 'Nombre del destinatario', 'followup.draft': 'Redactar nota',
     'followup.cadence': 'Cadencia: 2 contactos/puesto · 1 seguimiento tras 5 días hábiles · alto definitivo',
     'followup.lint.ok': 'Pasa las verificaciones — revísala y envíala tú mismo.',
@@ -83,4 +85,8 @@ const STR: Record<Lang, Dict> = {
     'common.loaded': 'Cargado', 'common.pay': 'Salario',
   },
 };
-export const t = (lang: Lang, key: string): string => STR[lang][key] ?? STR.en[key] ?? key;
+export const t = (lang: Lang, key: string, params?: Record<string, string | number>): string => {
+  let s = STR[lang][key] ?? STR.en[key] ?? key;
+  if (params) for (const k in params) s = s.split(`{${k}}`).join(String(params[k]));
+  return s;
+};

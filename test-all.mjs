@@ -38,6 +38,8 @@ import { resolveBackend, isLoopbackUrl, parseVerdict, selectActive, backendHealt
 import { scoreFromJudgments, parseEvalJson, stripPII, clampVerdict, buildEvalUser, evalRole, buildVerdict, prepEval } from './lib/eval_engine.mjs'
 import { bandAgreement, buildBatchRequests, parseBatchResults, clampLogEntry } from './lib/eval_ops.mjs'
 import { expandQueryTerms, relevanceScore, parseIntent } from './lib/search.mjs'
+import { feedbackStats } from './lib/feedback.mjs'
+import usajobs, { parseUsaJobsSearchUrl, parseUsaJobsJobUrl, buildSearchUrl, mapSearchItems, assembleJd } from './providers/usajobs.mjs'
 import { slugVariants, atsCandidates, discoverCompanies } from './lib/discover.mjs'
 import { extractText, isExtractable, structureCv } from './lib/docparse.mjs'
 import { importDocument, evaluate as engineEvaluate, recordVerdict, advanceStatus, buildCv, ENGINE_VERSION, tailor as engineTailor } from './lib/engine.mjs'
@@ -1571,6 +1573,15 @@ test('serve: HTTP façade — auth gate, pipeline/profile/cv reads, tracker writ
     assert.ok(upRes.text.includes('Marketing analyst'))
     assert.ok(upRes.fields && typeof upRes.fields === 'object') // identity fields returned so the app can seed the profile
     assert.ok((await (await fetch(`${base}/cv?token=${TOKEN}`)).json()).content.includes('Marketing analyst')) // persisted as the active résumé
+    // POST /eval/feedback records a thumbs verdict-rating; GET reports the agreement the calibrator reads
+    assert.equal((await fetch(`${base}/eval/feedback?token=${TOKEN}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ url: 'https://acme.test/j/1', thumb: 'bogus' }) })).status, 400) // thumb must be up|down
+    assert.equal((await (await fetch(`${base}/eval/feedback?token=${TOKEN}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ url: 'https://acme.test/j/1', thumb: 'up', band: 'apply', score: 4.4, role: 'Junior Analyst' }) })).json()).ok, true)
+    await fetch(`${base}/eval/feedback?token=${TOKEN}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ url: 'https://acme.test/j/2', thumb: 'down', band: 'dont', score: 2.1 }) })
+    const fb = await (await fetch(`${base}/eval/feedback?token=${TOKEN}`)).json()
+    assert.equal(fb.n, 2); assert.equal(fb.up, 1); assert.equal(fb.down, 1); assert.equal(fb.agreement, 50)
+    await fetch(`${base}/eval/feedback?token=${TOKEN}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ url: 'https://acme.test/j/1', thumb: 'down' }) }) // change of mind → de-dup by url, not a new row
+    const fb2 = await (await fetch(`${base}/eval/feedback?token=${TOKEN}`)).json()
+    assert.equal(fb2.n, 2); assert.equal(fb2.down, 2) // still 2 rows, the flipped one replaced
     assert.equal((await fetch(`${base}/nope?token=${TOKEN}`)).status, 404)
   } finally {
     child.kill('SIGKILL')
@@ -1656,6 +1667,59 @@ test('search: parseIntent falls back to keywords when the backend is down (never
   assert.equal(r.source, 'keywords')
   assert.ok(r.keywords.includes('data') && r.keywords.includes('analyst'))
   assert.deepEqual((await parseIntent({ active: { up: false }, intent: '' })).keywords, []) // empty intent → empty terms
+})
+
+test('usajobs: registered, opt-in detect, and pure parse/map/assemble over a captured-shape fixture', () => {
+  // Registered in the provider registry
+  assert.ok(providerIds().includes('usajobs'))
+  // detect() is opt-in: only usajobs hosts, and it reads the saved-search query into params
+  assert.equal(usajobs.detect({ company: 'Acme', careers_url: 'https://boards.greenhouse.io/acme' }), null)
+  const m = usajobs.detect({ company: 'USAJobs', careers_url: 'https://data.usajobs.gov/api/search?Keyword=data+analyst&LocationName=Ohio&evil=1' })
+  assert.deepEqual(m.params, { Keyword: 'data analyst', LocationName: 'Ohio' }) // 'evil' dropped (param allowlist)
+  // parseUsaJobsJobUrl pulls the control number; buildSearchUrl forces public + capped ResultsPerPage
+  assert.deepEqual(parseUsaJobsJobUrl('https://www.usajobs.gov/job/838012000'), { id: '838012000' })
+  assert.equal(parseUsaJobsJobUrl('https://example.com/job/1'), null)
+  const su = new URL(buildSearchUrl({ Keyword: 'nurse', ResultsPerPage: 9999, bogus: 'x' }))
+  assert.equal(su.searchParams.get('HiringPath'), 'public')
+  assert.equal(su.searchParams.get('ResultsPerPage'), '25') // capped at MAX_RESULTS
+  assert.equal(su.searchParams.get('bogus'), null) // not forwarded
+  // mapSearchItems + assembleJd over a minimal captured-shape response
+  const fixture = {
+    SearchResult: { SearchResultItems: [
+      { MatchedObjectId: '838012000', MatchedObjectDescriptor: {
+        PositionTitle: 'Data Analyst', PositionURI: 'https://www.usajobs.gov:443/job/838012000',
+        OrganizationName: 'Dept of Data', PositionLocationDisplay: 'Columbus, Ohio',
+        PublicationStartDate: '2026-06-01', QualificationSummary: 'Bachelor + SQL.',
+        UserArea: { Details: { JobSummary: 'Analyze datasets.', MajorDutiesList: ['Build reports', 'Clean data'], Requirements: 'US citizenship.' } },
+      } },
+      { MatchedObjectDescriptor: null }, // malformed item is skipped, not thrown
+    ] },
+  }
+  const jobs = mapSearchItems(fixture, 'USAJobs')
+  assert.equal(jobs.length, 1)
+  assert.equal(jobs[0].title, 'Data Analyst')
+  assert.equal(jobs[0].url, 'https://www.usajobs.gov/job/838012000') // :443 stripped
+  assert.equal(jobs[0].company, 'Dept of Data')
+  assert.equal(jobs[0].location, 'Columbus, Ohio')
+  const jd = assembleJd(fixture.SearchResult.SearchResultItems[0].MatchedObjectDescriptor)
+  assert.ok(jd.description.includes('Analyze datasets') && jd.description.includes('Build reports') && jd.description.includes('US citizenship'))
+  assert.equal(parseUsaJobsSearchUrl('not a url'), null) // never throws on junk
+})
+
+test('feedback: feedbackStats — agreement% from thumbs, disagreements are the down-rated roles', () => {
+  const rows = [
+    { url: 'a', thumb: 'up', band: 'apply', score: '4.4', role: 'PM' },
+    { url: 'b', thumb: 'down', band: 'apply', score: '4.1', role: 'VP over-level' },
+    { url: 'c', thumb: 'up', band: 'dont', score: '1.9', role: 'analyst' },
+    { url: 'd', thumb: '', band: '', score: '', role: 'unrated' }, // no thumb → not counted
+  ]
+  const s = feedbackStats(rows)
+  assert.equal(s.n, 3) // only the two up + one down count; the blank thumb is ignored
+  assert.equal(s.up, 2)
+  assert.equal(s.down, 1)
+  assert.equal(s.agreement, 67) // round(2/3*100)
+  assert.deepEqual(s.disagreements.map((r) => r.role), ['VP over-level']) // the eval-was-wrong list
+  assert.equal(feedbackStats([]).agreement, 0) // empty → 0, no divide-by-zero
 })
 
 test('fix: salary — extractPay is bounded against a degenerate comma run (no quadratic hang)', () => {
