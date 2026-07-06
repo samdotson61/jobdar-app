@@ -322,10 +322,12 @@ prescreen:
   reason_years: "pide más experiencia que tu nivel"
   reason_clearance: "requiere una autorización de seguridad activa"
   reason_degree: "exige título (excluiste los puestos que lo requieren)"
+  reason_sponsorship: "no ofrece patrocinio de visa (tú lo necesitas)"
   flag_clearance: "menciona autorización de seguridad"
   flag_degree_stretch: "pide título — vale la pena intentarlo igual"
   flag_sponsorship: "sin patrocinio de visa"
   flag_license: "requiere licencia/certificación"
+  note_sponsors: "patrocina visa"
 
 outreach:
   title: "Contactos — un contacto cálido vale más que una solicitud fría"

@@ -26,7 +26,7 @@ import { parseResumeText } from './lib/resume.mjs'
 import { renderDashboard, analyze } from './lib/commands/dashboard.mjs'
 import { renderTui, pipelineView } from './lib/commands/tui.mjs'
 import { mergeScanned, recordEval, serializePipeline, band, isEvaluated, isTracked, setStatus, pruneScanned, PIPELINE_COLS, recordPrescreen, pendingQueue, roleKey, resolveAlias } from './lib/evaluations.mjs'
-import { extractYearsRequired, extractDegreeGate, extractGates, screenDecision, prescreenRole, freshnessPoints, reasonLine, blendSalary, extractCredential, extractField, cvHasField, cvHasCredential, isHardIdentity } from './lib/prescreen.mjs'
+import { extractYearsRequired, extractDegreeGate, extractGates, screenDecision, prescreenRole, freshnessPoints, reasonLine, blendSalary, extractCredential, extractField, cvHasField, cvHasCredential, isHardIdentity, extractSponsorship } from './lib/prescreen.mjs'
 import { extractPay, bandVsTarget, formatPay, paySummary, SALARY_TOLERANCE, SALARY_FLOOR } from './lib/salary.mjs'
 import { normalizeResumeDates, monthYear } from './lib/dates.mjs'
 import { decodeEntities, stripTags } from './lib/html.mjs'
@@ -1539,12 +1539,13 @@ test('serve: HTTP façade — auth gate, pipeline/profile/cv reads, tracker writ
     assert.deepEqual(prof.target_levels, ['entry', 'mid'])
     assert.equal(prof.inference_url, undefined) // secrets/impl details never leave
     // POST /profile persists whitelisted identity fields; secrets in the body are ignored, not written
-    const profPost = await (await fetch(`${base}/profile?token=${TOKEN}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: 'Alex Rivera', target_regions: ['west'], target_levels: ['mid'], target_salary: 90000, inference_url: 'http://evil', api_key: 'sekret' }) })).json()
+    const profPost = await (await fetch(`${base}/profile?token=${TOKEN}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: 'Alex Rivera', target_regions: ['west'], target_levels: ['mid'], target_salary: 90000, needs_sponsorship: true, inference_url: 'http://evil', api_key: 'sekret' }) })).json()
     assert.equal(profPost.ok, true)
     const prof2 = await (await fetch(`${base}/profile?token=${TOKEN}`)).json()
     assert.equal(prof2.name, 'Alex Rivera')
     assert.deepEqual(prof2.target_levels, ['mid'])
     assert.equal(prof2.target_salary, 90000)
+    assert.equal(prof2.needs_sponsorship, true) // the sponsorship toggle persists like the other identity fields
     assert.equal(prof2.inference_url, undefined) // the inference_url in the POST body was NOT accepted/returned
     const cvj = await (await fetch(`${base}/cv?token=${TOKEN}`)).json()
     assert.ok(cvj.loaded && cvj.content.includes('IT support'))
@@ -1704,6 +1705,59 @@ test('usajobs: registered, opt-in detect, and pure parse/map/assemble over a cap
   const jd = assembleJd(fixture.SearchResult.SearchResultItems[0].MatchedObjectDescriptor)
   assert.ok(jd.description.includes('Analyze datasets') && jd.description.includes('Build reports') && jd.description.includes('US citizenship'))
   assert.equal(parseUsaJobsSearchUrl('not a url'), null) // never throws on junk
+})
+
+test('sponsorship: three stances — explicit no, explicit sponsors, silent unknown; negative wins', () => {
+  // The single most common negative phrasing: "authorized to work … without sponsorship"
+  assert.equal(extractSponsorship('Must be authorized to work in the US without the need for visa sponsorship now or in the future.').stance, 'no')
+  assert.equal(extractSponsorship('We are unable to sponsor visas at this time.').stance, 'no')
+  assert.equal(extractSponsorship('This position does not offer sponsorship.').stance, 'no')
+  assert.equal(extractSponsorship('Applicants must be a U.S. citizen (federal contract).').stance, 'no')
+  assert.equal(extractSponsorship('Visa sponsorship is available for this role.').stance, 'sponsors')
+  assert.equal(extractSponsorship('We sponsor H-1B visas for exceptional candidates.').stance, 'sponsors')
+  assert.equal(extractSponsorship('We are willing to sponsor the right candidate.').stance, 'sponsors')
+  assert.equal(extractSponsorship('Great benefits: dental, vision, 401k.').stance, 'unknown') // silent = MOST JDs
+  assert.equal(extractSponsorship('No visa sponsorship. We value diversity.').stance, 'no') // restriction beats marketing
+  assert.equal(extractSponsorship('').stance, 'unknown')
+  // back-compat: `flagged` still means "an explicit no was found"
+  assert.equal(extractSponsorship('no sponsorship').flagged, true)
+  assert.equal(extractSponsorship('sponsorship available').flagged, false)
+})
+
+test('sponsorship: the needs_sponsorship toggle turns an explicit "no" into a QUOTED gate; off = flag only', () => {
+  const noJd = 'Senior analyst role. Candidates must be authorized to work without sponsorship now or in the future.'
+  const gates = extractGates(noJd)
+  const on = screenDecision(gates, { needs_sponsorship: true })
+  assert.equal(on.screened, true)
+  assert.equal(on.reasons[0].kind, 'sponsorship')
+  assert.ok(on.reasons[0].quote.includes('without sponsorship')) // the JD line is quoted — never silent
+  const off = screenDecision(gates, {})
+  assert.equal(off.screened, false) // without the toggle Jobdar can't know the user's status → flag only
+  assert.deepEqual(off.flags.map((f) => f.kind), ['sponsorship'])
+  // An explicit OFFER is a positive indicator — never a screen, never a point-costing flag
+  const yes = screenDecision(extractGates('Visa sponsorship is available. Join us!'), { needs_sponsorship: true })
+  assert.equal(yes.screened, false)
+  assert.equal(yes.sponsors, true)
+  assert.ok(!yes.flags.some((f) => f.kind === 'sponsorship'))
+  // prescreenRole surfaces both: screened w/ zero score on a "no", sponsors=true on an offer
+  const v = prescreenRole({ jdText: noJd, cvText: 'analyst sql', profile: { needs_sponsorship: true } })
+  assert.equal(v.screened, true)
+  assert.equal(v.score, 0)
+  const v2 = prescreenRole({ jdText: 'Analyst role. Visa sponsorship offered.', cvText: 'analyst sql', profile: { needs_sponsorship: true } })
+  assert.equal(v2.sponsors, true)
+})
+
+test('sponsorship: recordPrescreen notes — set, explicit-clear, and preserve-on-undefined', () => {
+  const rows = [{ url: 'https://a.test/1', prescreen: '', screen_reason: '', pay: '', notes: '', aliases: '' }]
+  const set1 = recordPrescreen(rows, 'https://a.test/1', { score: 70, reason: '', pay: '', notes: 'sponsors-visa' }, '2026-07-02')
+  assert.equal(set1[0].notes, 'sponsors-visa')
+  const kept = recordPrescreen(set1, 'https://a.test/1', { score: 71, reason: '', pay: '' }, '2026-07-03') // notes undefined → keep
+  assert.equal(kept[0].notes, 'sponsors-visa')
+  const cleared = recordPrescreen(kept, 'https://a.test/1', { score: 72, reason: '', pay: '', notes: '' }, '2026-07-04') // '' → honest clear
+  assert.equal(cleared[0].notes, '')
+  // pipeline round-trip carries the new column; a legacy file without it parses to ''
+  const tsv = serializePipeline(set1)
+  assert.ok(tsv.split('\n')[0].endsWith('\tnotes'))
 })
 
 test('feedback: feedbackStats — agreement% from thumbs, disagreements are the down-rated roles', () => {

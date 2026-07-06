@@ -322,10 +322,12 @@ prescreen:
   reason_years: "asks for more experience than your level"
   reason_clearance: "requires an active security clearance"
   reason_degree: "degree-gated (you excluded degree-required roles)"
+  reason_sponsorship: "no visa sponsorship offered (you need sponsorship)"
   flag_clearance: "clearance mentioned"
   flag_degree_stretch: "degree asked — worth a shot anyway"
   flag_sponsorship: "no visa sponsorship"
   flag_license: "license/cert required"
+  note_sponsors: "sponsors visa"
 
 outreach:
   title: "Outreach — a warm contact beats a cold application"

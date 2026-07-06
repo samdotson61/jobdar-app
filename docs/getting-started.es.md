@@ -65,9 +65,13 @@ Sin clave, el proveedor queda inactivo, así que los escaneos siguen funcionando
 node bin/jobdar prescreen
 ```
 Sin tokens y rápido: los puestos con un requisito duro que no puedes superar (años exigidos, una
-autorización de seguridad activa, un título que excluiste) se descartan **citando la línea de la
+autorización de seguridad activa, un título que excluiste, o — si pones `needs_sponsorship: true`
+en tu perfil o activas "Necesito patrocinio de visa" en la app — una oferta que rechaza
+explícitamente el patrocinio de visa) se descartan **citando la línea de la
 descripción como razón** — nunca en silencio — y el resto se ordena por coincidencia de
-habilidades + frescura para que evalúes primero el puesto más ganable. También lee el **salario
+habilidades + frescura para que evalúes primero el puesto más ganable. Los puestos que *ofrecen*
+patrocinio explícitamente reciben una nota de "patrocina visa"; las ofertas que no lo mencionan se
+dejan tal cual (la mayoría — Jobdar nunca afirma una postura que la empresa no declaró). También lee el **salario
 declarado** de la oferta y lo clasifica frente a tu `target_salary` (por encima / dentro / cerca /
 por debajo), mostrado junto a cada puesto; un puesto que paga algo por debajo del objetivo es una
 coincidencia "cerca", penalizada levemente, nunca descartada.

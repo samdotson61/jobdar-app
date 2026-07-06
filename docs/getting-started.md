@@ -71,9 +71,12 @@ Without a key the provider stays dormant, so scans keep working for everyone els
 node bin/jobdar prescreen
 ```
 Zero-token and fast: roles with a hard gate you can't clear (years required, an active security
-clearance, a degree you excluded) are screened out **with the JD line quoted as the reason** —
-never silently — and the rest are ranked by skill match + freshness so you evaluate the most
-winnable role first. It also reads the JD's **stated pay** and bands it against your `target_salary`
+clearance, a degree you excluded, or — if you set `needs_sponsorship: true` in your profile or flip
+the app's "Need visa sponsorship" toggle — a JD that explicitly refuses visa sponsorship) are
+screened out **with the JD line quoted as the reason** — never silently — and the rest are ranked
+by skill match + freshness so you evaluate the most winnable role first. Roles that explicitly
+*offer* sponsorship get a "sponsors visa" note; JDs that don't mention it are left alone (most
+don't — Jobdar never claims a stance the employer didn't state). It also reads the JD's **stated pay** and bands it against your `target_salary`
 (above / within / near / below) — shown next to each role; a role that pays slightly under target is
 a "near" match, nudged down a little, never screened out.
 

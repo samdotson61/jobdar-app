@@ -24,7 +24,7 @@ export default function Search() {
   const resumeFile = useStore((s) => s.resumeFile);
   const onboarded = useStore((s) => s.onboarded);
   const savedProfileName = useStore((s) => s.savedProfileName);
-  const { uploadResume, runSearch, discover, toggleTransferable, toggleRegion, toggleLevel, setSalary, setIntent, setOnboarded, continueAsSaved } = useStore.getState();
+  const { uploadResume, runSearch, discover, toggleTransferable, toggleSponsorship, toggleRegion, toggleLevel, setSalary, setIntent, setOnboarded, continueAsSaved } = useStore.getState();
   const lang = profile.language;
   const [msg, setMsg] = useState('');
   const [query, setQuery] = useState('');
@@ -115,6 +115,7 @@ export default function Search() {
           <Text style={{ color: C.dim, fontSize: 12, marginTop: 6 }}>{t(lang, 'common.level')}</Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 2 }}>
             {LEVEL_OPTS.map((l) => (<Chip key={l} label={t(lang, `level.${l}`)} active={profile.levels.includes(l)} on={() => toggleLevel(l)} color={C.tint} />))}
+            <Chip label={t(lang, 'search.sponsorship')} active={profile.sponsorship} on={toggleSponsorship} color={C.good} />
           </View>
           <Text style={{ color: C.dim, fontSize: 12, marginTop: 6 }}>{t(lang, 'common.salary')}</Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 2 }}>
@@ -169,6 +170,15 @@ export default function Search() {
               text={profile.transferable ? C.good : C.dim}
             />
           </Pressable>
+          {/* "I need visa sponsorship" — a status only the user can assert. On: explicit no-sponsorship
+              JDs screen out (quoted), explicit sponsors get a ✓; silent JDs stay untouched (honesty). */}
+          <Pressable onPress={toggleSponsorship}>
+            <Pill
+              label={`${t(lang, 'search.sponsorship')} ${profile.sponsorship ? '✓' : '○'}`}
+              color={profile.sponsorship ? C.good : C.chip}
+              text={profile.sponsorship ? C.good : C.dim}
+            />
+          </Pressable>
         </View>
         <Text style={{ color: C.dim, fontSize: 12, marginTop: 6 }}>{t(lang, 'common.salary')}</Text>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 2 }}>
@@ -214,6 +224,7 @@ export default function Search() {
           <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
             {/* Score is reserved for the evaluation (Apply) stage — Search shows only the fit indicator. */}
             <Pill label={t(lang, `search.confirm.${j.confirm}`)} color={confirmColor(j.confirm)} text={confirmColor(j.confirm)} />
+            {j.sponsors ? <Pill label={t(lang, 'search.sponsors')} color={C.good} text={C.good} /> : null}
             {j.gate ? <Pill label={`⛔ ${j.gate}`} color={C.bad} text={C.bad} /> : null}
           </View>
           <Text style={{ color: C.dim, marginTop: 6, fontSize: 12 }}>{j.screenReason}</Text>

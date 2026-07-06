@@ -4,6 +4,29 @@ All notable changes to Jobdar are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and Jobdar adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.44.0] — 2026-07-02
+
+**Immigration-sponsorship toggle** — for the users Jobdar is built for (international students, new
+Americans, workforce entrants). App `@jobdar/app` **1.14.0**; `test-all.mjs` **133**.
+
+- **"Need visa sponsorship" toggle** (Search tab + onboarding, EN/ES). A personal status only the user
+  can assert — never inferred from a résumé. Honest three-stance design because **most JDs are silent**:
+  - toggle ON + JD explicitly refuses ("without sponsorship now or in the future", "unable to sponsor",
+    "must be a U.S. citizen") → **screened out with the JD line quoted** (kind: `sponsorship`), same
+    honesty contract as years/clearance/credential gates; the eval clamp hard-gates it too;
+  - JD explicitly **offers** ("visa sponsorship available", "we sponsor H-1B") → a green **"✓ Sponsors
+    visa"** indicator on the role card (positive channel — never a point-costing flag);
+  - JD silent → untouched, no stance claimed either way.
+  Toggle OFF keeps the old behavior (an explicit "no" is a soft flag — Jobdar can't know your status).
+- **Engine:** `extractSponsorship` now three-stance (`no`/`sponsors`/`unknown`, negative wins, `flagged`
+  kept for back-compat); `screenDecision` gates on `needs_sponsorship`; new profile default
+  `needs_sponsorship: false`; serve `/prescreen` + `/evaluate` accept `needsSponsorship`; `POST/GET
+  /profile` persist/return it; new pipeline column **`notes`** (positive JD-stated indicators, currently
+  `sponsors-visa`; display-only, never a screen input; legacy files parse fine).
+- **Fix:** CLI `jobdar prescreen` now passes the role **title** into the gate (`prescreenRole`), so the
+  hard-identity field gate (accountant/nurse/attorney titles) fires on the CLI path like it already did
+  via serve — it silently never fired on the CLI before.
+
 ## [1.43.0] — 2026-07-02
 
 **Recommendations delivery** — closing out the eval-evaluation work: a real feedback loop, batch scoring,

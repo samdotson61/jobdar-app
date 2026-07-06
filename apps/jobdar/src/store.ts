@@ -38,6 +38,7 @@ interface State {
   // actions (existing signatures unchanged so the other tabs are untouched)
   setLang: (l: Lang) => void;
   toggleTransferable: () => void;
+  toggleSponsorship: () => void;       // "I need visa sponsorship" — re-gates the list (explicit-no roles screen out)
   toggleRegion: (r: string) => void;   // tune the search scope — re-scans on the next "Find matching roles"
   toggleLevel: (l: string) => void;
   setSalary: (n: number) => void;      // preferred target salary (0 = any) — nudges prescreen rank + pay band
@@ -95,6 +96,8 @@ const rowToScored = (r: any): Scored => ({
       : 'discovered',
   gate: r.screen_reason || undefined,
   confirm: r.screen_reason ? 'skip' : num(r.prescreen) >= 55 ? 'fit' : num(r.prescreen) >= 28 ? 'maybe' : 'skip',
+  // The JD explicitly stated it sponsors visas (prescreen wrote `sponsors-visa` to the row's notes).
+  sponsors: String(r.notes || '').includes('sponsors-visa') || undefined,
 });
 const byScore = (a: Scored, b: Scored) => Number(Boolean(a.gate)) - Number(Boolean(b.gate)) || b.prescreen - a.prescreen;
 const rowsToScored = (rows: any[]) => (rows || []).filter((r) => r && r.url).map(rowToScored).sort(byScore);
@@ -117,7 +120,9 @@ export const useStore = create<State>()(persist((set, get) => ({
   // Starts BLANK — no identity is seeded. Profile is filled only by an uploaded résumé or the user's choices.
   // transferable defaults ON: the app's users are new grads / early-career / career-changers, exactly who
   // need adjacent-skill credit (it changes what counts as a fit, not how many pass). The user can toggle off.
-  profile: { name: '', language: 'en', regions: [], levels: [], transferable: true, salary: 0 },
+  // sponsorship defaults OFF: it's a personal status only the user can assert; when on, explicit
+  // "no sponsorship" JDs screen out and explicit "we sponsor" JDs get a ✓ indicator (silent JDs untouched).
+  profile: { name: '', language: 'en', regions: [], levels: [], transferable: true, sponsorship: false, salary: 0 },
   cv: '',
   resumeFile: '',
   intent: '',
@@ -141,6 +146,13 @@ export const useStore = create<State>()(persist((set, get) => ({
 
   setLang: (language) => set((s) => ({ profile: { ...s.profile, language } })),
   toggleTransferable: () => set((s) => ({ profile: { ...s.profile, transferable: !s.profile.transferable } })),
+  // Toggling sponsorship changes which roles are GATES (not just rank) — re-prescreen so the visible list
+  // is honest immediately, and persist the choice to the CLI profile like the other identity fields.
+  toggleSponsorship: () => {
+    set((s) => ({ profile: { ...s.profile, sponsorship: !s.profile.sponsorship } }));
+    get().saveProfileToCli();
+    if (get().scored.length) get().rescore();
+  },
   // Region/level are the search SCOPE. Toggling keeps at least one selected; the next "Find matching
   // roles" re-scans with the new scope (lastScope mismatch forces it), and the visible list filters live.
   toggleRegion: (r) => set((s) => {
@@ -161,7 +173,7 @@ export const useStore = create<State>()(persist((set, get) => ({
     servePost('/profile', {
       name: p.name, language: p.language,
       target_regions: p.regions, target_levels: p.levels,
-      target_salary: p.salary, transferable_skills: p.transferable,
+      target_salary: p.salary, transferable_skills: p.transferable, needs_sponsorship: p.sponsorship,
     }).catch(() => {});
   },
   setIntent: (intent) => set({ intent }),
@@ -208,7 +220,7 @@ export const useStore = create<State>()(persist((set, get) => ({
         const terms = get().searchTerms || undefined;
         const TARGET = 30, BATCH = 6; let processed = 0;
         for (let i = 0; i < Math.ceil(TARGET / BATCH); i++) {
-          const pre = await servePost('/prescreen', { limit: BATCH, terms, rescore: true, cv: get().cv, targetSalary: get().profile.salary });
+          const pre = await servePost('/prescreen', { limit: BATCH, terms, rescore: true, cv: get().cv, targetSalary: get().profile.salary, needsSponsorship: get().profile.sponsorship });
           if (!pre || pre.ok === false) break;
           if (Array.isArray(pre.rows)) set({ scored: rowsToScored(pre.rows) });
           processed += Number(pre.checked) || 0;
@@ -255,6 +267,7 @@ export const useStore = create<State>()(persist((set, get) => ({
             regions: Array.isArray(prof.target_regions) ? prof.target_regions : s.profile.regions,
             levels: Array.isArray(prof.target_levels) ? prof.target_levels : s.profile.levels,
             transferable: Boolean(prof.transferable_skills),
+            sponsorship: Boolean(prof.needs_sponsorship),
             salary: Number(prof.target_salary) || 0,
           },
           cv: (cv && cv.content) || s.cv,
@@ -308,7 +321,7 @@ export const useStore = create<State>()(persist((set, get) => ({
       const TARGET = 30, BATCH = 6;
       let processed = 0;
       for (let i = 0; i < Math.ceil(TARGET / BATCH); i++) {
-        const pre = await servePost('/prescreen', { limit: BATCH, terms: terms || undefined, cv: get().cv, targetSalary: get().profile.salary });
+        const pre = await servePost('/prescreen', { limit: BATCH, terms: terms || undefined, cv: get().cv, targetSalary: get().profile.salary, needsSponsorship: get().profile.sponsorship });
         if (!pre || pre.ok === false) break;
         if (Array.isArray(pre.rows)) set({ scored: rowsToScored(pre.rows) });
         processed += Number(pre.checked) || 0;
@@ -335,7 +348,7 @@ export const useStore = create<State>()(persist((set, get) => ({
       const TARGET = 30, BATCH = 6;
       let processed = 0;
       for (let i = 0; i < Math.ceil(TARGET / BATCH); i++) {
-        const pre = await servePost('/prescreen', { limit: BATCH, terms, rescore: true, cv: get().cv, targetSalary: get().profile.salary });
+        const pre = await servePost('/prescreen', { limit: BATCH, terms, rescore: true, cv: get().cv, targetSalary: get().profile.salary, needsSponsorship: get().profile.sponsorship });
         if (!pre || pre.ok === false) break;
         if (Array.isArray(pre.rows)) set({ scored: rowsToScored(pre.rows) });
         processed += Number(pre.checked) || 0;
@@ -363,7 +376,7 @@ export const useStore = create<State>()(persist((set, get) => ({
       bump(0.5);
       const terms = get().searchTerms || undefined;
       for (let i = 0; i < 3; i++) {
-        const pre = await servePost('/prescreen', { limit: 6, terms, cv: get().cv, targetSalary: get().profile.salary });
+        const pre = await servePost('/prescreen', { limit: 6, terms, cv: get().cv, targetSalary: get().profile.salary, needsSponsorship: get().profile.sponsorship });
         if (!pre || pre.ok === false) break;
         if (Array.isArray(pre.rows)) set({ scored: rowsToScored(pre.rows) });
         bump(Math.min(0.94, 0.5 + 0.15 * (i + 1)));
@@ -381,7 +394,7 @@ export const useStore = create<State>()(persist((set, get) => ({
     set({ busy: url });
     try {
       const cv = get().cv;
-      const v = await servePost('/evaluate', { url, cv: cv || undefined, transferable: get().profile.transferable, targetSalary: get().profile.salary });
+      const v = await servePost('/evaluate', { url, cv: cv || undefined, transferable: get().profile.transferable, targetSalary: get().profile.salary, needsSponsorship: get().profile.sponsorship });
       if (v && v.ok !== false && v.score != null) {
         set((s) => ({ verdicts: { ...s.verdicts, [url]: verdictFromServe(v) } }));
         const row = get().scored.find((r) => r.url === url);

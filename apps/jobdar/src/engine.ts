@@ -7,9 +7,9 @@ import { band as engineBand, BANDS as ENGINE_BANDS } from '@jobdar/engine';
 export type Lang = 'en' | 'es';
 export type Band = 'apply' | 'research' | 'dont';
 
-export interface Profile { name: string; language: Lang; regions: string[]; levels: string[]; transferable: boolean; salary: number }
+export interface Profile { name: string; language: Lang; regions: string[]; levels: string[]; transferable: boolean; sponsorship: boolean; salary: number }
 export interface Job { company: string; role: string; url: string; location: string; postedOn?: string; jd: string }
-export interface Scored extends Job { prescreen: number; screenReason: string; gate?: string; confirm?: 'fit' | 'maybe' | 'skip'; level?: string }
+export interface Scored extends Job { prescreen: number; screenReason: string; gate?: string; confirm?: 'fit' | 'maybe' | 'skip'; level?: string; sponsors?: boolean }
 export interface Criterion { key: string; weight: number; judgment: 'strong' | 'partial' | 'none'; evidence: string }
 export interface Verdict { score: number; band: Band; criteria: Criterion[]; pay: string; clamped?: string }
 export interface Tailored { summary: string; coverLetter: string; keywords: string[] }
@@ -33,6 +33,7 @@ const STR: Record<Lang, Dict> = {
     'search.emptyPrompt': 'Upload your résumé (or set filters) and tap "Find matching roles" to start.',
     'search.scan': 'Find matching roles', 'search.discover': '🧭 Discover more companies (winc)',
     'search.transferable': 'Credit transferable skills',
+    'search.sponsorship': 'Need visa sponsorship', 'search.sponsors': '✓ Sponsors visa',
     'search.confirm.fit': 'Likely fit', 'search.confirm.maybe': 'Worth a look', 'search.confirm.skip': 'Skip',
     'search.searchPlaceholder': 'Search company or role…', 'search.sort': 'Sort', 'filter.all': 'All',
     'sort.score': 'Best match', 'sort.fresh': 'Newest', 'sort.company': 'A–Z',
@@ -64,6 +65,7 @@ const STR: Record<Lang, Dict> = {
     'search.emptyPrompt': 'Sube tu currículum (o elige filtros) y toca "Buscar empleos" para empezar.',
     'search.scan': 'Buscar empleos', 'search.discover': '🧭 Descubrir más empresas (winc)',
     'search.transferable': 'Acreditar habilidades transferibles',
+    'search.sponsorship': 'Necesito patrocinio de visa', 'search.sponsors': '✓ Patrocina visa',
     'search.confirm.fit': 'Buen encaje', 'search.confirm.maybe': 'Vale la pena', 'search.confirm.skip': 'Omitir',
     'search.searchPlaceholder': 'Buscar empresa o puesto…', 'search.sort': 'Orden', 'filter.all': 'Todos',
     'sort.score': 'Mejor', 'sort.fresh': 'Recientes', 'sort.company': 'A–Z',
