@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
+import { File as FsFile } from 'expo-file-system';
 import { useStore } from '@/src/store';
 import { t } from '@/src/engine';
 import { relevanceScore, levelDecision, locationMatches, regionPriority } from '@jobdar/engine';
@@ -24,12 +25,16 @@ export default function Search() {
   const resumeFile = useStore((s) => s.resumeFile);
   const onboarded = useStore((s) => s.onboarded);
   const savedProfileName = useStore((s) => s.savedProfileName);
-  const { uploadResume, runSearch, discover, toggleTransferable, toggleSponsorship, toggleRegion, toggleLevel, setSalary, setIntent, setOnboarded, continueAsSaved } = useStore.getState();
+  const serveUp = useStore((s) => s.serveUp);
+  const { uploadResume, runSearch, discover, toggleTransferable, toggleSponsorship, toggleRegion, toggleLevel, setSalary, setIntent, setOnboarded, continueAsSaved, hydrate } = useStore.getState();
   const lang = profile.language;
   const [msg, setMsg] = useState('');
   const [query, setQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortKey>('score');
   const [filter, setFilter] = useState<FilterKey>('all');
+  // Pagination: long pipelines (hundreds of rows) render in pages of 30; any view change resets to page 1.
+  const [shown, setShown] = useState(30);
+  useEffect(() => { setShown(30); }, [query, filter, sortBy, terms]);
 
   // Search + filter + sort the live rows. When an intent has been parsed, the list is RANKED by relevance
   // to what the user asked for and roles irrelevant to it are cut (an explicit fit is always kept).
@@ -72,13 +77,21 @@ export default function Search() {
       if (res.canceled || !res.assets?.length) return;
       const asset = res.assets[0];
       setMsg('');
-      // Read the picked file's BYTES → base64 and let serve parse it (docx via unzip, pdf via pdftotext, txt direct).
-      const buf = await (await fetch(asset.uri)).arrayBuffer();
-      const bytes = new Uint8Array(buf);
-      if (typeof btoa !== 'function') { setMsg(t(lang, 'common.binary')); return; }
-      let bin = '';
-      for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + 0x8000)));
-      const r = await uploadResume(asset.name, btoa(bin)); // persists the extracted text + re-ranks
+      // Read the picked file's BYTES → base64 and let serve parse it (docx via unzip, pdf via pdftotext,
+      // txt direct). Same result on both platforms, different readers: web fetches the blob: URI (the
+      // FileSystem File API is native-only); native reads via expo-file-system (fetch(file://) is flaky).
+      let base64 = '';
+      if (Platform.OS === 'web') {
+        const buf = await (await fetch(asset.uri)).arrayBuffer();
+        const bytes = new Uint8Array(buf);
+        if (typeof btoa !== 'function') { setMsg(t(lang, 'common.binary')); return; }
+        let bin = '';
+        for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + 0x8000)));
+        base64 = btoa(bin);
+      } else {
+        base64 = await new FsFile(asset.uri).base64();
+      }
+      const r = await uploadResume(asset.name, base64); // persists the extracted text + re-ranks
       if (!r.ok) setMsg(t(lang, 'common.uploadFailed'));   // honest: say it couldn't be read (e.g. scanned PDF)
       else setOnboarded(true);                             // a successful upload completes onboarding → into Search
     } catch (e: any) {
@@ -92,6 +105,15 @@ export default function Search() {
     </Pressable>
   );
 
+  // The app is a thin GUI over a LOCAL `jobdar serve` — a browser/native app can't start that process
+  // itself, so when it's unreachable say so honestly (with the command) and offer a one-tap re-check.
+  const backendBanner = !serveUp ? (
+    <Card style={{ borderColor: C.warn }}>
+      <Text style={{ color: C.warn, fontSize: 13, lineHeight: 18 }}>{t(lang, 'search.backendDown')}</Text>
+      <Btn kind="ghost" label={t(lang, 'common.retry')} onPress={hydrate} />
+    </Card>
+  ) : null;
+
   // First-run onboarding (shown until the user uploads a résumé, makes a choice, or skips). A genuine first
   // boot has onboarded:false; it persists once dismissed. Offers "continue as <name>" if a saved CLI profile
   // exists (cross-device restore), an upload, or a manual region/level/salary setup.
@@ -100,6 +122,7 @@ export default function Search() {
       <ScrollView style={{ backgroundColor: C.bg }} contentContainerStyle={{ padding: 16, paddingBottom: 56 }}>
         <H>{t(lang, 'onboard.title')}</H>
         <Sub>{t(lang, 'onboard.intro')}</Sub>
+        {backendBanner}
         <Card>
           {savedProfileName ? (
             <Btn label={`${t(lang, 'onboard.continueAs')} ${savedProfileName}`} onPress={continueAsSaved} />
@@ -133,6 +156,7 @@ export default function Search() {
     <ScrollView style={{ backgroundColor: C.bg }} contentContainerStyle={{ padding: 16, paddingBottom: 56 }}>
       <H>{t(lang, 'search.title')}</H>
       <Sub>{t(lang, 'search.intro')}</Sub>
+      {backendBanner}
 
       <Card>
         <Field
@@ -217,7 +241,7 @@ export default function Search() {
         ))}
       </View>
 
-      {visible.map((j) => (
+      {visible.slice(0, shown).map((j) => (
         <Card key={j.url}>
           <Text style={{ color: C.text, fontWeight: '700', fontSize: 15 }}>{j.role}</Text>
           <Text style={{ color: C.dim, marginBottom: 2 }}>{j.company} · {j.location}{j.postedOn ? ` · ${j.postedOn}` : ''}</Text>
@@ -230,6 +254,9 @@ export default function Search() {
           <Text style={{ color: C.dim, marginTop: 6, fontSize: 12 }}>{j.screenReason}</Text>
         </Card>
       ))}
+      {visible.length > shown ? (
+        <Btn kind="ghost" label={t(lang, 'search.showMore', { n: visible.length - shown })} onPress={() => setShown((s) => s + 30)} />
+      ) : null}
       {visible.length === 0 ? <Sub>{t(lang, 'search.emptyPrompt')}</Sub> : null}
     </ScrollView>
   );

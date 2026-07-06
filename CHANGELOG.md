@@ -4,6 +4,31 @@ All notable changes to Jobdar are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and Jobdar adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.45.0] — 2026-07-06
+
+**Web–native parity + gap-plugging** — the web app and the native app now behave identically, and the
+documented known-gaps list is brought up to what's actually true. App `@jobdar/app` **1.15.0**.
+
+- **Native persistence (AsyncStorage).** State now persists on BOTH platforms: web keeps synchronous
+  `localStorage` (same key — existing users keep their state, no hydration flash), native uses
+  `@react-native-async-storage/async-storage` (was a no-op → native lost everything on restart). Same
+  blank-first-boot / saved-after-first-use contract everywhere.
+- **Native résumé upload.** The picked file's bytes are read per-platform — web: `fetch(blob:)` →
+  `btoa` (unchanged); native: the SDK-56 `expo-file-system` `File.base64()` API (`fetch(file://)` is
+  unreliable on native). Same `POST /import/upload` path and behavior on both.
+- **Backend-down banner.** When `jobdar serve` is unreachable the Search tab (and onboarding) show an
+  honest banner with the command to run and a one-tap **Retry** — a browser/native app cannot start a
+  local process itself, so it says so instead of failing silently.
+- **List pagination.** The Search list renders in pages of 30 with "Show more (N remaining)" — a
+  several-hundred-row pipeline no longer renders in one go; any query/sort/filter change resets to page 1.
+- **Honest signal labels.** Prescreen chips renamed from verdict-language to signal-language:
+  "Likely fit" → **"Strong signals"**, "Worth a look" → **"Some signals"** (ES: "Señales fuertes" /
+  "Algunas señales") — prescreen is keyword overlap + freshness; "fit" is the eval's word.
+- **Known-gaps docs made true.** ROADMAP + phase9-architecture gap lists updated: onboarding /
+  `POST /profile` / doctor-poppler / USAJobs / native persistence marked shipped; remaining honest gaps
+  (per-device state, physical-phone serve URL, poppler host dep, keyless discovery scope, bimodal
+  evaluator pending labeled data, 1.0 human decisions) restated as of 1.45.
+
 ## [1.44.0] — 2026-07-02
 
 **Immigration-sponsorship toggle** — for the users Jobdar is built for (international students, new

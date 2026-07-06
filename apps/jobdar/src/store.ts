@@ -4,6 +4,7 @@ import {
   type Job, type Scored, type Verdict, type Tailored, type Draft, type Profile, type Lang, type Band, type Criterion,
   CADENCE,
 } from './engine';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { serveGet, servePost, serveHealth } from './serve';
 import { regionForLocation } from '@jobdar/engine';
 
@@ -65,15 +66,25 @@ interface State {
 const today = () => new Date().toISOString().slice(0, 10);
 const num = (x: any) => Number(x) || 0;
 
-// A smooth progress ticker: nudges the bar forward between server round-trips so it never looks frozen
-// during a long scan/prescreen, capped below 1 (real milestones jump it up via Math.max — never backward).
-// Persist the user's own state to the browser. First boot has NO stored key → the app starts blank; once
-// the user uploads a résumé or makes a selection, the change is saved and restored on the next load. (Web
-// localStorage; a no-op on native until AsyncStorage is wired — the app currently runs as a web PWA.)
+// Persist the user's own state on BOTH platforms — web and native behave identically. First boot has NO
+// stored key → the app starts blank; once the user uploads a résumé or makes a selection, the change is
+// saved and restored on the next load.
+//   web    → synchronous localStorage (unchanged key, so existing users keep their state, and hydration
+//            stays synchronous — no flash of the blank/onboarding state before the real one)
+//   native → AsyncStorage (zustand's createJSONStorage handles the Promise-returning variant)
 const stateStorage = {
-  getItem: (k: string) => { try { return typeof localStorage !== 'undefined' ? localStorage.getItem(k) : null; } catch { return null; } },
-  setItem: (k: string, v: string) => { try { if (typeof localStorage !== 'undefined') localStorage.setItem(k, v); } catch { /* private mode / no storage */ } },
-  removeItem: (k: string) => { try { if (typeof localStorage !== 'undefined') localStorage.removeItem(k); } catch { /* ignore */ } },
+  getItem: (k: string): string | null | Promise<string | null> => {
+    try { if (typeof localStorage !== 'undefined') return localStorage.getItem(k); } catch { return null; }
+    return AsyncStorage.getItem(k).catch(() => null);
+  },
+  setItem: (k: string, v: string): void | Promise<void> => {
+    try { if (typeof localStorage !== 'undefined') { localStorage.setItem(k, v); return; } } catch { return; /* private mode / no storage */ }
+    return AsyncStorage.setItem(k, v).catch(() => {});
+  },
+  removeItem: (k: string): void | Promise<void> => {
+    try { if (typeof localStorage !== 'undefined') { localStorage.removeItem(k); return; } } catch { return; }
+    return AsyncStorage.removeItem(k).catch(() => {});
+  },
 };
 
 const startTicker = (set: any, get: any) => {

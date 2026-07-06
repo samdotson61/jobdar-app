@@ -7,7 +7,7 @@
 > fit against your résumé, **tailors** an ATS-friendly CV/cover letter, and **tracks** every application —
 > with your data kept **local**, processed by a **private on-device model by default** or your own cloud API.
 >
-> **Status:** Phases 0–7, **5.5, 7.7, 7.8, 8b, 8a, 8c, 8e and 8f** complete — **Jobdar CLI `1.44.0`** (9.1 serve façade, security/correctness hardening, 9.3 intent search + tunable region/level/résumé controls + BM25-lite relevance, 9.4 winc-suggest ATS discovery, a search-speed pass, region-timezone ranking, a fit-only Search tab, honest résumé status, docx/pdf résumé upload, résumé-seeded profile, a blank-start app, a target-salary selector, persisted state after first use, a documented known-gaps list, a `jobdar doctor` poppler check, `POST /profile` persistence, a first-run onboarding screen, an eval-calibration pass, an **eval-feedback loop** (thumbs → `jobdar calibrate --feedback`), **batch Apply scoring**, a **USAJobs** opt-in provider, npm ship-prep, + a **"Need visa sponsorship" toggle**). Bilingual core; **seven scanner
+> **Status:** Phases 0–7, **5.5, 7.7, 7.8, 8b, 8a, 8c, 8e and 8f** complete — **Jobdar CLI `1.45.0`** (9.1 serve façade, security/correctness hardening, 9.3 intent search + tunable region/level/résumé controls + BM25-lite relevance, 9.4 winc-suggest ATS discovery, a search-speed pass, region-timezone ranking, a fit-only Search tab, honest résumé status, docx/pdf résumé upload, résumé-seeded profile, a blank-start app, a target-salary selector, persisted state after first use, a documented known-gaps list, a `jobdar doctor` poppler check, `POST /profile` persistence, a first-run onboarding screen, an eval-calibration pass, an **eval-feedback loop** (thumbs → `jobdar calibrate --feedback`), **batch Apply scoring**, a **USAJobs** opt-in provider, npm ship-prep, + a **"Need visa sponsorship" toggle**, + **web-native parity** (AsyncStorage persistence, native résumé upload, a backend-down banner, list pagination, honest signal labels)). Bilingual core; **seven scanner
 > providers** (Greenhouse, Workday, iCIMS, Lever, Ashby + an opt-in JSON-LD reader), all live-verified,
 > all with eval-time JD fetch; level + region toggles; the `jobdar init` wizard; the full
 > **discover→prescreen→evaluate→track→build pipeline** — `scan` finds + filters (it never scores),
@@ -35,29 +35,33 @@
 
 ## Known gaps & current limitations
 
-Current as of v1.40.x — tracked deliberately so they aren't mistaken for bugs. The app-side items are elaborated in
-[docs/phase9-architecture.md](docs/phase9-architecture.md#known-gaps--current-limitations).
+Current as of v1.45.x — tracked deliberately so they aren't mistaken for bugs. The app-side items are elaborated in
+[docs/phase9-architecture.md](docs/phase9-architecture.md#known-gaps--current-limitations). *(Resolved since
+v1.40.x: onboarding shipped 1.41; `POST /profile` shipped 1.41; the `jobdar doctor` poppler check shipped
+1.41; USAJobs opt-in provider shipped 1.43; native persistence via AsyncStorage shipped 1.45.)*
 
-- **No onboarding screen yet.** The web/mobile app boots **blank** (no name / region / level / résumé /
-  roles) and is populated only by a résumé upload or the user's chip choices. A guided first-run onboarding
-  flow (welcome → résumé/goals → first search) is planned **before any public or beta release**; the blank
-  Search tab is the interim. *(Deferred — pre-1.0.)*
-- **App profile persistence is browser-local only.** The app persists its own state to the browser
-  (localStorage) — first boot is blank, and after a résumé upload or selection it's saved and restored on
-  reload. There is **no `POST /profile`** to write the chosen identity back to the CLI's
-  `config/profile.yml`, so the app identity lives in the browser (not the CLI config), and a cleared store
-  or a different browser/device starts blank. The résumé *text* is persisted server-side (`data/cv.md`); the
-  rest of the profile is not. Persisting app identity to the CLI is a future option. *(By design for now.)*
+- **State persists per-device; no cross-machine sync.** Web (localStorage) and native (AsyncStorage) persist
+  identically — blank first boot, saved after first use — and identity/résumé are also written to the CLI's
+  `config/profile.yml` / `data/cv.md` via serve. Moving machines = copying the jobdar home. *(By design —
+  local-first.)*
+- **A physical phone needs a reachable serve.** Loopback works on web + the iOS simulator; a real device
+  must use `jobdar serve --host 0.0.0.0` + the `?serve=<mac-ip>&token=<t>` override (or `configureServe`
+  on native). A native settings screen for this is future work. *(Documented; future UI.)*
 - **PDF résumé upload/import needs `pdftotext` (poppler) on the host.** `.docx` uses `unzip` (ubiquitous);
   `.pdf` uses `pdftotext` — install poppler (`brew install poppler` / `apt-get install poppler-utils`).
-  Without it the app returns an honest "couldn't read that file"; scanned/image-only PDFs have no embedded
-  text to extract. *(Host dependency — belongs in setup docs + a `jobdar doctor` check before the beta.)*
+  `jobdar doctor` flags it when missing; without it the app returns an honest "couldn't read that file";
+  scanned/image-only PDFs have no embedded text to extract. *(Host dependency — doctor-checked.)*
 - **Discovery is keyless ATS-probing, not an aggregator.** `jobdar discover` has winc name companies and
   probes Greenhouse/Lever/Ashby/Workday slugs — it finds companies whose ATS handle is guessable, not every
-  posting on the internet. An opt-in **aggregator / USAJobs Pro provider** on the same `/discover` seam is a
-  future add (keeping the default keyless/local; LinkedIn/Indeed have no open search API). *(Future — Pro tier.)*
-- **1.0 ship items still open:** npm publish + marketplace listing (needs the org from Step 0.2) and the
-  **closed beta** (7.6). See the status banner above and the Remaining-work guide below. *(Tracked for 1.0.)*
+  posting on the internet. **USAJobs** (opt-in, BYO free key, dormant without one) shipped in 1.43 but is
+  **not yet live-verified** (needs a real key). A broader **aggregator Pro provider** on the same
+  `/discover` seam is a future add (LinkedIn/Indeed have no open search API). *(Future — Pro tier.)*
+- **The evaluator is bimodal** (Apply/Don't clusters, thin Research band). Code-side causes fixed
+  (1.42); the fix path is the 👍/👎 feedback ledger → `jobdar calibrate --feedback` → recalibrate
+  thresholds from N≥50–100 real labels, not guesses. *(Data-gated — collect via real use.)*
+- **1.0 ship items still open:** claim the npm name (`jobdar` is available, unscoped) or pick a scope,
+  npm publish + marketplace listing, then the **closed beta** (7.6) — mechanics prepped in
+  [RELEASING.md](RELEASING.md); the name/beta/license calls are human decisions. *(Tracked for 1.0.)*
 
 ---
 

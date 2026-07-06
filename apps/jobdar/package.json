@@ -1,13 +1,15 @@
 {
   "name": "@jobdar/app",
   "main": "expo-router/entry",
-  "version": "1.14.0",
+  "version": "1.15.0",
   "dependencies": {
     "@jobdar/engine": "workspace:*",
+    "@react-native-async-storage/async-storage": "2.2.0",
     "expo": "~56.0.12",
     "expo-constants": "~56.0.18",
     "expo-dev-client": "~56.0.20",
     "expo-document-picker": "~56.0.4",
+    "expo-file-system": "~56.0.8",
     "expo-font": "~56.0.7",
     "expo-linking": "~56.0.14",
     "expo-router": "~56.2.11",
