@@ -5,7 +5,9 @@
 // Run directly:  node scan.mjs [--dry-run] [--lang en|es]
 // Or via the CLI: jobdar scan [--dry-run]
 
-import { loadProfile, loadPortals } from './lib/config.mjs'
+import { loadProfile, loadPortals, loadUsaJobsCreds } from './lib/config.mjs'
+import { setUsaJobsCredsSource } from './providers/_creds.mjs'
+setUsaJobsCredsSource(loadUsaJobsCreds) // key-gated providers read creds through the fs-free seam
 import { getT } from './lib/i18n.mjs'
 import { parseFlags, resolveLang, isDirectRun } from './lib/cli.mjs'
 import { resolveProvider } from './providers/_contract.mjs'

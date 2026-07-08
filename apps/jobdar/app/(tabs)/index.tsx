@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { File as FsFile } from 'expo-file-system';
+import { router } from 'expo-router';
+import { backendMode } from '@/src/serve';
 import { useStore } from '@/src/store';
 import { t } from '@/src/engine';
 import { relevanceScore, levelDecision, locationMatches, regionPriority } from '@jobdar/engine';
@@ -26,6 +28,7 @@ export default function Search() {
   const onboarded = useStore((s) => s.onboarded);
   const savedProfileName = useStore((s) => s.savedProfileName);
   const serveUp = useStore((s) => s.serveUp);
+  const modelUp = useStore((s) => s.modelUp);
   const { uploadResume, runSearch, discover, toggleTransferable, toggleSponsorship, toggleRegion, toggleLevel, setSalary, setIntent, setOnboarded, continueAsSaved, hydrate } = useStore.getState();
   const lang = profile.language;
   const [msg, setMsg] = useState('');
@@ -105,12 +108,19 @@ export default function Search() {
     </Pressable>
   );
 
-  // The app is a thin GUI over a LOCAL `jobdar serve` — a browser/native app can't start that process
-  // itself, so when it's unreachable say so honestly (with the command) and offer a one-tap re-check.
+  // Honest backend status. serve mode: unreachable façade → say so with the command + Retry. local
+  // (on-device) mode: the façade is the app itself, so the only gap is the model — search works without
+  // it, scoring doesn't; point at Settings to download it once.
+  const localMode = backendMode() === 'local';
   const backendBanner = !serveUp ? (
     <Card style={{ borderColor: C.warn }}>
       <Text style={{ color: C.warn, fontSize: 13, lineHeight: 18 }}>{t(lang, 'search.backendDown')}</Text>
       <Btn kind="ghost" label={t(lang, 'common.retry')} onPress={hydrate} />
+    </Card>
+  ) : localMode && !modelUp ? (
+    <Card style={{ borderColor: C.warn }}>
+      <Text style={{ color: C.warn, fontSize: 13, lineHeight: 18 }}>{t(lang, 'search.modelMissing')}</Text>
+      <Btn kind="ghost" label={t(lang, 'common.settings')} onPress={() => router.push('/settings' as any)} />
     </Card>
   ) : null;
 
@@ -155,6 +165,9 @@ export default function Search() {
   return (
     <ScrollView style={{ backgroundColor: C.bg }} contentContainerStyle={{ padding: 16, paddingBottom: 56 }}>
       <H>{t(lang, 'search.title')}</H>
+      <Pressable onPress={() => router.push('/settings' as any)} style={{ position: 'absolute', right: 16, top: 18 }} hitSlop={10}>
+        <Text style={{ color: C.dim, fontSize: 18 }}>⚙︎</Text>
+      </Pressable>
       <Sub>{t(lang, 'search.intro')}</Sub>
       {backendBanner}
 

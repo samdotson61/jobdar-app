@@ -4,8 +4,12 @@
 // commands (eval, pipeline's eval step, pdf tailoring) use the configured
 // inference backend — your API key now, the on-device model in Phase 8.
 
-import { loadProfile, loadApiKey } from '../lib/config.mjs'
+import { loadProfile, loadApiKey, loadUsaJobsCreds } from '../lib/config.mjs'
+import { setUsaJobsCredsSource } from '../providers/_creds.mjs'
 import { getT } from '../lib/i18n.mjs'
+
+// Wire key-gated providers to the CLI's credential store (providers themselves stay fs-free — Phase 10).
+setUsaJobsCredsSource(loadUsaJobsCreds)
 import { parseFlags, resolveLang, readVersion } from '../lib/cli.mjs'
 
 // Commands not yet built map to the phase that delivers them (honest stubs).

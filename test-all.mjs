@@ -1760,6 +1760,37 @@ test('sponsorship: recordPrescreen notes — set, explicit-clear, and preserve-o
   assert.ok(tsv.split('\n')[0].endsWith('\tnotes'))
 })
 
+test('phase10: engine seed.mjs is in lockstep with data/seed/employers.yml (regen: node scripts/gen-seed.mjs)', async () => {
+  const yaml = (await import('js-yaml')).default
+  const yml = yaml.load(readFileSync(path.join(PKG_ROOT, 'data', 'seed', 'employers.yml'), 'utf8'))
+  const { SEED_EMPLOYERS } = await import('./packages/engine/seed.mjs')
+  assert.deepEqual(SEED_EMPLOYERS, yml.employers) // generated module must mirror the source catalog
+})
+
+test('phase10: pure pipeline + outreach splits — parsePipeline round-trips; fs shells re-export unchanged', async () => {
+  const pure = await import('./lib/pipeline_pure.mjs')
+  const rows = [{ company: 'A', role: 'R', url: 'https://a.test/1', location: 'X', score: '', band: '', recommendation: '', status: 'scanned', posted: '', first_seen: '2026-07-08', updated: '2026-07-08', prescreen: '', screen_reason: '', pay: '', aliases: '', notes: '' }]
+  assert.deepEqual(pure.parsePipeline(pure.serializePipeline(rows)), rows) // pure round-trip
+  // legacy text without the notes column parses with notes ''
+  const legacy = 'company\trole\turl\nA\tR\thttps://a.test/1'
+  assert.equal(pure.parsePipeline(legacy)[0].notes, '')
+  // the fs shells re-export the same functions (identity, not forks)
+  const evals = await import('./lib/evaluations.mjs')
+  assert.equal(evals.mergeScanned, pure.mergeScanned)
+  const opure = await import('./lib/outreach_pure.mjs')
+  const outreach = await import('./lib/outreach.mjs')
+  assert.equal(outreach.lintDraft, opure.lintDraft)
+  assert.equal(outreach.draftOutreach, opure.draftOutreach)
+  // usajobs creds seam: default dormant, settable, resilient to a throwing source
+  const creds = await import('./providers/_creds.mjs')
+  assert.deepEqual(creds.getUsaJobsCreds(), { key: '', email: '' })
+  creds.setUsaJobsCredsSource(() => ({ key: 'k', email: 'e@x.com' }))
+  assert.deepEqual(creds.getUsaJobsCreds(), { key: 'k', email: 'e@x.com' })
+  creds.setUsaJobsCredsSource(() => { throw new Error('boom') })
+  assert.deepEqual(creds.getUsaJobsCreds(), { key: '', email: '' })
+  creds.setUsaJobsCredsSource(() => ({ key: '', email: '' })) // restore dormant for other tests
+})
+
 test('feedback: feedbackStats — agreement% from thumbs, disagreements are the down-rated roles', () => {
   const rows = [
     { url: 'a', thumb: 'up', band: 'apply', score: '4.4', role: 'PM' },

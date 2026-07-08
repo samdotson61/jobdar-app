@@ -1,9 +1,28 @@
-// Typed client for `jobdar serve` — the app's ONLY data source. The CLI + winc engine are the full
-// stack (Sam's locked architecture); this app is a thin GUI that fetches from serve. Defaults to a local
-// serve on loopback. On web you can override at runtime with `?serve=<base>&token=<t>` so a phone can
-// point at the Mac's LAN IP + bearer token (from `jobdar serve --host 0.0.0.0`) without a rebuild.
+// Typed backend client — the app's ONLY data source, with two interchangeable backends behind one
+// contract (Phase 10):
+//   'local' — the ON-DEVICE backend (src/local/backend.ts: real @jobdar/engine + llama.rn + file Store).
+//             The NATIVE default: fully local, no Mac, no serve.
+//   'serve' — a `jobdar serve` HTTP façade (the CLI + winc as the full stack). The WEB default; also the
+//             native "companion mode" pointing at a Mac's LAN serve (`?serve=<base>&token=<t>` on web,
+//             the Settings screen on native; persisted).
+import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { localCall } from './local/backend';
+
 let BASE = 'http://127.0.0.1:4320';
 let TOKEN = '';
+export type BackendMode = 'local' | 'serve';
+let MODE: BackendMode = Platform.OS === 'web' ? 'serve' : 'local';
+// Persisted override (Settings) — loads fast; the pre-hydration default is correct per-platform anyway.
+AsyncStorage.getItem('jobdar-backend-config').then((raw) => {
+  if (!raw) return;
+  try {
+    const c = JSON.parse(raw);
+    if (c.mode === 'local' || c.mode === 'serve') MODE = c.mode;
+    if (typeof c.base === 'string' && c.base) BASE = c.base;
+    if (typeof c.token === 'string') TOKEN = c.token;
+  } catch { /* corrupt config → per-platform defaults */ }
+}).catch(() => {});
 try {
   // @ts-ignore — web only
   if (typeof window !== 'undefined' && window.location && window.location.search) {
@@ -16,12 +35,17 @@ try {
   /* native / no window */
 }
 
-export function configureServe(o: { base?: string; token?: string }) {
+export function configureServe(o: { base?: string; token?: string; mode?: BackendMode; persist?: boolean }) {
   if (o.base) BASE = o.base;
   if (o.token != null) TOKEN = o.token;
+  if (o.mode === 'local' || o.mode === 'serve') MODE = o.mode;
+  if (o.persist) AsyncStorage.setItem('jobdar-backend-config', JSON.stringify({ mode: MODE, base: BASE, token: TOKEN })).catch(() => {});
 }
 export function serveBase() {
   return BASE;
+}
+export function backendMode(): BackendMode {
+  return MODE;
 }
 
 const headers = (): Record<string, string> => ({
@@ -30,6 +54,9 @@ const headers = (): Record<string, string> => ({
 });
 
 async function call(path: string, init?: RequestInit): Promise<any> {
+  if (MODE === 'local') {
+    return localCall(path, init && init.method === 'POST' ? 'POST' : 'GET', init && typeof init.body === 'string' ? JSON.parse(init.body) : undefined);
+  }
   const r = await fetch(`${BASE}${path}`, { ...init, headers: { ...headers(), ...((init && (init.headers as any)) || {}) } });
   const body = await r.json().catch(() => ({}));
   // Non-2xx (incl. 503 backend-down) returns a tagged object rather than throwing — callers branch on it.

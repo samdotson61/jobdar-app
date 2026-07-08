@@ -1,0 +1,481 @@
+// GENERATED from data/seed/employers.yml — do not edit by hand. Regenerate with
+//   node scripts/gen-seed.mjs
+// when the yml changes (the seed-parity test in test-all.mjs guards drift).
+export const SEED_EMPLOYERS = [
+ {
+  "company": "Enova",
+  "careers_url": "https://job-boards.greenhouse.io/enova",
+  "region": "midwest",
+  "metro": "Chicago, IL",
+  "sector": "fintech"
+ },
+ {
+  "company": "project44",
+  "careers_url": "https://job-boards.greenhouse.io/project44",
+  "region": "midwest",
+  "metro": "Chicago, IL",
+  "sector": "logistics"
+ },
+ {
+  "company": "Hudl",
+  "careers_url": "https://job-boards.greenhouse.io/hudl",
+  "region": "midwest",
+  "metro": "Lincoln, NE",
+  "sector": "sports-tech"
+ },
+ {
+  "company": "StockX",
+  "careers_url": "https://job-boards.greenhouse.io/stockx",
+  "region": "midwest",
+  "metro": "Detroit, MI",
+  "sector": "ecommerce"
+ },
+ {
+  "company": "Jamf",
+  "careers_url": "https://job-boards.greenhouse.io/jamf",
+  "region": "midwest",
+  "metro": "Minneapolis, MN",
+  "sector": "software"
+ },
+ {
+  "company": "Cincinnati Children's Hospital",
+  "careers_url": "https://cincinnatichildrens.wd5.myworkdayjobs.com/careersatcincinnatichildrens",
+  "region": "midwest",
+  "metro": "Cincinnati, OH",
+  "sector": "healthcare"
+ },
+ {
+  "company": "Fifth Third Bank",
+  "careers_url": "https://fifththird.wd5.myworkdayjobs.com/53careers",
+  "region": "midwest",
+  "metro": "Cincinnati, OH",
+  "sector": "finance"
+ },
+ {
+  "company": "Integrity Express Logistics",
+  "careers_url": "https://ielfreight.wd1.myworkdayjobs.com/external",
+  "region": "midwest",
+  "metro": "Cincinnati, OH",
+  "sector": "logistics"
+ },
+ {
+  "company": "VEGA Americas",
+  "careers_url": "https://job-boards.greenhouse.io/vegaamericas",
+  "region": "midwest",
+  "metro": "Cincinnati, OH",
+  "sector": "industrial-tech"
+ },
+ {
+  "company": "FC Cincinnati",
+  "careers_url": "https://job-boards.greenhouse.io/fccincinnati",
+  "region": "midwest",
+  "metro": "Cincinnati, OH",
+  "sector": "sports"
+ },
+ {
+  "company": "Jellyvision",
+  "careers_url": "https://job-boards.greenhouse.io/jellyvision",
+  "region": "midwest",
+  "metro": "Chicago, IL",
+  "sector": "hr-tech"
+ },
+ {
+  "company": "Avant",
+  "careers_url": "https://job-boards.greenhouse.io/avant",
+  "region": "midwest",
+  "metro": "Chicago, IL",
+  "sector": "fintech"
+ },
+ {
+  "company": "Relativity",
+  "careers_url": "https://job-boards.greenhouse.io/relativity",
+  "region": "midwest",
+  "metro": "Chicago, IL",
+  "sector": "legal-tech"
+ },
+ {
+  "company": "Tempus",
+  "careers_url": "https://job-boards.greenhouse.io/tempus",
+  "region": "midwest",
+  "metro": "Chicago, IL",
+  "sector": "health-tech"
+ },
+ {
+  "company": "Medpace",
+  "careers_url": "https://job-boards.greenhouse.io/medpace",
+  "region": "midwest",
+  "metro": "Cincinnati, OH",
+  "sector": "health-tech"
+ },
+ {
+  "company": "Qualifacts",
+  "careers_url": "https://job-boards.greenhouse.io/qualifacts",
+  "region": "southeast",
+  "metro": "Nashville, TN",
+  "sector": "health-tech"
+ },
+ {
+  "company": "Genesco",
+  "careers_url": "https://careers-genesco.icims.com/jobs/search",
+  "region": "southeast",
+  "metro": "Nashville, TN",
+  "sector": "retail"
+ },
+ {
+  "company": "HCA Healthcare",
+  "careers_url": "https://hca.wd5.myworkdayjobs.com/HCAHospitals",
+  "region": "southeast",
+  "metro": "Nashville, TN",
+  "sector": "healthcare"
+ },
+ {
+  "company": "84.51°",
+  "careers_url": "https://job-boards.greenhouse.io/8451",
+  "region": "midwest",
+  "metro": "Cincinnati, OH",
+  "sector": "data-analytics"
+ },
+ {
+  "company": "May Mobility",
+  "careers_url": "https://job-boards.greenhouse.io/maymobility",
+  "region": "midwest",
+  "metro": "Ann Arbor, MI",
+  "sector": "mobility"
+ },
+ {
+  "company": "Censys",
+  "careers_url": "https://job-boards.greenhouse.io/censys",
+  "region": "midwest",
+  "metro": "Ann Arbor, MI",
+  "sector": "security"
+ },
+ {
+  "company": "Workit Health",
+  "careers_url": "https://job-boards.greenhouse.io/workithealth",
+  "region": "midwest",
+  "metro": "Ann Arbor, MI",
+  "sector": "health-tech"
+ },
+ {
+  "company": "Path Robotics",
+  "careers_url": "https://job-boards.greenhouse.io/pathrobotics",
+  "region": "midwest",
+  "metro": "Columbus, OH",
+  "sector": "robotics"
+ },
+ {
+  "company": "Greenlight Guru",
+  "careers_url": "https://job-boards.greenhouse.io/greenlightguru",
+  "region": "midwest",
+  "metro": "Indianapolis, IN",
+  "sector": "medtech-saas"
+ },
+ {
+  "company": "SpotHero",
+  "careers_url": "https://job-boards.greenhouse.io/spothero",
+  "region": "midwest",
+  "metro": "Chicago, IL",
+  "sector": "mobility"
+ },
+ {
+  "company": "Amount",
+  "careers_url": "https://job-boards.greenhouse.io/amount",
+  "region": "midwest",
+  "metro": "Chicago, IL",
+  "sector": "fintech"
+ },
+ {
+  "company": "Sprout Social",
+  "careers_url": "https://job-boards.greenhouse.io/sproutsocial",
+  "region": "midwest",
+  "metro": "Chicago, IL",
+  "sector": "software"
+ },
+ {
+  "company": "Civis Analytics",
+  "careers_url": "https://job-boards.greenhouse.io/civisanalytics",
+  "region": "midwest",
+  "metro": "Chicago, IL",
+  "sector": "data"
+ },
+ {
+  "company": "Cameo",
+  "careers_url": "https://job-boards.greenhouse.io/cameo",
+  "region": "midwest",
+  "metro": "Chicago, IL",
+  "sector": "consumer"
+ },
+ {
+  "company": "Kalderos",
+  "careers_url": "https://job-boards.greenhouse.io/kalderos",
+  "region": "midwest",
+  "metro": "Chicago, IL",
+  "sector": "health-tech"
+ },
+ {
+  "company": "Cleveland Clinic",
+  "careers_url": "https://ccf.wd1.myworkdayjobs.com/ClevelandClinicCareers",
+  "region": "midwest",
+  "metro": "Cleveland, OH",
+  "sector": "healthcare"
+ },
+ {
+  "company": "OhioHealth",
+  "careers_url": "https://ohiohealth.wd5.myworkdayjobs.com/OhioHealthJobs",
+  "region": "midwest",
+  "metro": "Columbus, OH",
+  "sector": "healthcare"
+ },
+ {
+  "company": "Nationwide Children's Hospital",
+  "careers_url": "https://nationwidechildrens.wd5.myworkdayjobs.com/NCHCareers",
+  "region": "midwest",
+  "metro": "Columbus, OH",
+  "sector": "healthcare"
+ },
+ {
+  "company": "Bon Secours Mercy Health",
+  "careers_url": "https://easyservice.wd5.myworkdayjobs.com/BonSecoursMercyHealthCareers",
+  "region": "midwest",
+  "metro": "Cincinnati, OH",
+  "sector": "healthcare"
+ },
+ {
+  "company": "Corewell Health",
+  "careers_url": "https://spectrumhealth.wd5.myworkdayjobs.com/CorewellHealthCareers",
+  "region": "midwest",
+  "metro": "Grand Rapids, MI",
+  "sector": "healthcare"
+ },
+ {
+  "company": "Trinity Health",
+  "careers_url": "https://trinityhealth.wd1.myworkdayjobs.com/Jobs",
+  "region": "midwest",
+  "metro": "Livonia, MI",
+  "sector": "healthcare"
+ },
+ {
+  "company": "Advocate Health",
+  "careers_url": "https://aah.wd5.myworkdayjobs.com/External",
+  "region": "midwest",
+  "metro": "Chicago, IL",
+  "sector": "healthcare"
+ },
+ {
+  "company": "Sanford Health",
+  "careers_url": "https://sanford.wd5.myworkdayjobs.com/SanfordHealth",
+  "region": "midwest",
+  "metro": "Sioux Falls, SD",
+  "sector": "healthcare"
+ },
+ {
+  "company": "Gundersen Health System",
+  "careers_url": "https://gundersenhealth.wd5.myworkdayjobs.com/Gundersen",
+  "region": "midwest",
+  "metro": "La Crosse, WI",
+  "sector": "healthcare"
+ },
+ {
+  "company": "ThedaCare",
+  "careers_url": "https://thedacare.wd5.myworkdayjobs.com/ThedaCare_Career_Site1",
+  "region": "midwest",
+  "metro": "Appleton, WI",
+  "sector": "healthcare"
+ },
+ {
+  "company": "Nationwide",
+  "careers_url": "https://nationwide.wd1.myworkdayjobs.com/Nationwide_Career",
+  "region": "midwest",
+  "metro": "Columbus, OH",
+  "sector": "insurance"
+ },
+ {
+  "company": "Caterpillar",
+  "careers_url": "https://cat.wd5.myworkdayjobs.com/CaterpillarCareers",
+  "region": "midwest",
+  "metro": "Peoria, IL",
+  "sector": "manufacturing"
+ },
+ {
+  "company": "Kohl's",
+  "careers_url": "https://kohls.wd1.myworkdayjobs.com/kohlscareers",
+  "region": "midwest",
+  "metro": "Menomonee Falls, WI",
+  "sector": "retail"
+ },
+ {
+  "company": "Kettering Health",
+  "careers_url": "https://careers-ketteringhealth.icims.com",
+  "region": "midwest",
+  "metro": "Dayton, OH",
+  "sector": "healthcare"
+ },
+ {
+  "company": "Carle Health",
+  "careers_url": "https://careers-carle.icims.com",
+  "region": "midwest",
+  "metro": "Urbana-Champaign, IL",
+  "sector": "healthcare"
+ },
+ {
+  "company": "OSU Physicians",
+  "careers_url": "https://careers-osuphysicians.icims.com",
+  "region": "midwest",
+  "metro": "Columbus, OH",
+  "sector": "healthcare"
+ },
+ {
+  "company": "The Methodist Hospitals",
+  "careers_url": "https://careers-methodisthospitals.icims.com",
+  "region": "midwest",
+  "metro": "Merrillville, IN",
+  "sector": "healthcare"
+ },
+ {
+  "company": "Children's Mercy Kansas City",
+  "careers_url": "https://jobs-childrensmercykc.icims.com",
+  "region": "midwest",
+  "metro": "Kansas City, MO",
+  "sector": "healthcare"
+ },
+ {
+  "company": "Ascension Wisconsin",
+  "careers_url": "https://careers-ascensionwisconsinhospital.icims.com",
+  "region": "midwest",
+  "metro": "Milwaukee, WI",
+  "sector": "healthcare"
+ },
+ {
+  "company": "Aspire Indiana Health",
+  "careers_url": "https://careers-aspireindiana.icims.com",
+  "region": "midwest",
+  "metro": "Noblesville, IN",
+  "sector": "healthcare"
+ },
+ {
+  "company": "Benedictine",
+  "careers_url": "https://careers-bhshealth.icims.com",
+  "region": "midwest",
+  "metro": "St. Paul, MN",
+  "sector": "healthcare"
+ },
+ {
+  "company": "Vanderbilt University Medical Center",
+  "careers_url": "https://vumc.wd1.myworkdayjobs.com/vumccareers",
+  "region": "southeast",
+  "metro": "Nashville, TN",
+  "sector": "healthcare"
+ },
+ {
+  "company": "Ochsner Health",
+  "careers_url": "https://ochsner.wd1.myworkdayjobs.com/Ochsner",
+  "region": "southeast",
+  "metro": "New Orleans, LA",
+  "sector": "healthcare"
+ },
+ {
+  "company": "Baptist Health (Kentucky)",
+  "careers_url": "https://bhs.wd1.myworkdayjobs.com/careers",
+  "region": "southeast",
+  "metro": "Louisville, KY",
+  "sector": "healthcare"
+ },
+ {
+  "company": "Baptist Health Jacksonville",
+  "careers_url": "https://baptistjax.wd1.myworkdayjobs.com/External_Careers",
+  "region": "southeast",
+  "metro": "Jacksonville, FL",
+  "sector": "healthcare"
+ },
+ {
+  "company": "Baptist Health (Montgomery)",
+  "careers_url": "https://baptistfirst.wd12.myworkdayjobs.com/baptistfirst",
+  "region": "southeast",
+  "metro": "Montgomery, AL",
+  "sector": "healthcare"
+ },
+ {
+  "company": "AdventHealth",
+  "careers_url": "https://adventhealth.wd12.myworkdayjobs.com/AH_External_Career_Site",
+  "region": "southeast",
+  "metro": "Altamonte Springs, FL",
+  "sector": "healthcare"
+ },
+ {
+  "company": "Methodist Le Bonheur Healthcare",
+  "careers_url": "https://methodisthealth.wd5.myworkdayjobs.com/MLH",
+  "region": "southeast",
+  "metro": "Memphis, TN",
+  "sector": "healthcare"
+ },
+ {
+  "company": "Prisma Health",
+  "careers_url": "https://prismahealth.wd5.myworkdayjobs.com/PrismaHealthCorporate",
+  "region": "southeast",
+  "metro": "Greenville, SC",
+  "sector": "healthcare"
+ },
+ {
+  "company": "Piedmont Healthcare",
+  "careers_url": "https://careers-piedmont.icims.com",
+  "region": "southeast",
+  "metro": "Atlanta, GA",
+  "sector": "healthcare"
+ },
+ {
+  "company": "Bayfront Health",
+  "careers_url": "https://careers-bayfronthealth.icims.com",
+  "region": "southeast",
+  "metro": "St. Petersburg, FL",
+  "sector": "healthcare"
+ },
+ {
+  "company": "Lowe's",
+  "careers_url": "https://lowes.wd5.myworkdayjobs.com/LWS_External_CS",
+  "region": "southeast",
+  "metro": "Mooresville, NC",
+  "sector": "retail"
+ },
+ {
+  "company": "Carvana",
+  "careers_url": "https://job-boards.greenhouse.io/carvana",
+  "region": "southwest",
+  "metro": "Tempe, AZ",
+  "sector": "ecommerce"
+ },
+ {
+  "company": "Axon",
+  "careers_url": "https://job-boards.greenhouse.io/axon",
+  "region": "southwest",
+  "metro": "Scottsdale, AZ",
+  "sector": "public-safety"
+ },
+ {
+  "company": "Self Financial",
+  "careers_url": "https://job-boards.greenhouse.io/selffinancial",
+  "region": "southwest",
+  "metro": "Austin, TX",
+  "sector": "fintech"
+ },
+ {
+  "company": "Cook Children's Health Care System",
+  "careers_url": "https://cookchildrens.wd1.myworkdayjobs.com/Cook_Childrens_Careers",
+  "region": "southwest",
+  "metro": "Fort Worth, TX",
+  "sector": "healthcare"
+ },
+ {
+  "company": "USAA",
+  "careers_url": "https://usaa.wd1.myworkdayjobs.com/USAAJOBSWD",
+  "region": "southwest",
+  "metro": "San Antonio, TX",
+  "sector": "insurance"
+ },
+ {
+  "company": "Banner Health",
+  "careers_url": "https://bannerhealth.wd108.myworkdayjobs.com/Careers",
+  "region": "southwest",
+  "metro": "Phoenix, AZ",
+  "sector": "healthcare"
+ }
+]

@@ -7,8 +7,7 @@
 //   xcrun simctl get_app_container booted com.jobdar.app data   → copy the .gguf into Documents/
 import { useState } from 'react';
 import { ScrollView, Text } from 'react-native';
-import { Paths } from 'expo-file-system';
-import { initLlama } from 'llama.rn';
+import { completionJson, installedTier } from '@/src/local/llm';
 // @ts-ignore — pure-JS engine exports (same modules serve uses)
 import { prepEval, buildVerdict, evalSystemFor, EVAL_JSON_SCHEMA } from '@jobdar/engine';
 import { Btn, C, Card, H, Sub } from '@/src/ui';
@@ -34,31 +33,19 @@ export default function Spike() {
   const run = async () => {
     setBusy(true);
     try {
-      const modelPath = `${Paths.document.uri}/${MODEL_FILE}`.replace('file://', '');
-      add(`model: ${modelPath}`);
-      const t0 = Date.now();
-      const ctx = await initLlama({ model: modelPath, n_ctx: 4096, n_gpu_layers: 0 });
-      add(`init: ${((Date.now() - t0) / 1000).toFixed(1)}s`);
-
+      const tier = await installedTier();
+      add(tier ? `model: ${tier.file}` : 'no model installed — download one in Settings first');
+      if (!tier) { setBusy(false); return; }
       const today = new Date().toISOString().slice(0, 10);
       const { gates, decision, user } = prepEval({ jd: JD, cv: CV, profile: PROFILE, today });
       const t1 = Date.now();
-      const r = await ctx.completion({
-        messages: [
-          { role: 'system', content: evalSystemFor(true) },
-          { role: 'user', content: user },
-        ],
-        response_format: { type: 'json_schema', json_schema: EVAL_JSON_SCHEMA },
-        temperature: 0, top_k: 1, n_predict: 1024,
-      });
+      const r = await completionJson({ system: evalSystemFor(true), user, schema: EVAL_JSON_SCHEMA, maxTokens: 1024 });
       const secs = ((Date.now() - t1) / 1000).toFixed(1);
-      add(`completion: ${secs}s (CPU — sim numbers are not device numbers)`);
-      const v = buildVerdict({ text: r.text, jd: JD, gates, decision, profile: PROFILE, transferable: true, model: MODEL_FILE, backend: 'llama.rn' });
+      add(`init+completion: ${secs}s (simulator=CPU — device numbers differ)`);
+      const v = buildVerdict({ text: r.text, jd: JD, gates, decision, profile: PROFILE, transferable: true, model: r.model, backend: 'llama.rn' });
       add(v.ok
         ? `VERDICT: ${v.band} · ${v.score}/5 · clamped:${v.clamped}\nrec: ${String(v.recommendation).slice(0, 160)}`
         : `PARSE FAIL — raw: ${String(r.text).slice(0, 300)}`);
-      await ctx.release();
-      add('context released.');
     } catch (e: any) {
       add(`ERROR: ${String(e?.message ?? e)}`);
     }

@@ -18,7 +18,7 @@
 // are unit-tested against a captured response fixture; the network path is exercised only with a live key.
 
 import { fetchJson } from '../lib/http.mjs'
-import { loadUsaJobsCreds } from '../lib/config.mjs'
+import { getUsaJobsCreds } from './_creds.mjs'
 
 const API_HOST_ALLOWLIST = [/^data\.usajobs\.gov$/]
 // Only these Search API params are ever forwarded (allowlist — no arbitrary query passthrough).
@@ -136,7 +136,7 @@ const usajobs = {
   },
 
   async fetch(match, ctx = {}) {
-    const { key, email } = loadUsaJobsCreds()
+    const { key, email } = getUsaJobsCreds()
     if (!key || !email) return [] // dormant without a BYO key — never breaks a scan
     // ctx may override/augment the saved search (intent-driven scans pass keyword/location).
     const params = { ...(match.params || {}) }
@@ -153,7 +153,7 @@ const usajobs = {
   async fetchJob(jobUrl) {
     const parsed = parseUsaJobsJobUrl(jobUrl)
     if (!parsed) return null
-    const { key, email } = loadUsaJobsCreds()
+    const { key, email } = getUsaJobsCreds()
     if (!key || !email) return null // dormant without a key
     // No public get-by-id endpoint — re-query Search by the control number and match the item back.
     const url = buildSearchUrl({ Keyword: parsed.id, ResultsPerPage: MAX_RESULTS })

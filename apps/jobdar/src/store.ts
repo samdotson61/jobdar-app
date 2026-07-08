@@ -5,7 +5,7 @@ import {
   CADENCE,
 } from './engine';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { serveGet, servePost, serveHealth } from './serve';
+import { backendMode, serveGet, servePost, serveHealth } from './serve';
 import { regionForLocation } from '@jobdar/engine';
 
 // The app holds NO engine logic — it renders what `jobdar serve` (the real CLI + winc) returns. Every
@@ -21,6 +21,7 @@ interface State {
   intent: string;               // free-text "what are you looking for?"
   searchTerms: SearchTerms | null; // parsed intent (winc/keywords) — drives relevance ranking + cutting
   serveUp: boolean;
+  modelUp: boolean;             // local mode: the on-device model is installed (health backend.up)
   busy: string | null;          // url/operation currently in flight (for spinners)
   scoring: boolean;             // a batch score-top-N pass is running
   progress: number;             // 0..1 for the "Find matching roles" search; 0 = idle
@@ -139,6 +140,7 @@ export const useStore = create<State>()(persist((set, get) => ({
   intent: '',
   searchTerms: null,
   serveUp: false,
+  modelUp: false,
   busy: null,
   scoring: false,
   progress: 0,
@@ -256,7 +258,16 @@ export const useStore = create<State>()(persist((set, get) => ({
   // user's own choices (region/level/salary/intent → "Find matching roles"). A real onboarding lands later.
   hydrate: async () => {
     const h = await serveHealth();
-    set({ serveUp: h.ok });
+    set({ serveUp: h.ok, modelUp: Boolean(h.backend && h.backend.up) });
+    // Local mode: the device's pipeline FILE is the durable store — restore the list from it when the
+    // in-memory cache is empty (e.g. after a cold start; the AsyncStorage cache is best-effort for
+    // multi-MB row sets). User state (an in-flight session's rows) always wins.
+    if (backendMode() === 'local' && get().scored.length === 0) {
+      try {
+        const pj = await serveGet('/pipeline');
+        if (pj && pj.ok !== false && Array.isArray(pj.rows) && pj.rows.length) set({ scored: rowsToScored(pj.rows) });
+      } catch { /* no pipeline yet — blank first boot stays blank */ }
+    }
     // Peek (don't apply) any saved CLI profile so onboarding can offer "continue as <name>". The app stays
     // blank until the user uploads, makes a choice, or explicitly taps continue — blank-start is preserved.
     if (h.ok) {

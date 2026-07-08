@@ -7,7 +7,7 @@
 > fit against your résumé, **tailors** an ATS-friendly CV/cover letter, and **tracks** every application —
 > with your data kept **local**, processed by a **private on-device model by default** or your own cloud API.
 >
-> **Status:** Phases 0–7, **5.5, 7.7, 7.8, 8b, 8a, 8c, 8e and 8f** complete — **Jobdar CLI `1.46.0`** (9.1 serve façade, security/correctness hardening, 9.3 intent search + tunable region/level/résumé controls + BM25-lite relevance, 9.4 winc-suggest ATS discovery, a search-speed pass, region-timezone ranking, a fit-only Search tab, honest résumé status, docx/pdf résumé upload, résumé-seeded profile, a blank-start app, a target-salary selector, persisted state after first use, a documented known-gaps list, a `jobdar doctor` poppler check, `POST /profile` persistence, a first-run onboarding screen, an eval-calibration pass, an **eval-feedback loop** (thumbs → `jobdar calibrate --feedback`), **batch Apply scoring**, a **USAJobs** opt-in provider, npm ship-prep, + a **"Need visa sponsorship" toggle**, + **web-native parity** (AsyncStorage persistence, native résumé upload, a backend-down banner, list pagination, honest signal labels)). Bilingual core; **seven scanner
+> **Status:** Phases 0–7, **5.5, 7.7, 7.8, 8b, 8a, 8c, 8e and 8f** complete — **Jobdar CLI `1.47.0`** (9.1 serve façade, security/correctness hardening, 9.3 intent search + tunable region/level/résumé controls + BM25-lite relevance, 9.4 winc-suggest ATS discovery, a search-speed pass, region-timezone ranking, a fit-only Search tab, honest résumé status, docx/pdf résumé upload, résumé-seeded profile, a blank-start app, a target-salary selector, persisted state after first use, a documented known-gaps list, a `jobdar doctor` poppler check, `POST /profile` persistence, a first-run onboarding screen, an eval-calibration pass, an **eval-feedback loop** (thumbs → `jobdar calibrate --feedback`), **batch Apply scoring**, a **USAJobs** opt-in provider, npm ship-prep, + a **"Need visa sponsorship" toggle**, + **web-native parity** (AsyncStorage persistence, native résumé upload, a backend-down banner, list pagination, honest signal labels)). Bilingual core; **seven scanner
 > providers** (Greenhouse, Workday, iCIMS, Lever, Ashby + an opt-in JSON-LD reader), all live-verified,
 > all with eval-time JD fetch; level + region toggles; the `jobdar init` wizard; the full
 > **discover→prescreen→evaluate→track→build pipeline** — `scan` finds + filters (it never scores),
@@ -827,12 +827,12 @@ serves). The serve-backed mode remains for the Mac-companion path.
 | Slice | Scope | Status |
 |---|---|---|
 | **L0 spike (go/no-go)** | llama.rn dev build; same GGUF/prompt/grammar as winc; verdict parity | **PASSED 2026-07-08** — on-device `apply 4.1` vs winc `apply 4.5` (same band/clamp, one sub-rating step of template/build drift; sim CPU — device speed TBD) |
-| L1 | Local backend dispatcher behind the same `servePost/serveGet` contract (store.ts untouched) + expo-file-system Store port (pipeline/profile/cv) + pure `parsePipeline` export | pending |
-| L2 | Native scanning + prescreen (providers are fetch-based; no CORS on native; lower concurrency for phone radios) | pending |
-| L3 | Model manager: confirm-gated GGUF download w/ progress+resume; RAM-tiered default (4b on 8GB devices, 2b below, honest labeling) | pending |
-| L4 | evaluate/tailor/outreach-draft via llama.rn; re-run the persona calibration matrix on-device; thumbs ledger local | pending |
-| L5 | JS docparse: docx (fflate) + txt/md; PDF deferred with the honest error | pending |
-| L6 | TestFlight internal → external (see Jobdar-Beta.md Phases A–C) | pending |
+| L1 | Local backend dispatcher (`src/local/backend.ts`) behind the same `servePost/serveGet` contract (store.ts untouched) + file Store (`src/local/files.ts`, CLI-identical TSV/JSON formats) + pure `lib/pipeline_pure.mjs`/`lib/outreach_pure.mjs` splits + fs-free provider creds seam | **SHIPPED 1.47.0** |
+| L2 | Native scanning + prescreen: engine-exported providers (no CORS on native), seed catalog via generated `packages/engine/seed.mjs`, pool 4 for phone radios | **SHIPPED 1.47.0** |
+| L3 | Model manager (Settings screen): confirm-gated resumable GGUF download from the winc registry (unsloth HF), RAM-tiered default (4b ≥7GB, 2b below), delete, backend mode chooser (on-device ⇄ Mac serve w/ URL+token — the connect screen) | **SHIPPED 1.47.0** |
+| L4 | evaluate / tailor / outreach-draft via llama.rn (grammar-JSON + greedy, winc eval profile); intent parse = deterministic keyword fallback on-device (model parse later); on-device calibration matrix re-run PENDING (needs device hardware) | **CORE SHIPPED 1.47.0** |
+| L5 | JS docparse: docx (fflate) + txt/md; PDF deferred with the honest on-screen error | **SHIPPED 1.47.0** |
+| L6 | TestFlight: eas.json profiles ready; remaining = Sam's account steps (App Store Connect record, eas login, icon choice) + first internal build | ready for Sam |
 
 Known constraints: no Metal in the iOS **simulator** (parity testing only; speed on hardware);
 qwen3.5-4b Q4 (~2.4GB) needs 8GB devices — 2b (~1.2GB) is the floor tier and its flatter calibration

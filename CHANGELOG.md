@@ -4,6 +4,40 @@ All notable changes to Jobdar are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and Jobdar adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.47.0] — 2026-07-08
+
+**Phase 10 L1–L5: the app runs FULLY LOCAL on the phone — no Mac, no serve.** App `@jobdar/app`
+**1.17.0**; CLI tests **135**. Native now defaults to the ON-DEVICE backend; web stays serve-backed;
+a Settings screen flips either way (persisted).
+
+- **L1 — local backend.** `src/local/backend.ts` implements the serve endpoint surface (health, profile,
+  cv, import/upload, scan, prescreen, search/parse, evaluate, eval/save, eval/feedback, tailor,
+  outreach/draft, outreach/log) with the SAME response shapes, so `store.ts` is untouched; `src/serve.ts`
+  routes by backend mode. Storage (`src/local/files.ts`) uses CLI-identical formats (pipeline/feedback/
+  outreach TSV, cv.md, profile JSON) — a future phone⇄Mac export is a file copy.
+- **CLI-side pure splits (no behavior change, tests green):** `lib/pipeline_pure.mjs` +
+  `lib/outreach_pure.mjs` (fs shells re-export), `providers/_creds.mjs` (usajobs reads creds through an
+  injectable seam — provider graph is now fs-free; bin/jobdar + scan.mjs wire the config source),
+  `packages/engine` exports pipeline logic, outreach rules/drafting, providers, and a generated
+  `seed.mjs` employer catalog (`scripts/gen-seed.mjs`, parity-tested).
+- **L2 — native scanning/prescreen:** engine providers fetch boards directly (no CORS on native),
+  seed portals by region, pool 4 (phone radios), same level/region filters + gates + expired-JD flooring.
+- **L3 — model manager (Settings):** confirm-gated resumable GGUF download from the same unsloth/HF
+  registry winc uses; RAM-tiered recommendation (4b ≥7GB RAM, 2b below); delete; backend chooser with
+  the Mac-serve connect fields (URL + bearer token — the TestFlight companion mode).
+- **L4 — model verbs on-device:** evaluate/tailor/outreach-draft via llama.rn with the winc eval profile
+  (greedy + grammar-JSON); model-missing → honest banner linking Settings (search still works). Honest
+  limits: intent parse falls back to deterministic keywords on-device (model parse is a later slice);
+  `/discover` returns an honest not-available; the on-device calibration matrix re-run needs real
+  hardware (TestFlight).
+- **L5 — résumé parsing on-device:** docx via fflate + txt/md direct; PDF gets the honest "export as
+  .docx/.txt" error (no pdftotext on iOS).
+- Metro: playwright (the CLI-only iCIMS `--playwright` fallback) stubbed to an empty module; llama.rn
+  is kept out of the WEB bundle via platform-split `llm.native.ts`/`llm.web.ts` (verified: no initLlama
+  in the exported web JS).
+- TestFlight: eas.json profiles already present; remaining steps are account-bound (App Store Connect
+  record, `eas login`, icon) — see ROADMAP Phase 10 L6 + ~/Documents/Jobdar-Beta.md.
+
 ## [1.46.0] — 2026-07-08
 
 **Phase 10 kickoff: fully-local iPhone — L0 spike PASSED (GO).** Direction locked by Sam: fully-local
