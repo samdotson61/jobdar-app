@@ -7,7 +7,7 @@
 > fit against your résumé, **tailors** an ATS-friendly CV/cover letter, and **tracks** every application —
 > with your data kept **local**, processed by a **private on-device model by default** or your own cloud API.
 >
-> **Status:** Phases 0–7, **5.5, 7.7, 7.8, 8b, 8a, 8c, 8e and 8f** complete — **Jobdar CLI `1.45.0`** (9.1 serve façade, security/correctness hardening, 9.3 intent search + tunable region/level/résumé controls + BM25-lite relevance, 9.4 winc-suggest ATS discovery, a search-speed pass, region-timezone ranking, a fit-only Search tab, honest résumé status, docx/pdf résumé upload, résumé-seeded profile, a blank-start app, a target-salary selector, persisted state after first use, a documented known-gaps list, a `jobdar doctor` poppler check, `POST /profile` persistence, a first-run onboarding screen, an eval-calibration pass, an **eval-feedback loop** (thumbs → `jobdar calibrate --feedback`), **batch Apply scoring**, a **USAJobs** opt-in provider, npm ship-prep, + a **"Need visa sponsorship" toggle**, + **web-native parity** (AsyncStorage persistence, native résumé upload, a backend-down banner, list pagination, honest signal labels)). Bilingual core; **seven scanner
+> **Status:** Phases 0–7, **5.5, 7.7, 7.8, 8b, 8a, 8c, 8e and 8f** complete — **Jobdar CLI `1.46.0`** (9.1 serve façade, security/correctness hardening, 9.3 intent search + tunable region/level/résumé controls + BM25-lite relevance, 9.4 winc-suggest ATS discovery, a search-speed pass, region-timezone ranking, a fit-only Search tab, honest résumé status, docx/pdf résumé upload, résumé-seeded profile, a blank-start app, a target-salary selector, persisted state after first use, a documented known-gaps list, a `jobdar doctor` poppler check, `POST /profile` persistence, a first-run onboarding screen, an eval-calibration pass, an **eval-feedback loop** (thumbs → `jobdar calibrate --feedback`), **batch Apply scoring**, a **USAJobs** opt-in provider, npm ship-prep, + a **"Need visa sponsorship" toggle**, + **web-native parity** (AsyncStorage persistence, native résumé upload, a backend-down banner, list pagination, honest signal labels)). Bilingual core; **seven scanner
 > providers** (Greenhouse, Workday, iCIMS, Lever, Ashby + an opt-in JSON-LD reader), all live-verified,
 > all with eval-time JD fetch; level + region toggles; the `jobdar init` wizard; the full
 > **discover→prescreen→evaluate→track→build pipeline** — `scan` finds + filters (it never scores),
@@ -810,3 +810,31 @@ from a guided wizard — the core promise — before we invest in iCIMS, the loc
 ### Sources
 - Workday CXS API guide — https://jobspipe.dev/blog/workday-api-guide
 - iCIMS developer docs (Search / Job Portal / XML feed) — https://developer-community.icims.com/
+
+---
+
+## Phase 10 — Fully-local iPhone (ACTIVE, direction locked 2026-07-08)
+
+**Sam's call: fully-local iOS FIRST** (download from the App Store, works with no Mac and no serve),
+**then** the web app / jobdar.ai hosted UI, **then Android** using the same stack for parity
+(llama.rn = llama.cpp bindings for React Native on BOTH platforms). Full analysis + TestFlight plan:
+`~/Documents/Jobdar-Beta.md`.
+
+Both backend halves move into the app: the engine (mostly pure JS in `@jobdar/engine` already; the
+fs-bound pieces get ports) and the model (llama.rn, grammar-JSON + greedy — the same eval profile winc
+serves). The serve-backed mode remains for the Mac-companion path.
+
+| Slice | Scope | Status |
+|---|---|---|
+| **L0 spike (go/no-go)** | llama.rn dev build; same GGUF/prompt/grammar as winc; verdict parity | **PASSED 2026-07-08** — on-device `apply 4.1` vs winc `apply 4.5` (same band/clamp, one sub-rating step of template/build drift; sim CPU — device speed TBD) |
+| L1 | Local backend dispatcher behind the same `servePost/serveGet` contract (store.ts untouched) + expo-file-system Store port (pipeline/profile/cv) + pure `parsePipeline` export | pending |
+| L2 | Native scanning + prescreen (providers are fetch-based; no CORS on native; lower concurrency for phone radios) | pending |
+| L3 | Model manager: confirm-gated GGUF download w/ progress+resume; RAM-tiered default (4b on 8GB devices, 2b below, honest labeling) | pending |
+| L4 | evaluate/tailor/outreach-draft via llama.rn; re-run the persona calibration matrix on-device; thumbs ledger local | pending |
+| L5 | JS docparse: docx (fflate) + txt/md; PDF deferred with the honest error | pending |
+| L6 | TestFlight internal → external (see Jobdar-Beta.md Phases A–C) | pending |
+
+Known constraints: no Metal in the iOS **simulator** (parity testing only; speed on hardware);
+qwen3.5-4b Q4 (~2.4GB) needs 8GB devices — 2b (~1.2GB) is the floor tier and its flatter calibration
+re-opens on-device (the eval-tuning research + thumbs feedback loop apply); model downloads are
+post-install and confirm-gated (App-Store-legal, established local-LLM pattern).

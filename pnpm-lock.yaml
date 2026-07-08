@@ -23,6 +23,9 @@ importers:
       expo:
         specifier: ~56.0.12
         version: 56.0.12(@babel/core@7.29.7)(@expo/dom-webview@56.0.5)(@expo/metro-runtime@56.0.15)(expo-router@56.2.11)(react-dom@19.2.3(react@19.2.3))(react-native-web@0.21.2(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-native-worklets@0.8.3(@babel/core@7.29.7)(@react-native/metro-config@0.85.3(@babel/core@7.29.7))(react-native@0.85.3(@babel/core@7.29.7)(@react-native/metro-config@0.85.3(@babel/core@7.29.7))(@types/react@19.2.17)(react@19.2.3))(react@19.2.3))(react-native@0.85.3(@babel/core@7.29.7)(@react-native/metro-config@0.85.3(@babel/core@7.29.7))(@types/react@19.2.17)(react@19.2.3))(react@19.2.3)(typescript@6.0.3)
+      expo-build-properties:
+        specifier: ~56.0.22
+        version: 56.0.22(expo@56.0.12)
       expo-constants:
         specifier: ~56.0.18
         version: 56.0.18(expo@56.0.12)(react-native@0.85.3(@babel/core@7.29.7)(@react-native/metro-config@0.85.3(@babel/core@7.29.7))(@types/react@19.2.17)(react@19.2.3))
@@ -56,6 +59,9 @@ importers:
       expo-web-browser:
         specifier: ~56.0.5
         version: 56.0.5(expo@56.0.12)(react-native@0.85.3(@babel/core@7.29.7)(@react-native/metro-config@0.85.3(@babel/core@7.29.7))(@types/react@19.2.17)(react@19.2.3))
+      llama.rn:
+        specifier: 0.12.5
+        version: 0.12.5(react-native@0.85.3(@babel/core@7.29.7)(@react-native/metro-config@0.85.3(@babel/core@7.29.7))(@types/react@19.2.17)(react@19.2.3))(react@19.2.3)
       react:
         specifier: 19.2.3
         version: 19.2.3
@@ -636,6 +642,9 @@ packages:
 
   '@expo/schema-utils@56.0.1':
     resolution: {integrity: sha512-CZ/+mYbQmWeOnkCGlWy9K+lFxbJSMFY7+TqBZcKzBSTU5Q7IGRvn/sOG3TdNjIdLPmbA8xe7R/c3UUQ28R9i9w==}
+
+  '@expo/schema-utils@56.0.2':
+    resolution: {integrity: sha512-WcOH1E6rwxRqNwBzPOVhd5GBbMlS04+5n+ZMdhdwKOg/Kt3suV+F8F6An+z8mUJ8eSuMM3HD9Sj09t7vc/Xjkw==}
 
   '@expo/sdk-runtime-versions@1.0.0':
     resolution: {integrity: sha512-Doz2bfiPndXYFPMRwPyGa1k5QaKDVpY806UJj570epIiMzWaYyCtobasyfC++qfIXVb5Ocy7r3tP9d62hAQ7IQ==}
@@ -1463,6 +1472,11 @@ packages:
       react: '*'
       react-native: '*'
 
+  expo-build-properties@56.0.22:
+    resolution: {integrity: sha512-HbWHkpHUJxorDO/7FKtniQVsbylkIW+h1/wIJCNNGF5WAm+VBrF2M9Jnm+Uho5BFQBKJ/QMynyfxr6Ans9UrpQ==}
+    peerDependencies:
+      expo: '*'
+
   expo-constants@56.0.18:
     resolution: {integrity: sha512-8AMtbDGl/WVPnWlmbpGmvcdnNCy9E4PFnwdVwj600vljkMDPSxcAcjw8GVXEPk3PpZ+ngTqsrkltWyj0UKYAxw==}
     peerDependencies:
@@ -1943,6 +1957,14 @@ packages:
   lightningcss@1.32.0:
     resolution: {integrity: sha512-NXYBzinNrblfraPGyrbPoD19C1h9lfI/1mzgWYvXUTe414Gz/X1FD2XBZSZM7rRTrMA8JL3OtAaGifrIKhQ5yQ==}
     engines: {node: '>= 12.0.0'}
+
+  llama.rn@0.12.5:
+    resolution: {integrity: sha512-XCGrmf39Mh0Roo97Rwq+8j34xrAPw3faYdaFZl6GCKGbrcEdoxPGZWy+44GjAK44M399+qjFHJzVrmzYrlX6LQ==}
+    engines: {node: '>= 16.0.0'}
+    hasBin: true
+    peerDependencies:
+      react: '*'
+      react-native: '*'
 
   lodash.debounce@4.0.8:
     resolution: {integrity: sha512-FT1yDzDYEoYWhnSGnpE/4Kj1fLZkDFyqRb7fNt6FdYOSxlUWAtp42Eh6Wb0rGIv/m9Bgo7x4GhQbm5Ys4SG5ow==}
@@ -3679,6 +3701,8 @@ snapshots:
 
   '@expo/schema-utils@56.0.1': {}
 
+  '@expo/schema-utils@56.0.2': {}
+
   '@expo/sdk-runtime-versions@1.0.0': {}
 
   '@expo/spawn-async@1.8.0':
@@ -4545,6 +4569,13 @@ snapshots:
       - supports-color
       - typescript
 
+  expo-build-properties@56.0.22(expo@56.0.12):
+    dependencies:
+      '@expo/schema-utils': 56.0.2
+      expo: 56.0.12(@babel/core@7.29.7)(@expo/dom-webview@56.0.5)(@expo/metro-runtime@56.0.15)(expo-router@56.2.11)(react-dom@19.2.3(react@19.2.3))(react-native-web@0.21.2(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-native-worklets@0.8.3(@babel/core@7.29.7)(@react-native/metro-config@0.85.3(@babel/core@7.29.7))(react-native@0.85.3(@babel/core@7.29.7)(@react-native/metro-config@0.85.3(@babel/core@7.29.7))(@types/react@19.2.17)(react@19.2.3))(react@19.2.3))(react-native@0.85.3(@babel/core@7.29.7)(@react-native/metro-config@0.85.3(@babel/core@7.29.7))(@types/react@19.2.17)(react@19.2.3))(react@19.2.3)(typescript@6.0.3)
+      resolve-from: 5.0.0
+      semver: 7.8.4
+
   expo-constants@56.0.18(expo@56.0.12)(react-native@0.85.3(@babel/core@7.29.7)(@react-native/metro-config@0.85.3(@babel/core@7.29.7))(@types/react@19.2.17)(react@19.2.3)):
     dependencies:
       '@expo/env': 2.3.0
@@ -5034,6 +5065,11 @@ snapshots:
       lightningcss-linux-x64-musl: 1.32.0
       lightningcss-win32-arm64-msvc: 1.32.0
       lightningcss-win32-x64-msvc: 1.32.0
+
+  llama.rn@0.12.5(react-native@0.85.3(@babel/core@7.29.7)(@react-native/metro-config@0.85.3(@babel/core@7.29.7))(@types/react@19.2.17)(react@19.2.3))(react@19.2.3):
+    dependencies:
+      react: 19.2.3
+      react-native: 0.85.3(@babel/core@7.29.7)(@react-native/metro-config@0.85.3(@babel/core@7.29.7))(@types/react@19.2.17)(react@19.2.3)
 
   lodash.debounce@4.0.8: {}
 

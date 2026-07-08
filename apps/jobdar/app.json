@@ -38,7 +38,9 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
-      ]
+      ],
+      "llama.rn",
+      "expo-build-properties"
     ],
     "experiments": {
       "typedRoutes": true
