@@ -45,7 +45,8 @@ and how you want roles evaluated — then writes your config and seeds real empl
 ```bash
 node bin/jobdar scan
 ```
-You'll see fresh roles from your region's employers, filtered to your level and area. Add or change
+Watch the 📡 radar sweep as boards report in — the tally counts the roles that actually land. You'll
+see fresh roles from your region's employers, filtered to your level and area. Add or change
 employers any time with `jobdar seed --region <region> --write`.
 
 ### Optional: add USAJobs (federal jobs)
@@ -88,7 +89,12 @@ a "near" match, nudged down a little, never screened out.
 
 ```bash
 node bin/jobdar eval <job-url>    # or: eval --next for the best pending role
+node bin/jobdar eval --next 10    # auto-score the next 10 (5, 10, 15 … any number up to 50) — radar bar included
 ```
+
+Every eval — single or batch — ends by telling you **where your jobs report lives** (`data/pipeline.tsv`
+in your jobdar home) and how to view it: `jobdar tracker` (table), `jobdar tui` (interactive),
+`jobdar dashboard` (web).
 
 **Where does the model come from?** `eval`, `tailor`, and outreach drafts need one — everything above
 runs without any. Two easy paths:

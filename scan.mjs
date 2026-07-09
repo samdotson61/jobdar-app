@@ -14,6 +14,7 @@ import { resolveProvider } from './providers/_contract.mjs'
 import { filterByLevel } from './lib/levels.mjs'
 import { filterByLocation } from './lib/regions.mjs'
 import { upsertScanned, prunePipeline } from './lib/evaluations.mjs'
+import { createRadar } from './lib/progress.mjs'
 import { color, symbol, heading } from './lib/ui.mjs'
 
 const regionLabel = (t, regions) => (regions || []).map((r) => t(`regions.${r}`)).join(', ') || t('common.none')
@@ -71,6 +72,18 @@ export async function runScan(argv = []) {
   // Live scan. Portals run through a small concurrency pool (4 at once) — each provider still paces
   // its own pages politely; the pool only overlaps DIFFERENT employers' boards.
   console.log(t('scan.scanning', { count: resolved.length }))
+  // The radar sweep: one tick per portal, tallying the roles that actually landed on the radar.
+  // TTY-only; pipes/CI keep the plain per-portal lines below as the record.
+  const radar = createRadar({
+    total: resolved.length,
+    tallies: [
+      { key: 'roles', fmt: (n) => color.green(t('scan.tally_roles', { count: n })) },
+      { key: 'failed', fmt: (n) => color.red(`✗ ${n}`) },
+    ],
+  })
+  const multi = resolved.length > 1
+  const say = (line) => (multi ? radar.log(line) : console.log(line))
+  if (multi) radar.start()
   let total = 0
   let excludedLevel = 0
   let excludedRegion = 0
@@ -78,9 +91,11 @@ export async function runScan(argv = []) {
   const queue = resolved.slice()
   const scanOne = async ({ portal, hit }) => {
     if (!hit) {
-      console.log(`  ${symbol.warn()} ${t('scan.error_for', { company: portal.company, error: t('scan.no_provider') })}`)
+      say(`  ${symbol.warn()} ${t('scan.error_for', { company: portal.company, error: t('scan.no_provider') })}`)
+      radar.tick('failed')
       return
     }
+    radar.label(portal.company)
     try {
       const jobs = await hit.provider.fetch(hit.match, ctx)
       const lvl = filterByLevel(jobs, levels)
@@ -89,15 +104,18 @@ export async function runScan(argv = []) {
       total += loc.kept.length
       excludedLevel += lvl.excluded
       excludedRegion += loc.excluded
-      console.log(`  ${symbol.ok()} ${t('scan.found_for', { company: portal.company, count: loc.kept.length })}`)
+      say(`  ${symbol.ok()} ${t('scan.found_for', { company: portal.company, count: loc.kept.length })}`)
+      radar.tick('roles', loc.kept.length)
     } catch (err) {
-      console.log(`  ${symbol.fail()} ${t('scan.error_for', { company: portal.company, error: err.message })}`)
+      say(`  ${symbol.fail()} ${t('scan.error_for', { company: portal.company, error: err.message })}`)
+      radar.tick('failed')
     }
   }
   const workers = Array.from({ length: Math.min(4, queue.length) }, async () => {
     while (queue.length) await scanOne(queue.shift())
   })
   await Promise.all(workers)
+  radar.stop()
   if (excludedLevel > 0) console.log(color.dim(t('scan.level_note', { count: excludedLevel })))
   if (excludedRegion > 0) console.log(color.dim(t('scan.region_note', { count: excludedRegion })))
 

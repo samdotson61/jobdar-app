@@ -14,14 +14,16 @@ puesto frente a tu currículum, adapta un CV y una carta de presentación compat
 registra cada postulación.
 
 > **Estado:** Fases 0–7, 5.5, 7.7, 7.8, 8b, 8a, 8c, 8e + 8f **completas**, **Fase 10 L0–L5 entregada** —
-> **Jobdar CLI `1.47.1`** + **app `1.17.0`**: núcleo bilingüe; **seis escáneres
+> **Jobdar CLI `1.48.0`** + **app `1.17.0`**: núcleo bilingüe; **seis escáneres
 > verificados en vivo** (Workday, iCIMS, Greenhouse, Lever, Ashby + un lector JSON-LD opcional) más un
 > agregador federal **USAJobs** opcional (con tu propia clave gratuita); selectores
 > de nivel y región y el asistente `jobdar init`; la tubería completa **descubrir → prefiltrar → evaluar →
 > registrar → construir** — `scan` encuentra y filtra puestos (nunca los puntúa), `jobdar prescreen`
 > **filtra y ordena la cola sin gastar tokens** (los requisitos duros descartan con una razón citada, nunca
 > en silencio), el modelo (`jobdar eval`) puntúa la compatibilidad (0–5 → Postular / Investigar / Descartar)
-> y la registra, tú avanzas el estado (`a` en la TUI o `jobdar tracker --set`), `jobdar outreach` encuentra
+> y la registra — un puesto o **lotes con `--next N`** (5/10/15… tope de 50) con una **barra de progreso
+> de radar**, y cada evaluación termina indicando **dónde está tu informe de empleos** — tú avanzas el
+> estado (`a` en la TUI o `jobdar tracker --set`), `jobdar outreach` encuentra
 > el **contacto cálido** y mantiene los seguimientos corteses por construcción, y `jobdar pdf` construye el
 > currículum ATS adaptado; una TUI desplazable con cursor + un panel web con analíticas; frescura
 > (`posted` / `first_seen`, `scan --prune`). Y la **app de iPhone ya ejecuta toda la tubería
@@ -86,6 +88,7 @@ jobdar scan           # escanea portales en busca de nuevos puestos (sin modelo)
 jobdar seed --region midwest --write   # agrega empleadores reales de tu región
 jobdar prescreen      # filtra y ordena los puestos pendientes por probabilidad (sin modelo)
 jobdar eval <url>     # evalúa un puesto frente a tu currículum
+jobdar eval --next 10 # puntúa automáticamente los 10 mejores pendientes (5, 10, 15 … hasta 50) — con barra de radar
 jobdar pipeline       # escanear -> evaluar -> registrar, de principio a fin
 jobdar tailor [empresa] # IA: resumen de CV + carta para el puesto (fundamentado, modelo local)
 jobdar pdf [empresa]  # currículum adaptado para ATS → output/ (HTML, +PDF con Playwright)
@@ -138,6 +141,10 @@ nivel intermedio, o activa senior (que entonces se clasifica con normalidad, sin
   (`transferable_skills` / `eval --transferable`).
 - **Privado por diseño** — datos en local + modelo en el dispositivo por defecto; nunca alojamos
   tu currículum.
+- **Divertido, nunca falso** — el barrido de radar 📡 anima cada paso largo (escanear, prefiltrar,
+  evaluar, adaptar, borradores de contacto, calibrar, render de PDF): recuentos honestos que crecen al
+  llegar los resultados, ETA medidos y tiempo transcurrido real — nunca un porcentaje inventado. El
+  mismo lenguaje de radar llegará a la app.
 - **Fácil para cualquiera** — un asistente de configuración guiado y bilingüe para la CLI hoy; la app de
   iPhone totalmente en el dispositivo (beta por TestFlight pronto), y después una app web amigable, para
   personas no técnicas.

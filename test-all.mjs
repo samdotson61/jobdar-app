@@ -47,6 +47,8 @@ import { coverIsComplete, assembleTailoredCv, TAILOR_JSON_SCHEMA, buildTailorUse
 import { effectiveDirectives, contentHash, recordVariant } from './lib/customize_store.mjs'
 import { parsePreConfirm, isBorderline, evalSystemFor, preConfirmSystemFor } from './lib/eval_engine.mjs'
 import { resolvePay, socForTitle, loadWages, loadSocMap } from './lib/pay.mjs'
+import { parseNextCount, reportFooterLines, NEXT_MAX } from './lib/commands/eval.mjs'
+import { renderRadar, renderSweep, fmtEta, fmtElapsed, visibleLength, createRadar, SWEEP_FRAMES } from './lib/progress.mjs'
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url))
 const tests = []
@@ -1811,6 +1813,76 @@ test('fix: salary — extractPay is bounded against a degenerate comma run (no q
   const t0 = Date.now()
   extractPay('Compensation: $1' + ',000'.repeat(20000) + ' and benefits.')
   assert.ok(Date.now() - t0 < 1000, 'extractPay must not backtrack super-linearly on a hostile money run')
+})
+
+test('eval --next N: parseNextCount — bare/invalid stay guidance, numbers batch, 50 is the ceiling', () => {
+  assert.equal(parseNextCount(true), null) // bare --next = the AI-CLI guidance loop, unchanged
+  assert.equal(parseNextCount(undefined), null)
+  assert.equal(parseNextCount('abc'), null)
+  assert.equal(parseNextCount('0'), null)
+  assert.equal(parseNextCount('-3'), null)
+  assert.deepEqual(parseNextCount('1'), { n: 1, asked: 1, capped: false })
+  assert.deepEqual(parseNextCount('15'), { n: 15, asked: 15, capped: false })
+  assert.deepEqual(parseNextCount('50'), { n: 50, asked: 50, capped: false })
+  assert.deepEqual(parseNextCount('99'), { n: NEXT_MAX, asked: 99, capped: true })
+})
+
+test('radar bar: renderRadar is honest — real counts, sweep only mid-run, ETA, fits the width', () => {
+  const mid = renderRadar({ done: 3, total: 10, frame: 1, tallyText: '2 Apply · 1 Research', label: 'Cardinal Health — Data Analyst I', width: 110, etaMs: 120000 })
+  assert.ok(mid.includes('3/10') && mid.includes('30%'), 'shows the true count and percent')
+  assert.ok(mid.includes(SWEEP_FRAMES[1]), 'the sweep head animates by frame')
+  assert.ok(mid.includes('~2m') && mid.includes('Cardinal Health'), 'shows the measured ETA and the role in flight')
+  const finished = renderRadar({ done: 10, total: 10, frame: 3, tallyText: '', label: '', width: 80 })
+  assert.ok(finished.includes('10/10') && finished.includes('100%'))
+  for (const f of SWEEP_FRAMES) assert.ok(!finished.includes(f), 'no sweep once complete')
+  const narrow = renderRadar({ done: 1, total: 9, frame: 0, tallyText: '', label: 'x'.repeat(300), width: 60 })
+  assert.ok(visibleLength(narrow) <= 60, `must fit the terminal: ${visibleLength(narrow)} > 60`)
+  const crowded = renderRadar({ done: 4, total: 9, frame: 2, tallyText: "1 Apply · 1 Research · 2 Don't · ✗ 2", label: 'Very Long Company Name — A Very Long Role Title Indeed', width: 80, etaMs: 600000 })
+  assert.ok(visibleLength(crowded) <= 80, `tally/ETA/label must never overflow the width: ${visibleLength(crowded)} > 80`)
+  assert.equal(fmtEta(45_000), '~45s')
+  assert.equal(fmtEta(240_000), '~4m')
+  assert.equal(fmtEta(0), '')
+})
+
+test('radar sweep (indeterminate): the blip bounces, elapsed is true, tick(key, n) tallies honestly', () => {
+  const a = renderSweep({ frame: 0, label: 'tailoring Data Analyst I', width: 90, elapsedMs: 42000 })
+  assert.ok(a.includes('42s') && a.includes('tailoring') && !a.includes('%'), 'sweep shows elapsed + label, never a percent')
+  // the blip bounces: frame 0 → left edge, frame 23 → right edge, frame 46 → back at the left
+  const blipAt = (frame) => {
+    const line = renderSweep({ frame, width: 80 })
+    const track = line.slice(line.indexOf('[') + 1, line.indexOf(']'))
+    return track.search(/[◐◓◑◒]/)
+  }
+  assert.equal(blipAt(0), 0)
+  assert.equal(blipAt(23), 23)
+  assert.equal(blipAt(46), 0)
+  assert.ok(visibleLength(renderSweep({ frame: 5, label: 'y'.repeat(200), width: 60, elapsedMs: 1000 })) <= 60, 'sweep fits the terminal')
+  assert.equal(fmtElapsed(42_000), '42s')
+  assert.equal(fmtElapsed(190_000), '3m 10s')
+  // controller: caller-defined tallies; tick(key, n) advances one unit and adds n to that tally
+  // (scan ticks one portal with however many roles it kept — including zero).
+  const writes = []
+  const fake = { isTTY: true, columns: 100, write: (s) => writes.push(s) }
+  const r = createRadar({ total: 3, stream: fake, tallies: [{ key: 'roles', fmt: (n) => `${n} on the radar` }, { key: 'failed', fmt: (n) => `x${n}` }] })
+  r.start('Cardinal')
+  r.tick('roles', 5)
+  r.tick('roles', 0)
+  r.tick('failed')
+  const last = writes[writes.length - 1]
+  assert.ok(last.includes('3/3') && last.includes('5 on the radar') && last.includes('x1'), `tallies accumulate per unit: ${last}`)
+  r.stop()
+})
+
+test('eval report footer: always names the report + views; offers --next 5/10/15 only while pending', () => {
+  const t = getT('en')
+  const withPending = reportFooterLines(t, { file: '/tmp/home/data/pipeline.tsv', pending: 12 }).join('\n')
+  assert.ok(withPending.includes('/tmp/home/data/pipeline.tsv'), 'says where the report file lives')
+  assert.ok(withPending.includes('jobdar tracker') && withPending.includes('jobdar tui') && withPending.includes('jobdar dashboard'))
+  assert.ok(withPending.includes('--next 5') && withPending.includes('12'), 'offers the quick batch sizes with the real pending count')
+  const drained = reportFooterLines(t, { file: '/tmp/p.tsv', pending: 0 }).join('\n')
+  assert.ok(!drained.includes('--next'), 'no evaluate-more nudge when nothing is pending')
+  const es = reportFooterLines(getT('es'), { file: '/x.tsv', pending: 3 }).join('\n')
+  assert.ok(es.includes('informe de empleos') && es.includes('--next 5'), 'Spanish footer holds parity')
 })
 
 let passed = 0

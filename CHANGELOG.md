@@ -4,6 +4,42 @@ All notable changes to Jobdar are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and Jobdar adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.48.0] — 2026-07-09
+
+**The radar sweep everywhere + batch eval — Jobdar should feel fun, not like a chore.** Every
+long-running CLI verb now animates the 📡 radar; `jobdar eval --next N` batch-scores the queue; and
+every eval ends by saying where your jobs report is. CLI-only (app untouched at `1.17.0`); **139
+tests** (+4). Fun is now a written product principle (ROADMAP Phase 10) that the app inherits:
+delight from motion and personality, never from claiming progress that didn't happen.
+
+- **📡 Radar on every long verb** — `scan` (tick per portal, tally = "{n} on the radar"), `prescreen`
+  (previously a silent multi-minute loop — now ranked/screened counts live), `eval` live + Batches
+  prep, `calibrate` (✓/≠ agreement as it lands). Open-ended waits — `tailor`, `outreach --draft`,
+  Batches polling, the Playwright PDF render — get the **indeterminate sweep**: a bouncing blip with
+  true elapsed time, because a percent nobody measured would be a lie.
+
+- **`jobdar eval --next 5 | 10 | 15`** — a numeric `--next` auto-scores that many roles off the
+  prescreen-ranked pending queue (any number works, hard-**capped at 50** per run with an honest
+  capping note: "Capping this run at 50 roles (you asked for {n})"). Bare `--next` (no number) keeps
+  its exact guidance meaning — the AI-CLI model loop in `modes/eval.md` is untouched. Composes with
+  the existing auto flags (`--confirm`, `--escalate`, `--include-screened`, `--limit`, `--transferable`).
+- **The engine: `lib/progress.mjs`** (zero dependencies) — one controller, two honest modes:
+  determinate bars (caller-defined tallies that appear only once their count is > 0, an ETA measured
+  from the real pace, the item in flight) and the indeterminate sweep (elapsed only). Hard width
+  budget — segments append only when they fit whole; only the label truncates (verified ≤80 cols under
+  a live PTY). TTY-only by construction: pipes/CI keep the plain per-item lines. Persistent ✓ lines
+  print above the live bar via `radar.log`.
+- **The report footer — after every eval, both languages:** where the jobs report lives
+  (`data/pipeline.tsv` in the active jobdar home), how to view it (`jobdar tracker` · `jobdar tui` ·
+  `jobdar dashboard`), and — only while roles remain pending — the quick batch sizes
+  (`--next 5 · 10 · 15`, up to 50) with the real pending count. Printed on the model `--save` path,
+  the live auto loop, and the Batches path alike.
+- Backend-down guidance now also offers `jobdar backend --install` (not just `--check`) — the
+  first-time user's actual next step.
+- Live-verified against winc/qwen3.5-4b on a sandboxed `JOBDAR_HOME` (real 5,036-row pipeline copy):
+  real verdicts with pay bands, honest ✗ ticks on dead June-era JD links, the `--next 99` capping
+  note, and Spanish footer parity.
+
 ## [1.47.1] — 2026-07-09
 
 **Docs + install truth pass — a layman can now actually install it.** No runtime behavior change (one

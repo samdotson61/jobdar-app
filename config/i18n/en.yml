@@ -45,6 +45,7 @@ scan:
   found_for: "{company}: {count} role(s)"
   error_for: "{company}: {error}"
   total_found: "{count} role(s) found across {portals} portal(s)."
+  tally_roles: "{count} on the radar"
   level_note: "{count} role(s) outside your level(s) were filtered out"
   region_note: "{count} role(s) outside your region(s) were filtered out"
   eval_hint: "Discovered roles saved to your pipeline. Scan only finds roles — run `jobdar eval <url>` to score fit (the model scores, not the scanner)."
@@ -237,6 +238,11 @@ eval:
   preconfirm_skip: "pre-confirm skipped {role} — {reason}"
   preconfirm_thinned: "{skipped} role(s) skipped by AI pre-confirm before the scoring pass."
   escalated: "escalated borderline {from} → {to} on the api backend"
+  next_capped: "Capping this run at {max} roles (you asked for {n}) — run it again for the rest."
+  report_where: "Your jobs report: {file}"
+  report_view: "View it: jobdar tracker (table) · jobdar tui (interactive) · jobdar dashboard (web)"
+  report_more: "Evaluate more ({pending} pending): jobdar eval --next 5 · 10 · 15 — any number up to 50"
+  batch_waiting: "Batches job submitted — sweeping until the results land (the 50%-price tier takes its time)…"
 
 backend:
   title: "Inference backend"
@@ -318,6 +324,8 @@ prescreen:
   screened_header: "Screened out — each with its reason, nothing hidden ({count}):"
   override_hint: "Still want one? `jobdar eval --next --include-screened`, or `jobdar eval <url>` directly."
   done: "Prescreen done: {ranked} ranked, {screened} screened. `jobdar eval --next` now serves the best role first."
+  tally_ranked: "{count} ranked"
+  tally_screened: "{count} screened"
   jd_unavailable: "JD unavailable — scored on freshness only"
   reason_years: "asks for more experience than your level"
   reason_clearance: "requires an active security clearance"

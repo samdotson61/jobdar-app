@@ -45,6 +45,7 @@ scan:
   found_for: "{company}: {count} puesto(s)"
   error_for: "{company}: {error}"
   total_found: "{count} puesto(s) encontrado(s) en {portals} portal(es)."
+  tally_roles: "{count} en el radar"
   level_note: "{count} puesto(s) fuera de tu(s) nivel(es) fueron filtrados"
   region_note: "{count} puesto(s) fuera de tu(s) región(es) fueron filtrados"
   eval_hint: "Puestos descubiertos guardados en tu flujo. El escaneo solo encuentra puestos — ejecuta `jobdar eval <url>` para puntuar la compatibilidad (puntúa el modelo, no el escáner)."
@@ -237,6 +238,11 @@ eval:
   preconfirm_skip: "el pre-confirm omitió {role} — {reason}"
   preconfirm_thinned: "{skipped} puesto(s) omitidos por el pre-confirm de IA antes de puntuar."
   escalated: "escalado limítrofe {from} → {to} en el backend api"
+  next_capped: "Este lote se limita a {max} puestos (pediste {n}) — vuelve a ejecutarlo para el resto."
+  report_where: "Tu informe de empleos: {file}"
+  report_view: "Míralo: jobdar tracker (tabla) · jobdar tui (interactivo) · jobdar dashboard (web)"
+  report_more: "Evalúa más ({pending} pendientes): jobdar eval --next 5 · 10 · 15 — cualquier número hasta 50"
+  batch_waiting: "Trabajo por lotes enviado — barriendo hasta que lleguen los resultados (la tarifa al 50% se toma su tiempo)…"
 
 backend:
   title: "Backend de inferencia"
@@ -318,6 +324,8 @@ prescreen:
   screened_header: "Filtrados — cada uno con su razón, nada se oculta ({count}):"
   override_hint: "¿Aun así quieres uno? `jobdar eval --next --include-screened`, o `jobdar eval <url>` directamente."
   done: "Prescreen listo: {ranked} ordenados, {screened} filtrados. `jobdar eval --next` ahora sirve primero el mejor puesto."
+  tally_ranked: "{count} ordenados"
+  tally_screened: "{count} filtrados"
   jd_unavailable: "descripción no disponible — puntuado solo por frescura"
   reason_years: "pide más experiencia que tu nivel"
   reason_clearance: "requiere una autorización de seguridad activa"

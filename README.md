@@ -12,13 +12,15 @@ dominate US enterprise employers), evaluates each role against your résumé, ta
 cover letter, and tracks every application.
 
 > **Status:** Phases 0–7, 5.5, 7.7, 7.8, 8b, 8a, 8c, 8e + 8f **complete**, **Phase 10 L0–L5 shipped** —
-> **Jobdar CLI `1.47.1`** + **app `1.17.0`**: bilingual core; **six live-verified
+> **Jobdar CLI `1.48.0`** + **app `1.17.0`**: bilingual core; **six live-verified
 > scanner providers** (Workday, iCIMS, Greenhouse, Lever, Ashby + an opt-in JSON-LD reader) plus an opt-in
 > **USAJobs** federal aggregator (BYO free key); level + region
 > toggles and the `jobdar init` wizard; the full **discover → prescreen → evaluate → track → build** pipeline —
 > `scan` finds and filters roles (it never scores), `jobdar prescreen` **gates + ranks the queue zero-token**
 > (hard gates screen with a quoted reason, never silently), the model's `jobdar eval` scores fit (0–5 →
-> Apply / Research / Don't) and records it, you advance status (`a` in the TUI or `jobdar tracker --set`),
+> Apply / Research / Don't) and records it — one role or **`--next N` batches** (5/10/15… capped at 50)
+> behind a **radar progress bar**, every eval ending with **where your jobs report lives** — you advance
+> status (`a` in the TUI or `jobdar tracker --set`),
 > `jobdar outreach` finds the **warm contact** and keeps follow-ups polite by construction, and `jobdar pdf`
 > builds the tailored ATS résumé; a scrollable cursor-driven `jobdar tui` workspace + a web dashboard with
 > analytics; freshness tracking (`posted` / `first_seen`, `scan --prune`). And the **iPhone app now runs
@@ -79,6 +81,7 @@ jobdar scan           # scan portals for new roles (no model needed)
 jobdar seed --region midwest --write   # add real employers for your region
 jobdar prescreen      # gate + rank pending roles by likelihood (no model needed)
 jobdar eval <url>     # evaluate a role against your résumé
+jobdar eval --next 10 # auto-score the 10 best pending (5, 10, 15 … up to 50) — radar bar included
 jobdar pipeline       # scan -> evaluate -> track, end to end
 jobdar tailor [company] # AI: role-targeted CV summary + cover letter (grounded, local model)
 jobdar pdf [company]  # tailored ATS résumé → output/ (HTML, +PDF with Playwright)
@@ -124,6 +127,9 @@ your first scan — `jobdar init` walks you through it in English or Spanish, no
 - **A dedicated no-degree path** — surfaces skills-based, apprenticeship, and "or equivalent experience" roles.
 - **Transferable-skills toggle** — for career-changers and new grads: credits genuine adjacent skills toward a role's requirements and treats an "X+ years in [field]" ask as bridgeable, not a hard wall — without lowering the bar (`transferable_skills` / `eval --transferable`).
 - **Private by design** — local data + on-device model by default; no résumé ever hosted by us.
+- **Fun, never fake** — the 📡 radar sweep animates every long-running step (scan, prescreen, eval,
+  tailor, outreach drafts, calibrate, PDF render): honest tallies that grow as results land, measured
+  ETAs and true elapsed time — never an invented percent. The same radar language is headed into the app.
 - **Easy for anyone** — a guided, bilingual setup wizard for the CLI today; the fully-on-device iPhone
   app (TestFlight beta soon), then a friendly web app, for non-technical users.
 

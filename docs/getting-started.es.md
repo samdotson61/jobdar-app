@@ -38,8 +38,9 @@ empleadores reales de tu región. **Sin editar archivos.** Pulsa Enter para acep
 ```bash
 node bin/jobdar scan
 ```
-Verás puestos nuevos de los empleadores de tu región, filtrados a tu nivel y zona. Agrega o cambia
-empleadores cuando quieras con `jobdar seed --region <región> --write`.
+Mira el barrido de radar 📡 mientras los portales van respondiendo — el recuento suma los puestos que
+de verdad aterrizan. Verás puestos nuevos de los empleadores de tu región, filtrados a tu nivel y
+zona. Agrega o cambia empleadores cuando quieras con `jobdar seed --region <región> --write`.
 
 ### Opcional: agregar USAJobs (empleos federales)
 
@@ -84,7 +85,12 @@ coincidencia "cerca", penalizada levemente, nunca descartada.
 
 ```bash
 node bin/jobdar eval <url-del-puesto>    # o: eval --next para el mejor puesto pendiente
+node bin/jobdar eval --next 10           # puntúa los siguientes 10 (5, 10, 15 … hasta 50) — con barra de radar
 ```
+
+Cada evaluación — individual o por lote — termina indicándote **dónde está tu informe de empleos**
+(`data/pipeline.tsv` en tu directorio de jobdar) y cómo verlo: `jobdar tracker` (tabla), `jobdar tui`
+(interactivo), `jobdar dashboard` (web).
 
 **¿De dónde sale el modelo?** `eval`, `tailor` y los borradores de contacto necesitan uno — todo lo
 anterior funciona sin ninguno. Dos caminos fáciles:
