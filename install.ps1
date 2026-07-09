@@ -13,7 +13,7 @@ if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
   exit 1
 }
 
-$Repo = if ($env:JOBDAR_REPO) { $env:JOBDAR_REPO } else { "https://github.com/getjobdar/jobdar.git" }
+$Repo = if ($env:JOBDAR_REPO) { $env:JOBDAR_REPO } else { "https://github.com/samdotson61/jobdar-app.git" }
 $Dir = if ($env:JOBDAR_DIR) { $env:JOBDAR_DIR } else { Join-Path $HOME "jobdar" }
 
 if (Test-Path (Join-Path $Dir ".git")) {

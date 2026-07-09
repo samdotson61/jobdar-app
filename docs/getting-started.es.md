@@ -5,19 +5,23 @@
 Jobdar encuentra empleos de nivel inicial en EE. UU. que encajan contigo, mantiene tus datos en tu
 máquina y funciona en inglés o español. Esta es la ruta de 5 minutos de cero a tu primer escaneo.
 
+> **¿Prefieres una app?** La app de iPhone — toda la tubería corriendo de forma privada en tu teléfono —
+> llegará **pronto en beta por TestFlight**, y será la forma más fácil de probar Jobdar. Hoy, la CLI de
+> abajo es el camino.
+
 ## 1. Instalar (un comando)
 
 **macOS / Linux**
 ```bash
-curl -fsSL https://raw.githubusercontent.com/getjobdar/jobdar/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/samdotson61/jobdar-app/main/install.sh | bash
 ```
 **Windows (PowerShell)**
 ```powershell
-irm https://raw.githubusercontent.com/getjobdar/jobdar/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/samdotson61/jobdar-app/main/install.ps1 | iex
 ```
 ¿Sin instalador? Solo necesitas [Node.js 20+](https://nodejs.org), luego:
 ```bash
-git clone https://github.com/getjobdar/jobdar && cd jobdar && npm install && node bin/jobdar init
+git clone https://github.com/samdotson61/jobdar-app && cd jobdar-app && npm install && node bin/jobdar init
 ```
 
 ## 2. Configurar (el asistente)
@@ -81,8 +85,17 @@ coincidencia "cerca", penalizada levemente, nunca descartada.
 ```bash
 node bin/jobdar eval <url-del-puesto>    # o: eval --next para el mejor puesto pendiente
 ```
-Dentro de una CLI de IA (como Claude Code), las mismas acciones son comandos de barra: `/jobdar scan`,
-`/jobdar eval` y un onboarding guiado `/jobdar`.
+
+**¿De dónde sale el modelo?** `eval`, `tailor` y los borradores de contacto necesitan uno — todo lo
+anterior funciona sin ninguno. Dos caminos fáciles:
+
+- **Modelo local privado (el predeterminado):** `node bin/jobdar backend --install` te guía por la
+  instalación local gratuita (winc.cpp — sin cuenta, sin clave de API, nada sale de tu máquina), y
+  `node bin/jobdar backend --check` la verifica de principio a fin. `node bin/jobdar backend` muestra el
+  estado en cualquier momento.
+- **Tu CLI de IA:** dentro de Claude Code (o similar), las mismas acciones son comandos de barra —
+  `/jobdar scan`, `/jobdar eval` y un onboarding guiado `/jobdar` — usando el modelo de esa CLI, sin
+  configuración extra.
 
 **¿Cambias de campo o recién te gradúas?** Activa la coincidencia por habilidades transferibles —
 `jobdar init` te la ofrece (activada por defecto para perfiles de cambio de carrera / sin título), o

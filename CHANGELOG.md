@@ -4,6 +4,40 @@ All notable changes to Jobdar are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and Jobdar adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.47.1] — 2026-07-09
+
+**Docs + install truth pass — a layman can now actually install it.** No runtime behavior change (one
+string: the scanner User-Agent). Full-state audit first: local == `origin/main` == `987487f`, 135/135
+tests green, version lockstep verified across all manifests.
+
+- **Every install path pointed at a GitHub org that doesn't exist.** `getjobdar` (the ROADMAP Step 0.2
+  placeholder) was never created, so the one-command installers (`install.sh` / `install.ps1`), the
+  getting-started guides (EN/ES), `package.json` repository/homepage/bugs, the plugin + marketplace
+  manifests, and the scanner User-Agent all 404'd. Everything now points at the real public repo,
+  **`samdotson61/jobdar-app`** — cloneable today. The branded-org call for 1.0 stays Sam's (RELEASING.md
+  now carries a "GitHub home" decision note with the one-pass URL-sweep grep).
+- **README (EN/ES) no longer leads with an install that 404s.** `npm i -g jobdar` isn't published yet —
+  the README now leads with the working installer one-liner + clone path and marks npm as arriving with
+  the 1.0 publish.
+- **README (EN/ES): "Two surfaces" → "Three surfaces."** The iPhone app — fully on-device since 1.47,
+  **TestFlight beta next, the easiest way to try Jobdar** — now sits between the CLI (available now) and
+  the web app (later, jobdar.ai). The stale pre-1.0 "Next steps" section (it still described the Phase
+  0–6 MVP cut line) is replaced with the real remaining list: TestFlight L6 → npm publish + closed beta →
+  feedback recalibration → jobdar.ai + Android.
+- **Getting-started (EN/ES) now answers "where does the model come from?"** New model-paths block under
+  the eval step — `jobdar backend --install` (free, private, on-device; `--check` verifies) or your AI
+  CLI's `/jobdar` slash commands — plus the app-beta pointer up top; troubleshooting gains a
+  model-missing row.
+- **Stale claims corrected to v1.47 truth:** ROADMAP banner (said "Next build phase: Phase 8d", was
+  dated 2026-06-12, and overclaimed "seven providers, all live-verified" — it's six live-verified + the
+  opt-in USAJobs pending a key) and known-gaps (a phone no longer needs a reachable serve; native
+  persists via the file store, not AsyncStorage); `apps/README.md` (claimed "no on-device model yet" and
+  blamed Expo Go on SDK version — the real constraint is llama.rn needs a dev build);
+  `docs/phase9-architecture.md` known-gaps (native off serve since 1.47);
+  `docs/troubleshooting.md` ("no server-side profile write yet" — `POST /profile` shipped 1.41);
+  RELEASING.md non-blockers (onboarding + persistence long shipped). CLAUDE.md status line now carries
+  Phase 10 L0–L5 + app `1.17.0`.
+
 ## [1.47.0] — 2026-07-08
 
 **Phase 10 L1–L5: the app runs FULLY LOCAL on the phone — no Mac, no serve.** App `@jobdar/app`

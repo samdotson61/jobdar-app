@@ -46,11 +46,18 @@ These gate a real 1.0 and need a human call; the checklist above is ready the mo
   headline 1.0. The feedback loop (`jobdar calibrate --feedback`) is built precisely to harvest that.
 - **License confirmation.** Currently Apache-2.0. Fine to ship; just confirm it's the intended license
   for a public tool that touches employer job data.
+- **GitHub home.** Everything (installers, docs, package metadata, the scanner User-Agent) points at
+  the real public repo, `samdotson61/jobdar-app` — so install instructions work today. If you claim a
+  branded org for 1.0 (ROADMAP Step 0.2 suggests e.g. `getjobdar`), transfer the repo (GitHub redirects
+  the old URLs) and sweep the references in one pass:
+  `grep -rn "samdotson61/jobdar-app" --include="*.md" --include="*.json" --include="*.mjs" --include="*.sh" --include="*.ps1" .`
 
 ## Known non-blockers (documented, shippable as-is)
 
-See `ROADMAP.md` → "Known gaps & current limitations". None block a beta: no first-run onboarding polish
-(blank Search is the interim), app profile persistence is browser-local only, PDF résumé import needs
-`poppler`/`pdftotext` on the host (flagged by `jobdar doctor`), discovery is keyless ATS-probing
-(aggregators like USAJobs are opt-in BYO-key), and the evaluator is bimodal on the small labeled set
-(the feedback loop is the path to recalibration once real thumbs accumulate).
+See `ROADMAP.md` → "Known gaps & current limitations". None block a beta: PDF résumé import needs
+`poppler`/`pdftotext` on the host for the CLI/serve (flagged by `jobdar doctor`; on-device the app asks
+for `.docx`/`.txt`), discovery is keyless ATS-probing (aggregators like USAJobs are opt-in BYO-key, not
+yet live-verified), the evaluator is bimodal on the small labeled set (the feedback loop is the path to
+recalibration once real thumbs accumulate), and the on-device hardware numbers (Metal speed, the in-app
+model-download UX) are unexercised until TestFlight. *(Resolved since this list was first written:
+first-run onboarding shipped 1.41; app persistence is per-device on both platforms since 1.45/1.47.)*

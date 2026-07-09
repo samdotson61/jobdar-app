@@ -217,29 +217,38 @@ conformance/lint test keeps the scanner provider-pure so the same code stays por
 
 ## Known gaps & current limitations
 
-Current as of `@jobdar/app` 1.15.0 / CLI 1.45.0 — intentional/known, mirrored in
+Current as of `@jobdar/app` 1.17.x / CLI 1.47.x — intentional/known, mirrored in
 [ROADMAP.md](../ROADMAP.md#known-gaps--current-limitations). (Resolved since 1.10.0: first-run
 **onboarding shipped** in 1.41 — welcome → continue-as/upload/manual → search; **`POST /profile`
 shipped** in 1.41 — the app writes the chosen identity to `config/profile.yml`; the **`jobdar doctor`
-poppler check shipped** in 1.41; **native persistence shipped** in 1.45 via AsyncStorage.)
+poppler check shipped** in 1.41; **native persistence shipped** in 1.45 via AsyncStorage and moved to
+the on-device file store in 1.47. **Phase 10 (1.47) took native off serve entirely** — the serve-shaped
+items below now describe the web app and the optional Mac-companion mode, not native.)
 
 - **State persists per-device; there is no sync.** The app persists durable user state (profile incl.
   salary/sponsorship, résumé text + filename, intent/terms, results, verdicts, feedback, drafts, ledger)
-  via zustand `persist` — **web → localStorage, native → AsyncStorage — identically**: first boot blank,
-  saved after the first upload/selection, restored on the next load. Identity is also written to the
-  CLI's `config/profile.yml` (`POST /profile`) and the résumé to `data/cv.md`, so a new browser/device on
-  the same machine can offer "Continue as <name>". But there is **no cross-machine sync** — moving
-  machines = copying the jobdar home (by design; local-first).
-- **A physical phone needs a reachable serve.** The app defaults to `http://127.0.0.1:4320`, which works
-  on web and in the iOS simulator (loopback maps to the host). A real device must point at the Mac's LAN
-  IP: run `jobdar serve --host 0.0.0.0` (prints a bearer token) and open the app with
-  `?serve=http://<mac-ip>:4320&token=<t>` (web) or call `configureServe` (native). A native settings
-  screen for this is future work.
+  — **web → localStorage** (zustand `persist`), **native → the on-device file store** since 1.47
+  (`src/local/files.ts`, CLI-identical TSV/JSON formats; files are the source of truth — AsyncStorage is
+  unreliable past ~2MB, so hydration re-reads the files): first boot blank, saved after the first
+  upload/selection, restored on the next load. In serve mode, identity is also written to the CLI's
+  `config/profile.yml` (`POST /profile`) and the résumé to `data/cv.md`, so a new browser/device on the
+  same machine can offer "Continue as <name>". But there is **no cross-machine sync** — moving machines =
+  copying the jobdar home; a future phone⇄Mac export is a file copy by construction (by design;
+  local-first).
+- **Native no longer needs a serve (1.47)** — it defaults to the **on-device backend**: scanning,
+  prescreen, eval, tailor, and outreach drafts all run on the phone. The optional **Mac-serve companion
+  mode** (Settings → backend: URL + bearer token) still needs a reachable `jobdar serve --host 0.0.0.0`.
+  **Web** keeps the serve default `http://127.0.0.1:4320` and the `?serve=http://<mac-ip>:4320&token=<t>`
+  override. On-device honest limits: intent parse = deterministic keyword fallback, `/discover` returns
+  not-available, and the in-app model-download UX + real-device Metal speed are unexercised until the
+  TestFlight beta (Phase 10 L6).
 - **PDF upload depends on `pdftotext` (poppler) on the serve host.** `POST /import/upload` writes the bytes
   to the confined `data/uploads/` dir and runs the deterministic `docparse` extractor — `.docx` via `unzip`,
   `.pdf` via `pdftotext`, `.txt/.md` direct. The host needs poppler for PDF (`brew install poppler` /
   `apt-get install poppler-utils`); `jobdar doctor` flags it when missing, and the upload returns an honest
-  error. Scanned/image-only PDFs have no embedded text and cannot be parsed.
+  error. Scanned/image-only PDFs have no embedded text and cannot be parsed. On the **on-device native
+  backend** (1.47), PDF parsing is deferred entirely with an honest "export as .docx/.txt" error —
+  `.docx` parses on-device via fflate; there is no pdftotext on iOS.
 - **Discovery is keyless ATS-probing, not an aggregator.** Company discovery (winc suggests → probe
   Greenhouse/Lever/Ashby slugs → keep boards that resolve) finds companies whose ATS handle is guessable;
   it is not a global posting index. **USAJobs shipped in 1.43** as an opt-in seventh provider (BYO free

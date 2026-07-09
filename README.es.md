@@ -13,7 +13,8 @@ Jobdar escanea las páginas de empleo de las empresas (con soporte de primera cl
 puesto frente a tu currículum, adapta un CV y una carta de presentación compatibles con ATS, y
 registra cada postulación.
 
-> **Estado:** Fases 0–7, 5.5, 7.7, 7.8, 8b, 8a, 8c, 8e + 8f **completas** — **Jobdar CLI `1.47.0`**: núcleo bilingüe; **seis escáneres
+> **Estado:** Fases 0–7, 5.5, 7.7, 7.8, 8b, 8a, 8c, 8e + 8f **completas**, **Fase 10 L0–L5 entregada** —
+> **Jobdar CLI `1.47.1`** + **app `1.17.0`**: núcleo bilingüe; **seis escáneres
 > verificados en vivo** (Workday, iCIMS, Greenhouse, Lever, Ashby + un lector JSON-LD opcional) más un
 > agregador federal **USAJobs** opcional (con tu propia clave gratuita); selectores
 > de nivel y región y el asistente `jobdar init`; la tubería completa **descubrir → prefiltrar → evaluar →
@@ -23,8 +24,11 @@ registra cada postulación.
 > y la registra, tú avanzas el estado (`a` en la TUI o `jobdar tracker --set`), `jobdar outreach` encuentra
 > el **contacto cálido** y mantiene los seguimientos corteses por construcción, y `jobdar pdf` construye el
 > currículum ATS adaptado; una TUI desplazable con cursor + un panel web con analíticas; frescura
-> (`posted` / `first_seen`, `scan --prune`). Pendiente para 1.0: publicar en npm + marketplace, y luego una
-> beta cerrada. Consulta **[ROADMAP.md](ROADMAP.md)** para el plan completo y
+> (`posted` / `first_seen`, `scan --prune`). Y la **app de iPhone ya ejecuta toda la tubería
+> completamente en el teléfono** — escaneo nativo, evaluación/adaptación/contacto en el dispositivo vía
+> llama.rn, un gestor de modelos integrado — **sin Mac, sin servidor; el siguiente paso es una beta por
+> TestFlight**. Pendiente para el 1.0 de la CLI: publicar en npm + marketplace, y luego una beta cerrada.
+> Consulta **[ROADMAP.md](ROADMAP.md)** para el plan completo y
 > **[CHANGELOG.md](CHANGELOG.md)** para lo ya entregado.
 
 ## Tus datos se quedan en local
@@ -49,21 +53,28 @@ incluye plantillas `*.example.yml` sin datos personales. Tu currículum (`data/c
 tu flujo viven en el directorio `data/`, también ignorado por git.
 
 **Portátil entre dispositivos.** Todos tus datos viven en un único *directorio de datos del usuario*:
-un clon del repositorio los guarda dentro de la carpeta (todo el clon es una unidad autónoma y móvil),
-una instalación global usa `~/.jobdar` (nunca dentro de `node_modules`, así las actualizaciones no lo
-borran), y **`JOBDAR_HOME`** lo reubica donde quieras. Cambiar de equipo = copiar una carpeta;
-`jobdar doctor` muestra el directorio activo. Las tablas de idioma y el catálogo de empleadores viajan
-con el código, así que funcionan desde cualquier ubicación.
+las instalaciones nuevas (incluido el instalador de un comando) usan `~/.jobdar` — separado del código,
+así las actualizaciones nunca lo borran — mientras que un clon que ya tiene `config/profile.yml` guarda
+todo dentro de esa carpeta (una unidad autónoma y móvil), y **`JOBDAR_HOME`** lo reubica donde quieras.
+Cambiar de equipo = copiar una carpeta; `jobdar doctor` muestra el directorio activo. Las tablas de
+idioma y el catálogo de empleadores viajan con el código, así que funcionan desde cualquier ubicación.
 
-## Dos superficies, un mismo motor
+## Tres superficies, un mismo motor
 
-- **CLI (la columna vertebral)** — local primero, para personas técnicas, se ejecuta con tu propia
-  CLI/API de IA. Sale primero.
-- **Aplicación web (después — [Fase 9](ROADMAP.md#phase-9--web-and-mobile-apps-future--post-10))**
-  — una app alojada, multiplataforma y bilingüe para personas no técnicas: sube un currículum y
-  recibe orientación hacia empleos que encajan, con poco esfuerzo. La evaluación se ejecuta **en
-  tu navegador** por defecto, así que el currículum nunca sale de tu dispositivo. Objetivos:
-  **facilidad de uso** y **precisión**.
+- **CLI (disponible hoy — la columna vertebral)** — local primero. Escanear, prefiltrar y registrar no
+  necesitan modelo; `jobdar backend --install` agrega el modelo local privado y gratuito para
+  evaluar/adaptar, o usa tu propia CLI/API de IA.
+- **App de iPhone (beta pronto — la forma más fácil de probar Jobdar)** — toda la tubería corre **en el
+  teléfono**: escanear → prefiltrar → evaluar → adaptar → contactar, con el modelo descargado dentro de
+  la app. Sin Mac, sin servidor, sin cuenta; tu currículum nunca sale del dispositivo. El siguiente paso
+  es una **beta por TestFlight**
+  ([Fase 10](ROADMAP.md#phase-10--fully-local-iphone-active-direction-locked-2026-07-08)); Android llega
+  después con la misma base.
+- **Aplicación web (después — [Fase 9](ROADMAP.md#phase-9--web-and-mobile-apps-future--post-10),
+  jobdar.ai)** — una app alojada, multiplataforma y bilingüe para personas no técnicas: sube un currículum
+  y recibe orientación hacia empleos que encajan, con poco esfuerzo. La evaluación se queda **de tu lado**
+  por defecto, así que el currículum nunca sale de tu dispositivo. Objetivos: **facilidad de uso** y
+  **precisión**.
 
 ## Uso de la CLI
 
@@ -85,9 +96,17 @@ jobdar tui            # panel interactivo en la terminal
 jobdar doctor         # revisa tu configuración
 ```
 
-Instala con `npm i -g jobdar` (o usa `npx jobdar` sin instalar). Dentro de una CLI de IA como
-Claude Code, las mismas acciones están disponibles como el comando de barra `/jobdar scan`,
-`/jobdar eval`, etc.
+**Instalación (funciona hoy):**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/samdotson61/jobdar-app/main/install.sh | bash
+```
+
+Windows (PowerShell): `irm https://raw.githubusercontent.com/samdotson61/jobdar-app/main/install.ps1 | iex`.
+¿Sin instalador? `git clone https://github.com/samdotson61/jobdar-app && cd jobdar-app && npm install &&
+node bin/jobdar init`. (`npm i -g jobdar` / `npx jobdar` llegan con la publicación 1.0 en npm — consulta
+[RELEASING.md](RELEASING.md).) Dentro de una CLI de IA como Claude Code, las mismas acciones están
+disponibles como el comando de barra `/jobdar scan`, `/jobdar eval`, etc.
 
 ¿Nuevo/a por aquí? La **[guía Empezar](docs/getting-started.es.md)** es la ruta de 5 minutos desde la
 instalación hasta tu primer escaneo — `jobdar init` te guía en inglés o español, sin editar YAML.
@@ -103,7 +122,7 @@ nivel intermedio, o activa senior (que entonces se clasifica con normalidad, sin
 
 ## Por qué Jobdar es diferente
 
-- **Inglés estadounidense + español**, paridad completa (inglés primario) — en la CLI y la app web.
+- **Inglés estadounidense + español**, paridad completa (inglés primario) — en la CLI y las apps.
 - **Escáner para grandes empresas de EE. UU.** — Workday + iCIMS primero, más Greenhouse/Lever/Ashby.
 - **Flujo descubrir → prefiltrar → evaluar** — `scan` encuentra y filtra puestos pero **nunca los puntúa**; `jobdar prescreen` descarta requisitos duros (años exigidos, autorización de seguridad activa, título obligatorio) **con una razón citada — nunca en silencio** — y ordena el resto por coincidencia de habilidades + frescura; el modelo (`jobdar eval`) puntúa la compatibilidad **0–5** con tu currículum y registra una banda **Postular / Investigar / Descartar**. `jobdar tui` muestra los puestos descubiertos como *pendiente eval* hasta que el modelo los puntúa.
 - **Un contacto cálido vale más que una solicitud fría** — `jobdar outreach` construye enlaces de búsqueda de personas en LinkedIn (tú navegas y eliges; Jobdar nunca extrae datos ni envía nada), los borradores los envías tú, y la cadencia cortés — 2 personas por puesto, UN seguimiento tras 5+ días hábiles, y se acabó — la aplica el código.
@@ -119,12 +138,15 @@ nivel intermedio, o activa senior (que entonces se clasifica con normalidad, sin
   (`transferable_skills` / `eval --transferable`).
 - **Privado por diseño** — datos en local + modelo en el dispositivo por defecto; nunca alojamos
   tu currículum.
-- **Fácil para cualquiera** — un asistente de configuración guiado y bilingüe para la CLI hoy; una
-  app web amigable para personas no técnicas después.
+- **Fácil para cualquiera** — un asistente de configuración guiado y bilingüe para la CLI hoy; la app de
+  iPhone totalmente en el dispositivo (beta por TestFlight pronto), y después una app web amigable, para
+  personas no técnicas.
 
 ## Próximos pasos
 
-La línea de corte del MVP del roadmap (CLI): cimientos y marca → núcleo en inglés estadounidense →
-proveedor Workday → el ajuste de nivel (inicial por defecto) + afinado sin título → el ajuste de
-región (Medio Oeste sembrado primero) → el asistente de configuración. El backend de modelo local
-intercambiable y la app web llegan después de la 1.0.
+La línea de corte del MVP ya está entregada (mira el estado de arriba). Lo que queda, en orden: la **beta
+por TestFlight** de la app de iPhone ([Fase 10 L6](ROADMAP.md#phase-10--fully-local-iphone-active-direction-locked-2026-07-08)
+— pasos de cuenta), la **publicación en npm + marketplace** y una **beta cerrada** de la CLI (las
+decisiones de nombre / organización / licencia están en [RELEASING.md](RELEASING.md)), la recalibración
+del evaluador con 👍/👎 reales (`jobdar calibrate --feedback`, al acumular N≥50–100 etiquetas), y luego la
+**app web (jobdar.ai)** y **Android** con la misma base.

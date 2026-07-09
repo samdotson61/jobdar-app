@@ -13,7 +13,7 @@ if ! command -v git >/dev/null 2>&1; then
   exit 1
 fi
 
-REPO="${JOBDAR_REPO:-https://github.com/getjobdar/jobdar.git}"
+REPO="${JOBDAR_REPO:-https://github.com/samdotson61/jobdar-app.git}"
 DIR="${JOBDAR_DIR:-$HOME/jobdar}"
 
 if [ -d "$DIR/.git" ]; then

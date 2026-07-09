@@ -5,19 +5,23 @@
 Jobdar finds entry-level US jobs that fit you, keeps your data on your machine, and works in English
 or Spanish. Here's the 5-minute path from zero to your first scan.
 
+> **Prefer an app?** The iPhone app — the whole pipeline running privately on your phone — is headed
+> to a **TestFlight beta soon**, and will be the easiest way to try Jobdar. Today, the CLI below is
+> the way in.
+
 ## 1. Install (one command)
 
 **macOS / Linux**
 ```bash
-curl -fsSL https://raw.githubusercontent.com/getjobdar/jobdar/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/samdotson61/jobdar-app/main/install.sh | bash
 ```
 **Windows (PowerShell)**
 ```powershell
-irm https://raw.githubusercontent.com/getjobdar/jobdar/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/samdotson61/jobdar-app/main/install.ps1 | iex
 ```
 No installer? You just need [Node.js 20+](https://nodejs.org), then:
 ```bash
-git clone https://github.com/getjobdar/jobdar && cd jobdar && npm install && node bin/jobdar init
+git clone https://github.com/samdotson61/jobdar-app && cd jobdar-app && npm install && node bin/jobdar init
 ```
 
 **Optional tools** (Jobdar tells you when a feature needs one — run `node bin/jobdar doctor`):
@@ -85,8 +89,16 @@ a "near" match, nudged down a little, never screened out.
 ```bash
 node bin/jobdar eval <job-url>    # or: eval --next for the best pending role
 ```
-Inside an AI CLI (like Claude Code), the same actions are slash commands: `/jobdar scan`,
-`/jobdar eval`, and a guided `/jobdar` onboarding.
+
+**Where does the model come from?** `eval`, `tailor`, and outreach drafts need one — everything above
+runs without any. Two easy paths:
+
+- **Private on-device model (the default):** `node bin/jobdar backend --install` walks you through the
+  free local setup (winc.cpp — no account, no API key, nothing leaves your machine), and
+  `node bin/jobdar backend --check` verifies it end to end. `node bin/jobdar backend` shows the status
+  any time.
+- **Your AI CLI:** inside Claude Code (or similar), the same actions are slash commands — `/jobdar scan`,
+  `/jobdar eval`, and a guided `/jobdar` onboarding — using that CLI's model, no extra setup.
 
 **Switching fields or fresh out of school?** Turn on transferable-skills matching — `jobdar init` offers
 it (on by default for career-changer / no-degree profiles), or add `--transferable` to any `eval`. It

@@ -7,9 +7,9 @@
 > fit against your résumé, **tailors** an ATS-friendly CV/cover letter, and **tracks** every application —
 > with your data kept **local**, processed by a **private on-device model by default** or your own cloud API.
 >
-> **Status:** Phases 0–7, **5.5, 7.7, 7.8, 8b, 8a, 8c, 8e and 8f** complete — **Jobdar CLI `1.47.0`** (9.1 serve façade, security/correctness hardening, 9.3 intent search + tunable region/level/résumé controls + BM25-lite relevance, 9.4 winc-suggest ATS discovery, a search-speed pass, region-timezone ranking, a fit-only Search tab, honest résumé status, docx/pdf résumé upload, résumé-seeded profile, a blank-start app, a target-salary selector, persisted state after first use, a documented known-gaps list, a `jobdar doctor` poppler check, `POST /profile` persistence, a first-run onboarding screen, an eval-calibration pass, an **eval-feedback loop** (thumbs → `jobdar calibrate --feedback`), **batch Apply scoring**, a **USAJobs** opt-in provider, npm ship-prep, + a **"Need visa sponsorship" toggle**, + **web-native parity** (AsyncStorage persistence, native résumé upload, a backend-down banner, list pagination, honest signal labels)). Bilingual core; **seven scanner
-> providers** (Greenhouse, Workday, iCIMS, Lever, Ashby + an opt-in JSON-LD reader), all live-verified,
-> all with eval-time JD fetch; level + region toggles; the `jobdar init` wizard; the full
+> **Status:** Phases 0–7, **5.5, 7.7, 7.8, 8b, 8a, 8c, 8e and 8f** complete + **Phase 10 L0–L5 shipped** — **Jobdar CLI `1.47.1`** / app `1.17.0` (9.1 serve façade, security/correctness hardening, 9.3 intent search + tunable region/level/résumé controls + BM25-lite relevance, 9.4 winc-suggest ATS discovery, a search-speed pass, region-timezone ranking, a fit-only Search tab, honest résumé status, docx/pdf résumé upload, résumé-seeded profile, a blank-start app, a target-salary selector, persisted state after first use, a documented known-gaps list, a `jobdar doctor` poppler check, `POST /profile` persistence, a first-run onboarding screen, an eval-calibration pass, an **eval-feedback loop** (thumbs → `jobdar calibrate --feedback`), **batch Apply scoring**, a **USAJobs** opt-in provider, npm ship-prep, + a **"Need visa sponsorship" toggle**, + **web-native parity** (AsyncStorage persistence, native résumé upload, a backend-down banner, list pagination, honest signal labels), + **Phase 10 L0–L5: the fully-local iPhone app** (the whole pipeline runs **on the phone** — on-device backend over a CLI-format file store, native scanning, an in-app model manager, llama.rn eval/tailor/outreach on the winc eval profile, docx/txt résumé parse — no Mac, no serve)). Bilingual core; **six live-verified scanner
+> providers** (Greenhouse, Workday, iCIMS, Lever, Ashby + an opt-in JSON-LD reader), all with
+> eval-time JD fetch, plus the opt-in **USAJobs** aggregator (BYO free key; not yet live-verified); level + region toggles; the `jobdar init` wizard; the full
 > **discover→prescreen→evaluate→track→build pipeline** — `scan` finds + filters (it never scores),
 > **`jobdar prescreen` gates + ranks the queue zero-token** (hard gates screen with a quoted reason,
 > never silently), the model's `jobdar eval` scores fit (0–5 → Apply/Research/Don't) and records it,
@@ -17,36 +17,40 @@
 > warm contact and enforces the polite follow-up cadence in code, `jobdar pdf` builds the tailored ATS
 > résumé; a scrollable cursor-driven TUI workspace + a web dashboard with analytics; freshness tracking
 > (`posted`/`first_seen`, `scan --prune`); security/privacy pass (zero telemetry, SSRF-guarded).
-> Remaining for 1.0 ship: **npm publish + marketplace** (needs the org from Step 0.2) and the **closed
-> beta** (7.6 — can start from the GitHub repo + installer now). **Phase 7.8 shipped (1.18.0)** — the
-> zero-token deterministic pass (pay extraction, date normalization, dedup) that feeds everything after.
-> **Phase 8b shipped (1.19.0)** — on-device inference via **winc.cpp** (the `winc-jobdar` branch) is now
-> the **default** backend (private, no key, no cost) and the engine the Phase 9 **web + iOS/Android apps
-> embed**, with a `jobdar backend` command + `--install` bootstrap; verified end-to-end against a live
-> `winc serve --eval`. **8a/8b/8c shipped. Next build phase: Phase 8d** (offer eval + keyless BLS pay)
-> (PDF résumé/JD understanding), **8d** (offer evaluation), **8e** (the engine contract), then Phase 9
-> (web + mobile apps). Step-by-step:
+> Remaining for the 1.0 CLI ship: **npm publish + marketplace** (the name/org call in Step 0.2 — install
+> today is the GitHub repo + one-command installer, which work now) and the **closed beta** (7.6).
+> **Active build phase: [Phase 10 — fully-local iPhone](#phase-10--fully-local-iphone-active-direction-locked-2026-07-08):
+> L0–L5 shipped in 1.46–1.47; next is L6 TestFlight** (Sam's account steps: App Store Connect record,
+> `eas login`, icon), then the **web app / jobdar.ai** and **Android** on the same stack. On-device
+> inference via **winc.cpp** (the `winc-jobdar` branch) is the CLI's **default** backend (private, no
+> key, no cost — `jobdar backend --install`), and the app now runs the same eval profile **on the phone
+> via llama.rn**. Step-by-step:
 > [Remaining work — build-order implementation guide](#remaining-work--build-order-implementation-guide).
 > See [CHANGELOG.md](CHANGELOG.md).
-> **Date:** 2026-06-12 (Phases 0–7 built 2026-06-05; 1.11/1.12 + Phase 5.5 on 2026-06-09; 7.7
-> prescreen + outreach on 2026-06-12)
+> **Date:** 2026-07-09 (Phases 0–7 built 2026-06-05; Phase 10 direction locked + L0–L5 shipped
+> 2026-07-08; status banner refreshed 2026-07-09)
 
 ---
 
 ## Known gaps & current limitations
 
-Current as of v1.45.x — tracked deliberately so they aren't mistaken for bugs. The app-side items are elaborated in
+Current as of v1.47.x — tracked deliberately so they aren't mistaken for bugs. The app-side items are elaborated in
 [docs/phase9-architecture.md](docs/phase9-architecture.md#known-gaps--current-limitations). *(Resolved since
 v1.40.x: onboarding shipped 1.41; `POST /profile` shipped 1.41; the `jobdar doctor` poppler check shipped
-1.41; USAJobs opt-in provider shipped 1.43; native persistence via AsyncStorage shipped 1.45.)*
+1.41; USAJobs opt-in provider shipped 1.43; native persistence via AsyncStorage shipped 1.45 and moved to
+the on-device file store — fully serve-free — in 1.47.)*
 
-- **State persists per-device; no cross-machine sync.** Web (localStorage) and native (AsyncStorage) persist
-  identically — blank first boot, saved after first use — and identity/résumé are also written to the CLI's
-  `config/profile.yml` / `data/cv.md` via serve. Moving machines = copying the jobdar home. *(By design —
-  local-first.)*
-- **A physical phone needs a reachable serve.** Loopback works on web + the iOS simulator; a real device
-  must use `jobdar serve --host 0.0.0.0` + the `?serve=<mac-ip>&token=<t>` override (or `configureServe`
-  on native). A native settings screen for this is future work. *(Documented; future UI.)*
+- **State persists per-device; no cross-machine sync.** Web persists to localStorage; native persists to
+  the **on-device file store** (CLI-identical TSV/JSON formats — files are the source of truth since
+  1.47) — blank first boot, saved after first use — and in Mac-serve mode identity/résumé are also
+  written to the CLI's `config/profile.yml` / `data/cv.md` via serve. Moving machines = copying the
+  jobdar home (a future phone⇄Mac export is a file copy by construction). *(By design — local-first.)*
+- **Native is fully local since 1.47 — a phone needs no serve.** The optional **Mac-serve companion
+  mode** (Settings → backend: URL + bearer token) still needs a reachable `jobdar serve --host 0.0.0.0`;
+  web keeps loopback + the `?serve=<mac-ip>&token=<t>` override. On-device honest limits (Phase 10
+  L4/L5): intent parse falls back to deterministic keywords, `/discover` returns not-available, PDF
+  résumé parse asks for `.docx`/`.txt`, and the in-app model-download UX + real-device Metal speed are
+  still to be exercised on hardware in the TestFlight beta. *(Phase 10 L6.)*
 - **PDF résumé upload/import needs `pdftotext` (poppler) on the host.** `.docx` uses `unzip` (ubiquitous);
   `.pdf` uses `pdftotext` — install poppler (`brew install poppler` / `apt-get install poppler-utils`).
   `jobdar doctor` flags it when missing; without it the app returns an honest "couldn't read that file";
