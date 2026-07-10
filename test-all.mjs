@@ -48,6 +48,8 @@ import { effectiveDirectives, contentHash, recordVariant } from './lib/customize
 import { parsePreConfirm, isBorderline, evalSystemFor, preConfirmSystemFor } from './lib/eval_engine.mjs'
 import { resolvePay, socForTitle, loadWages, loadSocMap } from './lib/pay.mjs'
 import { parseNextCount, reportFooterLines, NEXT_MAX } from './lib/commands/eval.mjs'
+import { findRoleMatches } from './lib/commands/tailor.mjs'
+import { resolveJdSafe } from './lib/commands/_jd.mjs'
 import { renderRadar, renderSweep, fmtEta, fmtElapsed, visibleLength, createRadar, SWEEP_FRAMES } from './lib/progress.mjs'
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url))
@@ -1883,6 +1885,39 @@ test('eval report footer: always names the report + views; offers --next 5/10/15
   assert.ok(!drained.includes('--next'), 'no evaluate-more nudge when nothing is pending')
   const es = reportFooterLines(getT('es'), { file: '/x.tsv', pending: 3 }).join('\n')
   assert.ok(es.includes('informe de empleos') && es.includes('--next 5'), 'Spanish footer holds parity')
+})
+
+test('fix: dead JD links — findRoleMatches keeps every match; resolveJdSafe never escapes as a stack', async () => {
+  const rows = [
+    { url: 'u1', company: "Cincinnati Children's", role: 'EMR Analyst I - Epic Trainer' },
+    { url: 'u2', company: "Cincinnati Children's", role: 'EMR Analyst I - Epic Patient Access' },
+    { url: 'u3', company: 'Enova', role: 'Data Analyst' },
+  ]
+  assert.deepEqual(findRoleMatches(rows, { url: 'u2' }).map((r) => r.url), ['u2']) // exact --url wins, single
+  assert.deepEqual(findRoleMatches(rows, { query: 'emr' }).map((r) => r.url), ['u1', 'u2']) // ALL matches, stored order — the tail becomes suggestions
+  assert.deepEqual(findRoleMatches(rows, { query: 'enova' }).map((r) => r.url), ['u3']) // company matches too
+  assert.deepEqual(findRoleMatches(rows, { query: 'zzz' }), [])
+  assert.deepEqual(findRoleMatches(rows, { query: '' }), [])
+  // A dead posting (provider matched, HTTP fetch failed) must resolve ok:false with the friendly
+  // line printed — never throw to the global stack-dumping handler. Injected thrower = no network.
+  const t = getT('en')
+  const dead = await resolveJdSafe('https://acme.wd5.example/dead-posting', t, async () => {
+    throw new Error('HTTP 404')
+  })
+  assert.equal(dead.ok, false)
+  assert.equal(dead.description, '')
+  // Garbage/unmatched refs RESOLVE empty (ok:true) — that's the caller's no-JD path, not an error.
+  const garbage = await resolveJdSafe('https://[malformed', t)
+  assert.equal(garbage.ok, true)
+  assert.equal(garbage.description, '')
+  // Local text files still extract on-device.
+  const dir = mkdtempSync(path.join(tmpdir(), 'jobdar-jd-'))
+  const file = path.join(dir, 'jd.txt')
+  writeFileSync(file, 'Junior Analyst — writes SQL.')
+  const local = await resolveJdSafe(file, t)
+  assert.equal(local.ok, true)
+  assert.ok(local.description.includes('Junior Analyst'))
+  rmSync(dir, { recursive: true, force: true })
 })
 
 let passed = 0

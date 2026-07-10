@@ -377,3 +377,5 @@ outreach:
 
 common:
   none: "none"
+  jd_fetch_error: "Couldn't fetch that posting ({error}) — the listing may have closed. Open {url} in a browser to check."
+  jd_alternatives: "{count} other matching pipeline role(s) — try one of these:"

@@ -4,6 +4,26 @@ All notable changes to Jobdar are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and Jobdar adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.48.1] — 2026-07-10
+
+**Fix: a dead job link no longer dumps a stack trace.** Boards expire postings fast (two of this
+week's pipeline URLs died within hours of each other), and `jobdar tailor <query>` hitting one crashed
+with a raw `Error: HTTP 404` + stack — the opposite of honest, friendly failure. **140 tests** (+1).
+
+- New shared `lib/commands/_jd.mjs` `resolveJdSafe()` — tailor and outreach `--draft` (URL, pipeline
+  row, and local-file paths all) now print one clean bilingual line instead: *"Couldn't fetch that
+  posting (HTTP 404) — the listing may have closed. Open {url} in a browser to check."* — and exit
+  nonzero without a stack. (`bin/jobdar`'s global handler still stack-dumps genuinely unexpected
+  errors; a closed listing just isn't one.)
+- **Tailor now hands you a way forward:** the matcher keeps *every* row your query hit
+  (`findRoleMatches`, exported + tested), so when the first match's posting is gone it lists up to
+  three other matching roles with ready-to-run `jobdar tailor --url …` lines.
+- `eval` was already safe (its guidance/auto paths catch fetch errors) — verified, unchanged.
+- Bonus fix caught by the verification: **`outreach --draft <url|company>` (the documented form) never
+  worked** — the value-less `--draft` flag ate the target as its value, so the command answered "name
+  a role" no matter what you passed. It now honors a string-valued `--draft` as the target, the same
+  pattern `eval --auto <url>` uses.
+
 ## [1.48.0] — 2026-07-09
 
 **The radar sweep everywhere + batch eval — Jobdar should feel fun, not like a chore.** Every

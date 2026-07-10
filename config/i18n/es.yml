@@ -377,3 +377,5 @@ outreach:
 
 common:
   none: "ninguno"
+  jd_fetch_error: "No se pudo obtener esa oferta ({error}) — puede que la publicación haya cerrado. Abre {url} en el navegador para comprobarlo."
+  jd_alternatives: "{count} otro(s) puesto(s) del pipeline coinciden — prueba uno de estos:"
