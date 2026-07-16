@@ -3,12 +3,13 @@
 // the provider registry / Greenhouse detect(), EN<->ES modes parity, and state aliases.
 
 import { strict as assert } from 'node:assert'
-import { readdirSync, existsSync, readFileSync, writeFileSync, mkdtempSync, mkdirSync, rmSync } from 'node:fs'
+import { readdirSync, existsSync, readFileSync, writeFileSync, mkdtempSync, mkdirSync, rmSync, symlinkSync, realpathSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { execFileSync } from 'node:child_process'
 import { tmpdir, homedir } from 'node:os'
 import { getStrings, listKeys, getT } from './lib/i18n.mjs'
+import { globalCommandStatus } from './doctor.mjs'
 import { PROFILE_DEFAULTS, SUPPORTED_LANGUAGES, paths, ROOT as PKG_ROOT, atomicWrite } from './lib/config.mjs'
 import { resolveProvider, providerIds } from './providers/_contract.mjs'
 import greenhouse, { parseJobUrl as parseGhJobUrl } from './providers/greenhouse.mjs'
@@ -1918,6 +1919,43 @@ test('fix: dead JD links — findRoleMatches keeps every match; resolveJdSafe ne
   assert.equal(local.ok, true)
   assert.ok(local.description.includes('Junior Analyst'))
   rmSync(dir, { recursive: true, force: true })
+})
+
+test('doctor: globalCommandStatus classifies PATH entries — ok / broken (moved checkout) / elsewhere / missing', () => {
+  const bin = mkdtempSync(path.join(tmpdir(), 'jobfaro-bin-'))
+  const repo = mkdtempSync(path.join(tmpdir(), 'jobfaro-repo-'))
+  mkdirSync(path.join(repo, 'bin'))
+  writeFileSync(path.join(repo, 'bin', 'jobfaro'), '#!/usr/bin/env node\n')
+  const opts = { pathDirs: ['', bin], repoRoot: repo } // empty PATH entries are skipped, not treated as cwd
+
+  assert.deepEqual(globalCommandStatus('jobfaro', opts), { status: 'missing', target: null })
+
+  // npm link's symlink chain resolves into the checkout → ok.
+  symlinkSync(path.join(repo, 'bin', 'jobfaro'), path.join(bin, 'jobfaro'))
+  assert.equal(globalCommandStatus('jobfaro', opts).status, 'ok')
+
+  // The checkout was renamed → the link dangles → broken, and the stale target is reported.
+  const gone = path.join(repo, 'old-name', 'bin', 'jobfaro')
+  symlinkSync(gone, path.join(bin, 'jf'))
+  const broken = globalCommandStatus('jf', opts)
+  assert.equal(broken.status, 'broken')
+  assert.equal(broken.target, gone)
+
+  // A real command that lives outside the checkout (another copy, an npm -g release) → elsewhere.
+  const other = mkdtempSync(path.join(tmpdir(), 'jobfaro-other-'))
+  writeFileSync(path.join(other, 'stray'), '')
+  symlinkSync(path.join(other, 'stray'), path.join(bin, 'stray'))
+  const elsewhere = globalCommandStatus('stray', opts)
+  assert.equal(elsewhere.status, 'elsewhere')
+  assert.equal(elsewhere.target, realpathSync(path.join(other, 'stray')))
+
+  // First PATH hit wins, like the shell: a broken link in an earlier dir shadows a good later one.
+  const bin2 = mkdtempSync(path.join(tmpdir(), 'jobfaro-bin2-'))
+  symlinkSync(path.join(repo, 'bin', 'jobfaro'), path.join(bin2, 'jf'))
+  assert.equal(globalCommandStatus('jf', { pathDirs: [bin, bin2], repoRoot: repo }).status, 'broken')
+  assert.equal(globalCommandStatus('jf', { pathDirs: [bin2, bin], repoRoot: repo }).status, 'ok')
+
+  for (const d of [bin, bin2, repo, other]) rmSync(d, { recursive: true, force: true })
 })
 
 let passed = 0

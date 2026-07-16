@@ -1,6 +1,6 @@
 {
   "name": "jobfaro",
-  "version": "1.49.2",
+  "version": "1.50.0",
   "description": "Bilingual (American English / Español) US job-search command center for new grads and people breaking into the workforce — region- and level-adaptable, privacy-first.",
   "type": "module",
   "bin": {

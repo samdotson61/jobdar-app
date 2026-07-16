@@ -5,16 +5,49 @@
 // Run directly:  node doctor.mjs [--lang en|es]
 // Or via the CLI: jobfaro doctor
 
-import { existsSync } from 'node:fs'
+import { existsSync, lstatSync, realpathSync, readlinkSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 import path from 'node:path'
-import { loadProfile, paths, SUPPORTED_LANGUAGES, fileExists } from './lib/config.mjs'
+import { loadProfile, paths, SUPPORTED_LANGUAGES, fileExists, ROOT } from './lib/config.mjs'
 import { getT } from './lib/i18n.mjs'
 import { parseFlags, resolveLang, isDirectRun } from './lib/cli.mjs'
 import { providerIds } from './providers/_contract.mjs'
 import { color, symbol, heading } from './lib/ui.mjs'
 
 const MIN_NODE_MAJOR = 20
+
+// Where does a global command on PATH actually point? `npm link` installs
+// symlinks that bake this checkout's absolute path — moving or renaming the
+// folder leaves them dangling ("command not found" with no hint why).
+// Returns { status: 'ok' | 'missing' | 'broken' | 'elsewhere', target }.
+export function globalCommandStatus(cmd, { pathDirs, repoRoot }) {
+  for (const dir of pathDirs) {
+    if (!dir) continue
+    const entry = path.join(dir, cmd)
+    try {
+      lstatSync(entry)
+    } catch {
+      continue
+    }
+    let resolved
+    try {
+      resolved = realpathSync(entry)
+    } catch {
+      let target = entry
+      try {
+        target = path.resolve(dir, readlinkSync(entry))
+      } catch {}
+      return { status: 'broken', target }
+    }
+    let root = repoRoot
+    try {
+      root = realpathSync(repoRoot)
+    } catch {}
+    if (resolved === root || resolved.startsWith(root + path.sep)) return { status: 'ok', target: resolved }
+    return { status: 'elsewhere', target: resolved }
+  }
+  return { status: 'missing', target: null }
+}
 
 export async function runDoctor(argv = []) {
   const { flags } = parseFlags(argv)
@@ -71,6 +104,24 @@ export async function runDoctor(argv = []) {
     warn(t('doctor.playwright_optional'))
   }
   warn(t('doctor.pdf_optional'))
+
+  // Global commands (optional): warn when `jobfaro`/`jf` on PATH are dangling or
+  // point at another copy — the after-a-move failure is otherwise silent. npm's
+  // Windows shims are .cmd wrappers, not symlinks, so this check is POSIX-only.
+  if (process.platform !== 'win32') {
+    const pathDirs = (process.env.PATH || '').split(path.delimiter)
+    const statuses = ['jobfaro', 'jf'].map((cmd) => ({ cmd, ...globalCommandStatus(cmd, { pathDirs, repoRoot: ROOT }) }))
+    if (statuses.every((s) => s.status === 'ok')) ok(t('doctor.link_ok', { cmds: 'jobfaro, jf' }))
+    else if (statuses.every((s) => s.status === 'missing')) warn(t('doctor.link_missing', { cmds: 'jobfaro, jf' }))
+    else {
+      for (const s of statuses) {
+        if (s.status === 'ok') ok(t('doctor.link_ok', { cmds: s.cmd }))
+        else if (s.status === 'missing') warn(t('doctor.link_missing', { cmds: s.cmd }))
+        else if (s.status === 'broken') warn(t('doctor.link_broken', { cmd: s.cmd, target: s.target }))
+        else warn(t('doctor.link_elsewhere', { cmd: s.cmd, target: s.target }))
+      }
+    }
+  }
 
   // Résumé import/upload tools (optional): .docx needs `unzip` (ubiquitous), .pdf needs `pdftotext` (poppler).
   const hasBin = (cmd, args) => { try { execFileSync(cmd, args, { stdio: 'ignore' }); return true } catch { return false } }

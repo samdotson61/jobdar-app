@@ -20,5 +20,5 @@ Scope is locked: American English + Spanish; Midwest-default region; entry-defau
 touches public job data.
 
 > Status: Phases 0–7, 5.5, 7.7, 7.8, 8b, 8a, 8c, 8e + 8f complete + Phase 10 L0–L5 (fully-local iPhone
-> app; L6 TestFlight = Sam's account steps) — Jobfaro CLI 1.49.2 · app 1.18.0 (see `ROADMAP.md` / `CHANGELOG.md`).
+> app; L6 TestFlight = Sam's account steps) — Jobfaro CLI 1.50.0 · app 1.18.0 (see `ROADMAP.md` / `CHANGELOG.md`).
 > Scan discovers + filters roles; the model's `eval` scores fit — the scanner never scores.

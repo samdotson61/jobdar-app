@@ -5,7 +5,8 @@ optional.
 
 | Symptom | Fix |
 |---|---|
-| `command not found: jobfaro` | Use `node bin/jobfaro <cmd>`, or run `npm link` to put `jobfaro` on your PATH. |
+| `command not found: jobfaro` | Use `node bin/jobfaro <cmd>`, or run `npm link` to put `jobfaro` (and `jf`) on your PATH. |
+| `jobfaro`/`jf` stopped working after the folder moved or was renamed | The `npm link` symlinks bake the old absolute path (so do CocoaPods and native build caches). Run `./scripts/after-move.sh` — it relinks the commands, purges the stale caches, and re-runs `pod install` + `doctor`. `jobfaro doctor` names the broken link and this fix. |
 | `doctor` warns about Playwright / PDF | Optional — only some JS-rendered iCIMS sites need Playwright (`npm i playwright`); `jobfaro pdf` always writes HTML, and Playwright adds the automatic PDF. You can still scan, eval, and track. |
 | `eval` says the model/backend is down or missing | `node bin/jobfaro backend --install` sets up the free private on-device model (no account, no key); `node bin/jobfaro backend --check` verifies it end to end. In the app: Settings → download the model. Or run inside an AI CLI (`/jobfaro eval`) — no setup. |
 | `jobfaro scan` shows 0 portals | Run `jobfaro init`, or `jobfaro seed --region <region> --write` to add employers. |

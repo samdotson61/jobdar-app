@@ -4,6 +4,25 @@ All notable changes to Jobfaro are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and Jobfaro adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.50.0] — 2026-07-16
+
+**Rename-resilience: a moved/renamed checkout now diagnoses and heals itself.** 141 tests green.
+Motivated by the Jobdar→Jobfaro folder rename, which silently broke the global `jobfaro`/`jf`
+commands (the `npm link` symlinks bake the absolute path — as do CocoaPods xcconfigs and
+expo-modules-jsi's package-local `.DerivedData`).
+
+- **`jobfaro doctor` checks the global command wiring** (POSIX; npm's Windows shims aren't
+  symlinks): finds `jobfaro`/`jf` on PATH and verifies they resolve into *this* checkout.
+  Four honest states — ok, not installed (optional, with the `npm link` tip), **broken link**
+  (names the stale target + the fix), and points-at-a-different-install. Warn-only, never fails
+  the check. EN/ES. Verified live by re-breaking the link the way the rename did.
+- **`scripts/after-move.sh`** — one command that refreshes everything baking the old path:
+  re-runs `npm link` (after dropping stale `jobfaro`/`jobdar` globals), purges `.DerivedData`
+  caches under the package trees, removes `Pods/` + `Podfile.lock` and re-runs
+  `LANG=en_US.UTF-8 pod install` (with honest skips when CocoaPods or `node_modules` are
+  absent), then finishes with `doctor`. Verified live end-to-end, including the pods rebuild.
+- docs: troubleshooting table covers the after-a-move symptom + fix.
+
 ## [1.49.2] — 2026-07-16
 
 **TestFlight build prep — everything short of Sam's logins.** 140 tests green.

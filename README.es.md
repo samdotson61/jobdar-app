@@ -14,7 +14,7 @@ puesto frente a tu currículum, adapta un CV y una carta de presentación compat
 registra cada postulación.
 
 > **Estado:** Fases 0–7, 5.5, 7.7, 7.8, 8b, 8a, 8c, 8e + 8f **completas**, **Fase 10 L0–L5 entregada** —
-> **Jobfaro CLI `1.49.2`** + **app `1.18.0`**: núcleo bilingüe; **seis escáneres
+> **Jobfaro CLI `1.50.0`** + **app `1.18.0`**: núcleo bilingüe; **seis escáneres
 > verificados en vivo** (Workday, iCIMS, Greenhouse, Lever, Ashby + un lector JSON-LD opcional) más un
 > agregador federal **USAJobs** opcional (con tu propia clave gratuita); selectores
 > de nivel y región y el asistente `jobfaro init`; la tubería completa **descubrir → prefiltrar → evaluar →
