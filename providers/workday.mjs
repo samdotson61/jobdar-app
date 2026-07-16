@@ -1,4 +1,4 @@
-// Jobdar — Workday provider (Phase 2). The marquee enterprise ATS.
+// Jobfaro — Workday provider (Phase 2). The marquee enterprise ATS.
 //
 // Workday powers most large US employers (manufacturers, retailers, health systems, banks,
 // ag). Its public "CXS" API is clean and unauthenticated for public job boards:

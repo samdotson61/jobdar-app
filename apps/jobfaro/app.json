@@ -1,21 +1,21 @@
 {
   "expo": {
-    "name": "jobdar",
-    "slug": "jobdar",
+    "name": "jobfaro",
+    "slug": "jobfaro",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "jobdar",
+    "scheme": "jobfaro",
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.jobdar.app",
+      "bundleIdentifier": "com.jobfaro.app",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
-      "package": "com.jobdar.app",
+      "package": "com.jobfaro.app",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -46,10 +46,7 @@
       "typedRoutes": true
     },
     "extra": {
-      "router": {},
-      "eas": {
-        "projectId": "f1ef2162-30d9-4fe7-b34a-3f50edcbf393"
-      }
+      "router": {}
     }
   }
 }

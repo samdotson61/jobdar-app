@@ -1,6 +1,6 @@
-# Jobdar — region-aware employer catalog (Phase 5). Seeded Midwest-first; other regions fill in
+# Jobfaro — region-aware employer catalog (Phase 5). Seeded Midwest-first; other regions fill in
 # over time. Each entry: company, careers_url (provider auto-detected), region, metro, sector.
-# `jobdar seed --region <r> [--write]` materializes matching entries into config/portals.yml.
+# `jobfaro seed --region <r> [--write]` materializes matching entries into config/portals.yml.
 # All entries below were live-verified to return public postings (2026-06-05).
 employers:
   # --- Midwest (default) ---

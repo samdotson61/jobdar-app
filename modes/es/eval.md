@@ -9,13 +9,13 @@ status: authored
 **Objetivo:** leer una oferta de empleo frente al currículum de la persona y devolver un informe
 de compatibilidad claro. Usa el backend de inferencia configurado (`inference:` en `config/profile.yml`):
 **winc.cpp en el dispositivo por defecto** (local, privado, sin clave) o tu propia clave de API (`api`).
-`jobdar backend` comprueba que esté activo. Aplica la rúbrica de [`_shared.md`](_shared.md).
+`jobfaro backend` comprueba que esté activo. Aplica la rúbrica de [`_shared.md`](_shared.md).
 
 ## Entradas
-- La oferta — `jobdar eval <url>` la obtiene por ti vía el proveedor correspondiente
+- La oferta — `jobfaro eval <url>` la obtiene por ti vía el proveedor correspondiente
   (greenhouse / workday / icims) y la imprime; tú la lees y la puntúas. (Un archivo o texto pegado también sirve.)
 - El perfil y el currículum de la persona (`config/profile.yml`, `cv.md`).
-- **La fecha de hoy** — `jobdar eval` la imprime. Úsala: trata cualquier "Presente"/"Actual" del
+- **La fecha de hoy** — `jobfaro eval` la imprime. Úsala: trata cualquier "Presente"/"Actual" del
   currículum como hoy, **nunca como una fecha futura** (un puesto "mar 2025 – Presente" está en curso,
   no es empleo futuro).
 
@@ -52,21 +52,21 @@ di qué cerraría la brecha. Los puestos con barrera de título siguen visibles 
 include_degree_required_roles está activado.}
 
 ## Salario
-{cita el rango DECLARADO de la oferta si existe (`jobdar prescreen` lo extrae en la columna `pay`) y
+{cita el rango DECLARADO de la oferta si existe (`jobfaro prescreen` lo extrae en la columna `pay`) y
 cómo se compara con el objetivo — por encima / dentro / cerca / por debajo. Si no se publica, dilo.
 Nunca inventes una cifra.}
 
 ## Siguiente paso
-{postular, adaptar un CV (`jobdar pdf`) o seguir adelante — una acción concreta}
+{postular, adaptar un CV (`jobfaro pdf`) o seguir adelante — una acción concreta}
 ```
 
 ## Regístralo
 
 El escáner solo descubre puestos — nunca los puntúa. **Tú** eres quien puntúa, así que guarda tu
-veredicto en el flujo (luego aparece en `jobdar tui` / el panel):
+veredicto en el flujo (luego aparece en `jobfaro tui` / el panel):
 
 ```
-jobdar eval --save --url <url> --score <0.0–5.0> --band <apply|research|dont> --company "{empresa}" --role "{puesto}" --note "{recomendación de una línea}"
+jobfaro eval --save --url <url> --score <0.0–5.0> --band <apply|research|dont> --company "{empresa}" --role "{puesto}" --note "{recomendación de una línea}"
 ```
 
 Sé conciso y específico. Cita la oferta. Nunca infles la puntuación ni inventes una cualificación.

@@ -4,7 +4,7 @@
 // the CLI, and a future export/import between phone and Mac is a file copy, not a migration.
 import * as FS from 'expo-file-system/legacy';
 
-const DIR = `${FS.documentDirectory}jobdar`;
+const DIR = `${FS.documentDirectory}jobfaro`;
 const f = (name: string) => `${DIR}/${name}`;
 
 async function ensureDir(): Promise<void> {

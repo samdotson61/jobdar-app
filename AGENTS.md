@@ -1,6 +1,6 @@
-# Jobdar — Agent Guide
+# Jobfaro — Agent Guide
 
-Jobdar is a bilingual (American English / Español) US job-search command center for
+Jobfaro is a bilingual (American English / Español) US job-search command center for
 **new grads and people breaking into the workforce** (including those without a degree).
 It **scans** company career pages, **evaluates** roles against the user's résumé,
 **tailors** an ATS-friendly CV/cover letter, and **tracks** applications — with the user's
@@ -12,7 +12,7 @@ This file orients an AI CLI agent (Claude Code, Gemini CLI, …). Humans: see `R
 
 1. **Deterministic Node.js layer (zero model).** `scan.mjs` + `providers/*.mjs`,
    `doctor.mjs`, the tracker, and config under `config/`. These never call a model and
-   touch only **public** job data. Run them directly (`node scan.mjs`) or via `jobdar <cmd>`.
+   touch only **public** job data. Run them directly (`node scan.mjs`) or via `jobfaro <cmd>`.
 2. **AI brain (this layer).** Markdown prompts in `modes/` that you, the agent, read to
    evaluate roles, tailor résumés, and prep outreach. `modes/_shared.md` holds the shared
    rubric; each `modes/<mode>.md` is one task.
@@ -34,10 +34,10 @@ Deterministic work needs no model; only **evaluation/tailoring** does.
   new grads without lowering the bar; `eval --transferable` forces it on per-run).
 - For any user-facing string, prefer the i18n tables in `config/i18n/` over inventing copy.
 - Match the user's language (`language:`, or the JD's language) in everything you generate.
-- **Always surface the dashboard.** Whenever you run Jobdar or report results, point the user to it
-  for easy access: `jobdar tui` (terminal) or `jobdar dashboard` (web · http://localhost:4319).
-- **Build résumés via `jobdar pdf`.** After tailoring `data/cv.md` to a role (the `apply` mode),
-  `jobdar pdf [company]` renders an ATS-friendly HTML/PDF résumé into `output/`.
+- **Always surface the dashboard.** Whenever you run Jobfaro or report results, point the user to it
+  for easy access: `jobfaro tui` (terminal) or `jobfaro dashboard` (web · http://localhost:4319).
+- **Build résumés via `jobfaro pdf`.** After tailoring `data/cv.md` to a role (the `apply` mode),
+  `jobfaro pdf [company]` renders an ATS-friendly HTML/PDF résumé into `output/`.
 
 ## Modes
 
@@ -53,9 +53,9 @@ Deterministic work needs no model; only **evaluation/tailoring** does.
 
 Each base mode has a full Spanish peer in `modes/es/`.
 
-> Status: Phases 0–7, 5.5, 7.7, 7.8, 8b, 8a, 8c, 8e + 8f complete — Jobdar CLI 1.42.0. The brain is authored EN-canonical with full
+> Status: Phases 0–7, 5.5, 7.7, 7.8, 8b, 8a, 8c, 8e + 8f complete — Jobfaro CLI 1.42.0. The brain is authored EN-canonical with full
 > Spanish parity; level archetypes (Phase 4) and region tuning (Phase 5) are wired into the rubric.
 > On-device inference (8b), automated eval (8a), document understanding (8c), the engine contract (8e),
-> offer/pay core (8d), and the **transferable-skills toggle** have all shipped — `jobdar backend`,
-> `jobdar eval --auto [--transferable]`, `jobdar calibrate`, `jobdar import`, `jobdar serve`. Next up:
+> offer/pay core (8d), and the **transferable-skills toggle** have all shipped — `jobfaro backend`,
+> `jobfaro eval --auto [--transferable]`, `jobfaro calibrate`, `jobfaro import`, `jobfaro serve`. Next up:
 > Phase 9 (web + mobile apps over the engine contract). See `CHANGELOG.md`.

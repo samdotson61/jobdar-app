@@ -1,9 +1,9 @@
-// Jobdar — environment & setup check.
+// Jobfaro — environment & setup check.
 // Hard requirements fail (x); heavy extras (PDF, Playwright) are OPTIONAL and
 // only warn (Phase 0.5), so a fresh, no-PDF install still passes cleanly.
 //
 // Run directly:  node doctor.mjs [--lang en|es]
-// Or via the CLI: jobdar doctor
+// Or via the CLI: jobfaro doctor
 
 import { existsSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
@@ -44,7 +44,7 @@ export async function runDoctor(argv = []) {
   // Dependencies — if config.mjs imported, js-yaml resolved, so we're good here.
   ok(t('doctor.deps_ok'))
 
-  // Where user data lives (portable: JOBDAR_HOME > repo-local checkout > ~/.jobdar).
+  // Where user data lives (portable: JOBFARO_HOME > repo-local checkout > ~/.jobfaro).
   ok(t('doctor.home', { home: paths.home }))
 
   // Config files (warn, don't fail — `init` will create them).

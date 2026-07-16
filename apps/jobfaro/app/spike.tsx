@@ -1,15 +1,15 @@
-// L0 SPIKE — on-device eval parity (dev-only route: jobdar://spike, not linked from the tabs).
+// L0 SPIKE — on-device eval parity (dev-only route: jobfaro://spike, not linked from the tabs).
 // Runs the REAL engine eval (prepEval prompt + EVAL_JSON_SCHEMA + buildVerdict clamp/score) against a
 // local GGUF via llama.rn — the same model file winc serves — and renders the verdict + timing so it can
 // be compared 1:1 with a live `POST /evaluate` against winc. Greedy + grammar-JSON mirrors the winc eval
 // profile. Simulator note: no Metal in the iOS sim → n_gpu_layers 0 (CPU); speed numbers are meaningless
 // here, only OUTPUT parity counts. Push the model first:
-//   xcrun simctl get_app_container booted com.jobdar.app data   → copy the .gguf into Documents/
+//   xcrun simctl get_app_container booted com.jobfaro.app data   → copy the .gguf into Documents/
 import { useState } from 'react';
 import { ScrollView, Text } from 'react-native';
 import { completionJson, installedTier } from '@/src/local/llm';
 // @ts-ignore — pure-JS engine exports (same modules serve uses)
-import { prepEval, buildVerdict, evalSystemFor, EVAL_JSON_SCHEMA } from '@jobdar/engine';
+import { prepEval, buildVerdict, evalSystemFor, EVAL_JSON_SCHEMA } from '@jobfaro/engine';
 import { Btn, C, Card, H, Sub } from '@/src/ui';
 
 const MODEL_FILE = 'Qwen3.5-4B-Q4_K_M.gguf'; // the exact file winc serves as qwen3.5-4b

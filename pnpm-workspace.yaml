@@ -1,5 +1,5 @@
 # Phase 9.0: the repo is a pnpm workspace so the apps consume the SAME engine the CLI runs.
-# The CLI (root package) still imports lib/ directly; @jobdar/engine re-exports lib/ so there is ONE
+# The CLI (root package) still imports lib/ directly; @jobfaro/engine re-exports lib/ so there is ONE
 # source of truth — no forked re-implementation in the app.
 packages:
   - 'packages/*'

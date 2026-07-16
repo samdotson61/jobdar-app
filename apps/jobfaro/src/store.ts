@@ -6,10 +6,10 @@ import {
 } from './engine';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { backendMode, serveGet, servePost, serveHealth } from './serve';
-import { regionForLocation } from '@jobdar/engine';
+import { regionForLocation } from '@jobfaro/engine';
 
-// The app holds NO engine logic — it renders what `jobdar serve` (the real CLI + winc) returns. Every
-// action is a thin call to serve; `@jobdar/engine` is used only for derived UI (band colors, cadence labels).
+// The app holds NO engine logic — it renders what `jobfaro serve` (the real CLI + winc) returns. Every
+// action is a thin call to serve; `@jobfaro/engine` is used only for derived UI (band colors, cadence labels).
 
 export interface Contact { url: string; person: string; date: string; kind: 'contact' | 'followup' }
 export interface SearchTerms { keywords: string[]; titles: string[]; exclude: string[]; level?: string; regions?: string[] }
@@ -454,7 +454,7 @@ export const useStore = create<State>()(persist((set, get) => ({
   },
 
   // A thumbs on a verdict is a human label. Persist it locally (survives reload) AND append to the serve
-  // ledger so `jobdar calibrate --feedback` can report where the eval disagrees with real users.
+  // ledger so `jobfaro calibrate --feedback` can report where the eval disagrees with real users.
   rateVerdict: (url, thumb) => {
     set((s) => ({ feedback: { ...s.feedback, [url]: thumb } }));
     const v = get().verdicts[url];
@@ -504,7 +504,7 @@ export const useStore = create<State>()(persist((set, get) => ({
     return { ok: true };
   },
 }), {
-  name: 'jobdar-app-v1',
+  name: 'jobfaro-app-v1',
   storage: createJSONStorage(() => stateStorage),
   // Persist only the user's own state (identity, choices, results) — NOT transient runtime flags. First
   // boot (no stored key) → the blank initial state; after a résumé/selection it's saved and restored.

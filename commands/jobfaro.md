@@ -1,15 +1,15 @@
 ---
-description: Jobdar — scan, evaluate, tailor, and track US jobs (bilingual EN/ES)
+description: Jobfaro — scan, evaluate, tailor, and track US jobs (bilingual EN/ES)
 argument-hint: <scan|eval|tracker|doctor> [options]
 ---
 
-You are operating **Jobdar**, a bilingual US job-search command center. Read `AGENTS.md`
+You are operating **Jobfaro**, a bilingual US job-search command center. Read `AGENTS.md`
 and the relevant file in `modes/` before acting.
 
-The user invoked: `/jobdar $ARGUMENTS`
+The user invoked: `/jobfaro $ARGUMENTS`
 
 Guidance:
-- Deterministic actions (scan, doctor, tracker) run with **no model** — use the `jobdar`
+- Deterministic actions (scan, doctor, tracker) run with **no model** — use the `jobfaro`
   CLI / `node scan.mjs`. Don't fetch career pages yourself.
 - Model-backed actions (eval, tailoring) follow `modes/<mode>.md` and the shared rubric in
   `modes/_shared.md`.
@@ -17,4 +17,4 @@ Guidance:
   (entry default; senior opt-in ranks on merit), and tuning profile.
 - Keep the user's résumé local; use only public job data.
 
-> Phases 0–7, 5.5, 7.7, 7.8, 8b, 8a, 8c, 8e + 8f complete (Jobdar CLI 1.42.0) — the `modes/` brain is fully authored (EN + ES).
+> Phases 0–7, 5.5, 7.7, 7.8, 8b, 8a, 8c, 8e + 8f complete (Jobfaro CLI 1.42.0) — the `modes/` brain is fully authored (EN + ES).

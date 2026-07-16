@@ -7,11 +7,11 @@ status: authored
 # Pipeline — scan → evaluate → track
 
 **Goal:** run the whole loop end to end and report it in the user's language. The fully
-automated `jobdar pipeline` command lands in **Phase 6**; this mode defines the flow and the
+automated `jobfaro pipeline` command lands in **Phase 6**; this mode defines the flow and the
 report structure now so the agent can drive it today.
 
 ## Flow
-1. **Scan** — `jobdar scan` for new public roles (deterministic, no model).
+1. **Scan** — `jobfaro scan` for new public roles (deterministic, no model).
 2. **Evaluate** — score each new role with the **eval** mode against the user's résumé.
 3. **Track** — record outcomes with canonical state IDs (see `templates/states.yml`); the
    tracker accepts Spanish state aliases and shows localized labels.

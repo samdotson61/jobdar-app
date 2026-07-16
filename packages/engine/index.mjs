@@ -1,4 +1,4 @@
-// @jobdar/engine — the single source of truth for the deterministic engine.
+// @jobfaro/engine — the single source of truth for the deterministic engine.
 //
 // Re-exports the PURE, fs-free lib/ modules (decoupled from config.mjs in Phase 9.0) so the apps run the
 // EXACT same scoring / gating / level-filtering the CLI runs — no forked re-implementation. The CLI still

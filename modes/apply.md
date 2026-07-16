@@ -40,5 +40,5 @@ Write in the user's language, or mirror the JD's language for the submitted mate
 Hand the draft to the user to review and send. Never submit on their behalf.
 
 > **Résumé render:** after tailoring the CV to the JD (reorder and emphasize the user's *real*
-> experience) and saving it to `data/cv.md`, run `jobdar pdf [company]` to produce an ATS-friendly
+> experience) and saving it to `data/cv.md`, run `jobfaro pdf [company]` to produce an ATS-friendly
 > HTML/PDF résumé in `output/`.

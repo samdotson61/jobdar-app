@@ -7,11 +7,11 @@ status: authored
 # Flujo — escanear → evaluar → registrar
 
 **Objetivo:** ejecutar todo el ciclo de principio a fin e informarlo en el idioma de la persona.
-El comando totalmente automático `jobdar pipeline` llega en la **Fase 6**; este modo define el
+El comando totalmente automático `jobfaro pipeline` llega en la **Fase 6**; este modo define el
 flujo y la estructura del informe ya, para que el agente pueda ejecutarlo hoy.
 
 ## Flujo
-1. **Escanear** — `jobdar scan` para nuevos puestos públicos (determinista, sin modelo).
+1. **Escanear** — `jobfaro scan` para nuevos puestos públicos (determinista, sin modelo).
 2. **Evaluar** — puntúa cada puesto nuevo con el modo **eval** frente al currículum de la persona.
 3. **Registrar** — anota los resultados con IDs de estado canónicos (ver `templates/states.yml`);
    el registro acepta alias de estado en español y muestra etiquetas localizadas.

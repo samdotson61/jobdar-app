@@ -1,6 +1,6 @@
-// Phase 9.0: pnpm-workspace Metro config so the app bundles @jobdar/engine (the real lib/ engine) which
+// Phase 9.0: pnpm-workspace Metro config so the app bundles @jobfaro/engine (the real lib/ engine) which
 // lives outside the app dir. Standard Expo monorepo setup: watch the workspace root + resolve its
-// node_modules (where pnpm symlinks @jobdar/engine → packages/engine → re-exports ../../lib).
+// node_modules (where pnpm symlinks @jobfaro/engine → packages/engine → re-exports ../../lib).
 const { getDefaultConfig } = require('expo/metro-config');
 const path = require('path');
 

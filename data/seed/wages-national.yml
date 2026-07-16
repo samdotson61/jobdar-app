@@ -1,5 +1,5 @@
-# Jobdar — national wage SEED floor (Phase 8d.2). Keyless OEWS-style national annual figures by SOC,
-# so a role's pay is NEVER blank offline. This is the always-available floor; `jobdar pay --refresh`
+# Jobfaro — national wage SEED floor (Phase 8d.2). Keyless OEWS-style national annual figures by SOC,
+# so a role's pay is NEVER blank offline. This is the always-available floor; `jobfaro pay --refresh`
 # (lib/bls.mjs, 8d.2b) grows data/cache/wages.yml from the keyless OEWS bulk download and overrides
 # these per (area, soc). Approximate national values — treat as a floor, not a quote. p25 / median / p75.
 13-1082: { occ: "Project Management Specialists", p25: 75000, median: 98000, p75: 128000 }

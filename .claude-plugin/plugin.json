@@ -1,12 +1,12 @@
 {
-  "name": "jobdar",
-  "version": "1.48.1",
+  "name": "jobfaro",
+  "version": "1.49.0",
   "description": "Bilingual US job-search command center — scan, evaluate, tailor, and track jobs for new grads and people entering the workforce.",
   "author": {
     "name": "Sam Dotson"
   },
-  "homepage": "https://github.com/samdotson61/jobdar-app",
+  "homepage": "https://github.com/samdotson61/jobfaro-app",
   "license": "Apache-2.0",
   "keywords": ["jobs", "job-search", "bilingual", "ats", "workday", "icims", "new-grad"],
-  "commands": ["./commands/jobdar.md"]
+  "commands": ["./commands/jobfaro.md"]
 }

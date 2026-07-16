@@ -16,27 +16,27 @@ in the user's language (or the recipient's, if known).
 - **Specific.** Name the role, one real reason you're a fit, and one clear ask.
 - **Human.** Friendly, not desperate or generic. No buzzword salad.
 - **No overreach.** Don't claim a connection or experience you don't have.
-- **Polite by construction.** The cadence below is enforced by `jobdar outreach` in code — work
+- **Polite by construction.** The cadence below is enforced by `jobfaro outreach` in code — work
   with it, never around it.
 
 ## The flow (deterministic tool + you)
 
-1. **Find the person.** `jobdar outreach <roleUrl>` prints LinkedIn people-search links
+1. **Find the person.** `jobfaro outreach <roleUrl>` prints LinkedIn people-search links
    (recruiters, likely hiring managers). The USER clicks and picks a human — never scrape,
    browse, or fetch LinkedIn yourself, and never invent a person.
 2. **Personalize from a paste.** Ask the user to paste the person's name + public headline (and,
    if they want, the "About" line). Use the paste for THIS draft only — **never write it to any
    file, note, or tracker**. The ledger stores name/title/channel/date, nothing else.
 3. **Draft** in the output shape below — role + one fit reason from the user's cv.md + one ask.
-4. **Lint before showing the final.** Run `jobdar outreach --lint <draft-file> --channel
+4. **Lint before showing the final.** Run `jobfaro outreach --lint <draft-file> --channel
    linkedin --person "Name"` (length ≤300 for LinkedIn notes, no leftover placeholders, the
    recipient's name present). Fix anything it flags.
 5. **The user sends it themselves**, then logs it:
-   `jobdar outreach --log --url <roleUrl> --person "Name" [--channel linkedin|email]`.
+   `jobfaro outreach --log --url <roleUrl> --person "Name" [--channel linkedin|email]`.
 
 ## Cadence (enforced — explain it, don't fight it)
 - Max **2 people per role**; one thread per person.
-- **One** polite follow-up per person, ripe after **≥5 business days** — `jobdar outreach --due`
+- **One** polite follow-up per person, ripe after **≥5 business days** — `jobfaro outreach --due`
   says when. After that the thread is closed: silence is an answer, and the tool will refuse a
   second nudge.
 
@@ -53,4 +53,4 @@ Subject: {clear and specific}
 ```
 
 Drafts only — the user sends. After a sent message, point them at
-`jobdar outreach --log` so the follow-up timing is tracked for them.
+`jobfaro outreach --log` so the follow-up timing is tracked for them.

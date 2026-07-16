@@ -1,4 +1,4 @@
-# Jobdar — deterministic title → SOC router (Phase 8d.2b fallback). The model routes title→SOC when a
+# Jobfaro — deterministic title → SOC router (Phase 8d.2b fallback). The model routes title→SOC when a
 # backend is up; this keyword map is the offline / no-model path (local-first). First match wins, so list
 # the more specific occupations before the generic coordinator/assistant catch-all. Keys are SOC codes
 # matching data/seed/wages-national.yml.

@@ -1,7 +1,7 @@
-# Releasing Jobdar
+# Releasing Jobfaro
 
-The CLI ships to npm as the `jobdar` package (the Expo app in `apps/jobdar/` is **not** part of the
-npm package — it's a separate GUI over `jobdar serve`). This checklist covers a CLI release.
+The CLI ships to npm as the `jobfaro` package (the Expo app in `apps/jobfaro/` is **not** part of the
+npm package — it's a separate GUI over `jobfaro serve`). This checklist covers a CLI release.
 
 ## Every release — the mechanical checklist
 
@@ -36,26 +36,26 @@ Then draft a GitHub release from the tag, pasting the CHANGELOG entry.
 
 These gate a real 1.0 and need a human call; the checklist above is ready the moment they're settled:
 
-- **npm name / namespace.** `jobdar` (unscoped) is **available** on the registry as of 2026-07-02
-  (`npm view jobdar` → 404). Options: claim `jobdar` now, or publish under a scope
-  (`@sdotson/jobdar` / an org scope). Unscoped is the cleaner install (`npm i -g jobdar`) but is a
+- **npm name / namespace.** `jobfaro` (unscoped) is **available** on the registry as of 2026-07-02
+  (`npm view jobfaro` → 404). Options: claim `jobfaro` now, or publish under a scope
+  (`@sdotson/jobfaro` / an org scope). Unscoped is the cleaner install (`npm i -g jobfaro`) but is a
   land-grab you can't undo casually. Decide before first publish.
 - **Public vs. closed beta.** The repo is already public, but publishing to npm invites `npm i -g`
   installs from strangers. Recommend a **closed beta** first (share the tarball or a scoped prerelease
   `1.0.0-beta.0` with `--tag beta`) so the eval quality and onboarding get real-user feedback before a
-  headline 1.0. The feedback loop (`jobdar calibrate --feedback`) is built precisely to harvest that.
+  headline 1.0. The feedback loop (`jobfaro calibrate --feedback`) is built precisely to harvest that.
 - **License confirmation.** Currently Apache-2.0. Fine to ship; just confirm it's the intended license
   for a public tool that touches employer job data.
 - **GitHub home.** Everything (installers, docs, package metadata, the scanner User-Agent) points at
-  the real public repo, `samdotson61/jobdar-app` — so install instructions work today. If you claim a
-  branded org for 1.0 (ROADMAP Step 0.2 suggests e.g. `getjobdar`), transfer the repo (GitHub redirects
+  the real public repo, `samdotson61/jobfaro-app` — so install instructions work today. If you claim a
+  branded org for 1.0 (ROADMAP Step 0.2 suggests e.g. `getjobfaro`), transfer the repo (GitHub redirects
   the old URLs) and sweep the references in one pass:
-  `grep -rn "samdotson61/jobdar-app" --include="*.md" --include="*.json" --include="*.mjs" --include="*.sh" --include="*.ps1" .`
+  `grep -rn "samdotson61/jobfaro-app" --include="*.md" --include="*.json" --include="*.mjs" --include="*.sh" --include="*.ps1" .`
 
 ## Known non-blockers (documented, shippable as-is)
 
 See `ROADMAP.md` → "Known gaps & current limitations". None block a beta: PDF résumé import needs
-`poppler`/`pdftotext` on the host for the CLI/serve (flagged by `jobdar doctor`; on-device the app asks
+`poppler`/`pdftotext` on the host for the CLI/serve (flagged by `jobfaro doctor`; on-device the app asks
 for `.docx`/`.txt`), discovery is keyless ATS-probing (aggregators like USAJobs are opt-in BYO-key, not
 yet live-verified), the evaluator is bimodal on the small labeled set (the feedback loop is the path to
 recalibration once real thumbs accumulate), and the on-device hardware numbers (Metal speed, the in-app

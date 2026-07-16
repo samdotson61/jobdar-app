@@ -1,4 +1,4 @@
-// Jobdar — scanner provider contract & registry.
+// Jobfaro — scanner provider contract & registry.
 //
 // A provider is a plugin that lists public job postings from one ATS. Each
 // provider module default-exports an object:

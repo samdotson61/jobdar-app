@@ -2,7 +2,7 @@
 
 > **Canonical spec.** Thin clients over the frozen Phase 8e engine. **One UI codebase** (Expo: React
 > Native + react-native-web) → web PWA **and** native iOS/Android. **One scanner codebase** (the existing
-> `providers/*.mjs`) → an always-on Node scanner-proxy **and** `jobdar serve`. Privacy is structural: the
+> `providers/*.mjs`) → an always-on Node scanner-proxy **and** `jobfaro serve`. Privacy is structural: the
 > résumé and every score stay on-device; the only server is a PII-free scanner whose request schema
 > *cannot* carry a résumé. On-device model default, Midwest/entry defaults, EN/ES parity, version-lockstep.
 >
@@ -13,7 +13,7 @@
 | # | Decision | Choice |
 |---|---|---|
 | 1 | UI stack / code-sharing | **Expo (React Native + react-native-web)** — one codebase → web PWA + native iOS/Android. `expo-router` tabs, Zustand + TanStack Query. |
-| 2 | Scanner-proxy hosting | **Always-on Node service on Fly.io/Render** (Dockerized; the shared `scanHandler` wrapped in a thin HTTP server). No edge-CPU cap → HTML-heavy iCIMS/Workday parse freely. `jobdar serve` keeps loopback for power users. |
+| 2 | Scanner-proxy hosting | **Always-on Node service on Fly.io/Render** (Dockerized; the shared `scanHandler` wrapped in a thin HTTP server). No edge-CPU cap → HTML-heavy iCIMS/Workday parse freely. `jobfaro serve` keeps loopback for power users. |
 | 3 | v1 scope | **Web + native together.** Native is on the critical path; the 9.0 spike must prove the native runtime before UI. |
 | 4 | On-device model | **Per-platform quant** — larger on web/desktop, smaller on mobile. The 9.7 harness reports accuracy **per surface** (honest, not asserted parity). |
 | 5 | Native runtime | **Decide in the 9.0 spike; bias `llama.rn`** (shares winc's GGUF/quant lineage → keeps the guaranteed-JSON Verdict shape closest to the web path). |
@@ -21,21 +21,21 @@
 
 ## Feasibility — verified against the code before locking the stack
 
-- **Provider purity:** `providers/*.mjs` + `lib/http.mjs` + `lib/html.mjs` contain **zero** `node:`/`Buffer`/`process`/`child_process` references — pure Web-standard `fetch`/`URL`/`AbortController`. They run **byte-for-byte** in a Node server, in `jobdar serve`, and in a native-fetch context. "One scanner codebase" is real.
+- **Provider purity:** `providers/*.mjs` + `lib/http.mjs` + `lib/html.mjs` contain **zero** `node:`/`Buffer`/`process`/`child_process` references — pure Web-standard `fetch`/`URL`/`AbortController`. They run **byte-for-byte** in a Node server, in `jobfaro serve`, and in a native-fetch context. "One scanner codebase" is real.
 - **Scoring-core purity:** `eval_engine`, `prescreen`, `salary`, `pay` (compute), `tailor`, `outreach` (`draftOutreach`/`lintDraft`), `cv_render`, `regions`, `levels`, `dates` import **zero** node builtins. The rubric is **inlined JS constants** in `eval_engine.mjs` — *not* read from `modes/*.md` via fs at runtime. The whole scoring path drops into a browser unchanged.
 - **fs coupling is exactly 9 modules**, all routed through the `paths` chokepoint in `lib/config.mjs`: `config`, `evaluations`, `outreach`, `customize_store`, `resume`, `docparse`, `pay`, `i18n`, `eval_ops`. **That is the entire port surface.**
 - **`inference.mjs` is pure `fetch`** to a Messages-API shape; `selectActive()`/`callBackend()` already *are* the `InferenceClient` interface.
 
 ## Two conflicts resolved
 
-1. **The loopback guard blocks an embedded model.** `inference.mjs` hard-throws for any `kind:'local'` whose `baseUrl` is not loopback (`isLoopbackUrl`). WebLLM-in-browser and `llama.rn`-on-device are not HTTP servers — no URL. **Resolution:** add a third backend kind **`local-embedded`** to `selectActive`; `callBackend` dispatches it to an injected `InferenceClient.complete(opts)` returning the same `{text,usage,model}` shape, bypassing the URL guards. `kind:'local'` (loopback HTTP) stays for `jobdar serve`/winc; `kind:'api'` (BYO key) unchanged. Additive at the 8e seam, not a fork.
+1. **The loopback guard blocks an embedded model.** `inference.mjs` hard-throws for any `kind:'local'` whose `baseUrl` is not loopback (`isLoopbackUrl`). WebLLM-in-browser and `llama.rn`-on-device are not HTTP servers — no URL. **Resolution:** add a third backend kind **`local-embedded`** to `selectActive`; `callBackend` dispatches it to an injected `InferenceClient.complete(opts)` returning the same `{text,usage,model}` shape, bypassing the URL guards. `kind:'local'` (loopback HTTP) stays for `jobfaro serve`/winc; `kind:'api'` (BYO key) unchanged. Additive at the 8e seam, not a fork.
 2. **Capacitor framing → Expo.** Native fetch (Expo `fetch`/RN `fetch`) also has no browser CORS, so `providers/*.mjs` can be called directly from the native build as a *9.x optimization* — but the **default transport for both surfaces is the Fly/Render proxy** (one path, central rate-limiting).
 
 ## Architecture — shared core + three surfaces + one proxy
 
 ```
                          ┌──────────────────────────────────────────────┐
-                         │  @jobdar/engine  (packages/engine)            │
+                         │  @jobfaro/engine  (packages/engine)            │
                          │  ENGINE_VERSION-pinned, ZERO node:* imports    │
                          │  PURE: eval_engine, prescreen, salary, pay,    │
                          │  tailor, draftOutreach/lintDraft, cv_render,   │
@@ -45,7 +45,7 @@
                          │         InferenceClient, discover/fetchJd      │
                          └──────────────────────────────────────────────┘
             ┌──────────────────────────┬──────────────────────────┬───────────────┐
-   CLI (apps/cli, Node)        Web PWA (apps/jobdar)       Native iOS/Android   @jobdar/scanner
+   CLI (apps/cli, Node)        Web PWA (apps/jobfaro)       Native iOS/Android   @jobfaro/scanner
    Store=fs, extract=          Store=IndexedDB/OPFS        (same Expo source)   (packages/scanner)
    pdftotext/unzip,            extract=unpdf/mammoth       Store=expo-sqlite +  providers/*.mjs
    Inference=loopback HTTP     Inference=WebLLM/WebGPU      expo-file-system     UNCHANGED
@@ -54,7 +54,7 @@
                                        │ public search params + job URLs only    Always-on Node service
                                        └────────────────────────────────────────▶ Fly.io / Render
                                        (résumé + scores NEVER cross this line)    /scan, /fetch-jd
-                                                                                  (also: jobdar serve)
+                                                                                  (also: jobfaro serve)
 ```
 
 **Privacy by architecture (the verification gate):** every model verb — `importDocument`, `preConfirm`,
@@ -136,11 +136,11 @@ interface DocExtract { extractText(fileOrBuffer): {ext, text, error?} }
 | Web | **IndexedDB** (rows) + **OPFS** (`cv.md` blob) | **unpdf** (pdf.js) + **mammoth** + txt/md |
 | Native | **expo-sqlite** + **expo-file-system** | native pickers + **unpdf-wasm**/mammoth |
 
-Migration order inside `@jobdar/engine`: `config` (paths→keys) → `evaluations` → `outreach` →
+Migration order inside `@jobfaro/engine`: `config` (paths→keys) → `evaluations` → `outreach` →
 `customize_store` → `resume` → `pay`/`i18n` (asset reads become **bundled imports**) → `eval_ops`. The
 CLI keeps the fs Store so one logic path serves all surfaces — no fork. Schema migration follows the
 existing TSV pattern (columns appended at the end, missing-cols read as `''` → backward-compatible).
-Portability: a `JOBDAR_HOME`-style export/import bundle (the "copy the folder to migrate" idea), optional
+Portability: a `JOBFARO_HOME`-style export/import bundle (the "copy the folder to migrate" idea), optional
 encrypted backup.
 
 ## Bilingual, accessibility, offline
@@ -156,21 +156,21 @@ encrypted backup.
 
 ## Monorepo / file structure
 
-pnpm workspace; the CLI also consumes `@jobdar/engine` (one source of truth, lockstep with
+pnpm workspace; the CLI also consumes `@jobfaro/engine` (one source of truth, lockstep with
 `ENGINE_VERSION`).
 
 ```
-jobdar/                                  (repo root → workspace root)
+jobfaro/                                  (repo root → workspace root)
 ├─ pnpm-workspace.yaml
 ├─ packages/
-│  ├─ engine/   @jobdar/engine  (pinned to ENGINE_VERSION; zero node:*; ports injected)
+│  ├─ engine/   @jobfaro/engine  (pinned to ENGINE_VERSION; zero node:*; ports injected)
 │  │  ├─ src/   migrated lib/*.mjs   ├─ ports/ store.d.ts docextract.d.ts inference.d.ts
 │  │  └─ assets/ i18n/{en,es}.yml, states.yml, wages-national.yml  (bundled imports)
-│  └─ scanner/  @jobdar/scanner
+│  └─ scanner/  @jobfaro/scanner
 │     └─ providers/*.mjs + http.mjs + html.mjs (UNCHANGED) + scanHandler.mjs (/scan, /fetch-jd)
 ├─ apps/
 │  ├─ cli/      Node CLI → engine fs-Store + loopback inference
-│  ├─ jobdar/   Expo app (web PWA + iOS + Android)
+│  ├─ jobfaro/   Expo app (web PWA + iOS + Android)
 │  │  ├─ app/(tabs)/{search,apply,followup}.tsx
 │  │  ├─ adapters/ store.web.ts (IndexedDB/OPFS), store.native.ts (sqlite/fs),
 │  │  │            extract.web.ts, extract.native.ts,
@@ -178,22 +178,22 @@ jobdar/                                  (repo root → workspace root)
 │  │  ├─ state/  zustand (profile, toggles, language, backend)
 │  │  └─ app.json / metro.config.js / public/manifest.webmanifest + sw
 │  └─ server/   Node HTTP service for Fly.io/Render
-│     └─ src/index.ts  imports @jobdar/scanner scanHandler → /scan, /fetch-jd
+│     └─ src/index.ts  imports @jobfaro/scanner scanHandler → /scan, /fetch-jd
 │        + Dockerfile + fly.toml / render.yaml  (CORS locked to prod origin, rate-limited)
 └─ (existing modes/, docs/, CHANGELOG.md, ROADMAP.md — version-lockstep across all)
 ```
 
 **Hosting:** one always-on Node service (Fly.io or Render), Dockerized, CORS locked to the production
-origin, per-IP + per-provider rate-limit + stable `jobdar` User-Agent as the central choke point. The app
-reads a `backendBaseUrl` setting: hosted proxy by default, `127.0.0.1:4320` when `jobdar serve` is up. A
+origin, per-IP + per-provider rate-limit + stable `jobfaro` User-Agent as the central choke point. The app
+reads a `backendBaseUrl` setting: hosted proxy by default, `127.0.0.1:4320` when `jobfaro serve` is up. A
 conformance/lint test keeps the scanner provider-pure so the same code stays portable to native fetch.
 
 ## Milestones (v1 = web + native; each independently shippable)
 
 | # | Milestone | Deliverable |
 |---|---|---|
-| **9.0** | Foundation + engine extraction + **dual-adapter spike** | pnpm monorepo; `lib/*` → `@jobdar/engine` behind `Store`/`DocExtract`/`InferenceClient` ports (9 fs-modules via the `config.mjs` chokepoint); CLI re-pointed (`test-all.mjs` green = zero behavior change); `ENGINE_VERSION` bump; **one-eval-per-adapter spike proving WebLLM *and* `llama.rn` give an identical Verdict + valid guaranteed-JSON vs winc** (native runtime decided here). |
-| **9.1** | Scanner-proxy (Fly/Render) | Always-on Node service bundling `@jobdar/scanner`; `/scan` + `/fetch-jd`; Dockerized, CORS-locked, rate-limited; **live-verified vs real Workday/iCIMS/Greenhouse tenants** (URLs resolve 200). `jobdar serve` keeps loopback. |
+| **9.0** | Foundation + engine extraction + **dual-adapter spike** | pnpm monorepo; `lib/*` → `@jobfaro/engine` behind `Store`/`DocExtract`/`InferenceClient` ports (9 fs-modules via the `config.mjs` chokepoint); CLI re-pointed (`test-all.mjs` green = zero behavior change); `ENGINE_VERSION` bump; **one-eval-per-adapter spike proving WebLLM *and* `llama.rn` give an identical Verdict + valid guaranteed-JSON vs winc** (native runtime decided here). |
+| **9.1** | Scanner-proxy (Fly/Render) | Always-on Node service bundling `@jobfaro/scanner`; `/scan` + `/fetch-jd`; Dockerized, CORS-locked, rate-limited; **live-verified vs real Workday/iCIMS/Greenhouse tenants** (URLs resolve 200). `jobfaro serve` keeps loopback. |
 | **9.2** | Web adapters + upload→parse | IndexedDB/OPFS Store + unpdf/mammoth extract; résumé upload→`importDocument`→`cv.md`+profile prefill fully client-side; clean network trace. |
 | **9.3** | Web PWA | Three-tab shell over the verbs + WebLLM `local-embedded` + the WebGPU→smaller-quant→consent-cloud ladder; installable/offline; EN/ES parity; WCAG pass. |
 | **9.4** | Native adapters | expo-sqlite + expo-file-system Store, native pickers, `llama.rn` `local-embedded` inference. |
@@ -217,10 +217,10 @@ conformance/lint test keeps the scanner provider-pure so the same code stays por
 
 ## Known gaps & current limitations
 
-Current as of `@jobdar/app` 1.17.x / CLI 1.47.x — intentional/known, mirrored in
+Current as of `@jobfaro/app` 1.17.x / CLI 1.47.x — intentional/known, mirrored in
 [ROADMAP.md](../ROADMAP.md#known-gaps--current-limitations). (Resolved since 1.10.0: first-run
 **onboarding shipped** in 1.41 — welcome → continue-as/upload/manual → search; **`POST /profile`
-shipped** in 1.41 — the app writes the chosen identity to `config/profile.yml`; the **`jobdar doctor`
+shipped** in 1.41 — the app writes the chosen identity to `config/profile.yml`; the **`jobfaro doctor`
 poppler check shipped** in 1.41; **native persistence shipped** in 1.45 via AsyncStorage and moved to
 the on-device file store in 1.47. **Phase 10 (1.47) took native off serve entirely** — the serve-shaped
 items below now describe the web app and the optional Mac-companion mode, not native.)
@@ -233,11 +233,11 @@ items below now describe the web app and the optional Mac-companion mode, not na
   upload/selection, restored on the next load. In serve mode, identity is also written to the CLI's
   `config/profile.yml` (`POST /profile`) and the résumé to `data/cv.md`, so a new browser/device on the
   same machine can offer "Continue as <name>". But there is **no cross-machine sync** — moving machines =
-  copying the jobdar home; a future phone⇄Mac export is a file copy by construction (by design;
+  copying the jobfaro home; a future phone⇄Mac export is a file copy by construction (by design;
   local-first).
 - **Native no longer needs a serve (1.47)** — it defaults to the **on-device backend**: scanning,
   prescreen, eval, tailor, and outreach drafts all run on the phone. The optional **Mac-serve companion
-  mode** (Settings → backend: URL + bearer token) still needs a reachable `jobdar serve --host 0.0.0.0`.
+  mode** (Settings → backend: URL + bearer token) still needs a reachable `jobfaro serve --host 0.0.0.0`.
   **Web** keeps the serve default `http://127.0.0.1:4320` and the `?serve=http://<mac-ip>:4320&token=<t>`
   override. On-device honest limits: intent parse = deterministic keyword fallback, `/discover` returns
   not-available, and the in-app model-download UX + real-device Metal speed are unexercised until the
@@ -245,7 +245,7 @@ items below now describe the web app and the optional Mac-companion mode, not na
 - **PDF upload depends on `pdftotext` (poppler) on the serve host.** `POST /import/upload` writes the bytes
   to the confined `data/uploads/` dir and runs the deterministic `docparse` extractor — `.docx` via `unzip`,
   `.pdf` via `pdftotext`, `.txt/.md` direct. The host needs poppler for PDF (`brew install poppler` /
-  `apt-get install poppler-utils`); `jobdar doctor` flags it when missing, and the upload returns an honest
+  `apt-get install poppler-utils`); `jobfaro doctor` flags it when missing, and the upload returns an honest
   error. Scanned/image-only PDFs have no embedded text and cannot be parsed. On the **on-device native
   backend** (1.47), PDF parsing is deferred entirely with an honest "export as .docx/.txt" error —
   `.docx` parses on-device via fflate; there is no pdftotext on iOS.
@@ -256,7 +256,7 @@ items below now describe the web app and the optional Mac-companion mode, not na
   provider** on the same `/discover` seam remains future (LinkedIn/Indeed expose no open search API).
 - **The evaluator's score distribution is bimodal** (Apply/Don't clusters, thin Research band). Code-side
   causes are fixed (5-level ratings, no years-cliff, empty-JD guard); the residual is model behavior.
-  The fix path is DATA: the 👍/👎 feedback ledger (`jobdar calibrate --feedback`) accumulates real labels;
+  The fix path is DATA: the 👍/👎 feedback ledger (`jobfaro calibrate --feedback`) accumulates real labels;
   recalibrate band thresholds once N≥50–100 — don't guess them. See docs/eval-tuning-research.md §7.
 
 ## Top risks → mitigations

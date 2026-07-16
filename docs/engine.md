@@ -1,4 +1,4 @@
-# Jobdar engine contract (Phase 8e)
+# Jobfaro engine contract (Phase 8e)
 
 `lib/engine.mjs` is the **one programmatic seam** for the whole pipeline — import → scan → evaluate →
 track → build. It has **no console I/O**: every verb returns a structured value and takes an optional
@@ -6,7 +6,7 @@ track → build. It has **no console I/O**: every verb returns a structured valu
 **Build against this document, never against internals.** `ENGINE_VERSION` bumps on any breaking change
 to a signature or a returned shape.
 
-The same verbs are exposed as JSON over localhost by `jobdar serve` (default `http://127.0.0.1:4320`,
+The same verbs are exposed as JSON over localhost by `jobfaro serve` (default `http://127.0.0.1:4320`,
 CORS locked to localhost): `GET /health`, `POST /evaluate {jd, cv?, confirm?, transferable?}`, `POST /import {file}`.
 
 ## Verbs
@@ -47,12 +47,12 @@ tailoredCv, model, usage }` — a role-targeted summary, a complete cover letter
 `tailoredCv` (the CV with the summary led in). Uses the guaranteed-JSON path on capable local backends so
 even a 2B stays GROUNDED (selects/summarizes from the résumé — never fabricates); a **completeness guard**
 retries once if the cover letter comes back truncated (sets `coverComplete:false` if still short). `{ ok:false }`
-when the reply doesn't parse. Pair with `buildCv`/`jobdar pdf` to render `tailoredCv`.
+when the reply doesn't parse. Pair with `buildCv`/`jobfaro pdf` to render `tailoredCv`.
 
 `directives?` (Phase 8f) — an ordered array of user instructions that steer tone, emphasis, length, and
 structure ONLY. They are appended **after** the grounding rules (a fixed clause forbids adding facts not in
 the résumé) and the call runs at **`temperature: 0`**, so the same `(cv, jd, directives)` reproduce the same
-letter. Additive + optional — the engine contract version is unchanged. (`jobdar tailor --instruct` layers
+letter. Additive + optional — the engine contract version is unchanged. (`jobfaro tailor --instruct` layers
 these per role and writes versioned `-vN` variants; see `data/customize.yml`.)
 
 ### `draftOutreach({ active, jd?, cv?, profile?, role?, company?, person?, channel?, directives? }) → OutreachResult`
@@ -63,7 +63,7 @@ recipient by first name), using the guaranteed-JSON path so even a 2B stays grou
 **`temperature: 0`**. The result is gated through `lintDraft` (one firmer retry on a length/placeholder/
 missing-name failure); `lint` carries any remaining problems so the caller never treats an unchecked note
 as send-ready. `{ ok:false }` when the reply doesn't parse. **Drafting is not sending** — this verb never
-writes to the cadence ledger (`appendOutreach`/`jobdar outreach --log` remain the only way a contact is
+writes to the cadence ledger (`appendOutreach`/`jobfaro outreach --log` remain the only way a contact is
 recorded). Additive — engine contract version unchanged.
 
 ### Track (pure — rows in, rows out)
@@ -74,7 +74,7 @@ recorded). Additive — engine contract version unchanged.
 - reads: `readPipeline()`, `pendingQueue(rows, { includeScreened? })`
 
 ### `buildCv(cvMarkdown, opts?) → htmlString`
-Render a tailored ATS résumé as HTML (the PDF wrapper lives in `jobdar pdf`).
+Render a tailored ATS résumé as HTML (the PDF wrapper lives in `jobfaro pdf`).
 
 ### Backend selection (re-exported from `lib/inference`)
 `resolveBackend(profile, env)`, `selectActive(profile, env) → { kind, runtime, baseUrl, up, … }`,

@@ -1,9 +1,9 @@
 {
-  "name": "@jobdar/server",
+  "name": "@jobfaro/server",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Jobdar PII-free scanner-proxy (Phase 9.1) — reuses providers/*.mjs; deploys to Fly/Render in prod",
+  "description": "Jobfaro PII-free scanner-proxy (Phase 9.1) — reuses providers/*.mjs; deploys to Fly/Render in prod",
   "main": "index.mjs",
   "scripts": {
     "start": "node index.mjs"

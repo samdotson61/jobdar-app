@@ -12,7 +12,7 @@ código determinista (`lib/pay.mjs` `resolvePay`) aporta el contexto de mercado;
 las reglas de honestidad de [`_shared.md`](_shared.md).
 
 ## Entradas
-- La oferta — `jobdar offer <url> --base <n> [--bonus --pto --metro --remote --note]` captura base,
+- La oferta — `jobfaro offer <url> --base <n> [--bonus --pto --metro --remote --note]` captura base,
   bono, beneficios, PTO, área metro/remoto y fecha de inicio en la fila del registro (estado → `offer`).
 - **Contexto de mercado** — `resolvePay` devuelve `{ annualMin, annualMax, source, confidence, label }`;
   la `label` es texto obligatorio (`stated …` / `est. … (N comparables)` / `est. … (BLS mediana, occ)`).

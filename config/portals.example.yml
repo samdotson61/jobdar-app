@@ -1,5 +1,5 @@
-# Jobdar portals — EXAMPLE. Copy to config/portals.yml, or better: run `jobdar init` (seeds your
-# region) or `jobdar seed --region <r> --write`. config/portals.yml is GITIGNORED — the set of
+# Jobfaro portals — EXAMPLE. Copy to config/portals.yml, or better: run `jobfaro init` (seeds your
+# region) or `jobfaro seed --region <r> --write`. config/portals.yml is GITIGNORED — the set of
 # employers you're targeting is part of your private job search.
 portals:
   - company: Hudl

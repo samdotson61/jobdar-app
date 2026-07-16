@@ -1,12 +1,12 @@
 {
-  "name": "jobdar",
+  "name": "jobfaro",
   "owner": {
     "name": "Sam Dotson",
     "url": "https://github.com/samdotson61"
   },
   "plugins": [
     {
-      "name": "jobdar",
+      "name": "jobfaro",
       "source": "./",
       "description": "Bilingual US job-search command center for new grads and people entering the workforce (Midwest-default, entry-default, privacy-first)."
     }

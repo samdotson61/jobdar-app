@@ -1,4 +1,4 @@
-// Jobdar — generic JSON-LD provider (Phase 5.5). For career sites on ATSes we don't (yet) speak
+// Jobfaro — generic JSON-LD provider (Phase 5.5). For career sites on ATSes we don't (yet) speak
 // natively — Phenom, SmashFly/Symphony, custom portals — that embed schema.org JobPosting / ItemList
 // JSON-LD server-side. OPT-IN ONLY: a portal must say `provider: jsonld` explicitly (there is no URL
 // pattern to auto-detect), e.g.:

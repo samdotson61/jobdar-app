@@ -1,14 +1,14 @@
-// @jobdar/server — the PII-free scanner-proxy (Phase 9.1, local dev form).
+// @jobfaro/server — the PII-free scanner-proxy (Phase 9.1, local dev form).
 //
 // Reuses the REAL provider code unchanged (providers/*.mjs are pure Web-standard fetch). Two routes only;
 // the request bodies have NO field for a résumé or a score — the proxy is structurally incapable of seeing
 // PII. In production this same handler deploys to the always-on Node host (Fly/Render) with CORS locked
-// to the app origin; here it runs on loopback for local testing. `jobdar serve` is the power-user form.
+// to the app origin; here it runs on loopback for local testing. `jobfaro serve` is the power-user form.
 import http from 'node:http';
 import { fetchJobDescription, resolveProvider, providerIds } from '../../providers/_contract.mjs';
 
 const PORT = Number(process.env.PORT || 4320);
-const ORIGIN = process.env.JOBDAR_APP_ORIGIN || '*'; // lock to your app origin in production
+const ORIGIN = process.env.JOBFARO_APP_ORIGIN || '*'; // lock to your app origin in production
 
 const send = (res, code, obj) => {
   res.writeHead(code, {
@@ -53,4 +53,4 @@ const server = http.createServer(async (req, res) => {
   return send(res, 404, { error: 'not found', routes: ['GET /health', 'POST /fetch-jd', 'POST /scan'] });
 });
 
-server.listen(PORT, '127.0.0.1', () => console.log(`jobdar scanner-proxy on http://127.0.0.1:${PORT} (origin: ${ORIGIN})`));
+server.listen(PORT, '127.0.0.1', () => console.log(`jobfaro scanner-proxy on http://127.0.0.1:${PORT} (origin: ${ORIGIN})`));

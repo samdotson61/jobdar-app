@@ -6,7 +6,7 @@ import { router } from 'expo-router';
 import { backendMode } from '@/src/serve';
 import { useStore } from '@/src/store';
 import { t } from '@/src/engine';
-import { relevanceScore, levelDecision, locationMatches, regionPriority } from '@jobdar/engine';
+import { relevanceScore, levelDecision, locationMatches, regionPriority } from '@jobfaro/engine';
 import { Btn, C, Card, Field, H, Pill, Sub, confirmColor } from '@/src/ui';
 
 const REGION_OPTS = ['midwest', 'northeast', 'southeast', 'southwest', 'west', 'nationwide'];

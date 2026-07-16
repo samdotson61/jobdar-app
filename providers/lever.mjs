@@ -1,5 +1,5 @@
-// Jobdar — Lever provider (Phase 5.5). Lever is common at small/midsize companies — exactly the
-// lower-competition employers Jobdar favors. Clean unauthenticated JSON:
+// Jobfaro — Lever provider (Phase 5.5). Lever is common at small/midsize companies — exactly the
+// lower-competition employers Jobfaro favors. Clean unauthenticated JSON:
 //   list:   https://api.lever.co/v0/postings/{site}?mode=json
 //   detail: https://api.lever.co/v0/postings/{site}/{id}   (descriptionPlain)
 // Same { id, detect, fetch, fetchJob } contract as greenhouse/workday/icims: fetch() discovers

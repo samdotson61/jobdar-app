@@ -1,8 +1,8 @@
-# Jobdar one-command installer (Windows PowerShell).
+# Jobfaro one-command installer (Windows PowerShell).
 #   irm <url>/install.ps1 | iex
 $ErrorActionPreference = "Stop"
 
-Write-Host "Installing Jobdar…"
+Write-Host "Installing Jobfaro…"
 
 if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
   Write-Error "Node.js (>= 20) is required. Install it from https://nodejs.org and re-run."
@@ -13,8 +13,8 @@ if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
   exit 1
 }
 
-$Repo = if ($env:JOBDAR_REPO) { $env:JOBDAR_REPO } else { "https://github.com/samdotson61/jobdar-app.git" }
-$Dir = if ($env:JOBDAR_DIR) { $env:JOBDAR_DIR } else { Join-Path $HOME "jobdar" }
+$Repo = if ($env:JOBFARO_REPO) { $env:JOBFARO_REPO } else { "https://github.com/samdotson61/jobfaro-app.git" }
+$Dir = if ($env:JOBFARO_DIR) { $env:JOBFARO_DIR } else { Join-Path $HOME "jobfaro" }
 
 if (Test-Path (Join-Path $Dir ".git")) {
   Write-Host "Updating $Dir…"; git -C $Dir pull --ff-only
@@ -25,5 +25,5 @@ if (Test-Path (Join-Path $Dir ".git")) {
 Set-Location $Dir
 npm install --no-audit --no-fund
 node doctor.mjs
-node bin/jobdar init
-Write-Host "Done. Tip: 'npm link' puts the 'jobdar' command on your PATH."
+node bin/jobfaro init
+Write-Host "Done. Tip: 'npm link' puts the 'jobfaro' command on your PATH."

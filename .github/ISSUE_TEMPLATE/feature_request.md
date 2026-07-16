@@ -1,6 +1,6 @@
 ---
 name: Feature request
-about: Suggest an idea for Jobdar
+about: Suggest an idea for Jobfaro
 title: "[feature] "
 labels: enhancement
 ---
@@ -9,7 +9,7 @@ labels: enhancement
 Describe the job-search pain point. Who is it for (new grad / no-degree / career-changer)?
 
 **Proposed solution**
-What you'd like Jobdar to do.
+What you'd like Jobfaro to do.
 
 **Scope check (optional)**
 - Region(s) involved:

@@ -8,14 +8,14 @@ status: authored
 
 **Goal:** read one job description against the user's résumé and return a clear fit report.
 Model-backed — uses the configured inference backend (`inference:` in `config/profile.yml`):
-**on-device winc.cpp by default** (local, private, no key), or your own API key (`api`). `jobdar backend`
+**on-device winc.cpp by default** (local, private, no key), or your own API key (`api`). `jobfaro backend`
 checks it's live. Apply the rubric in [`_shared.md`](_shared.md).
 
 ## Inputs
-- The job description — `jobdar eval <url>` fetches it for you via the matching provider
+- The job description — `jobfaro eval <url>` fetches it for you via the matching provider
   (greenhouse / workday / icims) and prints it; you read and score it. (A file or pasted text works too.)
 - The user's profile + résumé (`config/profile.yml`, `cv.md`).
-- **Today's date** — `jobdar eval` prints it. Use it: treat any "Present"/"Current" on the résumé as
+- **Today's date** — `jobfaro eval` prints it. Use it: treat any "Present"/"Current" on the résumé as
   today, **never as a future date** (a "Mar 2025 – Present" role is ongoing, not future employment).
 
 ## Steps
@@ -48,20 +48,20 @@ degree_required: {yes | no | unclear}
 close the gap. Degree-gated roles stay visible (flagged) when include_degree_required_roles is on.}
 
 ## Pay
-{cite the JD's STATED range if present (`jobdar prescreen` extracts it into the `pay` column) and how
+{cite the JD's STATED range if present (`jobfaro prescreen` extracts it into the `pay` column) and how
 it compares to target — above / within / near / below. If pay is undisclosed, say so. Never invent a number.}
 
 ## Next step
-{apply, tailor a CV (`jobdar pdf`), or move on — one concrete action}
+{apply, tailor a CV (`jobfaro pdf`), or move on — one concrete action}
 ```
 
 ## Record it
 
 The scanner only discovers roles — it never scores them. **You** are the scorer, so persist your
-verdict to the pipeline (it then surfaces in `jobdar tui` / the dashboard):
+verdict to the pipeline (it then surfaces in `jobfaro tui` / the dashboard):
 
 ```
-jobdar eval --save --url <url> --score <0.0–5.0> --band <apply|research|dont> --company "{company}" --role "{role}" --note "{one-line recommendation}"
+jobfaro eval --save --url <url> --score <0.0–5.0> --band <apply|research|dont> --company "{company}" --role "{role}" --note "{one-line recommendation}"
 ```
 
 Keep it tight and specific. Cite the JD. Never inflate the score or invent a qualification.

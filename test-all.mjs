@@ -1,4 +1,4 @@
-// Jobdar — test runner (zero dependencies). Run with `npm test`.
+// Jobfaro — test runner (zero dependencies). Run with `npm test`.
 // Covers the foundation + bilingual core: i18n parity & interpolation, shipped defaults,
 // the provider registry / Greenhouse detect(), EN<->ES modes parity, and state aliases.
 
@@ -339,22 +339,22 @@ test('seed: region selection returns that region and swaps cleanly (gate)', () =
   assert.ok(toPortals(selectEmployers({ regions: ['midwest'] })).every((p) => p.company && p.careers_url))
 })
 
-test('portability: package assets resolve from ROOT; user dirs follow JOBDAR_HOME', () => {
+test('portability: package assets resolve from ROOT; user dirs follow JOBFARO_HOME', () => {
   // package assets are never coupled to the user config dir
   assert.equal(paths.i18nDir, path.join(PKG_ROOT, 'config', 'i18n'))
   assert.equal(paths.states, path.join(PKG_ROOT, 'templates', 'states.yml'))
   // a checkout WITH config/profile.yml is repo-local (a self-contained unit); profile.yml is
-  // gitignored, so a fresh clone (and CI) must fall back to ~/.jobdar — assert the rule, not
+  // gitignored, so a fresh clone (and CI) must fall back to ~/.jobfaro — assert the rule, not
   // one machine's state
   const expectedHome = existsSync(path.join(PKG_ROOT, 'config', 'profile.yml'))
     ? PKG_ROOT
-    : path.join(homedir(), '.jobdar')
+    : path.join(homedir(), '.jobfaro')
   assert.equal(paths.home, expectedHome)
-  // JOBDAR_HOME relocates every user dir (subprocess: paths resolve at import time)
-  const home = path.join(tmpdir(), 'jobdar-portability-test')
+  // JOBFARO_HOME relocates every user dir (subprocess: paths resolve at import time)
+  const home = path.join(tmpdir(), 'jobfaro-portability-test')
   const out = execFileSync(process.execPath, ['-e', "import('./lib/config.mjs').then(m => console.log(JSON.stringify(m.paths)))"], {
     cwd: ROOT,
-    env: { ...process.env, JOBDAR_HOME: home, JOBDAR_CONFIG_DIR: '', JOBDAR_DATA_DIR: '', JOBDAR_OUTPUT_DIR: '' },
+    env: { ...process.env, JOBFARO_HOME: home, JOBFARO_CONFIG_DIR: '', JOBFARO_DATA_DIR: '', JOBFARO_OUTPUT_DIR: '' },
     encoding: 'utf8',
   })
   const p = JSON.parse(out)
@@ -364,19 +364,19 @@ test('portability: package assets resolve from ROOT; user dirs follow JOBDAR_HOM
 })
 
 test('portability: i18n renders real strings even when the user config dir is elsewhere', () => {
-  // Regression: i18n used to load from CONFIG_DIR, so JOBDAR_CONFIG_DIR=<empty> degraded every
+  // Regression: i18n used to load from CONFIG_DIR, so JOBFARO_CONFIG_DIR=<empty> degraded every
   // string to its raw key ("cli.usage"). Tables are a package asset now.
-  const out = execFileSync(process.execPath, ['bin/jobdar', '--help'], {
+  const out = execFileSync(process.execPath, ['bin/jobfaro', '--help'], {
     cwd: ROOT,
-    env: { ...process.env, JOBDAR_HOME: path.join(tmpdir(), 'jobdar-empty-home-test') },
+    env: { ...process.env, JOBFARO_HOME: path.join(tmpdir(), 'jobfaro-empty-home-test') },
     encoding: 'utf8',
   })
-  assert.ok(out.includes('Usage: jobdar <command>'), 'help must render real strings')
+  assert.ok(out.includes('Usage: jobfaro <command>'), 'help must render real strings')
   assert.ok(!out.includes('cli.usage'), 'raw i18n keys must not leak')
 })
 
 test('safety: atomicWrite writes, overwrites in place, and leaves no orphan .tmp on success', () => {
-  const dir = mkdtempSync(path.join(tmpdir(), 'jobdar-atomic-'))
+  const dir = mkdtempSync(path.join(tmpdir(), 'jobfaro-atomic-'))
   const f = path.join(dir, 'store.tsv')
   atomicWrite(f, 'one\n')
   assert.equal(readFileSync(f, 'utf8'), 'one\n')
@@ -388,12 +388,12 @@ test('safety: atomicWrite writes, overwrites in place, and leaves no orphan .tmp
 })
 
 test('safety: a malformed profile.yml raises a clean userFacing error, not a raw YAMLException', () => {
-  const dir = mkdtempSync(path.join(tmpdir(), 'jobdar-badyaml-'))
+  const dir = mkdtempSync(path.join(tmpdir(), 'jobfaro-badyaml-'))
   writeFileSync(path.join(dir, 'profile.yml'), 'name: ok\nname: dup\n') // duplicate mapping key → invalid YAML
   const out = execFileSync(
     process.execPath,
     ['-e', "import('./lib/config.mjs').then((m) => { try { m.loadProfile(); console.log('NO_THROW') } catch (e) { console.log(JSON.stringify({ userFacing: !!e.userFacing, msg: e.message })) } })"],
-    { cwd: ROOT, env: { ...process.env, JOBDAR_CONFIG_DIR: dir }, encoding: 'utf8' },
+    { cwd: ROOT, env: { ...process.env, JOBFARO_CONFIG_DIR: dir }, encoding: 'utf8' },
   )
   const r = JSON.parse(out.trim())
   assert.equal(r.userFacing, true, 'malformed YAML must be flagged userFacing so the CLI prints a clean message')
@@ -486,14 +486,14 @@ test('dashboard: renders config, pipeline (TUI parity), analytics charts + track
   ]
   const catalog = [{ company: 'Enova', sector: 'fintech' }, { company: 'Hudl', sector: 'sports-tech' }]
   const en = renderDashboard(getT('en'), { profile, portals, pipeline, tracker: [], catalog, lang: 'en' })
-  assert.ok(en.includes('Jobdar dashboard') && en.includes('Midwest') && en.includes('Enova') && en.includes('greenhouse'))
+  assert.ok(en.includes('Jobfaro dashboard') && en.includes('Midwest') && en.includes('Enova') && en.includes('greenhouse'))
   assert.ok(en.includes('Data Analyst I') && en.includes('4.6')) // pipeline row — TUI parity
   assert.ok(en.includes('href="https://job-boards.greenhouse.io/enova/jobs/1"')) // role links to the posting
   assert.ok(en.includes('Analytics') && en.includes('<svg') && en.includes('Top companies') && en.includes('Pipeline funnel'))
   assert.ok(en.includes('By sector') && en.includes('By location')) // sector/region breakdown charts
   assert.ok(en.includes('id="pipe"') && en.includes('sessionStorage')) // client-side sortable columns
   const es = renderDashboard(getT('es'), { profile, portals: [], pipeline, tracker: [], catalog, lang: 'es' })
-  assert.ok(es.includes('Panel de Jobdar') && es.includes('Analíticas') && es.includes('<svg') && es.includes('Por sector'))
+  assert.ok(es.includes('Panel de Jobfaro') && es.includes('Analíticas') && es.includes('<svg') && es.includes('Por sector'))
 })
 
 test('dashboard: analyze() computes counts, funnel, companies, sectors + locations', () => {
@@ -1028,7 +1028,7 @@ test('inference: resolveBackend defaults to local winc, honors profile + env ove
   assert.equal(resolveBackend({ inference: 'api' }, {}).mode, 'api')
   assert.equal(resolveBackend({ inference: 'bogus' }, {}).mode, 'local') // unknown → local
   assert.equal(resolveBackend({ inference_url: 'http://127.0.0.1:9000/' }, {}).localUrl, 'http://127.0.0.1:9000') // trailing slash trimmed
-  assert.equal(resolveBackend({}, { JOBDAR_INFERENCE_URL: 'http://localhost:1234' }).localUrl, 'http://localhost:1234')
+  assert.equal(resolveBackend({}, { JOBFARO_INFERENCE_URL: 'http://localhost:1234' }).localUrl, 'http://localhost:1234')
 })
 
 test('inference: isLoopbackUrl gates the no-TLS local path', () => {
@@ -1064,8 +1064,8 @@ test('inference: selectActive resolves local/api/auto; auto falls back to api wh
   assert.equal(up.kind, 'local')
   assert.equal(up.up, true)
   assert.equal(up.jsonEval, true) // local backends serve guaranteed-JSON evals
-  const prevKey = process.env.JOBDAR_API_KEY
-  process.env.JOBDAR_API_KEY = 'sk-test'
+  const prevKey = process.env.JOBFARO_API_KEY
+  process.env.JOBFARO_API_KEY = 'sk-test'
   try {
     const api = await selectActive({ inference: 'api' })
     assert.equal(api.kind, 'api')
@@ -1077,8 +1077,8 @@ test('inference: selectActive resolves local/api/auto; auto falls back to api wh
     const autoDown = await selectActive({ inference: 'auto', inference_url: m.url })
     assert.equal(autoDown.kind, 'api') // winc down + key → auto picks api
   } finally {
-    if (prevKey === undefined) delete process.env.JOBDAR_API_KEY
-    else process.env.JOBDAR_API_KEY = prevKey
+    if (prevKey === undefined) delete process.env.JOBFARO_API_KEY
+    else process.env.JOBFARO_API_KEY = prevKey
   }
 })
 
@@ -1510,7 +1510,7 @@ test('transferable-skills toggle: off by default, steers both AI prompts when on
 
 test('serve: HTTP façade — auth gate, pipeline/profile/cv reads, tracker write, 404 (subprocess, env-isolated, no external net)', async () => {
   const { spawn } = await import('node:child_process')
-  const home = mkdtempSync(path.join(tmpdir(), 'jobdar-serve-'))
+  const home = mkdtempSync(path.join(tmpdir(), 'jobfaro-serve-'))
   const dataDir = path.join(home, 'data')
   const cfgDir = path.join(home, 'config')
   mkdirSync(dataDir, { recursive: true })
@@ -1522,7 +1522,7 @@ test('serve: HTTP façade — auth gate, pipeline/profile/cv reads, tracker writ
   const PORT = 40000 + (process.pid % 20000)
   const TOKEN = 'test-tok-123'
   const base = `http://127.0.0.1:${PORT}`
-  const child = spawn(process.execPath, [path.join(PKG_ROOT, 'bin', 'jobdar'), 'serve', '--port', String(PORT), '--token', TOKEN], { env: { ...process.env, JOBDAR_HOME: home }, stdio: 'ignore' })
+  const child = spawn(process.execPath, [path.join(PKG_ROOT, 'bin', 'jobfaro'), 'serve', '--port', String(PORT), '--token', TOKEN], { env: { ...process.env, JOBFARO_HOME: home }, stdio: 'ignore' })
   try {
     let up = false
     for (let i = 0; i < 60 && !up; i++) {
@@ -1557,7 +1557,7 @@ test('serve: HTTP façade — auth gate, pipeline/profile/cv reads, tracker writ
     assert.equal(ts.ok, true)
     const after = await (await fetch(`${base}/pipeline?token=${TOKEN}`)).json()
     assert.equal(after.rows[0].status, 'applied') // real pipeline.tsv mutation persisted
-    // security: /import refuses a path outside the jobdar home (arbitrary-file-read fix)
+    // security: /import refuses a path outside the jobfaro home (arbitrary-file-read fix)
     assert.equal((await fetch(`${base}/import?token=${TOKEN}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ file: '/etc/passwd' }) })).status, 403)
     // security: CORS is NOT reflected for a public origin, but IS for a localhost origin (reflective-CORS fix)
     assert.equal((await fetch(`${base}/pipeline?token=${TOKEN}`, { headers: { origin: 'https://evil.example.com' } })).headers.get('access-control-allow-origin'), null)
@@ -1736,7 +1736,7 @@ test('sponsorship: the needs_sponsorship toggle turns an explicit "no" into a QU
   assert.equal(on.reasons[0].kind, 'sponsorship')
   assert.ok(on.reasons[0].quote.includes('without sponsorship')) // the JD line is quoted — never silent
   const off = screenDecision(gates, {})
-  assert.equal(off.screened, false) // without the toggle Jobdar can't know the user's status → flag only
+  assert.equal(off.screened, false) // without the toggle Jobfaro can't know the user's status → flag only
   assert.deepEqual(off.flags.map((f) => f.kind), ['sponsorship'])
   // An explicit OFFER is a positive indicator — never a screen, never a point-costing flag
   const yes = screenDecision(extractGates('Visa sponsorship is available. Join us!'), { needs_sponsorship: true })
@@ -1879,7 +1879,7 @@ test('eval report footer: always names the report + views; offers --next 5/10/15
   const t = getT('en')
   const withPending = reportFooterLines(t, { file: '/tmp/home/data/pipeline.tsv', pending: 12 }).join('\n')
   assert.ok(withPending.includes('/tmp/home/data/pipeline.tsv'), 'says where the report file lives')
-  assert.ok(withPending.includes('jobdar tracker') && withPending.includes('jobdar tui') && withPending.includes('jobdar dashboard'))
+  assert.ok(withPending.includes('jobfaro tracker') && withPending.includes('jobfaro tui') && withPending.includes('jobfaro dashboard'))
   assert.ok(withPending.includes('--next 5') && withPending.includes('12'), 'offers the quick batch sizes with the real pending count')
   const drained = reportFooterLines(t, { file: '/tmp/p.tsv', pending: 0 }).join('\n')
   assert.ok(!drained.includes('--next'), 'no evaluate-more nudge when nothing is pending')
@@ -1911,7 +1911,7 @@ test('fix: dead JD links — findRoleMatches keeps every match; resolveJdSafe ne
   assert.equal(garbage.ok, true)
   assert.equal(garbage.description, '')
   // Local text files still extract on-device.
-  const dir = mkdtempSync(path.join(tmpdir(), 'jobdar-jd-'))
+  const dir = mkdtempSync(path.join(tmpdir(), 'jobfaro-jd-'))
   const file = path.join(dir, 'jd.txt')
   writeFileSync(file, 'Junior Analyst — writes SQL.')
   const local = await resolveJdSafe(file, t)

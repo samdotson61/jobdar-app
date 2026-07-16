@@ -1,4 +1,4 @@
-// Jobdar — iCIMS provider (Phase 3). The second big US enterprise ATS (health systems,
+// Jobfaro — iCIMS provider (Phase 3). The second big US enterprise ATS (health systems,
 // insurers, manufacturers). Harder than Workday: there is NO public unauthenticated JSON API,
 // so the default path parses public career pages.
 //
@@ -154,7 +154,7 @@ async function fetchViaHtml(match) {
 }
 
 // Opt-in render path for JS-rendered iCIMS widgets. Sequential, single browser; lazy-imports
-// Playwright so the default install stays light. Enable with `jobdar scan --playwright`.
+// Playwright so the default install stays light. Enable with `jobfaro scan --playwright`.
 async function fetchViaPlaywright(match) {
   let chromium
   try {

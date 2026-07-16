@@ -1,9 +1,9 @@
-// Jobdar — scanner orchestrator (zero-token, deterministic, no model).
+// Jobfaro — scanner orchestrator (zero-token, deterministic, no model).
 // Loads portals, resolves a provider for each, and lists public postings.
 // `--dry-run` resolves providers and prints a summary with NO network calls.
 //
 // Run directly:  node scan.mjs [--dry-run] [--lang en|es]
-// Or via the CLI: jobdar scan [--dry-run]
+// Or via the CLI: jobfaro scan [--dry-run]
 
 import { loadProfile, loadPortals, loadUsaJobsCreds } from './lib/config.mjs'
 import { setUsaJobsCredsSource } from './providers/_creds.mjs'
@@ -26,7 +26,7 @@ export async function runScan(argv = []) {
   const lang = resolveLang(flags, profile)
   const t = getT(lang)
   const dryRun = Boolean(flags['dry-run'] || flags.n)
-  const ctx = { render: Boolean(flags.playwright || process.env.JOBDAR_PLAYWRIGHT), lang }
+  const ctx = { render: Boolean(flags.playwright || process.env.JOBFARO_PLAYWRIGHT), lang }
   const levels = flags.levels
     ? String(flags.levels).split(',').map((s) => s.trim()).filter(Boolean)
     : profile.target_levels

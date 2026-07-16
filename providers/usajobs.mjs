@@ -1,4 +1,4 @@
-// Jobdar — USAJobs provider (opt-in, BYO free key). USAJobs is the U.S. federal government's official
+// Jobfaro — USAJobs provider (opt-in, BYO free key). USAJobs is the U.S. federal government's official
 // jobs aggregator — a huge, public, entry-friendly source (many roles open to the public with clear
 // grade/pay bands). Unlike the per-company ATS providers, it's ONE endpoint covering thousands of
 // agencies, so it broadens coverage in a single portal.

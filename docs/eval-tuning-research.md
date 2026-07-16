@@ -1,6 +1,6 @@
 # Eval tuning — research notes
 
-> Research backing the design of `jobdar eval`'s scoring (Phase 8a.4–8a.6) and `jobdar offer`
+> Research backing the design of `jobfaro eval`'s scoring (Phase 8a.4–8a.6) and `jobfaro offer`
 > (Phase 8d). Goal: the same rubric must score **consistently and fairly** on both backends —
 > a frontier API model *and* a small local model served by
 > [winc.cpp](https://github.com/samdotson61/winc.cpp). Compiled 2026-06-10.
@@ -61,7 +61,7 @@ fit a small local model's context
 **Calibrate against humans before trusting it.** Standard practice: a **30–50 example
 human-annotated calibration set**, re-scored on every prompt or model change; track agreement
 and drift ([Kinde](https://www.kinde.com/learn/ai-for-software-engineering/best-practice/llm-as-a-judge-done-right-calibrating-guarding-debiasing-your-evaluators/)).
-For Jobdar: a fixture set of real JDs hand-banded by us, run by `test-all.mjs` against any
+For Jobfaro: a fixture set of real JDs hand-banded by us, run by `test-all.mjs` against any
 configured backend.
 
 **Small local models hold up — with help.** Decomposed rubric + few-shot anchors + structured
@@ -71,7 +71,7 @@ output is precisely the recipe that lets a 3–8B-class local model judge useful
 than absolute scoring, but our pipeline needs absolute bands — so we use **band-anchored
 absolute scoring** and reserve pairwise for A/B-testing rubric changes on the calibration set.
 
-## 2. Fairness — load-bearing for Jobdar's audience
+## 2. Fairness — load-bearing for Jobfaro's audience
 
 A 2025 study of ~10,000 real candidate–job pairs found off-the-shelf LLMs (OpenAI, Anthropic,
 Google, Meta, Deepseek) reached ROC AUC ≈ 0.77 on hiring fit **and carried measurable
@@ -80,7 +80,7 @@ the authors' conclusion: never deploy hiring-adjacent LLM scoring without explic
 guardrails ([arXiv 2507.02087](https://arxiv.org/pdf/2507.02087);
 see also [bias in job–résumé matching](https://arxiv.org/pdf/2503.19182)).
 
-Jobdar's stakes are lower — we score **jobs for one candidate**, not candidates for an employer —
+Jobfaro's stakes are lower — we score **jobs for one candidate**, not candidates for an employer —
 but two guards are still ours to build:
 
 1. **Minimal-slice + PII-strip (8a.3, extended):** the eval prompt gets the JD + a *skills/
@@ -91,7 +91,7 @@ but two guards are still ours to build:
    include no-degree/equivalent-experience JD pairs so a regression here **fails tests**, not
    just vibes.
 
-## 3. Concrete rubric design for `jobdar eval` (feeds 8a.1/8a.4)
+## 3. Concrete rubric design for `jobfaro eval` (feeds 8a.1/8a.4)
 
 Sub-criteria (model returns `strong | partial | none` + one quoted JD line of evidence each):
 
@@ -191,13 +191,13 @@ run-to-run. Two deterministic levers, tested on qwen3.5-2b (N=3, same 8-JD set):
 | **temp-0 + json-schema** | **100% (24/24)** | **0** | **0** |
 
 ‡ a lucky run (true range 65–100%). **Verdict: feasible.** `temp-0 + guaranteed-JSON`
-(`response_format=json_schema` on winc's `/v1/chat/completions`, the jobdar.4 feature) takes the 2B to
+(`response_format=json_schema` on winc's `/v1/chat/completions`, the jobfaro.4 feature) takes the 2B to
 **100% / 0 parse-fails / 0 dangerous on this set** — at half the e2b footprint (1.6 vs 3.1 GiB). Neither lever
 works alone: temp-0 on `/v1/messages` *worsens* parse-fails (the model deterministically derails out of
-JSON), and JSON-alone at temp 0.7 still mis-accepts. **Shipped** (winc 1.21.4-jobdar.4 + Jobdar 1.25.0): the eval profile decodes greedy (`--temp 0 --top-k 1`,
-`applyEvalProfile` → `GreedySampling`) and Jobdar auto-routes local-backend evals through the JSON-schema
+JSON), and JSON-alone at temp 0.7 still mis-accepts. **Shipped** (winc 1.21.4-jobfaro.4 + Jobfaro 1.25.0): the eval profile decodes greedy (`--temp 0 --top-k 1`,
+`applyEvalProfile` → `GreedySampling`) and Jobfaro auto-routes local-backend evals through the JSON-schema
 endpoint (`active.jsonEval`, default-on; opt out with `eval_grammar: false`; graceful fallback to
-`/v1/messages` on error). End-to-end re-verify through Jobdar's real pipeline: qwen3.5-2b-Q4 **100% / 0
+`/v1/messages` on error). End-to-end re-verify through Jobfaro's real pipeline: qwen3.5-2b-Q4 **100% / 0
 parse-fails / 0 dangerous** (24 evals), e2b + 4B held 100%, greedy confirmed on the server.
 
 **Validation status — promising, NOT yet production-proof.** This is one 8-JD policy-boundary set (24
@@ -235,7 +235,7 @@ lattice so Research is reachable; (2) the **clamp no longer cliffs on a years sh
 score via the experience sub-criterion; hard credentials still clamp) — verified live (a 2-yr engineer vs a
 3–6-yr role is `clamped:false`, not force-zeroed); (3) prompt **reserves `none`** for zero signal; (4)
 **`/evaluate` guards an empty JD** (unfetchable listing → honest "couldn't assess", not a résumé-blind
-Apply); (5) `jobdar calibrate` gained a **score-distribution report** + **per-item cv**.
+Apply); (5) `jobfaro calibrate` gained a **score-distribution report** + **per-item cv**.
 
 **What these do NOT fix (needs data, not code):** on the small live matrix the distribution stayed bimodal.
 Two causes — the test set had few genuine *borderline* roles (mostly clear fits / over-reaches / over-level),

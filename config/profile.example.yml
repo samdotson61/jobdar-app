@@ -1,4 +1,4 @@
-# Jobdar profile — EXAMPLE. Copy to config/profile.yml (or just run `jobdar init`, which writes it
+# Jobfaro profile — EXAMPLE. Copy to config/profile.yml (or just run `jobfaro init`, which writes it
 # for you). config/profile.yml is GITIGNORED: it holds your name, metro, and salary target — personal
 # data that must never reach a repo or npm package.
 language: en            # en | es

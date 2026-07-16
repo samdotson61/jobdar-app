@@ -1,4 +1,4 @@
-// Jobdar — Ashby provider (Phase 5.5). Ashby is the third common startup/midsize ATS (after
+// Jobfaro — Ashby provider (Phase 5.5). Ashby is the third common startup/midsize ATS (after
 // Greenhouse/Lever). Unauthenticated posting API:
 //   board: https://api.ashbyhq.com/posting-api/job-board/{org}   (includes descriptionHtml per job)
 // Same { id, detect, fetch, fetchJob } contract: fetch() discovers (no JD carried — uniform with the

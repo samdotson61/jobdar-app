@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Jobdar one-command installer (macOS / Linux). Usage:  curl -fsSL <url>/install.sh | bash
+# Jobfaro one-command installer (macOS / Linux). Usage:  curl -fsSL <url>/install.sh | bash
 set -euo pipefail
 
-echo "Installing Jobdar…"
+echo "Installing Jobfaro…"
 
 if ! command -v node >/dev/null 2>&1; then
   echo "Node.js (>= 20) is required. Install it from https://nodejs.org and re-run." >&2
@@ -13,8 +13,8 @@ if ! command -v git >/dev/null 2>&1; then
   exit 1
 fi
 
-REPO="${JOBDAR_REPO:-https://github.com/samdotson61/jobdar-app.git}"
-DIR="${JOBDAR_DIR:-$HOME/jobdar}"
+REPO="${JOBFARO_REPO:-https://github.com/samdotson61/jobfaro-app.git}"
+DIR="${JOBFARO_DIR:-$HOME/jobfaro}"
 
 if [ -d "$DIR/.git" ]; then
   echo "Updating $DIR…"; git -C "$DIR" pull --ff-only
@@ -27,8 +27,8 @@ npm install --no-audit --no-fund
 node doctor.mjs || true
 
 if [ -t 0 ]; then
-  node bin/jobdar init
+  node bin/jobfaro init
 else
-  echo "Setup: run  cd \"$DIR\" && node bin/jobdar init"
+  echo "Setup: run  cd \"$DIR\" && node bin/jobfaro init"
 fi
-echo "Done. Tip: 'npm link' puts the 'jobdar' command on your PATH."
+echo "Done. Tip: 'npm link' puts the 'jobfaro' command on your PATH."

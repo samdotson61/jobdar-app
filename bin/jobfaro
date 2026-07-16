@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Jobdar — CLI entrypoint & subcommand router.
+// Jobfaro — CLI entrypoint & subcommand router.
 // Deterministic commands (scan, doctor, tracker) run with no model. Model-backed
 // commands (eval, pipeline's eval step, pdf tailoring) use the configured
 // inference backend — your API key now, the on-device model in Phase 8.
@@ -14,14 +14,14 @@ import { parseFlags, resolveLang, readVersion } from '../lib/cli.mjs'
 
 // Commands not yet built map to the phase that delivers them (honest stubs).
 const PLANNED = {
-  pipeline: 'Phase 8 — use `/jobdar pipeline` in your AI CLI today',
+  pipeline: 'Phase 8 — use `/jobfaro pipeline` in your AI CLI today',
   update: 'npm publish (Phase 7.5) — for now: git pull && npm install',
 }
 
 const COMMAND_ORDER = ['init', 'import', 'scan', 'seed', 'prescreen', 'eval', 'pipeline', 'pdf', 'outreach', 'tracker', 'dashboard', 'tui', 'serve', 'backend', 'calibrate', 'doctor', 'update']
 
 function printHelp(t) {
-  console.log(`jobdar — ${t('cli.tagline')}\n`)
+  console.log(`jobfaro — ${t('cli.tagline')}\n`)
   console.log(t('cli.usage') + '\n')
   console.log(t('cli.commands_header'))
   for (const cmd of COMMAND_ORDER) console.log(`  ${cmd.padEnd(11)} ${t(`cli.command_desc.${cmd}`)}`)
@@ -144,8 +144,8 @@ async function main() {
 }
 
 // Phase 9.0: the inference client is now config-free and reads the key from env. Seed it from the
-// gitignored data/credentials.env (where `jobdar init` saves it) so the CLI's `api` backend still works.
-if (!process.env.JOBDAR_API_KEY) { const k = loadApiKey(); if (k) process.env.JOBDAR_API_KEY = k }
+// gitignored data/credentials.env (where `jobfaro init` saves it) so the CLI's `api` backend still works.
+if (!process.env.JOBFARO_API_KEY) { const k = loadApiKey(); if (k) process.env.JOBFARO_API_KEY = k }
 
 main()
   // Respect a command's process.exitCode (refusals set it) — exit(0) would clobber it.

@@ -1,6 +1,6 @@
 // Settings (Phase 10) — the model manager + backend chooser. Native default is the ON-DEVICE backend:
 // download the model once (confirm-gated, ~1-3GB, resumable) and everything runs locally. The serve
-// mode is the Mac-companion path (jobdar serve --host 0.0.0.0 + bearer token) — also how TestFlight
+// mode is the Mac-companion path (jobfaro serve --host 0.0.0.0 + bearer token) — also how TestFlight
 // testers without an 8GB phone can ride a Mac. Honest throughout: sizes, tiers, and state are real.
 import { useEffect, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';

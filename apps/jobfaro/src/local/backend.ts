@@ -1,6 +1,6 @@
-// The ON-DEVICE backend (Phase 10) — implements the SAME endpoint surface `jobdar serve` exposes, with
+// The ON-DEVICE backend (Phase 10) — implements the SAME endpoint surface `jobfaro serve` exposes, with
 // the same response shapes, so src/serve.ts can route every store action here untouched. The engine
-// logic is the real @jobdar/engine (identical to the CLI); storage is src/local/files.ts; the model is
+// logic is the real @jobfaro/engine (identical to the CLI); storage is src/local/files.ts; the model is
 // llama.rn via src/local/llm (greedy + grammar-JSON — the winc eval profile). No network leaves the
 // device except the scanners fetching PUBLIC job boards and the one-time model download.
 // @ts-ignore — the engine is plain JS
@@ -12,7 +12,7 @@ import {
   TAILOR_SYSTEM, buildTailorUser, TAILOR_JSON_SCHEMA, parseEvalJson, coverIsComplete, fillSignature, assembleTailoredCv, directiveBlock,
   OUTREACH_SYSTEM, buildOutreachUser, OUTREACH_JSON_SCHEMA, lintDraft, canContact, canFollowup, LINKEDIN_NOTE_MAX,
   SEED_EMPLOYERS, seedToPortals, stripTags, decodeEntities,
-} from '@jobdar/engine';
+} from '@jobfaro/engine';
 import { unzipSync, strFromU8 } from 'fflate';
 import { readText, writeText, readJson, writeJson, FILES } from './files';
 import { installedTier, completionJson, llmAvailable } from './llm';

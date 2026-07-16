@@ -12,7 +12,7 @@ configured inference backend. The model **never invents pay numbers**: determini
 [`_shared.md`](_shared.md).
 
 ## Inputs
-- The offer — `jobdar offer <url> --base <n> [--bonus --pto --metro --remote --note]` captures base,
+- The offer — `jobfaro offer <url> --base <n> [--bonus --pto --metro --remote --note]` captures base,
   bonus, benefits, PTO, metro/remote, start date onto the tracker row (status → `offer`).
 - **Market context** — `resolvePay` returns `{ annualMin, annualMax, source, confidence, label }`; the
   `label` is mandatory UI text (`stated …` / `est. … (N comparable)` / `est. … (BLS median, occ)`).

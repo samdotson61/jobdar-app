@@ -56,7 +56,7 @@ export default function Apply() {
                   </Text>
                 ))}
 
-                {/* Thumbs = a human label on this verdict. Feeds the local calibration ledger (jobdar calibrate --feedback). */}
+                {/* Thumbs = a human label on this verdict. Feeds the local calibration ledger (jobfaro calibrate --feedback). */}
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
                   <Text style={{ color: C.dim, fontSize: 12, marginRight: 8 }}>{t(lang, 'apply.rate')}</Text>
                   {(['up', 'down'] as const).map((th) => {

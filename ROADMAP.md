@@ -1,4 +1,4 @@
-# Jobdar — Phase-and-Step Roadmap
+# Jobfaro — Phase-and-Step Roadmap
 
 > A bilingual (American English / Español) US job-search command center for **new grads and people
 > breaking into the workforce** — including those without a college degree. **Region-adaptable** (Midwest
@@ -7,23 +7,23 @@
 > fit against your résumé, **tailors** an ATS-friendly CV/cover letter, and **tracks** every application —
 > with your data kept **local**, processed by a **private on-device model by default** or your own cloud API.
 >
-> **Status:** Phases 0–7, **5.5, 7.7, 7.8, 8b, 8a, 8c, 8e and 8f** complete + **Phase 10 L0–L5 shipped** — **Jobdar CLI `1.48.1`** / app `1.17.0` (9.1 serve façade, security/correctness hardening, 9.3 intent search + tunable region/level/résumé controls + BM25-lite relevance, 9.4 winc-suggest ATS discovery, a search-speed pass, region-timezone ranking, a fit-only Search tab, honest résumé status, docx/pdf résumé upload, résumé-seeded profile, a blank-start app, a target-salary selector, persisted state after first use, a documented known-gaps list, a `jobdar doctor` poppler check, `POST /profile` persistence, a first-run onboarding screen, an eval-calibration pass, an **eval-feedback loop** (thumbs → `jobdar calibrate --feedback`), **batch Apply scoring**, a **USAJobs** opt-in provider, npm ship-prep, + a **"Need visa sponsorship" toggle**, + **web-native parity** (AsyncStorage persistence, native résumé upload, a backend-down banner, list pagination, honest signal labels), + **Phase 10 L0–L5: the fully-local iPhone app** (the whole pipeline runs **on the phone** — on-device backend over a CLI-format file store, native scanning, an in-app model manager, llama.rn eval/tailor/outreach on the winc eval profile, docx/txt résumé parse — no Mac, no serve), + **batch eval + the radar sweep everywhere** (`eval --next N`, 5/10/15… capped at 50; 📡 honest radar progress on every long-running verb — scan, prescreen, eval live+batch, tailor, outreach drafts, calibrate, PDF render — determinate bars with measured ETAs, a bouncing sweep with true elapsed for open-ended model calls, and a report-location footer after every eval)). Bilingual core; **six live-verified scanner
+> **Status:** Phases 0–7, **5.5, 7.7, 7.8, 8b, 8a, 8c, 8e and 8f** complete + **Phase 10 L0–L5 shipped** — **Jobfaro CLI `1.49.0`** / app `1.18.0` (9.1 serve façade, security/correctness hardening, 9.3 intent search + tunable region/level/résumé controls + BM25-lite relevance, 9.4 winc-suggest ATS discovery, a search-speed pass, region-timezone ranking, a fit-only Search tab, honest résumé status, docx/pdf résumé upload, résumé-seeded profile, a blank-start app, a target-salary selector, persisted state after first use, a documented known-gaps list, a `jobfaro doctor` poppler check, `POST /profile` persistence, a first-run onboarding screen, an eval-calibration pass, an **eval-feedback loop** (thumbs → `jobfaro calibrate --feedback`), **batch Apply scoring**, a **USAJobs** opt-in provider, npm ship-prep, + a **"Need visa sponsorship" toggle**, + **web-native parity** (AsyncStorage persistence, native résumé upload, a backend-down banner, list pagination, honest signal labels), + **Phase 10 L0–L5: the fully-local iPhone app** (the whole pipeline runs **on the phone** — on-device backend over a CLI-format file store, native scanning, an in-app model manager, llama.rn eval/tailor/outreach on the winc eval profile, docx/txt résumé parse — no Mac, no serve), + **batch eval + the radar sweep everywhere** (`eval --next N`, 5/10/15… capped at 50; 📡 honest radar progress on every long-running verb — scan, prescreen, eval live+batch, tailor, outreach drafts, calibrate, PDF render — determinate bars with measured ETAs, a bouncing sweep with true elapsed for open-ended model calls, and a report-location footer after every eval)). Bilingual core; **six live-verified scanner
 > providers** (Greenhouse, Workday, iCIMS, Lever, Ashby + an opt-in JSON-LD reader), all with
-> eval-time JD fetch, plus the opt-in **USAJobs** aggregator (BYO free key; not yet live-verified); level + region toggles; the `jobdar init` wizard; the full
+> eval-time JD fetch, plus the opt-in **USAJobs** aggregator (BYO free key; not yet live-verified); level + region toggles; the `jobfaro init` wizard; the full
 > **discover→prescreen→evaluate→track→build pipeline** — `scan` finds + filters (it never scores),
-> **`jobdar prescreen` gates + ranks the queue zero-token** (hard gates screen with a quoted reason,
-> never silently), the model's `jobdar eval` scores fit (0–5 → Apply/Research/Don't) and records it,
-> the human advances status (`a` in the TUI / `jobdar tracker --set`), **`jobdar outreach`** finds the
-> warm contact and enforces the polite follow-up cadence in code, `jobdar pdf` builds the tailored ATS
+> **`jobfaro prescreen` gates + ranks the queue zero-token** (hard gates screen with a quoted reason,
+> never silently), the model's `jobfaro eval` scores fit (0–5 → Apply/Research/Don't) and records it,
+> the human advances status (`a` in the TUI / `jobfaro tracker --set`), **`jobfaro outreach`** finds the
+> warm contact and enforces the polite follow-up cadence in code, `jobfaro pdf` builds the tailored ATS
 > résumé; a scrollable cursor-driven TUI workspace + a web dashboard with analytics; freshness tracking
 > (`posted`/`first_seen`, `scan --prune`); security/privacy pass (zero telemetry, SSRF-guarded).
 > Remaining for the 1.0 CLI ship: **npm publish + marketplace** (the name/org call in Step 0.2 — install
 > today is the GitHub repo + one-command installer, which work now) and the **closed beta** (7.6).
 > **Active build phase: [Phase 10 — fully-local iPhone](#phase-10--fully-local-iphone-active-direction-locked-2026-07-08):
 > L0–L5 shipped in 1.46–1.47; next is L6 TestFlight** (Sam's account steps: App Store Connect record,
-> `eas login`, icon), then the **web app / jobdar.ai** and **Android** on the same stack. On-device
+> `eas login`, icon), then the **web app / jobfaro.ai** and **Android** on the same stack. On-device
 > inference via **winc.cpp** (the `winc-jobdar` branch) is the CLI's **default** backend (private, no
-> key, no cost — `jobdar backend --install`), and the app now runs the same eval profile **on the phone
+> key, no cost — `jobfaro backend --install`), and the app now runs the same eval profile **on the phone
 > via llama.rn**. Step-by-step:
 > [Remaining work — build-order implementation guide](#remaining-work--build-order-implementation-guide).
 > See [CHANGELOG.md](CHANGELOG.md).
@@ -36,7 +36,7 @@
 
 Current as of v1.47.x — tracked deliberately so they aren't mistaken for bugs. The app-side items are elaborated in
 [docs/phase9-architecture.md](docs/phase9-architecture.md#known-gaps--current-limitations). *(Resolved since
-v1.40.x: onboarding shipped 1.41; `POST /profile` shipped 1.41; the `jobdar doctor` poppler check shipped
+v1.40.x: onboarding shipped 1.41; `POST /profile` shipped 1.41; the `jobfaro doctor` poppler check shipped
 1.41; USAJobs opt-in provider shipped 1.43; native persistence via AsyncStorage shipped 1.45 and moved to
 the on-device file store — fully serve-free — in 1.47.)*
 
@@ -44,26 +44,26 @@ the on-device file store — fully serve-free — in 1.47.)*
   the **on-device file store** (CLI-identical TSV/JSON formats — files are the source of truth since
   1.47) — blank first boot, saved after first use — and in Mac-serve mode identity/résumé are also
   written to the CLI's `config/profile.yml` / `data/cv.md` via serve. Moving machines = copying the
-  jobdar home (a future phone⇄Mac export is a file copy by construction). *(By design — local-first.)*
+  jobfaro home (a future phone⇄Mac export is a file copy by construction). *(By design — local-first.)*
 - **Native is fully local since 1.47 — a phone needs no serve.** The optional **Mac-serve companion
-  mode** (Settings → backend: URL + bearer token) still needs a reachable `jobdar serve --host 0.0.0.0`;
+  mode** (Settings → backend: URL + bearer token) still needs a reachable `jobfaro serve --host 0.0.0.0`;
   web keeps loopback + the `?serve=<mac-ip>&token=<t>` override. On-device honest limits (Phase 10
   L4/L5): intent parse falls back to deterministic keywords, `/discover` returns not-available, PDF
   résumé parse asks for `.docx`/`.txt`, and the in-app model-download UX + real-device Metal speed are
   still to be exercised on hardware in the TestFlight beta. *(Phase 10 L6.)*
 - **PDF résumé upload/import needs `pdftotext` (poppler) on the host.** `.docx` uses `unzip` (ubiquitous);
   `.pdf` uses `pdftotext` — install poppler (`brew install poppler` / `apt-get install poppler-utils`).
-  `jobdar doctor` flags it when missing; without it the app returns an honest "couldn't read that file";
+  `jobfaro doctor` flags it when missing; without it the app returns an honest "couldn't read that file";
   scanned/image-only PDFs have no embedded text to extract. *(Host dependency — doctor-checked.)*
-- **Discovery is keyless ATS-probing, not an aggregator.** `jobdar discover` has winc name companies and
+- **Discovery is keyless ATS-probing, not an aggregator.** `jobfaro discover` has winc name companies and
   probes Greenhouse/Lever/Ashby/Workday slugs — it finds companies whose ATS handle is guessable, not every
   posting on the internet. **USAJobs** (opt-in, BYO free key, dormant without one) shipped in 1.43 but is
   **not yet live-verified** (needs a real key). A broader **aggregator Pro provider** on the same
   `/discover` seam is a future add (LinkedIn/Indeed have no open search API). *(Future — Pro tier.)*
 - **The evaluator is bimodal** (Apply/Don't clusters, thin Research band). Code-side causes fixed
-  (1.42); the fix path is the 👍/👎 feedback ledger → `jobdar calibrate --feedback` → recalibrate
+  (1.42); the fix path is the 👍/👎 feedback ledger → `jobfaro calibrate --feedback` → recalibrate
   thresholds from N≥50–100 real labels, not guesses. *(Data-gated — collect via real use.)*
-- **1.0 ship items still open:** claim the npm name (`jobdar` is available, unscoped) or pick a scope,
+- **1.0 ship items still open:** claim the npm name (`jobfaro` is available, unscoped) or pick a scope,
   npm publish + marketplace listing, then the **closed beta** (7.6) — mechanics prepped in
   [RELEASING.md](RELEASING.md); the name/beta/license calls are human decisions. *(Tracked for 1.0.)*
 
@@ -71,10 +71,10 @@ the on-device file store — fully serve-free — in 1.47.)*
 
 ## 0. What we're building, and who it's for
 
-**Jobdar** is a privacy-preserving job-search pipeline: it **scans** company career pages, **evaluates** fit
+**Jobfaro** is a privacy-preserving job-search pipeline: it **scans** company career pages, **evaluates** fit
 against your résumé, **tailors** an ATS-friendly CV/cover letter per role, and **tracks** every application.
 
-Jobdar is built first and foremost for two groups of people:
+Jobfaro is built first and foremost for two groups of people:
 
 1. **New grads** — college graduates in their 20s landing their first professional role.
 2. **People breaking into the workforce** — including those **without a college degree**, career-changers,
@@ -85,7 +85,7 @@ as a first-class option, and **senior** is **opt-in** — off by default, but a 
 ranks on merit (no penalty) the moment you choose it. The only thing ever de-prioritized is a role *above*
 the levels you selected.
 
-**Region is toggle-able too.** Jobdar is US-focused and **defaults to the Midwest**, but a built-in region
+**Region is toggle-able too.** Jobfaro is US-focused and **defaults to the Midwest**, but a built-in region
 selector adapts the company seeds, location filters, and search to wherever you are — **Midwest, Northeast,
 Southeast, Southwest, West, or nationwide** (plus custom). Midwest is seeded first; other regions fill in
 over time.
@@ -103,7 +103,7 @@ later (Phase 9): upload a résumé and get pointed toward fitting jobs with litt
 running **in the browser on a private model by default** (the résumé never leaves the device) and an
 API-key upgrade available. Both surfaces share the same scanner, regions, levels, bilingual content, and rubric.
 
-| Dimension | Typical job-search tools | **Jobdar** |
+| Dimension | Typical job-search tools | **Jobfaro** |
 |---|---|---|
 | **Primary user** | All experience levels, often senior-skewed | **New grads + people entering the workforce** (incl. no-degree); entry by default, toggle to mid; senior opt-in (full-rank when chosen) |
 | **Geography** | National/global, coastal-skewed | **US, region-toggle-able** — Midwest default; Northeast/Southeast/Southwest/West/nationwide |
@@ -142,52 +142,52 @@ Applies to every surface: CLI + TUI today, web and mobile (Phase 9) later.
 - **Clean & tight.** Every screen earns its pixels: small surfaces, fast paths, no decorative chrome,
   one obvious next action at any moment. Dense-but-legible information is the house style — the TUI is
   the reference (cursor, bands, counts; nothing else).
-- **Homey, not "friendly."** Jobdar is a well-kept workshop, not a cheerleader. Plain, warm language
+- **Homey, not "friendly."** Jobfaro is a well-kept workshop, not a cheerleader. Plain, warm language
   ("3 new roles at Medtronic"), no mascots, no exclamation marks, no congratulating the user for
   clicking. The Spanish voice carries the same register — cálido y directo, nunca meloso.
 - **Confidence is the product.** The job hunt is stressful; the tool must never be. Always show what
   just happened, what it cost (zero-token scan vs. a model call), and what to do next. Honest failure
   beats silent magic — a board we can't read says so, per portal. Predictability — same command, same
   shape of result, every time — is what makes a first-time job-seeker trust the pipeline.
-- **Out of the box with winc — no-frills, clean-cut, efficient.** Jobdar must be fully featured with
-  zero external accounts and zero manual key generation: `jobdar backend --install` auto-provisions
+- **Out of the box with winc — no-frills, clean-cut, efficient.** Jobfaro must be fully featured with
+  zero external accounts and zero manual key generation: `jobfaro backend --install` auto-provisions
   winc + the model (8b.0), inference defaults to local (8b.4), and reference data (BLS wages) comes from
   keyless bulk downloads (8d.2). If a feature would force the user through an external signup or a
   pasted key to work at all, choose the keyless path instead — even if it's a little more code on our
   side. (Decided 2026-06-13.)
 
-### The `jobdar` command
+### The `jobfaro` command
 
-One binary, simple subcommands — **`jobdar <command>`** — installed on your PATH (`npm i -g jobdar` or the
-one-line installer; `npx jobdar` works with no install):
+One binary, simple subcommands — **`jobfaro <command>`** — installed on your PATH (`npm i -g jobfaro` or the
+one-line installer; `npx jobfaro` works with no install):
 
 | Command | What it does | Needs a model? |
 |---|---|---|
-| `jobdar init` | Interactive bilingual setup wizard (region, level, profile, inference) | no |
-| `jobdar scan` | Scan configured portals for new roles (zero-token) | no |
-| `jobdar eval <url\|file\|->` | Evaluate a role against your résumé → score + report | yes (inference backend) |
-| `jobdar pipeline` | Process pending URLs end-to-end (scan → eval → track) | yes |
-| `jobdar pdf [company]` | Generate a tailored ATS CV / cover letter | yes (tailoring) |
-| `jobdar tracker` | View / update the application tracker | no |
-| `jobdar dashboard` | Launch the pipeline dashboard | no |
-| `jobdar doctor` | Validate setup (PDF/Playwright optional) | no |
-| `jobdar update` | Self-update | no |
+| `jobfaro init` | Interactive bilingual setup wizard (region, level, profile, inference) | no |
+| `jobfaro scan` | Scan configured portals for new roles (zero-token) | no |
+| `jobfaro eval <url\|file\|->` | Evaluate a role against your résumé → score + report | yes (inference backend) |
+| `jobfaro pipeline` | Process pending URLs end-to-end (scan → eval → track) | yes |
+| `jobfaro pdf [company]` | Generate a tailored ATS CV / cover letter | yes (tailoring) |
+| `jobfaro tracker` | View / update the application tracker | no |
+| `jobfaro dashboard` | Launch the pipeline dashboard | no |
+| `jobfaro doctor` | Validate setup (PDF/Playwright optional) | no |
+| `jobfaro update` | Self-update | no |
 
-`jobdar --help`, `jobdar <command> --help`, and `jobdar --version` — all bilingual. **Deterministic**
+`jobfaro --help`, `jobfaro <command> --help`, and `jobfaro --version` — all bilingual. **Deterministic**
 commands (scan, tracker, doctor, init…) run with **no model**; **model-backed** commands (`eval`, `pdf`
 tailoring, `pipeline`'s eval step) use the configured **inference backend** — your own API key now, or the
 on-device model once [Phase 8](#phase-8--pluggable-inference-8b-on-device-via-winccpp-first-then-8a-byo-key-auto-eval) lands.
 
-> **Two ways to drive it:** `jobdar <command>` in your **shell** (direct, scriptable, no AI CLI needed for
-> deterministic commands), or `/jobdar <mode>` inside an **AI CLI** (Claude Code / Gemini) for the full
+> **Two ways to drive it:** `jobfaro <command>` in your **shell** (direct, scriptable, no AI CLI needed for
+> deterministic commands), or `/jobfaro <mode>` inside an **AI CLI** (Claude Code / Gemini) for the full
 > agentic experience. Same capabilities, same config files.
 
 > **Naming note:** the brief said "iCIMIS" — the platform is **iCIMS** (the recruiting ATS); this plan
-> targets iCIMS. **Project name:** "Jobdar" (job + radar) was chosen on 2026-06-05 after screening npm +
+> targets iCIMS. **Project name:** "Jobfaro" (job + radar) was chosen on 2026-06-05 after screening npm +
 > jobs/HR product collisions — it came back clear. Final confirm is Step 0.2 (formal trademark search +
 > domain/org grab).
 
-> **Provenance & licensing:** Jobdar is an **independent implementation** built on common, well-understood
+> **Provenance & licensing:** Jobfaro is an **independent implementation** built on common, well-understood
 > patterns (a plugin scanner, Markdown agent prompts, Markdown/TSV data) — patterns aren't owned by anyone.
 > If we ever reuse third-party open-source code, we'll honor that code's license (e.g., MIT requires
 > retaining its copyright line in `LICENSE`) — a legal requirement, separate from product branding.
@@ -246,7 +246,7 @@ on-device inference**, which is why winc.cpp comes first below.
 | ✅ | **Prescreen gate + outreach engine** | 7.7 | ✅ shipped 1.15.0 (2026-06-12) | kills wasted evals before any model runs; builds the queue 8a/8b will consume |
 | ✅ | **Deterministic eval-precision (pay extract / date-normalize / dedup)** | 7.8 | ✅ shipped 1.18.0 (2026-06-13) | removed the worst measured defects (model salary, "future" dates, dup roles) before any backend work; feeds 8a/8d |
 | 2 | **Closed beta starts** | 7.6 | ⬜ ready now (GitHub repo + installer; npm NOT required) | real-user feedback steers everything below |
-| ✅ | **winc.cpp local backend — the DEFAULT (+ `jobdar backend --install` bootstrap)** | 8b.0–8b.5 | ✅ shipped 1.19.0 (2026-06-13) | the on-device engine the Phase 9 web + iOS/Android apps embed; makes "private, free, offline" real |
+| ✅ | **winc.cpp local backend — the DEFAULT (+ `jobfaro backend --install` bootstrap)** | 8b.0–8b.5 | ✅ shipped 1.19.0 (2026-06-13) | the on-device engine the Phase 9 web + iOS/Android apps embed; makes "private, free, offline" real |
 | ✅ | **BYO-key automated eval** | 8a.1–8a.3 | ✅ shipped 1.20.0 (2026-06-14) | the opt-in accuracy upgrade; small build |
 | ✅ | **Eval tuning + calibration + fairness + economics** | 8a.4–8a.9 | ✅ shipped 1.20.0 (8a.9 optional, deferred) | scores must be trustworthy before they're the product; research done → [docs/eval-tuning-research.md](docs/eval-tuning-research.md) — incl. the measured requirements-check win + grammar-constrained JSON |
 | ✅ | **PDF/document understanding (+ light AI pre-confirm)** | 8c.1–8c.5 | ✅ shipped 1.21.0 (2026-06-14) | "upload a résumé → go" for init; PDF JDs in eval |
@@ -263,20 +263,20 @@ on-device inference**, which is why winc.cpp comes first below.
 > **Status: ✅ shipped** (2026-06-05) — all steps built; the only loose end is 0.2's externals
 > (formal trademark search + domain/GitHub-org grab), the sole blocker on 7.5.
 
-**Goal:** a clean `Jobdar` repo that installs, passes `doctor`, and runs a dry-run scan — Jobdar-branded
+**Goal:** a clean `Jobfaro` repo that installs, passes `doctor`, and runs a dry-run scan — Jobfaro-branded
 throughout, scoped to EN/ES and the entry-default, Midwest-default focus.
 
 | Step | What | Key files |
 |---|---|---|
-| 0.1 ✅ | Scaffold the Jobdar codebase: the two-layer structure (`scan.mjs` + `providers/`, `modes/` + `AGENTS.md`, `config/`, tracker scripts, `doctor.mjs`). Repo + `git init` already done; add `LICENSE`. | repo root, `LICENSE` |
-| 0.2 🔶 | **Name locked: "Jobdar"** (screened clear on npm + jobs/HR products, 2026-06-05). Final confirm: formal USPTO/EUIPO trademark search; grab `jobdar.app`/`.io` (the `.com` is parked-for-resale) + a GitHub org (`/jobdar` is taken — use e.g. `getjobdar`/`jobdar-app`). | — |
-| 0.3 ✅ | Jobdar branding + the **`jobdar` CLI entrypoint**: register `bin/jobdar` in `package.json`'s `bin` (so `npm i -g`/`npx` expose a real `jobdar` shell command) with a subcommand router (`jobdar <command>`); the AI-CLI slash command `/jobdar`; env vars `JOBDAR_*`; `.claude-plugin/{plugin,marketplace}.json`; `.agents/skills/`. | `package.json` (`bin`), `bin/jobdar`, `.claude-plugin/*`, all docs |
+| 0.1 ✅ | Scaffold the Jobfaro codebase: the two-layer structure (`scan.mjs` + `providers/`, `modes/` + `AGENTS.md`, `config/`, tracker scripts, `doctor.mjs`). Repo + `git init` already done; add `LICENSE`. | repo root, `LICENSE` |
+| 0.2 🔶 | **Name locked: "Jobfaro"** (screened clear on npm + jobs/HR products, 2026-06-05). Final confirm: formal USPTO/EUIPO trademark search; grab `jobfaro.app`/`.io` (the `.com` is parked-for-resale) + a GitHub org (`/jobfaro` is taken — use e.g. `getjobfaro`/`jobfaro-app`). | — |
+| 0.3 ✅ | Jobfaro branding + the **`jobfaro` CLI entrypoint**: register `bin/jobfaro` in `package.json`'s `bin` (so `npm i -g`/`npx` expose a real `jobfaro` shell command) with a subcommand router (`jobfaro <command>`); the AI-CLI slash command `/jobfaro`; env vars `JOBFARO_*`; `.claude-plugin/{plugin,marketplace}.json`; `.agents/skills/`. | `package.json` (`bin`), `bin/jobfaro`, `.claude-plugin/*`, all docs |
 | 0.4 ✅ | Lock scope to **EN/ES only**; default region **Midwest**, default level **entry** — no coastal-skewed default content. | `config/`, `modes/` |
 | 0.5 ✅ | Make PDF/Playwright **optional** in `doctor.mjs` (warn, don't fail) so a no-PDF first run is green. | `doctor.mjs` |
 | 0.6 ✅ | Repo hygiene: `CHANGELOG.md` at `0.1.0`, `LICENSE`, `.github/` issue/PR templates + CI, and a `.gitignore` (`node_modules/`, `data/`, `output/`, `reports/`). | `CHANGELOG.md`, `.github/*`, `.gitignore` |
 
 **Verification gate:** `npm install && npm run doctor` passes (PDF shown as optional); `node scan.mjs --dry-run`
-runs against a tiny stub `portals.yml` and prints a clean summary; a branding grep shows only `jobdar`.
+runs against a tiny stub `portals.yml` and prints a clean summary; a branding grep shows only `jobfaro`.
 
 ---
 
@@ -427,10 +427,10 @@ hand-editing YAML. (For the CLI; the web app in Phase 9 lowers the bar further.)
 
 | Step | What | Detail |
 |---|---|---|
-| 6.1 | **Interactive setup wizard** `npx jobdar init`: bilingual prompts for name/contact, **region** (Midwest default) + metro, **target level(s)** (entry default; mid optional; senior opt-in), tuning profile (`new_grad` / no-degree), **inference** (on-device default vs. API key), language — then **writes `profile.yml` + `portals.yml` automatically**. No manual YAML. | new `setup.mjs` |
-| 6.2 | **Zero-config first scan:** sensible defaults so `jobdar scan` works immediately after `init`. Defer Playwright/PDF — lazy-install only on the first PDF request. | remove first-run friction |
-| 6.3 | **One-command install:** `curl … \| bash` (macOS/Linux) + PowerShell (Windows) that checks/installs Node, fetches Jobdar, installs deps, runs `doctor`, launches the wizard. Plus a GitHub "Use this template" repo + a **devcontainer/Codespaces** path. | installers + `.devcontainer/` |
-| 6.4 | Flesh out the unified **`jobdar`** command: `jobdar init / scan / eval / pipeline / pdf / tracker / dashboard / doctor / update`, each with `--help` + `--version`; bilingual help; shell tab-completion. Deterministic subcommands need no model; `eval`/tailoring use the inference backend (on-device winc.cpp by default, or a BYO API key). | `bin/jobdar` |
+| 6.1 | **Interactive setup wizard** `npx jobfaro init`: bilingual prompts for name/contact, **region** (Midwest default) + metro, **target level(s)** (entry default; mid optional; senior opt-in), tuning profile (`new_grad` / no-degree), **inference** (on-device default vs. API key), language — then **writes `profile.yml` + `portals.yml` automatically**. No manual YAML. | new `setup.mjs` |
+| 6.2 | **Zero-config first scan:** sensible defaults so `jobfaro scan` works immediately after `init`. Defer Playwright/PDF — lazy-install only on the first PDF request. | remove first-run friction |
+| 6.3 | **One-command install:** `curl … \| bash` (macOS/Linux) + PowerShell (Windows) that checks/installs Node, fetches Jobfaro, installs deps, runs `doctor`, launches the wizard. Plus a GitHub "Use this template" repo + a **devcontainer/Codespaces** path. | installers + `.devcontainer/` |
+| 6.4 | Flesh out the unified **`jobfaro`** command: `jobfaro init / scan / eval / pipeline / pdf / tracker / dashboard / doctor / update`, each with `--help` + `--version`; bilingual help; shell tab-completion. Deterministic subcommands need no model; `eval`/tailoring use the inference backend (on-device winc.cpp by default, or a BYO API key). | `bin/jobfaro` |
 | 6.5 | **Conversational guided onboarding** in the agent layer: a bilingual first-run flow that ingests a pasted résumé and confirms region + level(s). | `AGENTS.md`, `modes/_shared.md` |
 | 6.6 | **Résumé bootstrap:** accept a PDF/DOCX/paste → generate `cv.md` + prefill `profile.yml`. (Reused server-side by the Phase 9 web app.) | new helper + mode |
 | 6.7 | Plain-language **Getting Started** (EN + ES), 5-minute quickstart with screenshots/gif, troubleshooting page. | `docs/` |
@@ -449,11 +449,11 @@ only the README; repeat the whole flow in Spanish. Both pass.
 
 | Step | What | Detail |
 |---|---|---|
-| 7.1 ✅ | Dashboard decision: keep a Go TUI **optional** and/or add a lightweight `jobdar dashboard` → localhost web view as the friendly default. Bilingual labels; show active region + level(s). | see Open Decisions |
+| 7.1 ✅ | Dashboard decision: keep a Go TUI **optional** and/or add a lightweight `jobfaro dashboard` → localhost web view as the friendly default. Bilingual labels; show active region + level(s). | see Open Decisions |
 | 7.2 ✅ | Test coverage for Workday, iCIMS, i18n strings, the level toggle, and the region toggle in `test-all.mjs`; GitHub Actions CI green. | tests/CI |
 | 7.3 ✅ | Ethics/legal pass: ToS-respecting rate limits + backoff for Workday/iCIMS, robots awareness, a `LEGAL_DISCLAIMER`, a privacy statement ("data stays local; we host no résumés"), and license compliance for any reused third-party code. | compliance |
 | 7.4 ✅ | Security review of providers (SSRF allowlists, `redirect:'error'`, no secret leakage); confirm zero telemetry. | security |
-| 7.5 🔶 | Package & release: Claude Code plugin (`/jobdar`) in a marketplace + npm; `1.0.0`; bilingual release notes. **Blocked on Step 0.2** (org/trademark + npm name grab) — everything else is ready. | release |
+| 7.5 🔶 | Package & release: Claude Code plugin (`/jobfaro`) in a marketplace + npm; `1.0.0`; bilingual release notes. **Blocked on Step 0.2** (org/trademark + npm name grab) — everything else is ready. | release |
 | 7.6 ⬜ | Closed beta with target users (a new grad, a no-degree candidate, a career-changer, a Spanish-preferring user); iterate. **Does NOT need 7.5** — beta can start now from the GitHub repo + one-line installer. | beta |
 
 ---
@@ -469,9 +469,9 @@ applications warm with polite, tracked outreach.
 
 | Step | What | Detail |
 |---|---|---|
-| 7.7.1 ✅ | **`jobdar prescreen`** (`lib/prescreen.mjs`) — fetches each pending role's JD politely (sequential, paced) and extracts hard gates with a QUOTED snippet as evidence: years-required vs the selected level(s) (entry >2 / mid >5 / senior >10 — the LOWEST stated floor counts), an ACTIVE security clearance, and degree gates (`yes/no/unclear`; "or equivalent experience" downgrades to unclear). Soft signals (obtainable clearance, no-sponsorship, license/cert) only flag. Screened rows keep `screen_reason` on the pipeline — **nothing is ever hidden silently** (the 4.5 rule), and under `no_degree` a degree ask flags a stretch but NEVER screens. | the zero-token gate |
+| 7.7.1 ✅ | **`jobfaro prescreen`** (`lib/prescreen.mjs`) — fetches each pending role's JD politely (sequential, paced) and extracts hard gates with a QUOTED snippet as evidence: years-required vs the selected level(s) (entry >2 / mid >5 / senior >10 — the LOWEST stated floor counts), an ACTIVE security clearance, and degree gates (`yes/no/unclear`; "or equivalent experience" downgrades to unclear). Soft signals (obtainable clearance, no-sponsorship, license/cert) only flag. Screened rows keep `screen_reason` on the pipeline — **nothing is ever hidden silently** (the 4.5 rule), and under `no_degree` a degree ask flags a stretch but NEVER screens. | the zero-token gate |
 | 7.7.2 ✅ | **Likelihood score 0–100** = skill overlap (cv.md ∩ JD vocabulary, identical extraction both sides) + posting freshness (the `posted`/`first_seen` data the pipeline already tracked) + headroom minus soft flags. `eval --next` now serves the **prescreen-ranked queue**; screened roles return only with `--include-screened`. | rank the eval queue |
-| 7.7.3 ✅ | **`jobdar outreach`** (`lib/outreach.mjs`) — deterministic LinkedIn people-search LINKS (recruiters/TA, likely hiring manager via a level-stripped title, company people). The user browses and picks the human; **Jobdar never scrapes LinkedIn and never sends a message** (ToS + the politeness bar). | the referral lever |
+| 7.7.3 ✅ | **`jobfaro outreach`** (`lib/outreach.mjs`) — deterministic LinkedIn people-search LINKS (recruiters/TA, likely hiring manager via a level-stripped title, company people). The user browses and picks the human; **Jobfaro never scrapes LinkedIn and never sends a message** (ToS + the politeness bar). | the referral lever |
 | 7.7.4 ✅ | **Cadence enforced in code, not vibes:** a gitignored ledger (`data/outreach.tsv` — name/title/channel/date only) caps contacts at **2 per role**, one thread per person, **ONE follow-up** ripe after **≥5 business days** (`--due` says when), hard stop after — no override flag exists for the stop. | polite by construction |
 | 7.7.5 ✅ | **Draft lint + paste-to-personalize:** `outreach --lint` rejects >300-char LinkedIn notes, leftover `{placeholders}`, and drafts missing the recipient's name. `modes/outreach.md` (EN + ES parity) walks the flow: the pasted public headline feeds ONE draft and is never written to disk — and on the winc.cpp default backend (8b) it never leaves the device at all. | quality + privacy |
 
@@ -505,7 +505,7 @@ duplicate roles reaching the user — with pure code.
 | 7.8.2 ✅ | **`lib/dates.mjs` — résumé date normalization** (rec-spec §3a). `normalizeResumeDates(resume, today)` resolves "Present"→today and strips ambiguity BEFORE the prompt; the eval injects `Today's date is {today}` **after** any cached prefix (so it never busts 8a.8's prompt-cache). Measured: a prompt date-stamp alone cut the "future employment" misread 3→1; code normalization closes the rest. | dates are code's job |
 | 7.8.3 ✅ | **Near-duplicate dedup** (rec-spec §5). Extend `lib/evaluations.mjs mergeScanned()` from URL-only to `normalized(company+title) + canonical-location` (campus/building collapsed within a metro; different metros stay distinct). Keep `url` as the row key; record a collapsed dup as an **alias on the survivor** (survivor = tracked > evaluated > earliest `first_seen`); `recordEval`/`recordPrescreen`/`setStatus` resolve an alias URL to its survivor before writing; live aliases feed `prune`. Needs a NEW city/metro canonicalizer (export `regions.mjs`'s metro tables — `parseLocation` only yields a state set). 4.5 honesty: the survivor shows it absorbed N postings. | one role, one row |
 | 7.8.4 ✅ | **Config + rubric cleanup** (rec-spec §3b residue): the since-REMOVED `lib/scoring.mjs` left orphans — reconcile/remove `score_weights.salary` + `target_salary` in `config.mjs` and the stale `lib/scoring.mjs` pre-score/levelCap reference in `modes/_shared.md`. (The model already emits no salary; this is dead-config cleanup, not a model change.) | sweep the dead scorer |
-| 7.8.5 ✅ | **Test-fixture migration** (blocks 7.8 acceptance): copy the 2026-06-13 study corpus off Windows (`jobdar-wider-2026-06-13.json` — 79 JDs; `winc-resume-eval`/`reeval-*.jsonl`) into a committed `test/fixtures/`; lift the 7 verified-pay JD snippets as inline test consts (test-all.mjs's established style — it reads no external JD fixtures today). The same corpus is the acceptance set for 8d resolver coverage, the §3 gate re-run, and 8a.5 calibration — migrate once, reuse. | unblock CI |
+| 7.8.5 ✅ | **Test-fixture migration** (blocks 7.8 acceptance): copy the 2026-06-13 study corpus off Windows (`jobfaro-wider-2026-06-13.json` — 79 JDs; `winc-resume-eval`/`reeval-*.jsonl`) into a committed `test/fixtures/`; lift the 7 verified-pay JD snippets as inline test consts (test-all.mjs's established style — it reads no external JD fixtures today). The same corpus is the acceptance set for 8d resolver coverage, the §3 gate re-run, and 8a.5 calibration — migrate once, reuse. | unblock CI |
 
 **Verification gate:** `extractPay` returns the correct annual band for the 7 verified-pay fixtures
 (Carle $37.64/hr→$78,291 below; Censys non-HCOL $103–130k above; Cincinnati $91.5–116.7k above;
@@ -534,12 +534,12 @@ rest; we never receive or store résumés.
 | Step | What | Detail |
 |---|---|---|
 | 8a.1 ✅ | **`InferenceProvider` interface** (same plugin spirit as the scanner): `evaluate(jd, profile, cv)` → structured verdict `{ score, band, recommendation, … }`. The Markdown rubric (`modes/_shared.md` + `modes/eval.md`) is the shared spec. | abstraction |
-| 8a.2 ✅ | **`jobdar eval --auto [<url> \| --next \| --all-pending]`** — reads the key `init` already stores in `data/credentials.env` (today it's collected and never used), calls the **Anthropic Messages API** with rubric + JD + `cv.md`, parses the structured verdict, records it via the existing `eval --save` path. Batch mode walks the **prescreen-ranked queue (7.7)** politely — the gate has already removed roles a hard requirement closed, so every token lands on a winnable role. **One JD per request, always** — multi-JD prompts degrade quality, cross-contaminate verdicts, and break 8a.4's quoted-evidence design. | the single biggest daily-use unlock |
+| 8a.2 ✅ | **`jobfaro eval --auto [<url> \| --next \| --all-pending]`** — reads the key `init` already stores in `data/credentials.env` (today it's collected and never used), calls the **Anthropic Messages API** with rubric + JD + `cv.md`, parses the structured verdict, records it via the existing `eval --save` path. Batch mode walks the **prescreen-ranked queue (7.7)** politely — the gate has already removed roles a hard requirement closed, so every token lands on a winnable role. **One JD per request, always** — multi-JD prompts degrade quality, cross-contaminate verdicts, and break 8a.4's quoted-evidence design. | the single biggest daily-use unlock |
 | 8a.3 ✅ | **Minimal-slice + zero-retention posture:** send only the JD + relevant CV excerpt, never history; document the retention settings; key never leaves `credentials.env` (gitignored, 0600). | privacy |
 | 8a.4 ✅ | **Consistency guardrails + rubric design** (per [docs/eval-tuning-research.md](docs/eval-tuning-research.md)): pinned prompt, temperature 0, structured-output schema so every backend returns the same shape. **Decomposed sub-criteria** — skills 35% / experience 25% / level-fit 20% / logistics 10% / education-gate 10% — each a categorical `strong/partial/none` judgment **with a quoted JD line as evidence**, reason-then-judge ordering, 2 short anchor examples per band. **Code, not the model, computes the 0–5** from the weighted sub-judgments and applies the **shipped band thresholds** (`lib/evaluations.mjs` `BANDS`: **Apply ≥ 4.0 / Research ≥ 3.5 / else Don't** — DECIDED 2026-06-13, the shipped scale stands; the 8a draft's ≥3.5/≥2.0 is dropped). **§3 pipeline (rec-spec):** the eval JSON **MUST NOT contain `salary_fit`** (band merged post-model by `lib/salary.mjs`/8d resolver, §3b); optional `soc_code`/`seniority` gated behind the 8d pay resolver (emit only when it ships); the requirement gate/clamp **REUSES the shipped 7.7.1 `lib/prescreen.mjs` extractors + `lib/levels.mjs classifyTitle` — NO new `lib/gate.mjs`** (one extractor, two enforcement points: prescreen excludes pre-eval, the clamp overrides post-eval); unify on the shipped `YEARS_CEILING {entry:2,mid:5,senior:10}`; code owns the clamp (`qualified:false` → force the score below the Research band into `dont`, carrying the quoted gate line, via the existing `recordEval`). Pipeline order: normalizeDates → extract → gate → judge(fit-only) → clamp(+merge pay) → record. **Cert gate (§3c):** extend `lib/prescreen.mjs` `extractLicense` to promote a stated-**required** cert ("PMP certification required") from flag → hard gate for users who lack it (YEARS_CEILING already screens most over-experience reach roles pre-eval, so this closes the remaining cert/domain gap). The schema also carries a **`required` requirements-check block** (filled first) and the call uses winc's **grammar-constrained** endpoint — see 8a.4a / 8a.4b. | accuracy + the §3 pipeline |
-| 8a.4a ✅ | **Grammar-constrained structured output (winc-side SHIPPED — `winc-jobdar` 1.21.3-jobdar.4, §3e).** Issue the **eval** call to winc's OpenAI-compatible **`POST /v1/chat/completions` with `response_format={type:'json_schema', json_schema:…}`** (the 8a.4 schema) — the engine returns guaranteed valid, conformant JSON even from a prose-eliciting prompt, and winc's router preserves `response_format` across both its paths (regression-tested). The eval profile prints this guaranteed-JSON endpoint on ready. **Other jobdar calls stay on `/v1/messages`.** Nothing further needed from winc — this is the structural guarantee that would have caught the malformed-JSON the few-shot run exposed. | valid JSON, guaranteed |
+| 8a.4a ✅ | **Grammar-constrained structured output (winc-side SHIPPED — `winc-jobdar` 1.21.3-jobfaro.4, §3e).** Issue the **eval** call to winc's OpenAI-compatible **`POST /v1/chat/completions` with `response_format={type:'json_schema', json_schema:…}`** (the 8a.4 schema) — the engine returns guaranteed valid, conformant JSON even from a prose-eliciting prompt, and winc's router preserves `response_format` across both its paths (regression-tested). The eval profile prints this guaranteed-JSON endpoint on ready. **Other jobfaro calls stay on `/v1/messages`.** Nothing further needed from winc — this is the structural guarantee that would have caught the malformed-JSON the few-shot run exposed. | valid JSON, guaranteed |
 | 8a.4b ✅ | **In-band requirements-check (MEASURED WIN — 2026-06-13, 72-eval A/B/C/D on the real résumé, §3b).** The schema adds a **`required` block — `{min_years, certs[], degree, candidate_meets_all}` — filled FIRST**, forcing explicit requirement reasoning before the verdict. Best form: **pass prescreen's already-extracted, quote-backed required years/degree/clearance INTO the prompt as verified facts** and have the model fill only `candidate_meets_all` against them (stronger than letting it self-extract). Measured: +reqcheck took **Qwen-4B 4/6 → 6/6** gating (fixed over-acceptance AND over-strictness), **gemma 2/3 → 3/3** rejects, **Qwen-2B 1/3 → 2/3**, ≈ +90 output tokens — **adopt**. **REJECTED — few-shot examples:** they backfired (small models more lenient — Qwen-2B over-accepted all 3 reach roles — and JSON validity dropped 6/6 → 4/6 on the 4B); do NOT add without a reject-weighted redesign + re-test. | the gating fix |
-| 8a.5 ✅ | **Calibration set + clamp-override log + per-tier agreement (trust):** 30–50 real hand-banded JDs (incl. no-degree / "or equivalent experience" pairs) as **offline** fixtures asserting (1) salary-band accuracy 100% where stated (7.8.1 `extractPay`), (2) gate correctness on reach roles (`qualified:false` every tier — OhioHealth ePMO / Cincinnati 6-yr PM / Carle construction), (3) source-label presence on silent roles (8d resolver). Persist every **clamp override** (model said X, gate/pay said Y) — plus the winc `model` id + `usage` — to a gitignored `data/` log (outreach-ledger privacy: no CV text) to compute per-tier agreement (gemma4-e2b / 4B / 2B) + drift on every prompt/model change. **The live-backend scorer is an opt-in `jobdar calibrate`, NOT `npm test`** — only the fixture corpus + the pure scoring/agreement/drift functions stay in `test-all.mjs` (preserves the offline-test invariant). | trust |
+| 8a.5 ✅ | **Calibration set + clamp-override log + per-tier agreement (trust):** 30–50 real hand-banded JDs (incl. no-degree / "or equivalent experience" pairs) as **offline** fixtures asserting (1) salary-band accuracy 100% where stated (7.8.1 `extractPay`), (2) gate correctness on reach roles (`qualified:false` every tier — OhioHealth ePMO / Cincinnati 6-yr PM / Carle construction), (3) source-label presence on silent roles (8d resolver). Persist every **clamp override** (model said X, gate/pay said Y) — plus the winc `model` id + `usage` — to a gitignored `data/` log (outreach-ledger privacy: no CV text) to compute per-tier agreement (gemma4-e2b / 4B / 2B) + drift on every prompt/model change. **The live-backend scorer is an opt-in `jobfaro calibrate`, NOT `npm test`** — only the fixture corpus + the pure scoring/agreement/drift functions stay in `test-all.mjs` (preserves the offline-test invariant). | trust |
 | 8a.6 ✅ | **Fairness guards:** strip name/contact lines from the CV slice before the prompt is built (smaller bias surface AND less PII out the door — off-the-shelf LLMs measurably carry demographic bias in hiring contexts); under `no_degree`, a degree requirement can flag a role but never auto-zero it, and the calibration set makes a regression here a **test failure**, not a vibe. | fairness |
 | 8a.7 ✅ | **Bulk-eval economics — the Message Batches API:** `--all-pending` on the API backend submits one Batches-API job (one role per request) instead of N live calls — **50% of standard price**, up to 100k requests per batch, usually done within the hour; results polled and recorded via the same `--save` path. Interactive evals (`--next`, single URL) stay on the live Messages API. | half-price overnight runs |
 | 8a.8 ✅ | **Prompt caching for the shared prefix:** rubric + `cv.md` are byte-identical across every eval in a run — mark them with `cache_control` so each call pays full price only for the JD (~0.1× input price on the cached prefix; 5-min TTL that a paced sequential queue keeps warm). Requires a byte-stable prefix: no timestamps or per-run IDs ahead of the JD. | each eval pays only for the JD |
@@ -547,25 +547,25 @@ rest; we never receive or store résumés.
 
 ### Phase 8b — on-device backend: winc.cpp primary (private, no key, no cost) — **✅ SHIPPED 1.19.0**
 
-> **Shipped 1.19.0 (2026-06-13), Jobdar side:** `lib/inference.mjs` (one Messages-API client for local +
-> api), `jobdar backend` (status / `--check` canary / `--install`), `inference: local|api|auto` with
+> **Shipped 1.19.0 (2026-06-13), Jobfaro side:** `lib/inference.mjs` (one Messages-API client for local +
+> api), `jobfaro backend` (status / `--check` canary / `--install`), `inference: local|api|auto` with
 > **local as the default**, `inference_url`. Verified end-to-end against a live `winc serve --eval`
 > (Qwen3.5-4B) — `/health` + a real eval round-trip, zero external network; offline tests (85 total).
 > 8b.3 (Ollama/llamafile OpenAI-compat shims) now also shipped; only 8b.5 (confidential cloud) remains
 > future (documented-only). The cross-repo winc contract below stands; the local install here is
-> `1.21.3-jobdar.3` (pin remains jobdar.4).
+> `1.21.3-jobfaro.3` (pin remains jobfaro.4).
 
 > **Source of truth: the published repo — [github.com/samdotson61/winc.cpp](https://github.com/samdotson61/winc.cpp).**
 > All 8b integration work targets winc.cpp as released on GitHub (its README, `winc.toml` schema,
 > the `winc serve --eval` contract, and releases) — never a local checkout, which may drift behind origin.
-> **Dependency: the `winc-jobdar` BRANCH** (newest `1.21.3-jobdar.4`), NOT master — its **`winc serve
+> **Dependency: the `winc-jobdar` BRANCH** (newest `1.21.3-jobfaro.4`), NOT master — its **`winc serve
 > --eval`** profile is the contract: reasoning OFF at the template level (budget-0 measured broken on
 > Qwen3.5 → empty content), q8 KV / 16384 window, a native `/v1/messages` router on the `winc.toml`
 > port (default `127.0.0.1:8080`), auto-picking **gemma4-e2b < 5 GiB / qwen3.5-4b ≥ 5 GiB** (qwen3.5-2b
 > floor-only — over-accepts). **Two surfaces:** `/v1/messages` for general calls, and a **guaranteed-JSON
-> eval path — `POST /v1/chat/completions` with `response_format=json_schema`** (shipped in jobdar.4; the
+> eval path — `POST /v1/chat/completions` with `response_format=json_schema`** (shipped in jobfaro.4; the
 > eval profile prints it on ready, the router preserves `response_format` across both paths). Branch
-> builds are versioned `-jobdar.N` and **refuse a master self-update**.
+> builds are versioned `-jobfaro.N` and **refuse a master self-update**.
 > (The old "origin/master v1.4.5 / `winc serve`" note was doubly stale — master is now v1.21.2, and the
 > bare-`serve` agent profile runs reasoning ON, which returns EMPTY content to an eval client.)
 >
@@ -575,9 +575,9 @@ rest; we never receive or store résumés.
 
 | Step | What | Detail |
 |---|---|---|
-| 8b.0 ✅ | **One-command local bootstrap — `jobdar backend --install`** (+ the on-device `jobdar init` path): `winc setup` (engine/PATH) → **winc-tiered model pull (DELEGATED — never hardcode an alias; gemma4-e2b ~2.9 GB low-end, qwen3.5-4b 2.6 GB ≥ 5 GiB)** → `winc serve --eval` → canary-verify (`GET /health` 200 + one real eval round-trip). Target **fully-featured < 10 min** (the model download is the long pole). Install via a prebuilt `-jobdar.N` release (no compiler) or `git clone -b winc-jobdar … && ./install.sh` (source; install.sh auto-installs Go) fallback. **This is the Phase 9 first-run prototype** — same model family, size budget, and 10-min SLA. **Cross-repo dep:** winc must publish prebuilt `-jobdar.N` releases per OS/arch (the sha256 download path exists in `update.go`, gated off for jobdar builds) for the no-compiler path. | the onboarding gate — BUILD FIRST in 8b |
+| 8b.0 ✅ | **One-command local bootstrap — `jobfaro backend --install`** (+ the on-device `jobfaro init` path): `winc setup` (engine/PATH) → **winc-tiered model pull (DELEGATED — never hardcode an alias; gemma4-e2b ~2.9 GB low-end, qwen3.5-4b 2.6 GB ≥ 5 GiB)** → `winc serve --eval` → canary-verify (`GET /health` 200 + one real eval round-trip). Target **fully-featured < 10 min** (the model download is the long pole). Install via a prebuilt `-jobfaro.N` release (no compiler) or `git clone -b winc-jobdar … && ./install.sh` (source; install.sh auto-installs Go) fallback. **This is the Phase 9 first-run prototype** — same model family, size budget, and 10-min SLA. **Cross-repo dep:** winc must publish prebuilt `-jobfaro.N` releases per OS/arch (the sha256 download path exists in `update.go`, gated off for jobfaro builds) for the no-compiler path. | the onboarding gate — BUILD FIRST in 8b |
 | 8b.1 ✅ | **winc.cpp as the PRIMARY local backend.** `inference: local` points the SAME 8a client at winc's local server (default `http://127.0.0.1:8080/v1/messages`, configurable via `inference_url` to match the user's `winc.toml`) — it speaks the Anthropic Messages API natively, so no translation layer and no new client code. No key, no cost, fully offline. The client captures the Messages-API `usage` block and surfaces input/output tokens as a per-eval transparency "cost" (tokens on the local path; dollars only on the 8a/api path). | one client, two backends |
-| 8b.2 ✅ | **Friendly liveness UX:** probe `GET /health` (proxied through to llama-server → 200 only when fully loaded); if down, print the exact start command **`winc serve --eval`** (NOT bare `winc serve` — that's the agent profile with reasoning ON → empty content) plus the install pointer (`git clone -b winc-jobdar https://github.com/samdotson61/winc.cpp` → `./install.sh`, or a prebuilt `-jobdar.N` release + `winc setup`). **Delegate model choice to winc** — never print or pull a specific alias. | onboarding |
+| 8b.2 ✅ | **Friendly liveness UX:** probe `GET /health` (proxied through to llama-server → 200 only when fully loaded); if down, print the exact start command **`winc serve --eval`** (NOT bare `winc serve` — that's the agent profile with reasoning ON → empty content) plus the install pointer (`git clone -b winc-jobdar https://github.com/samdotson61/winc.cpp` → `./install.sh`, or a prebuilt `-jobfaro.N` release + `winc setup`). **Delegate model choice to winc** — never print or pull a specific alias. | onboarding |
 | 8b.3 ✅ | **Alternate local runtimes** behind the same interface for users without winc: **Ollama** / **llamafile** (OpenAI-compat shim mapped to the shared schema). Secondary — winc is the documented happy path. | breadth |
 | 8b.4 ✅ | **Backend selector + fallback:** `inference: local\|api\|auto`. **Default for everyone: `local` via winc.cpp** — private, free, no key; `api` (BYO key) is the opt-in accuracy upgrade; `auto` runs local and offers an API upgrade on borderline roles. Clear UX about the privacy/quality tradeoff. **Flip `PROFILE_DEFAULTS.inference` from `'api'` to `'local'` here** — shipped code still defaults to `api`, contradicting Open Decision 2 (local-default, decided 2026-06-10). | user control |
 | 8b.5 ⬜ | **(Future) confidential-cloud option:** TEE-based managed inference for cloud quality the operator can't read — only if local proves too weak and users won't BYO key. Documented, not built. | advanced |
@@ -590,10 +590,10 @@ same structured verdict shape into the pipeline.
 
 ## Phase 8c — Document understanding (PDFs in, structured data out)
 
-> **Status: ✅ shipped 1.21.0** (2026-06-14) — DOCX/PDF text extraction + `jobdar import` + the light AI pre-confirm (the Search-tab queue thinner). Verified on-device with two real résumés. DOCX via system `unzip` (no new deps); PDF via `pdftotext` when present. 8c.5 covers text/error/triage paths (PDF fixtures deferred).
+> **Status: ✅ shipped 1.21.0** (2026-06-14) — DOCX/PDF text extraction + `jobfaro import` + the light AI pre-confirm (the Search-tab queue thinner). Verified on-device with two real résumés. DOCX via system `unzip` (no new deps); PDF via `pdftotext` when present. 8c.5 covers text/error/triage paths (PDF fixtures deferred).
 
-**Goal:** Jobdar automatically reads and understands PDFs. A résumé PDF/DOCX becomes `data/cv.md` + a
-prefilled `config/profile.yml` with no hand-editing, and `jobdar eval` accepts a PDF JD. The division of
+**Goal:** Jobfaro automatically reads and understands PDFs. A résumé PDF/DOCX becomes `data/cv.md` + a
+prefilled `config/profile.yml` with no hand-editing, and `jobfaro eval` accepts a PDF JD. The division of
 labor is strict: **extraction is deterministic** (a parser, no model); **understanding is the inference
 backend's job** (text → structured fields) — so résumé understanding is private-by-default on winc.cpp
 and accuracy scales with whichever backend the user picked. (Supersedes the 6.6 sketch with a real plan;
@@ -602,19 +602,19 @@ library survey in [docs/eval-tuning-research.md](docs/eval-tuning-research.md) �
 | Step | What | Detail |
 |---|---|---|
 | 8c.1 ✅ | **Text-extraction layer** `lib/pdf_extract.mjs`: [unpdf](https://github.com/unjs/unpdf) (maintained, Mozilla pdf.js under the hood, no native binaries, runs in Node **and** serverless — the same code will serve Phase 9's server) as **the one new dependency**. `extractText(buffer) → { text, pages, meta }`. DOCX via a thin `mammoth` adapter; `.txt`/`.md` pass through. | one module, swappable |
-| 8c.2 ✅ | **`jobdar import <file>`** (+ wired into `jobdar init`): extract → send ONLY the extracted text to the inference backend with a structuring prompt → write `data/cv.md` (canonical Markdown CV) + prefill `config/profile.yml` (name, metro, suggested level(s), skills) → show a bilingual confirm/edit summary **before** saving anything. | the "upload résumé → go" path |
-| 8c.3 ✅ | **PDF JDs in eval:** `jobdar eval <file.pdf>` runs the same extraction and feeds the JD text through the existing eval path (eval already accepts files/stdin — this puts a PDF reader in front). | symmetry |
+| 8c.2 ✅ | **`jobfaro import <file>`** (+ wired into `jobfaro init`): extract → send ONLY the extracted text to the inference backend with a structuring prompt → write `data/cv.md` (canonical Markdown CV) + prefill `config/profile.yml` (name, metro, suggested level(s), skills) → show a bilingual confirm/edit summary **before** saving anything. | the "upload résumé → go" path |
+| 8c.3 ✅ | **PDF JDs in eval:** `jobfaro eval <file.pdf>` runs the same extraction and feeds the JD text through the existing eval path (eval already accepts files/stdin — this puts a PDF reader in front). | symmetry |
 | 8c.4 ✅ | **Scanned/image PDFs:** detect a near-empty text layer and fail honestly — a bilingual error + "export as text/DOCX" hint. OCR is documented as out of scope for now. | honest failure |
 | 8c.5 🔶 | **Tests:** fixture PDFs in `test-all.mjs` — a text-based résumé (EN + ES), a JD, and an image-only scan — extraction asserted offline, no network, no model. | regression net |
 
-**Verification gate:** a real résumé PDF → `jobdar import` → confirmed `cv.md` + prefilled profile, then
-`jobdar scan` and `jobdar eval --next` complete — **zero hand-edited YAML, fully offline on winc.cpp**.
+**Verification gate:** a real résumé PDF → `jobfaro import` → confirmed `cv.md` + prefilled profile, then
+`jobfaro scan` and `jobfaro eval --next` complete — **zero hand-edited YAML, fully offline on winc.cpp**.
 
 ---
 
 ## Phase 8d — Offer evaluation
 
-> **Status: 🔶 core shipped 1.24.0** (2026-06-14) — `lib/pay.mjs resolvePay` (STATED→COMPARABLE→BLS, mandatory source label) + national wage seed floor + `socForTitle` router + `modes/offer.md` rubric (EN/ES). Deferred: `jobdar offer` capture (8d.1), live BLS bulk-download (8d.2b — seed floor substitutes), multi-offer compare (8d.4).
+> **Status: 🔶 core shipped 1.24.0** (2026-06-14) — `lib/pay.mjs resolvePay` (STATED→COMPARABLE→BLS, mandatory source label) + national wage seed floor + `socForTitle` router + `modes/offer.md` rubric (EN/ES). Deferred: `jobfaro offer` capture (8d.1), live BLS bulk-download (8d.2b — seed floor substitutes), multi-offer compare (8d.4).
 
 **Goal:** when applications turn into offers, evaluate the offer the way we evaluate fit — against the
 user's profile, region, and **real wage data** — on the same swappable backends. The model never invents
@@ -623,12 +623,12 @@ numbers: deterministic code supplies market context; the model interprets it. (D
 
 | Step | What | Detail |
 |---|---|---|
-| 8d.1 | **`jobdar offer <company>`** — bilingual interactive capture: base, bonus, benefits, PTO, metro/remote, start date → stored on the tracker row (new `offer` fields + an `offer` state in `templates/states.yml`, EN canonical / ES alias per 1.4). | capture first |
-| 8d.2 | **Wage cache from the KEYLESS OEWS bulk download (rec-spec §2 — REVISED; BLS-source DECIDED 2026-06-13):** **no API key, no account, works out of the box.** Ship a small **national-by-SOC seed** (`data/seed/wages-national.yml`, sliced from the OEWS national release) as the always-offline floor so coverage is never blank; `data/cache/wages.yml` then **grows on demand** — on a region change / a new metro surfacing, download the keyless OEWS metro table(s) once and append only the needed `(area, soc)` rows, offline thereafter (`jobdar pay --refresh` re-pulls the annual release). **KEEP the metro cost-of-living index 8d.3/8d.4/4.7 depend on** — relocate it into the seed, do NOT drop it. (Pay sparsity is real — only 23/79 study postings stated pay, worst on the target roles, IT Support 0/8 — so an external anchor is required, not optional.) | facts from data, keyless |
+| 8d.1 | **`jobfaro offer <company>`** — bilingual interactive capture: base, bonus, benefits, PTO, metro/remote, start date → stored on the tracker row (new `offer` fields + an `offer` state in `templates/states.yml`, EN canonical / ES alias per 1.4). | capture first |
+| 8d.2 | **Wage cache from the KEYLESS OEWS bulk download (rec-spec §2 — REVISED; BLS-source DECIDED 2026-06-13):** **no API key, no account, works out of the box.** Ship a small **national-by-SOC seed** (`data/seed/wages-national.yml`, sliced from the OEWS national release) as the always-offline floor so coverage is never blank; `data/cache/wages.yml` then **grows on demand** — on a region change / a new metro surfacing, download the keyless OEWS metro table(s) once and append only the needed `(area, soc)` rows, offline thereafter (`jobfaro pay --refresh` re-pulls the annual release). **KEEP the metro cost-of-living index 8d.3/8d.4/4.7 depend on** — relocate it into the seed, do NOT drop it. (Pay sparsity is real — only 23/79 study postings stated pay, worst on the target roles, IT Support 0/8 — so an external anchor is required, not optional.) | facts from data, keyless |
 | 8d.2a ✅ | **`lib/pay.mjs` — three-layer `resolvePay(jd, role, metro, target)`:** STATED (`lib/salary.mjs extractPay`, high) → COMPARABLE (in-scan median {soc, seniority, metro}, n≥3, reusing `cv_render matchedKeywords`, med) → BLS (`wages.yml` percentile by seniority: entry→p25 / mid→median / senior→p75, base). Always returns `{annualMin, annualMax, source, confidence, band}`; **the source label is mandatory UI text** ("stated $X" / "est. $Y (N comparable)" / "est. $Z (BLS median, [occ], [metro])"); never blank, never model-produced. | the de-skew engine |
 | 8d.2b | **`lib/bls.mjs` (keyless bulk) + the hard split (§2b/§2c):** `ensureWages(regions, socCodes)` (idempotent, resumable) downloads the relevant **OEWS annual release table(s)** — keyless HTTPS from `download.bls.gov` / `bls.gov/oes` (XLSX/TXT flat files; set a descriptive User-Agent per BLS guidance) — and slices the needed `(area, soc)` rows into the cache; `lookupWage(...)` is a pure cache read; `nationalAdjusted(soc, metro)` (national row × metro pay-differential, `source:'bls-national-adj'`) covers rural/unreachable. **No API key** — the v2 API needs per-user registration (not out-of-the-box) and keyless v1 caps at ~10 req/day, so we take the bulk download. SSRF-guarded via `lib/http.mjs` (`download.bls.gov` + `www.bls.gov` allowlist, HTTPS, `redirect:'error'`). **Hard split:** the **model is the SOC + seniority router ONLY** (deterministic `data/seed/soc-map.yml` fallback for offline/no-model — local-first); **software owns every number** (download, slice, area-code lookup, percentile + hourly↔annual, cache). **SECURITY.md (lockstep):** add `download.bls.gov` / `www.bls.gov` as permitted outbound hosts — public reference data, no PII, no key. | model routes, software calculates |
 | 8d.3 ✅ | **Offer rubric** `modes/offer.md` (EN + ES): the model weighs comp-vs-market (from 8d.2), benefits completeness, growth trajectory, commute/remote — plus entry-level-specific factors (training, mentorship, first-role résumé value) → structured verdict `{ assessment: strong/fair/below, negotiation_levers[], questions_to_ask[] }` under the same 8a.4 consistency guardrails. | judgment on top of facts |
-| 8d.4 | **Multi-offer compare:** `jobdar offer --compare` — a COL-adjusted side-by-side of every recorded offer. | the real decision moment |
+| 8d.4 | **Multi-offer compare:** `jobfaro offer --compare` — a COL-adjusted side-by-side of every recorded offer. | the real decision moment |
 | 8d.5 | **Tests:** wage-math fixtures + verdict-shape checks on both backends in `test-all.mjs`. | parity |
 
 **Verification gate:** record a real-shaped offer; the verdict cites metro wage context and returns the
@@ -638,7 +638,7 @@ identical structured shape on `inference: api` and `inference: local`; a Spanish
 
 ## Phase 8e — The engine contract (CLI, web, mobile plug in here)
 
-> **Status: ✅ shipped 1.24.0** (2026-06-14) — `lib/engine.mjs` (no-console verbs + onProgress) + `jobdar serve` (localhost JSON façade) + `docs/engine.md` + a conformance test driving the full pipeline via the engine only. Phase 9 builds against this seam.
+> **Status: ✅ shipped 1.24.0** (2026-06-14) — `lib/engine.mjs` (no-console verbs + onProgress) + `jobfaro serve` (localhost JSON façade) + `docs/engine.md` + a conformance test driving the full pipeline via the engine only. Phase 9 builds against this seam.
 
 **Goal:** freeze the headless pipeline — **import → scan → eval → track → build** — behind ONE documented
 programmatic seam, so the CLI, the web app, and the mobile app are thin front-ends over the **same engine**.
@@ -647,18 +647,18 @@ This is the phase that makes Phase 9 a UI project instead of a rewrite.
 | Step | What | Detail |
 |---|---|---|
 | 8e.1 ✅ | **`lib/engine.mjs`** — export the verbs as functions with **no console I/O** (structured returns + progress callbacks): `importDocument()`, `scan()`, `evaluate()`, tracker verbs, `buildCv()`. The CLI subcommands become thin callers — behavior identical, seam explicit. | extract, don't rewrite |
-| 8e.2 ✅ | **Local HTTP façade** `jobdar serve` — the same verbs as JSON endpoints on localhost (the dashboard already proves the pattern); CORS locked to localhost; no secrets in responses. This is what a dev-build web front-end — or a phone on the LAN — talks to. | the plug socket |
+| 8e.2 ✅ | **Local HTTP façade** `jobfaro serve` — the same verbs as JSON endpoints on localhost (the dashboard already proves the pattern); CORS locked to localhost; no secrets in responses. This is what a dev-build web front-end — or a phone on the LAN — talks to. | the plug socket |
 | 8e.3 ✅ | **Contract doc** `docs/engine.md` — verb signatures, the `Job` / `Verdict` / `Offer` shapes, progress events; versioned. **Phase 9 builds against this doc, never against internals.** | the promise |
 | 8e.4 ✅ | **Conformance test:** one script in `test-all.mjs` drives a full pipeline run through `lib/engine.mjs` only — no CLI — and asserts every shape. | keeps the seam honest |
 
 **Verification gate:** a single script (no CLI) goes résumé-PDF → scanned → evaluated → tracked via
-`lib/engine.mjs`; `jobdar serve` does the same over HTTP from a browser `fetch`.
+`lib/engine.mjs`; `jobfaro serve` does the same over HTTP from a browser `fetch`.
 
 ---
 
 ## Phase 8f — Steerable customization (re-runnable, directive-driven materials)
 
-> **Status: ✅ complete.** 8f.1 shipped 1.27.0 (`jobdar tailor --instruct` — CV summary + cover letter); **8f.2 shipped 1.28.0** (2026-06-15) — grounded `draftOutreach` behind `jobdar outreach --draft`. _Supersedes the cut Phase 8d offer-capture remainder._
+> **Status: ✅ complete.** 8f.1 shipped 1.27.0 (`jobfaro tailor --instruct` — CV summary + cover letter); **8f.2 shipped 1.28.0** (2026-06-15) — grounded `draftOutreach` behind `jobfaro outreach --draft`. _Supersedes the cut Phase 8d offer-capture remainder._
 
 **Goal:** let the user **steer** their application materials with natural-language directives and
 **re-run** to refine — **grounded** (directives never add facts) and at **low temperature** so a re-run is
@@ -667,17 +667,17 @@ directive (or the résumé) changes. This is the CLI foundation for the Phase 9 
 
 | Step | What | Detail |
 |---|---|---|
-| 8f.1 ✅ | **`jobdar tailor` customization** — `--instruct "<directive>"` layers per-role directives, re-derives from résumé+JD at `temperature: 0`, writes versioned `-vN` variants; `--list` / `--reset` / `--revise`; idempotent (unchanged content hash = no-op). New `lib/customize_store.mjs` (`data/customize.yml`), a `temperature` passthrough in `lib/inference.mjs`, and a grounding-guard `directiveBlock` in `lib/tailor.mjs`. | the lever, not the dice |
-| 8f.2 ✅ | **`jobdar outreach --draft`** — a NEW grounded `draftOutreach` engine verb (mirrors `tailorRole`): one real fit reason + one ask, gated through the existing `lintDraft` + cadence (warns, never blocks — drafting ≠ sending); `--instruct` / `--channel` / `--person`; versioned `-vN`, idempotent. Never auto-logs to the cadence ledger. | model-drafted outreach |
+| 8f.1 ✅ | **`jobfaro tailor` customization** — `--instruct "<directive>"` layers per-role directives, re-derives from résumé+JD at `temperature: 0`, writes versioned `-vN` variants; `--list` / `--reset` / `--revise`; idempotent (unchanged content hash = no-op). New `lib/customize_store.mjs` (`data/customize.yml`), a `temperature` passthrough in `lib/inference.mjs`, and a grounding-guard `directiveBlock` in `lib/tailor.mjs`. | the lever, not the dice |
+| 8f.2 ✅ | **`jobfaro outreach --draft`** — a NEW grounded `draftOutreach` engine verb (mirrors `tailorRole`): one real fit reason + one ask, gated through the existing `lintDraft` + cadence (warns, never blocks — drafting ≠ sending); `--instruct` / `--channel` / `--person`; versioned `-vN`, idempotent. Never auto-logs to the cadence ledger. | model-drafted outreach |
 
-**Verification gate:** re-running `jobdar tailor <role> --instruct "<same>"` is a no-op; a changed
+**Verification gate:** re-running `jobfaro tailor <role> --instruct "<same>"` is a no-op; a changed
 directive writes the next `-vN`; an adversarial directive ("claim 10 years of X") does not fabricate.
 
 ---
 
 ## Phase 9 — Web and mobile apps (future / post-1.0)
 
-> **Status: 🏗️ building — 9.0 partially landed (`@jobdar/app` 1.1.0, 2026-06-15)** (full spec: [`docs/phase9-architecture.md`](docs/phase9-architecture.md)). **The app now runs the REAL engine, not a mirror:** the repo is a pnpm workspace, a new private **`@jobdar/engine`** package re-exports the pure `lib/` modules, and `apps/jobdar` imports it — so Search's level filter + prescreen gates + Apply's 0–5 score/clamp/band/pay are the **exact** CLI functions (`filterByLevel`, `prescreenRole`, `prepEval`, `buildVerdict`). The hand-written app mirror is deleted; `src/engine.ts` is a thin adapter. This fixed the level mismatch (entry/mid candidates no longer see senior/director roles) at the source. **9.1 landed (CLI 1.32.0):** `jobdar serve` is now the **full pipeline HTTP façade** over `lib/engine.mjs` — `GET /pipeline · /profile` (secrets redacted) `· /cv · /outreach/due` and `POST /scan · /prescreen · /eval/next · /eval/save · /tracker/set · /outreach/log` (plus the prior `/health · /evaluate · /import`), each reusing the real engine verbs + `pipeline.tsv`. Opt-in **LAN access + bearer token** (`jobdar serve --host 0.0.0.0`, auto-minted or `--token`) lets the iPhone on the same Wi-Fi drive it; default stays loopback. `test-all.mjs` **116** (+1 subprocess serve integration test). **⚡ ARCHITECTURE LOCKED (2026-06-15, Sam): all surfaces (web, desktop, mobile) point BY DEFAULT at the local jobdar CLI + winc engine as the ENTIRE full stack** — the model is **always server-side**; **cloud model API keys are a pluggable Pro-tier upgrade / monetization** (tracked at 9.6 below). This **supersedes the in-browser WebLLM / `llama.rn`-embedded plan** (no dual model implementation; no `kind:'local-embedded'`). Remaining: the model-generation endpoints (`POST /tailor`, `/outreach/draft`); **repoint the app off its stand-ins** (typed serve client; delete `SAMPLE_*` data + the keyword judge + the in-app generators — keep `@jobdar/engine` only for derived UI: band/level/cadence labels); live résumé upload→`/import`; EAS native + new-match push; then the Pro tier. **One Expo codebase (React Native + react-native-web) → web PWA + native iOS/Android**; the PII-free scanner-proxy (`apps/server`) stays an always-on Node option (Fly/Render) for hosted discovery. Privacy story: **the user runs their own jobdar+winc stack; their résumé/data live on their machine** (hosted-for-strangers is not a near-term goal).
+> **Status: 🏗️ building — 9.0 partially landed (`@jobfaro/app` 1.1.0, 2026-06-15)** (full spec: [`docs/phase9-architecture.md`](docs/phase9-architecture.md)). **The app now runs the REAL engine, not a mirror:** the repo is a pnpm workspace, a new private **`@jobfaro/engine`** package re-exports the pure `lib/` modules, and `apps/jobfaro` imports it — so Search's level filter + prescreen gates + Apply's 0–5 score/clamp/band/pay are the **exact** CLI functions (`filterByLevel`, `prescreenRole`, `prepEval`, `buildVerdict`). The hand-written app mirror is deleted; `src/engine.ts` is a thin adapter. This fixed the level mismatch (entry/mid candidates no longer see senior/director roles) at the source. **9.1 landed (CLI 1.32.0):** `jobfaro serve` is now the **full pipeline HTTP façade** over `lib/engine.mjs` — `GET /pipeline · /profile` (secrets redacted) `· /cv · /outreach/due` and `POST /scan · /prescreen · /eval/next · /eval/save · /tracker/set · /outreach/log` (plus the prior `/health · /evaluate · /import`), each reusing the real engine verbs + `pipeline.tsv`. Opt-in **LAN access + bearer token** (`jobfaro serve --host 0.0.0.0`, auto-minted or `--token`) lets the iPhone on the same Wi-Fi drive it; default stays loopback. `test-all.mjs` **116** (+1 subprocess serve integration test). **⚡ ARCHITECTURE LOCKED (2026-06-15, Sam): all surfaces (web, desktop, mobile) point BY DEFAULT at the local jobfaro CLI + winc engine as the ENTIRE full stack** — the model is **always server-side**; **cloud model API keys are a pluggable Pro-tier upgrade / monetization** (tracked at 9.6 below). This **supersedes the in-browser WebLLM / `llama.rn`-embedded plan** (no dual model implementation; no `kind:'local-embedded'`). Remaining: the model-generation endpoints (`POST /tailor`, `/outreach/draft`); **repoint the app off its stand-ins** (typed serve client; delete `SAMPLE_*` data + the keyword judge + the in-app generators — keep `@jobfaro/engine` only for derived UI: band/level/cadence labels); live résumé upload→`/import`; EAS native + new-match push; then the Pro tier. **One Expo codebase (React Native + react-native-web) → web PWA + native iOS/Android**; the PII-free scanner-proxy (`apps/server`) stays an always-on Node option (Fly/Render) for hosted discovery. Privacy story: **the user runs their own jobfaro+winc stack; their résumé/data live on their machine** (hosted-for-strangers is not a near-term goal).
 
 **Goal:** a hosted, cross-platform, bilingual **web app** — and, after it, a **mobile app** — where a
 non-technical user uploads a résumé and is pointed toward fitting jobs with little effort. **Ease of use
@@ -700,15 +700,15 @@ user always knows what happened, what it cost, and what's next.
 
 All three run on the **local AI by default** (8b) with the **tiered API-key upgrade** (8a) for premium editions — the same `inference: local|api|auto` backend the CLI already ships. The Search tab’s light-AI pre-confirm is a NEW thin layer between the in-browser model and the heavy `eval` — a cheap yes/maybe/no, not a score.
 
-**Finalized milestone ladder** (2026-06-15; full detail + architecture diagrams + verification in [`docs/phase9-architecture.md`](docs/phase9-architecture.md)). **Re-aligned 2026-06-15 to the locked architecture** (Sam): the apps are thin GUIs over a **local `jobdar serve` + winc engine as the full stack** — the model is always server-side; cloud API keys are a later **Pro tier**. The in-browser **WebLLM/`llama.rn`-embedded** track and the `Store`/`DocExtract`/`InferenceClient` *model*-port extraction are **dropped** (no dual model implementation). Locked: Expo one-codebase (web + native) · serve is the seam · default loopback, opt-in LAN+token · per-surface accuracy measured, not asserted.
+**Finalized milestone ladder** (2026-06-15; full detail + architecture diagrams + verification in [`docs/phase9-architecture.md`](docs/phase9-architecture.md)). **Re-aligned 2026-06-15 to the locked architecture** (Sam): the apps are thin GUIs over a **local `jobfaro serve` + winc engine as the full stack** — the model is always server-side; cloud API keys are a later **Pro tier**. The in-browser **WebLLM/`llama.rn`-embedded** track and the `Store`/`DocExtract`/`InferenceClient` *model*-port extraction are **dropped** (no dual model implementation). Locked: Expo one-codebase (web + native) · serve is the seam · default loopback, opt-in LAN+token · per-surface accuracy measured, not asserted.
 
 | # | Milestone | Deliverable |
 |---|---|---|
-| 9.0 | **App on the real deterministic engine** — ✅ *landed (`@jobdar/app` 1.1.0)* | pnpm workspace + private **`@jobdar/engine`** (re-exports the pure `lib/` modules) + `apps/jobdar` rewired to it (real `filterByLevel`/`prescreenRole`/`prepEval`/`buildVerdict`; mirror deleted; `test-all.mjs` green = zero CLI behavior change). The in-browser-model ports + dual-adapter spike are **dropped** — the model stays server-side over serve. |
-| 9.1 | **`jobdar serve` full pipeline façade + LAN access** — ✅ *landed (CLI 1.32.0)* | serve exposes the whole pipeline as JSON (`/pipeline·/profile·/cv·/outreach/due` + `POST /scan·/prescreen·/eval/next·/eval/save·/tracker/set·/outreach/log` + the prior `/health·/evaluate·/import`) over the real engine + winc; opt-in `--host 0.0.0.0` + bearer token for the phone; +1 subprocess test (**116**). The `apps/server` PII-free scanner-proxy stays an always-on Node option (Fly/Render) for hosted discovery. |
-| 9.2 | **Model endpoints + repoint the app onto serve** | `POST /tailor` + `/outreach/draft` (real-model, customize/ledger bookkeeping, 503 when winc down); a typed serve client in the app; Search/Apply/Follow-up `fetch` from serve; **DELETE** `SAMPLE_*` data + the keyword judge + the in-app generators; keep `@jobdar/engine` only for derived UI (band/level/cadence labels); a "start `jobdar serve` / enter token" connect screen. |
+| 9.0 | **App on the real deterministic engine** — ✅ *landed (`@jobfaro/app` 1.1.0)* | pnpm workspace + private **`@jobfaro/engine`** (re-exports the pure `lib/` modules) + `apps/jobfaro` rewired to it (real `filterByLevel`/`prescreenRole`/`prepEval`/`buildVerdict`; mirror deleted; `test-all.mjs` green = zero CLI behavior change). The in-browser-model ports + dual-adapter spike are **dropped** — the model stays server-side over serve. |
+| 9.1 | **`jobfaro serve` full pipeline façade + LAN access** — ✅ *landed (CLI 1.32.0)* | serve exposes the whole pipeline as JSON (`/pipeline·/profile·/cv·/outreach/due` + `POST /scan·/prescreen·/eval/next·/eval/save·/tracker/set·/outreach/log` + the prior `/health·/evaluate·/import`) over the real engine + winc; opt-in `--host 0.0.0.0` + bearer token for the phone; +1 subprocess test (**116**). The `apps/server` PII-free scanner-proxy stays an always-on Node option (Fly/Render) for hosted discovery. |
+| 9.2 | **Model endpoints + repoint the app onto serve** | `POST /tailor` + `/outreach/draft` (real-model, customize/ledger bookkeeping, 503 when winc down); a typed serve client in the app; Search/Apply/Follow-up `fetch` from serve; **DELETE** `SAMPLE_*` data + the keyword judge + the in-app generators; keep `@jobfaro/engine` only for derived UI (band/level/cadence labels); a "start `jobfaro serve` / enter token" connect screen. |
 | 9.3 | **Web PWA + upload→/import** | three-tab `expo-router` SPA polished over serve; résumé upload → `POST /import` (server extract+structure); installable/offline shell; EN/ES parity; WCAG; loading + backend-down states. |
-| 9.4 | **Native iOS/Android (EAS)** | same Expo source → EAS build → iOS + Android, talking to the user's `jobdar serve` over the LAN (token); **new-match push notifications**; store-submission prep. |
+| 9.4 | **Native iOS/Android (EAS)** | same Expo source → EAS build → iOS + Android, talking to the user's `jobfaro serve` over the LAN (token); **new-match push notifications**; store-submission prep. |
 | 9.5 | **Pro tier — pluggable cloud model keys (monetization)** | BYO cloud API key (the existing `inference:api` path) as a paid upgrade over the default local winc; explicit-consent confidential-cloud fallback; entitlement/key UI; the general monetization surface (design TBD with Sam). |
 | 9.6 | **Privacy + measurement gates** | the user runs their own stack (résumé/data stay on their machine); a CI guard that the app only talks to serve; **per-surface** match accuracy + task success + time-to-first-match; end-to-end verification (Spanish-preferring phone persona). |
 
@@ -720,14 +720,14 @@ left the browser** on the default path.
 
 ## MVP cut line (fastest path to something real)
 
-Ship a usable Jobdar **CLI** with the **bold** phases first; defer the rest:
+Ship a usable Jobfaro **CLI** with the **bold** phases first; defer the rest:
 
 1. **Phase 0** — foundation + branding (must-have)
 2. **Phase 1** — American-English core (ship EN first; ES parity can trail by a step)
 3. **Phase 2** — Workday provider (the single highest-value feature)
 4. **Phase 4** — level toggle (entry default, mid optional, senior opt-in) + no-degree tuning
 5. **Phase 5 (lite)** — region toggle with the **Midwest** catalog seeded first (+ `nationwide`/remote works immediately via filters)
-6. **Phase 6 (lite)** — the **`jobdar`** command (`init`, `scan`, `eval`) + the wizard + zero-config first scan (using the user's own AI CLI/API for `eval`)
+6. **Phase 6 (lite)** — the **`jobfaro`** command (`init`, `scan`, `eval`) + the wizard + zero-config first scan (using the user's own AI CLI/API for `eval`)
 
 **Defer to fast-follow:** Phase 3 (iCIMS), full ES parity, other-region seed catalogs, **Phase 8 pluggable
 inference / local model**, full test/CI hardening (Phase 7), and the **web app (Phase 9)**.
@@ -750,7 +750,7 @@ from a guided wizard — the core promise — before we invest in iCIMS, the loc
 | **Mid-level is fuzzy to detect by title** | Medium | Coarse title filter + let the rubric do level-fit scoring; tune with real fixtures |
 | **Spanish parity rots** as EN evolves | Medium | Single i18n string table + a CI check for missing ES keys |
 | **BLS pay data (8d): bulk-file size / format / annual cadence** | Low–Med | DECIDED: keyless OEWS bulk download (no API key/account — the v2 API needs per-user registration, v1 caps at ~10/day). Residual: the all-data flat file is large → slice to the user's metros + the IT/PM SOCs, don't cache wholesale; the format/layout can shift between annual releases → parse defensively + pin the release year per cached row; ship the national-by-SOC seed so a download failure is never blank; document `download.bls.gov`/`www.bls.gov` in SECURITY.md (no PII, no key) |
-| **Name/trademark** | Low | "Jobdar" screened clear; lock with a formal trademark search + domain/org grab (Step 0.2) |
+| **Name/trademark** | Low | "Jobfaro" screened clear; lock with a formal trademark search + domain/org grab (Step 0.2) |
 | **Scope creep** | Medium | Hold to the MVP cut line; don't build every mode, region, the local backend, or the web app before the CLI lands |
 
 ---
@@ -776,9 +776,9 @@ from a guided wizard — the core promise — before we invest in iCIMS, the loc
    GitHub template + npm + Claude plugin for the CLI, standard web deploy for the app.
 8. **BLS data source (Phase 8d).** → **DECIDED 2026-06-13: keyless OEWS bulk download, NO key, NO account.**
    The v2 API requires per-user registration (an external account the app can't generate silently —
-   not out-of-the-box); the keyless v1 dies at ~10 requests/day. So Jobdar downloads the OEWS annual
+   not out-of-the-box); the keyless v1 dies at ~10 requests/day. So Jobfaro downloads the OEWS annual
    release tables directly (keyless HTTPS) and slices locally — account-free, offline after first fetch,
-   honoring "Jobdar ships no API keys." Governing principle: **no-frills, clean-cut, works out of the
+   honoring "Jobfaro ships no API keys." Governing principle: **no-frills, clean-cut, works out of the
    box** — no feature that forces the user through an external signup. (Rejected: a shared shipped key
    — rate-limit/abuse risk + contradicts the no-keys posture.)
 
@@ -802,7 +802,7 @@ from a guided wizard — the core promise — before we invest in iCIMS, the loc
 ### Inference options (Phase 8/9)
 - **Local PRIMARY ([winc.cpp](https://github.com/samdotson61/winc.cpp)):** the user's `winc serve` runs
   llama.cpp's `llama-server`, which serves the **Anthropic Messages API natively** (`/v1/messages`) on
-  `127.0.0.1:8080` (per `winc.toml`) — Jobdar's API client just points at it (no key, no translation
+  `127.0.0.1:8080` (per `winc.toml`) — Jobfaro's API client just points at it (no key, no translation
   proxy, nothing leaves the device). Model management (download, hardware detect, hot-swap via
   llama-swap) is winc's job, not ours. Integration tracks the GitHub repo/releases, not local checkouts.
 - **Local alternates:** Ollama + a small instruct model (Llama 3.2 3B / Qwen2.5 3B) or `llamafile`
@@ -820,11 +820,11 @@ from a guided wizard — the core promise — before we invest in iCIMS, the loc
 ## Phase 10 — Fully-local iPhone (ACTIVE, direction locked 2026-07-08)
 
 **Sam's call: fully-local iOS FIRST** (download from the App Store, works with no Mac and no serve),
-**then** the web app / jobdar.ai hosted UI, **then Android** using the same stack for parity
+**then** the web app / jobfaro.ai hosted UI, **then Android** using the same stack for parity
 (llama.rn = llama.cpp bindings for React Native on BOTH platforms). Full analysis + TestFlight plan:
-`~/Documents/Jobdar-Beta.md`.
+`~/Documents/Jobfaro-Beta.md`.
 
-Both backend halves move into the app: the engine (mostly pure JS in `@jobdar/engine` already; the
+Both backend halves move into the app: the engine (mostly pure JS in `@jobfaro/engine` already; the
 fs-bound pieces get ports) and the model (llama.rn, grammar-JSON + greedy — the same eval profile winc
 serves). The serve-backed mode remains for the Mac-companion path.
 
@@ -843,7 +843,7 @@ qwen3.5-4b Q4 (~2.4GB) needs 8GB devices — 2b (~1.2GB) is the floor tier and i
 re-opens on-device (the eval-tuning research + thumbs feedback loop apply); model downloads are
 post-install and confirm-gated (App-Store-legal, established local-LLM pattern).
 
-**Fun is a product principle (Sam, 2026-07-09):** Jobdar should feel fun to use, never a chore. The
+**Fun is a product principle (Sam, 2026-07-09):** Jobfaro should feel fun to use, never a chore. The
 CLI's 📡 **radar sweep** (shipped 1.48.0 — honest tallies that grow as results land, measured ETAs,
 true elapsed for open-ended calls, no invented percent, bilingual) is the reference implementation;
 the app carries the same radar language into its scanning / batch-scoring / tailoring states from the
