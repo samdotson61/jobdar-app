@@ -31,4 +31,4 @@ if [ -t 0 ]; then
 else
   echo "Setup: run  cd \"$DIR\" && node bin/jobfaro init"
 fi
-echo "Done. Tip: 'npm link' puts the 'jobfaro' command on your PATH."
+echo "Done. Tip: 'npm link' puts the 'jobfaro' command (and its short alias 'jf') on your PATH."

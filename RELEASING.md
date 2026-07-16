@@ -36,7 +36,7 @@ Then draft a GitHub release from the tag, pasting the CHANGELOG entry.
 
 These gate a real 1.0 and need a human call; the checklist above is ready the moment they're settled:
 
-- **npm name / namespace.** `jobfaro` (unscoped) is **available** on the registry as of 2026-07-02
+- **npm name / namespace.** `jobfaro` (unscoped) is **available** on the registry as of 2026-07-16 (verified at the rename)
   (`npm view jobfaro` → 404). Options: claim `jobfaro` now, or publish under a scope
   (`@sdotson/jobfaro` / an org scope). Unscoped is the cleaner install (`npm i -g jobfaro`) but is a
   land-grab you can't undo casually. Decide before first publish.

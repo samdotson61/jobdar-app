@@ -4,6 +4,14 @@ All notable changes to Jobfaro are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and Jobfaro adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.49.1] — 2026-07-16
+
+**Docs-flush patch after the rename.** Getting-started (EN/ES) now teaches the `jf` alias right after
+install; `install.sh`'s closing tip mentions both commands; RELEASING's npm-availability claim now
+carries the date it was actually verified for *jobfaro* (2026-07-16 — the old date belonged to the old
+name); ROADMAP L6 lists `eas init` (the pre-rename EAS projectId was removed). GitHub repo metadata
+refreshed: description (Jobfaro wording, `jf` mention, fully-local iOS) + 9 topics.
+
 ## [1.49.0] — 2026-07-16
 
 **RENAMED: Jobdar → Jobfaro** ("faro" = lighthouse — a fitting beacon for a bilingual job radar; all

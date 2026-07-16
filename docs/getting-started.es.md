@@ -15,6 +15,8 @@ máquina y funciona en inglés o español. Esta es la ruta de 5 minutos de cero 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/samdotson61/jobfaro-app/main/install.sh | bash
 ```
+
+Cada comando de abajo también funciona con el alias corto `jf` (p. ej. `jf scan` ≡ `jobfaro scan`).
 **Windows (PowerShell)**
 ```powershell
 irm https://raw.githubusercontent.com/samdotson61/jobfaro-app/main/install.ps1 | iex

@@ -15,6 +15,8 @@ or Spanish. Here's the 5-minute path from zero to your first scan.
 ```bash
 curl -fsSL https://raw.githubusercontent.com/samdotson61/jobfaro-app/main/install.sh | bash
 ```
+
+Every command below also works with the short alias `jf` (e.g. `jf scan` ≡ `jobfaro scan`).
 **Windows (PowerShell)**
 ```powershell
 irm https://raw.githubusercontent.com/samdotson61/jobfaro-app/main/install.ps1 | iex
