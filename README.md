@@ -12,7 +12,7 @@ dominate US enterprise employers), evaluates each role against your résumé, ta
 cover letter, and tracks every application.
 
 > **Status:** Phases 0–7, 5.5, 7.7, 7.8, 8b, 8a, 8c, 8e + 8f **complete**, **Phase 10 L0–L5 shipped** —
-> **Jobfaro CLI `1.49.1`** + **app `1.18.0`**: bilingual core; **six live-verified
+> **Jobfaro CLI `1.49.2`** + **app `1.18.0`**: bilingual core; **six live-verified
 > scanner providers** (Workday, iCIMS, Greenhouse, Lever, Ashby + an opt-in JSON-LD reader) plus an opt-in
 > **USAJobs** federal aggregator (BYO free key); level + region
 > toggles and the `jobfaro init` wizard; the full **discover → prescreen → evaluate → track → build** pipeline —

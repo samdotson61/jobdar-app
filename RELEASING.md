@@ -52,6 +52,25 @@ These gate a real 1.0 and need a human call; the checklist above is ready the mo
   the old URLs) and sweep the references in one pass:
   `grep -rn "samdotson61/jobfaro-app" --include="*.md" --include="*.json" --include="*.mjs" --include="*.sh" --include="*.ps1" .`
 
+## TestFlight (the iOS app) — the exact sequence
+
+App-side prep is DONE (bundle `com.jobfaro.app`, icons/splash, `ITSAppUsesNonExemptEncryption:false`,
+eas.json profiles, Release config verified compiling locally). The four account-bound steps:
+
+```sh
+cd apps/jobfaro
+eas login                       # your Expo account (free)
+eas init                        # mints the Jobfaro project id (the pre-rename one was removed)
+eas build -p ios --profile production   # cloud build; first run walks Apple credentials (paid account)
+eas submit -p ios --latest      # uploads to App Store Connect → TestFlight
+```
+
+Before `eas submit`: create the app record once in App Store Connect (My Apps → “+” → New App →
+name **Jobfaro**, bundle ID **com.jobfaro.app**, SKU e.g. `jobfaro-ios`). Then TestFlight → add
+yourself as an internal tester (instant, no review). External testers come later via Beta App Review
+(~24–48h) — see `~/Documents/Jobfaro-Beta.md` for the phased plan and the review-notes checklist.
+First thing on real hardware: open `jobfaro://spike` and run the on-device eval for true Metal timings.
+
 ## Known non-blockers (documented, shippable as-is)
 
 See `ROADMAP.md` → "Known gaps & current limitations". None block a beta: PDF résumé import needs

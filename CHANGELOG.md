@@ -4,6 +4,26 @@ All notable changes to Jobfaro are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and Jobfaro adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.49.2] — 2026-07-16
+
+**TestFlight build prep — everything short of Sam's logins.** 140 tests green.
+
+- **install.sh:** plain `DIR=` now overrides the target too (`JOBFARO_DIR` still wins; found live when
+  the E2E test's `DIR=` was silently ignored) — override verified live; usage documented in the header.
+- **Real icon set** (replacing the Expo template defaults): a radar-beacon "faro" in the app's own
+  palette — navy field, cyan rings, bright sweep with fading trail, green blip — generated for all
+  surfaces (App Store 1024, splash, Android adaptive fg/bg/monochrome, favicon). Splash background
+  switched `#ffffff` → `#0b1220` to match. Placeholder-quality by design; swap anytime.
+- **Release configuration verified locally** before any EAS spend: `expo run:ios --configuration
+  Release` compiles, embeds the Hermes bundle, installs, and boots in the sim — with prior user state
+  restored across the Debug→Release binary swap (and a real on-device `.docx` résumé parse in it).
+- Fixed en route: the local directory rename (~/Claude/Jobdar → ~/Claude/Jobfaro) had left stale
+  absolute paths baked into CocoaPods' generated xcconfigs/Local Podspecs → Release's hermesc step
+  pointed at the dead path. Full `Pods/` regen fixed it (same class of bug as the expo-modules-jsi
+  package-local cache — generated-file absolute paths don't survive directory moves).
+- `eas-cli` installed globally; RELEASING.md gained the exact four-command TestFlight sequence
+  (`eas login` → `eas init` → `eas build -p ios --profile production` → `eas submit -p ios --latest`).
+
 ## [1.49.1] — 2026-07-16
 
 **Docs-flush patch after the rename.** Getting-started (EN/ES) now teaches the `jf` alias right after
