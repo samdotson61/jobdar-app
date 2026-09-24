@@ -4,6 +4,19 @@ All notable changes to Jobfaro are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and Jobfaro adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.60.1] — 2026-09-24
+
+**Docs: winc dependency pin `1.41.0-jobdar.1` + engine b11146 (Step 1+3 of docs/winc-1.41-upgrade-plan.md).**
+- Backend re-canaried today on **winc 1.41.0-jobdar.1 (66262ba) + llama.cpp engine b11146**: `jobfaro
+  backend --check` round-trip green (apply 4.1 on the fit probe), engine asserted from the running
+  `llama-server`. The eval profile (`winc serve --eval`) is byte-identical across v1.40/1.41 — zero client
+  code change.
+- ROADMAP + eval-tuning-research: the live pin now reads `1.41.0-jobdar.1`, with the new requirement stated
+  once: **winc ≥ 1.40.0** (older winc cannot install/update an engine since llama.cpp's 2026-08-21
+  release-scheme change). Historical tags the July rename had mutated (`1.21.x-jobfaro.4` never existed)
+  are restored to their real `-jobdar.N` spelling. No `--mlock`/`extra_server_args` advice existed to drop.
+- Eval-bench re-validation on b11146 is running separately (Step 2); its result lands in its own entry.
+
 ## [1.60.0] — 2026-08-31
 
 **Never serve a dead role.** Liveness was only as fresh as the last manual `recheck`; a posting

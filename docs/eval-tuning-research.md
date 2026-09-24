@@ -196,10 +196,10 @@ run-to-run. Two deterministic levers, tested on qwen3.5-2b (N=3, same 8-JD set):
 | **temp-0 + json-schema** | **100% (24/24)** | **0** | **0** |
 
 ‡ a lucky run (true range 65–100%). **Verdict: feasible.** `temp-0 + guaranteed-JSON`
-(`response_format=json_schema` on winc's `/v1/chat/completions`, the jobfaro.4 feature) takes the 2B to
+(`response_format=json_schema` on winc's `/v1/chat/completions`, the jobdar.4 feature) takes the 2B to
 **100% / 0 parse-fails / 0 dangerous on this set** — at half the e2b footprint (1.6 vs 3.1 GiB). Neither lever
 works alone: temp-0 on `/v1/messages` *worsens* parse-fails (the model deterministically derails out of
-JSON), and JSON-alone at temp 0.7 still mis-accepts. **Shipped** (winc 1.21.4-jobfaro.4 + Jobfaro 1.25.0): the eval profile decodes greedy (`--temp 0 --top-k 1`,
+JSON), and JSON-alone at temp 0.7 still mis-accepts. **Shipped** (winc 1.21.4-jobdar.4 + Jobfaro 1.25.0): the eval profile decodes greedy (`--temp 0 --top-k 1`,
 `applyEvalProfile` → `GreedySampling`) and Jobfaro auto-routes local-backend evals through the JSON-schema
 endpoint (`active.jsonEval`, default-on; opt out with `eval_grammar: false`; graceful fallback to
 `/v1/messages` on error). End-to-end re-verify through Jobfaro's real pipeline: qwen3.5-2b-Q4 **100% / 0
