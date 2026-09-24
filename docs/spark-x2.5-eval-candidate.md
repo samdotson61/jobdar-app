@@ -67,6 +67,46 @@ Don't that qwen parks in Research — all eight at **exactly 3.5**, the band flo
 padded with mismatches and its score lattice has a plateau on the threshold. That is calibration evidence
 for the pending "N ≥ 50 real thumbs" recalibration (bands are a settled decision — not changed here).
 
+## Model fail or eval fail? Both — quantified (same-day follow-up)
+
+Sam's question: are qwen-designed tweaks being misapplied to Spark? Diagnostics on the stored per-criterion
+ratings (zero model time; recomputed scores match the stored ones exactly):
+
+**The eval is qwen-shaped — two criteria penalize Spark on every row.** Per-criterion mean notch delta
+(Spark − qwen): skills **+0.22**, experience **+0.54**, level_fit −0.36, **logistics −2.44** (lower on 43/50
+rows, higher on 0), **education −1.52**. A penalty that lands regardless of the job is a *reading* mismatch
+(v2's "location wiring" was iterated against qwen's reading), not fit judgment; at 0.10 weight each it costs
+≈0.9 points per verdict — enough to turn 4.x Applies into Don'ts. And qwen barely uses the 5-level scale
+(250 ratings: strong 113 / none 81 / partial 53 / **good 3** / weak 0) while Spark uses all five — the
+3.5 plateau is qwen collapsing to three rungs; the bands and labels have been tuned around that.
+
+**Counterfactual re-scores (Spark's own ratings, mismatch neutralized):**
+
+| variant | bands | Apply precision | real fits found |
+|---|---|---|---|
+| qwen as run | 5/11/34 | 4/5 | 4 |
+| Spark as run | 2/2/46 | 1/2 | 1 |
+| Spark, logistics+education taken from qwen | 5/1/44 | 2/5 | 2 |
+| …and requirements clamp ignored (#53) | 6/4/40 | 3/6 | 3 |
+| qwen, logistics+education zero-weighted | 5/3/42 | 4/5 | 4 (agreement 32→**39**/50) |
+| Spark, logistics+education zero-weighted | 2/4/44 | 0/2 | 0 |
+
+**Reading:** about half of Spark's gap is the eval (the two mismatched criteria + one requirements-gate
+verdict); the other half is Spark's judgment on the *high-weight* criteria — after neutralizing the eval
+side it reaches 3/6 Apply precision, still short of qwen's 4/5 under the same treatment (e.g. #3 IT Systems
+Engineer: skills strong→partial, experience strong→partial — a real fit under-read). On the Don't-heavy
+corpus overall Spark agrees with labels *more* (36–37/50 vs 32/50): it is the better rejecter and the worse
+accepter, and "good jobs" is decided at the Apply end.
+
+**What we can and cannot claim:** the current eval is not model-neutral (certain). Spark is worse than qwen
+at the Apply end *under this prompt* (certain on this corpus, N=5 Apply rows). Whether a Spark-tuned prompt
+would close the remaining gap is **unknown** — we have not tuned for it the way v2 was tuned for qwen.
+Spark's headline benchmarks (coding, tools, JSON) measure a different task than rubric-grading fit.
+
+**Eval improvement surfaced for qwen itself:** zero-weighting logistics+education raises qwen's label
+agreement from 32/50 to 39/50 with Apply precision unchanged — those two criteria are mostly noise for both
+models as currently specified. Candidate follow-up (weights are a shipped decision; not changed here).
+
 ## Mobile parity (blocker 4 of the plan)
 
 The app bundles **llama.rn 0.12.5, whose llama.cpp is build 9769** (`LLAMA_BUILD_NUMBER` in its cpp/).

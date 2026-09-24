@@ -4,6 +4,17 @@ All notable changes to Jobfaro are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and Jobfaro adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.61.4] — 2026-09-24
+
+**Docs: Spark result decomposed — model fail vs eval fail, quantified.** Per-criterion diagnostics show the
+eval is qwen-shaped: logistics (−2.44 notches, lower on 43/50 rows, higher on 0) and education (−1.52)
+penalize Spark on every row; qwen uses only three of the five rating rungs (good: 3/250). Counterfactual
+re-scores: neutralizing the mismatch lifts Spark's Apply precision 1/2 → 3/6, still short of qwen's 4/5 —
+so roughly half the gap is the eval, half is Spark's judgment on the high-weight criteria (under an
+untuned prompt). Side finding: zero-weighting logistics+education improves qwen's label agreement
+32 → 39/50 at unchanged Apply precision (candidate eval improvement; weights unchanged). Rejection stands;
+the claim is narrowed to "worse at the Apply end under the current, qwen-tuned prompt."
+
 ## [1.61.3] — 2026-09-24
 
 **Docs correction: Spark findings re-scored on precision ("good jobs, not more jobs").** The Step-2 engine-
