@@ -4,6 +4,19 @@ All notable changes to Jobfaro are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and Jobfaro adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.61.2] — 2026-09-24
+
+**Spark-X2.5-4B evaluated as an eval-tier candidate — REJECTED (Step 5 of docs/winc-1.41-upgrade-plan.md;
+research only, nothing shipped).** Same engine (b11146), same shipped v2 prompt, same 50 labeled rows,
+eval-profile flags replicated verbatim via a direct llama-server (Spark is outside winc's picker),
+reasoning-off honored, 0 errors. Result vs qwen3.5-4b: bands **2/2/46** vs 5/11/34 (labels 5/9/36);
+agreement **24/30** vs 27/30; **4 Apply↔Don't flips** (3 demote genuine labeled-Apply roles to Don't, 1 is
+a correct rejection qwen missed); one invented Apply on a labeled-Don't admin role; the Research band
+collapses 11→2. Measured end-to-end speed gain only **18%** (8m34s vs 10m30s per 50), not the 36% decode
+headline. Mobile parity is impossible anyway: llama.rn 0.12.5 bundles llama.cpp b9769 < the b10828 Spark
+needs. **qwen3.5-4b stays.** Full note: `docs/spark-x2.5-eval-candidate.md`. The qwen eval serve was
+restored on :8080 afterwards.
+
 ## [1.61.1] — 2026-09-24
 
 **Eval bench re-validated on engine b11146 (Step 2 of docs/winc-1.41-upgrade-plan.md) — PASS.** Shipped v2

@@ -79,6 +79,10 @@ Blockers to establish first, in this order:
 Deliverable: a findings note under docs/, same format as eval-tuning-research.md. Ship nothing
 from this step without Sam's call.
 
+**Done 2026-09-24 → REJECTED.** See [`spark-x2.5-eval-candidate.md`](spark-x2.5-eval-candidate.md): 2/2/46 vs
+qwen 5/11/34, 24/30 vs 27/30 agreement, 4 Apply↔Don't flips (3 real fits demoted), Research band 11→2,
+only 18% faster end-to-end; llama.rn (b9769) can't run it on-device. qwen3.5-4b stays.
+
 ## Out of scope / do not do
 
 - Do not switch the eval model. qwen3.5-4b stays until Step 5's bench says otherwise.
