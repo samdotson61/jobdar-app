@@ -4,6 +4,17 @@ All notable changes to Jobfaro are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and Jobfaro adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.61.1] — 2026-09-24
+
+**Eval bench re-validated on engine b11146 (Step 2 of docs/winc-1.41-upgrade-plan.md) — PASS.** Shipped v2
+prompt, same 50-row labeled corpus, same labels, greedy; the engine (b10621 → b11146, with upstream's
+Gated-DeltaNet normalization fix for the Qwen3.5 line) was the only variable. Result: band distribution
+**identical** to the 2026-08-28 baseline (apply 5 / research 11 / dont 34 — labels 5/9/36), label
+agreement identical (27/30 non-debatable), **0 band moves, 0 Apply↔Don't flips**, mean score Δ −0.05.
+Largest per-row swing: #9 Therapy Aide (Nationwide Children's) 2.4 → 1.0, Don't both times — more
+decisive on a clear non-fit. Harness unchanged (`data/eval-bench-2026-09-24-b11146/`, local; a
+cross-engine `compare-engines.mjs` scripts the acceptance rule). Docs-only record; no code change.
+
 ## [1.61.0] — 2026-09-24
 
 **`jobfaro backend --install` refuses a too-old winc up front (Step 4 of docs/winc-1.41-upgrade-plan.md).**

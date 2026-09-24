@@ -88,8 +88,8 @@ from this step without Sam's call.
 
 ## Verification checklist to report back
 
-- [ ] `winc --version` = 1.41.0-jobdar.1 and `llama-server --version` = build 11146
-- [ ] `jobfaro backend --check` canary green with the engine asserted
-- [ ] ab-eval bench band counts vs baseline, pass/fail per the acceptance rule
-- [ ] docs pin updated + CHANGELOG entry + version bump
-- [ ] backend --install minimum-version guard + test
+- [x] `winc --version` = 1.41.0-jobdar.1 and `llama-server --version` = build 11146 (2026-09-24)
+- [x] `jobfaro backend --check` canary green (apply 4.1 round-trip), engine asserted from the running llama-server
+- [x] ab-eval bench: 5/11/34 on b11146 = baseline 5/11/34; 27/30 agreement both; 0 moves, 0 flips → **PASS** (CHANGELOG 1.61.1)
+- [x] docs pin updated + CHANGELOG entry + version bump (v1.60.1; also restored rename-mutated historical tags)
+- [x] backend --install minimum-version guard + test (v1.61.0; live-verified both ways)
