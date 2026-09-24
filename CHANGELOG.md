@@ -4,6 +4,18 @@ All notable changes to Jobfaro are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and Jobfaro adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.61.0] — 2026-09-24
+
+**`jobfaro backend --install` refuses a too-old winc up front (Step 4 of docs/winc-1.41-upgrade-plan.md).**
+Since llama.cpp's 2026-08-21 release-scheme change, any winc below 1.40.0 can no longer fetch an engine —
+`winc setup` would fail mid-install. `install()` now compares the found winc against `MIN_WINC = 1.40.0`
+and, when older, says so (EN/ES) with the fix (`winc update` for git-clone installs, or reinstall the
+prebuilt) and returns `{installed:false, tooOld:true}` with exit code 1 instead of delegating. New
+`compareWincVersion(a, b)` compares by base X.Y.Z (numeric, so 1.9.9 < 1.40.0; the branch's `-jobdar.N`
+suffix is ignored; unparseable → null and never blocks). Unit-tested (7 cases, 159 tests green) and
+live-verified both ways: a stubbed `winc 1.21.4-jobdar.4` on PATH is stopped with the hint; the real
+1.41.0-jobdar.1 proceeds unchanged.
+
 ## [1.60.1] — 2026-09-24
 
 **Docs: winc dependency pin `1.41.0-jobdar.1` + engine b11146 (Step 1+3 of docs/winc-1.41-upgrade-plan.md).**

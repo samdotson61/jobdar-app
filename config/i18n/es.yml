@@ -319,6 +319,8 @@ backend:
   install_prebuilt: "Precompilado (sin compilador): descarga una versión winc-jobdar y luego ejecuta `winc setup`"
   install_source: "Desde el código: git clone -b winc-jobdar https://github.com/samdotson61/winc.cpp && cd winc.cpp && ./install.sh"
   install_after: "Luego vuelve a ejecutar: jobfaro backend --install"
+  winc_too_old: "winc {version} es demasiado antiguo — winc setup ya no puede descargar un motor (requiere winc >= {min}, tras el cambio de esquema de versiones de llama.cpp del 2026-08-21)."
+  winc_update_hint: "Actualiza primero: `winc update` (instalaciones por git clone) o reinstala el binario precompilado desde las releases de winc.cpp — luego vuelve a ejecutar `jobfaro backend --install`."
   found_winc: "Se encontró winc {version}."
   setup_step: "Asegura un modelo:  winc setup   (elige un nivel automáticamente; descarga si hace falta)"
   serve_step: "Inicia el servidor de evaluación:  winc serve --eval"

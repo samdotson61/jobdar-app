@@ -2054,6 +2054,18 @@ test('phase10: pure pipeline + outreach splits — parsePipeline round-trips; fs
   creds.setUsaJobsCredsSource(() => ({ key: '', email: '' })) // restore dormant for other tests
 })
 
+test('backend: compareWincVersion compares by base X.Y.Z (branch/prerelease suffix ignored); unparseable → null', async () => {
+  const { compareWincVersion, MIN_WINC } = await import('./lib/commands/backend.mjs')
+  assert.equal(MIN_WINC, '1.40.0')
+  assert.equal(compareWincVersion('1.41.0-jobdar.1', '1.40.0'), 1)   // current branch build clears the floor
+  assert.equal(compareWincVersion('1.21.4-jobdar.4', '1.40.0'), -1)  // the old pin is below it
+  assert.equal(compareWincVersion('1.40.0', '1.40.0'), 0)
+  assert.equal(compareWincVersion('1.40.0-jobdar.9', '1.40.0'), 0)   // suffix never tips the comparison
+  assert.equal(compareWincVersion('1.9.9', '1.40.0'), -1)            // numeric, not lexical (9 < 40)
+  assert.equal(compareWincVersion('(unknown)', '1.40.0'), null)      // unknown build → neither old nor new
+  assert.equal(compareWincVersion('', '1.40.0'), null)
+})
+
 test('feedback: feedbackStats — agreement% from thumbs, disagreements are the down-rated roles', () => {
   const rows = [
     { url: 'a', thumb: 'up', band: 'apply', score: '4.4', role: 'PM' },
