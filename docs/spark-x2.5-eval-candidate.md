@@ -107,6 +107,41 @@ Spark's headline benchmarks (coding, tools, JSON) measure a different task than 
 agreement from 32/50 to 39/50 with Apply precision unchanged — those two criteria are mostly noise for both
 models as currently specified. Candidate follow-up (weights are a shipped decision; not changed here).
 
+## The zero-weight fix, tried on both models (Sam's follow-up, same day)
+
+Weights are post-hoc math over unchanged ratings, so "trying" the fix is exact and costs no model time.
+Three weightings, both models, same 50 rows:
+
+| | bands | Apply P / R | agreement | Research band holds (labels) |
+|---|---|---|---|---|
+| qwen shipped (.35/.25/.20/.10/.10) | 5/11/34 | 4/5 · 4/5 | 32/50 | 2 research, **9 dont** |
+| qwen half (.05/.05) | 5/3/42 | 4/5 · 4/5 | **39/50** | 1 apply, 1 research, 1 dont |
+| qwen zero | 5/3/42 | 4/5 · 4/5 | **39/50** | same |
+| Spark shipped | 2/2/46 | 1/2 · 1/5 | 36/50 | — |
+| Spark half | 3/3/44 | 1/3 · 1/5 | 37/50 | — |
+| Spark zero | 2/4/44 | **0/2 · 0/5** | 36/50 | — |
+
+**What changes for qwen (shipped → zero):** the eight Nationwide Children's admin-support rows fall
+3.5 → 3.1 (research → dont) — all labeled Don't, all now right; one real loss, #1 May Mobility Simulation
+Ops Manager (label research) 3.5 → 3.1 now wrong; one non-event, #5 Project Coordinator (label apply)
+3.4 → 3.7 — moves *toward* the label but not far enough. Apply precision and recall are untouched. Half
+weights (.05/.05) give the identical outcome — the whole benefit arrives without zeroing the criteria.
+
+**What changes for Spark:** it gets *worse* at the Apply end — #7 IS Project Manager II (the one real fit
+it found) drops to research; #46 Tech PM rises only to research; #14 Employee Recognition Assistant
+(label dont) rises to apply. Its Don't-side accuracy is unchanged (34/36).
+
+**Verdict on the conditional ("if Spark is always better, tune for Spark"):** it is not. The fix that
+helps qwen hurts Spark, because Spark's remaining errors live in skills/experience/level_fit — the
+criteria the fix leaves alone. Spark's one durable edge is rejection (34/36 Don't rows, where qwen with the
+fix reaches the same 34/36). No case to pivot.
+
+**Recommendation:** ship the *half*-weight form (renormalized so weights still sum to 1) — +7 correct
+verdicts on 50 with Apply precision unchanged, the Research band stops being a parking lot for
+labeled-Don't admin roles, and the two criteria stay visible in the rubric instead of vanishing. It is a
+shipped-rubric change (engine weights, app WEIGHTS display constant, engine.md/modes docs, tests) — held
+for Sam's go. Caveat as always: 50 rows, 5 labeled Apply, one labeler.
+
 ## Mobile parity (blocker 4 of the plan)
 
 The app bundles **llama.rn 0.12.5, whose llama.cpp is build 9769** (`LLAMA_BUILD_NUMBER` in its cpp/).

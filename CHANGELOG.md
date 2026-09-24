@@ -4,6 +4,16 @@ All notable changes to Jobfaro are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and Jobfaro adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.61.5] — 2026-09-24
+
+**Docs: the logistics/education weight fix tried on both models (counterfactual over unchanged ratings).**
+qwen: agreement 32 → **39/50**, Apply precision/recall unchanged 4/5, Research band 11 → 3 (the eight
+labeled-Don't admin-support rows leave it; one labeled-Research row is lost); half weights (.05/.05) give
+the identical result to zero. Spark: gets *worse* at the Apply end (1/2 → 0/2) — its residual errors are on
+skills/experience/level_fit, untouched by the fix. Conditional resolved: Spark is not "always better";
+no pivot. Recommendation recorded (half-weight form, renormalized) — a shipped-rubric change, held for
+Sam's go. Nothing in code changed.
+
 ## [1.61.4] — 2026-09-24
 
 **Docs: Spark result decomposed — model fail vs eval fail, quantified.** Per-criterion diagnostics show the
