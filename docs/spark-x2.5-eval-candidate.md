@@ -39,13 +39,33 @@
 - **It also invents a wrong Apply:** #28 Nationwide Children's — Administrative Support III, Marketing
   (label dont) 3.5 → **4.6 apply**. So the miss pattern is not "uniformly stricter" — it is *less
   discriminating*: it drops real fits and lifts a mismatch.
-- **The Research band collapses** 11 → 2 (eight `3.5 → 2.4` moves on the Nationwide Children's
-  admin-support rows). Reviving that band was the whole point of the 1.42–1.54 calibration work; Spark
-  re-bimodalizes the distribution.
+- **The Research band goes** 11 → 2 (eight `3.5 → 2.4` moves on the Nationwide Children's admin-support
+  rows). *Correction below:* those eight rows are labeled Don't — this is Spark being right and qwen being
+  soft, not a strike against Spark.
 - Score deltas: mean **−0.31**, max |Δ| **2.5**.
 - **Speed, measured end-to-end:** Spark 50 rows in **8m34s (~10.3 s/eval)** vs qwen **10m30s (~12.6
   s/eval)** → **18% faster**, not 36%. Eval calls are prompt-heavy (~800-token prompts, ~150-token
   outputs), so decode speed is only part of the wall clock.
+
+## Re-scored on the actual goal: good jobs, not more jobs (correction, same day)
+
+The acceptance rule above ("Apply ≤ 6, Research alive, no flips") was written for Step 2 to detect *engine
+drift*; reused for a model swap it carries a recall bias and mis-credits one thing. Re-scored on precision:
+
+| | Apply shown | truly Apply | precision | real fits found (of 5) |
+|---|---|---|---|---|
+| qwen3.5-4b | 5 | 4 | **0.80** | 4 |
+| Spark-X2.5-4B | 2 | 1 | **0.50** | 1 |
+
+Spark is not "stricter" — it is less discriminating: its one extra Apply is a labeled Don't (#28) and its
+three demotions are the most on-target roles in the set. The decision holds on the goal that matters.
+
+**What the eval got wrong (the finding worth keeping):** per-class agreement — qwen matches the label on
+only **2 / 9 Research rows** (Spark 1/9); on Don't rows qwen 26/36 vs Spark **34/36**. Eight of the eleven
+"Research → Don't" moves counted against Spark above were Spark being *right*: admin-support roles labeled
+Don't that qwen parks in Research — all eight at **exactly 3.5**, the band floor. qwen's Research band is
+padded with mismatches and its score lattice has a plateau on the threshold. That is calibration evidence
+for the pending "N ≥ 50 real thumbs" recalibration (bands are a settled decision — not changed here).
 
 ## Mobile parity (blocker 4 of the plan)
 

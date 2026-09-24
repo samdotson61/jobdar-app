@@ -4,6 +4,16 @@ All notable changes to Jobfaro are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and Jobfaro adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.61.3] — 2026-09-24
+
+**Docs correction: Spark findings re-scored on precision ("good jobs, not more jobs").** The Step-2 engine-
+drift acceptance rule had a recall bias when reused for the model swap. Re-scored: Apply precision qwen
+**0.80** (4/5 shown) vs Spark **0.50** (1/2 shown) — the rejection stands for the right reason (Spark is less
+discriminating, not stricter). Newly credited eval finding: qwen matches labels on only 2/9 Research rows;
+eight of Spark's "Research → Don't" moves were correct (labeled-Don't admin-support roles qwen parks at
+exactly 3.5, the band floor) — calibration evidence for the pending thumbs-driven recalibration. Bands
+unchanged.
+
 ## [1.61.2] — 2026-09-24
 
 **Spark-X2.5-4B evaluated as an eval-tier candidate — REJECTED (Step 5 of docs/winc-1.41-upgrade-plan.md;
