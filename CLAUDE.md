@@ -1,12 +1,12 @@
-# Jobfaro (Claude Code)
+# Jobdar (Claude Code)
 
-This repo is **Jobfaro** — a bilingual US job-search command center. Start with
+This repo is **Jobdar** — a bilingual US job-search command center. Start with
 [`AGENTS.md`](AGENTS.md) for the full agent guide; it applies to Claude Code too.
 
-- Deterministic commands run with no model: `jobfaro scan`, `jobfaro doctor`, `jobfaro tracker`,
-  `jobfaro recheck`, `jobfaro feedback` (or `node scan.mjs --dry-run`).
+- Deterministic commands run with no model: `jobdar scan`, `jobdar doctor`, `jobdar tracker`,
+  `jobdar recheck`, `jobdar feedback` (or `node scan.mjs --dry-run`).
 - Model-backed work (evaluate, tailor) reads the prompts in `modes/`.
-- Inside Claude Code, use the `/jobfaro` slash command (see `commands/jobfaro.md`).
+- Inside Claude Code, use the `/jobdar` slash command (see `commands/jobdar.md`).
 
 **Before starting work (every session): `git fetch origin && git status -sb`.** Multiple sessions
 work this repo — if local is behind, pull (or reconcile) BEFORE editing, and never claim a semver
@@ -20,5 +20,5 @@ Scope is locked: American English + Spanish; Midwest-default region; entry-defau
 touches public job data.
 
 > Status: Phases 0–7, 5.5, 7.7, 7.8, 8b, 8a, 8c, 8e + 8f complete + Phase 10 L0–L5 (fully-local iPhone
-> app; L6 TestFlight = Sam's account steps) — Jobfaro CLI 1.62.2 · app 1.24.0 (see `ROADMAP.md` / `CHANGELOG.md`).
+> app; L6 TestFlight = Sam's account steps) — Jobdar CLI 1.62.2 · app 1.24.0 (see `ROADMAP.md` / `CHANGELOG.md`).
 > Scan discovers + filters roles; the model's `eval` scores fit — the scanner never scores.

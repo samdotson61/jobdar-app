@@ -1,6 +1,11 @@
 # Phase 9.0: the repo is a pnpm workspace so the apps consume the SAME engine the CLI runs.
-# The CLI (root package) still imports lib/ directly; @jobfaro/engine re-exports lib/ so there is ONE
+# The CLI (root package) still imports lib/ directly; @jobdar/engine re-exports lib/ so there is ONE
 # source of truth — no forked re-implementation in the app.
 packages:
   - 'packages/*'
   - 'apps/*'
+  # apps/desktop is npm-managed on purpose: it consumes the engine as a vendored tarball
+  # (vendor/jobdar-engine.tgz via prepare-engine.mjs) because electron-builder cannot traverse a
+  # pnpm/file: symlink dependency. Keeping it out of the workspace stops `pnpm install` from
+  # rewriting its node_modules into a layout the packed app can't ship.
+  - '!apps/desktop'

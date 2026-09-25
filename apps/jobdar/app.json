@@ -1,21 +1,21 @@
 {
   "expo": {
-    "name": "jobfaro",
-    "slug": "jobfaro",
+    "name": "jobdar",
+    "slug": "jobdar",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "jobfaro",
+    "scheme": "jobdar",
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.jobfaro.app",
+      "bundleIdentifier": "com.jobdar.app",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
-      "package": "com.jobfaro.app",
+      "package": "com.jobdar.app",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",

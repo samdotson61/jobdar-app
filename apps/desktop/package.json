@@ -1,8 +1,8 @@
 {
-  "name": "jobfaro-desktop",
-  "version": "0.2.4",
+  "name": "jobdar-desktop",
+  "version": "0.3.0",
   "private": true,
-  "description": "Jobfaro Desktop (beta) — the full local job-search engine + the app GUI in one double-clickable window, for Mac and Windows beta testers.",
+  "description": "Jobdar Desktop (beta) — the full local job-search engine + the app GUI in one double-clickable window, for Mac and Windows beta testers.",
   "main": "main.cjs",
   "scripts": {
     "build-gui": "node build-gui.mjs",
@@ -18,16 +18,16 @@
     "smoke:packed": "node smoke-packed.mjs"
   },
   "dependencies": {
-    "jobfaro": "file:vendor/jobfaro-engine.tgz"
+    "jobdar": "file:vendor/jobdar-engine.tgz"
   },
   "devDependencies": {
     "electron": "^33.0.0",
     "electron-builder": "^25.0.0"
   },
   "build": {
-    "appId": "com.jobfaro.desktop",
-    "productName": "Jobfaro",
-    "artifactName": "Jobfaro-beta-${version}-${os}-${arch}.${ext}",
+    "appId": "com.jobdar.desktop",
+    "productName": "Jobdar",
+    "artifactName": "Jobdar-beta-${version}-${os}-${arch}.${ext}",
     "directories": {
       "output": "dist-build"
     },

@@ -1,8 +1,8 @@
 // Typed backend client — the app's ONLY data source, with two interchangeable backends behind one
 // contract (Phase 10):
-//   'local' — the ON-DEVICE backend (src/local/backend.ts: real @jobfaro/engine + llama.rn + file Store).
+//   'local' — the ON-DEVICE backend (src/local/backend.ts: real @jobdar/engine + llama.rn + file Store).
 //             The NATIVE default: fully local, no Mac, no serve.
-//   'serve' — a `jobfaro serve` HTTP façade (the CLI + winc as the full stack). The WEB default; also the
+//   'serve' — a `jobdar serve` HTTP façade (the CLI + winc as the full stack). The WEB default; also the
 //             native "companion mode" pointing at a Mac's LAN serve (`?serve=<base>&token=<t>` on web,
 //             the Settings screen on native; persisted).
 import { Platform } from 'react-native';
@@ -33,7 +33,7 @@ try {
   /* native / no window */
 }
 // Persisted override (Settings) — loads fast; the pre-hydration default is correct per-platform anyway.
-AsyncStorage.getItem('jobfaro-backend-config').then((raw) => {
+AsyncStorage.getItem('jobdar-backend-config').then((raw) => {
   if (!raw) return;
   try {
     const c = JSON.parse(raw);
@@ -47,7 +47,7 @@ export function configureServe(o: { base?: string; token?: string; mode?: Backen
   if (o.base) BASE = o.base;
   if (o.token != null) TOKEN = o.token;
   if (o.mode === 'local' || o.mode === 'serve') MODE = o.mode;
-  if (o.persist) AsyncStorage.setItem('jobfaro-backend-config', JSON.stringify({ mode: MODE, base: BASE, token: TOKEN })).catch(() => {});
+  if (o.persist) AsyncStorage.setItem('jobdar-backend-config', JSON.stringify({ mode: MODE, base: BASE, token: TOKEN })).catch(() => {});
 }
 export function serveBase() {
   return BASE;

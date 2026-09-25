@@ -1,4 +1,4 @@
-// Jobfaro — Greenhouse provider (reference implementation).
+// Jobdar — Greenhouse provider (reference implementation).
 // Greenhouse exposes a clean, unauthenticated public board API:
 //   list:   https://boards-api.greenhouse.io/v1/boards/{token}/jobs
 //   detail: https://boards-api.greenhouse.io/v1/boards/{token}/jobs/{id}   (full JD in `content`)

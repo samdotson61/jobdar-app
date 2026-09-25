@@ -1,8 +1,8 @@
-// @jobfaro/app — UI types + derived-UI helpers (Phase 9.2). The app holds NO engine logic: it renders what
-// `jobfaro serve` (the real CLI + winc) returns via src/serve.ts + src/store.ts. This file is only the shared
-// types, the band thresholds/colors (from the real @jobfaro/engine — used purely for instant UI coloring),
+// @jobdar/app — UI types + derived-UI helpers (Phase 9.2). The app holds NO engine logic: it renders what
+// `jobdar serve` (the real CLI + winc) returns via src/serve.ts + src/store.ts. This file is only the shared
+// types, the band thresholds/colors (from the real @jobdar/engine — used purely for instant UI coloring),
 // the cadence labels, and the bundled EN/ES strings. The old in-app scoring/tailoring stand-ins are gone.
-import { band as engineBand, BANDS as ENGINE_BANDS } from '@jobfaro/engine';
+import { band as engineBand, BANDS as ENGINE_BANDS } from '@jobdar/engine';
 
 export type Lang = 'en' | 'es';
 export type Band = 'apply' | 'research' | 'dont';
@@ -24,7 +24,7 @@ type Dict = Record<string, string>;
 const STR: Record<Lang, Dict> = {
   en: {
     'tab.search': 'Search', 'tab.apply': 'Apply', 'tab.followup': 'Follow-up',
-    'onboard.title': 'Welcome to Jobfaro', 'onboard.intro': 'Find roles you can actually get. Your résumé and data stay on your machine.',
+    'onboard.title': 'Welcome to Jobdar', 'onboard.intro': 'Find roles you can actually get. Your résumé and data stay on your machine.',
     'onboard.continueAs': 'Continue as', 'onboard.upload': '📄 Upload your résumé', 'onboard.manual': 'Or set your search manually:',
     'onboard.start': 'Start searching', 'onboard.skip': 'Skip for now',
     'search.title': 'Find roles that fit', 'search.intro': 'Describe what you want — winc + the scanner find and rank matching roles.',
@@ -39,14 +39,14 @@ const STR: Record<Lang, Dict> = {
     'search.ai.fit': 'good fit', 'search.ai.maybe': 'worth a look', 'search.ai.skip': 'not your lane',
     'search.aiSummary': '🤖 winc read the top {n} against your résumé: {fit} good fit(s) · {maybe} worth a look · {skip} not your lane (under Skip).', 'search.aiNone': 'Slim pickings on these boards — tap 🧭 Discover to hunt employers in your field.',
     'search.showMore': 'Show more ({n} remaining)',
-    'search.backendDown': 'Can’t reach the backend. Start it in a terminal — `jobfaro serve` — then retry.',
+    'search.backendDown': 'Can’t reach the backend. Start it in a terminal — `jobdar serve` — then retry.',
     'search.modelMissing': 'The on-device AI model isn’t downloaded yet — scoring needs it (search works without it).',
     'common.retry': 'Retry', 'common.settings': 'Settings',
-    'settings.title': 'Settings', 'settings.intro': 'Choose where Jobfaro’s engine runs and manage the on-device model. Your data stays on this device either way.',
-    'settings.backend': 'Engine', 'settings.local': 'On-device (private, no computer needed)', 'settings.serve': 'My computer (jobfaro serve)',
+    'settings.title': 'Settings', 'settings.intro': 'Choose where Jobdar’s engine runs and manage the on-device model. Your data stays on this device either way.',
+    'settings.backend': 'Engine', 'settings.local': 'On-device (private, no computer needed)', 'settings.serve': 'My computer (jobdar serve)',
     'settings.model': 'On-device model', 'settings.modelReady': '✓ {file} installed', 'settings.noModel': 'Download the model once (Wi-Fi recommended) and every evaluation runs privately on this phone.',
     'settings.download': '⬇︎ Download {size} GB', 'settings.downloaded': 'Model downloaded.', 'settings.recommended': 'recommended for this device',
-    'settings.delete': 'Remove downloaded model', 'settings.serveHelp': 'Run `jobfaro serve --host 0.0.0.0` on your computer, then enter its address and token.',
+    'settings.delete': 'Remove downloaded model', 'settings.serveHelp': 'Run `jobdar serve --host 0.0.0.0` on your computer, then enter its address and token.',
     'settings.token': 'Bearer token', 'settings.save': 'Save & connect',
     'search.searchPlaceholder': 'Search company or role…', 'search.sort': 'Sort', 'filter.all': 'All',
     'sort.score': 'Best match', 'sort.fresh': 'Newest', 'sort.company': 'A–Z',
@@ -83,7 +83,7 @@ const STR: Record<Lang, Dict> = {
   },
   es: {
     'tab.search': 'Buscar', 'tab.apply': 'Postular', 'tab.followup': 'Seguimiento',
-    'onboard.title': 'Bienvenido a Jobfaro', 'onboard.intro': 'Encuentra empleos que sí puedes conseguir. Tu currículum y tus datos se quedan en tu equipo.',
+    'onboard.title': 'Bienvenido a Jobdar', 'onboard.intro': 'Encuentra empleos que sí puedes conseguir. Tu currículum y tus datos se quedan en tu equipo.',
     'onboard.continueAs': 'Continuar como', 'onboard.upload': '📄 Sube tu currículum', 'onboard.manual': 'O configura tu búsqueda manualmente:',
     'onboard.start': 'Empezar a buscar', 'onboard.skip': 'Omitir por ahora',
     'search.title': 'Encuentra empleos que encajan', 'search.intro': 'Describe lo que buscas — winc + el escáner encuentran y ordenan empleos que encajan.',
@@ -97,14 +97,14 @@ const STR: Record<Lang, Dict> = {
     'search.ai.fit': 'buen encaje', 'search.ai.maybe': 'vale la pena mirar', 'search.ai.skip': 'no es tu área',
     'search.aiSummary': '🤖 winc leyó los {n} mejores frente a tu currículum: {fit} buen(os) encaje(s) · {maybe} vale la pena mirar · {skip} no es tu área (en Omitir).', 'search.aiNone': 'Poca cosecha en estos portales — toca 🧭 Descubrir para buscar empleadores de tu campo.',
     'search.showMore': 'Mostrar más ({n} restantes)',
-    'search.backendDown': 'No se puede conectar con el backend. Inícialo en una terminal — `jobfaro serve` — y reintenta.',
+    'search.backendDown': 'No se puede conectar con el backend. Inícialo en una terminal — `jobdar serve` — y reintenta.',
     'search.modelMissing': 'El modelo de IA del dispositivo aún no está descargado — la evaluación lo necesita (la búsqueda funciona sin él).',
     'common.retry': 'Reintentar', 'common.settings': 'Ajustes',
-    'settings.title': 'Ajustes', 'settings.intro': 'Elige dónde corre el motor de Jobfaro y gestiona el modelo del dispositivo. Tus datos se quedan en este dispositivo en ambos casos.',
-    'settings.backend': 'Motor', 'settings.local': 'En el dispositivo (privado, sin computadora)', 'settings.serve': 'Mi computadora (jobfaro serve)',
+    'settings.title': 'Ajustes', 'settings.intro': 'Elige dónde corre el motor de Jobdar y gestiona el modelo del dispositivo. Tus datos se quedan en este dispositivo en ambos casos.',
+    'settings.backend': 'Motor', 'settings.local': 'En el dispositivo (privado, sin computadora)', 'settings.serve': 'Mi computadora (jobdar serve)',
     'settings.model': 'Modelo en el dispositivo', 'settings.modelReady': '✓ {file} instalado', 'settings.noModel': 'Descarga el modelo una vez (Wi-Fi recomendado) y cada evaluación corre en privado en este teléfono.',
     'settings.download': '⬇︎ Descargar {size} GB', 'settings.downloaded': 'Modelo descargado.', 'settings.recommended': 'recomendado para este dispositivo',
-    'settings.delete': 'Eliminar el modelo descargado', 'settings.serveHelp': 'Ejecuta `jobfaro serve --host 0.0.0.0` en tu computadora y escribe su dirección y token.',
+    'settings.delete': 'Eliminar el modelo descargado', 'settings.serveHelp': 'Ejecuta `jobdar serve --host 0.0.0.0` en tu computadora y escribe su dirección y token.',
     'settings.token': 'Token de acceso', 'settings.save': 'Guardar y conectar',
     'search.searchPlaceholder': 'Buscar empresa o puesto…', 'search.sort': 'Orden', 'filter.all': 'Todos',
     'sort.score': 'Mejor', 'sort.fresh': 'Recientes', 'sort.company': 'A–Z',

@@ -1,4 +1,4 @@
-// Build the desktop GUI: export the Expo app for web (apps/jobfaro) and copy the bundle into ./gui,
+// Build the desktop GUI: export the Expo app for web (apps/jobdar) and copy the bundle into ./gui,
 // which the in-process serve hosts (same origin as the API). Run before `npm run dist`.
 import { execSync } from 'node:child_process'
 import { rmSync, cpSync, existsSync } from 'node:fs'
@@ -6,7 +6,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const here = path.dirname(fileURLToPath(import.meta.url))
-const appDir = path.resolve(here, '..', 'jobfaro')
+const appDir = path.resolve(here, '..', 'jobdar')
 console.log('exporting web bundle from', appDir)
 execSync('npx expo export --platform web --clear', { cwd: appDir, stdio: 'inherit' })
 const dist = path.join(appDir, 'dist')

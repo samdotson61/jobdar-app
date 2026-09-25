@@ -1,7 +1,7 @@
-# Jobfaro upgrade plan: winc.cpp 1.41.0-jobdar.1 + engine b11146
+# Jobdar upgrade plan: winc.cpp 1.41.0-jobdar.1 + engine b11146
 
-Written 2026-09-24 for the Jobfaro bot. Everything below was verified on the winc side today;
-the Jobfaro-side work is what you own. Do it in order — each step gates the next.
+Written 2026-09-24 for the Jobdar bot. Everything below was verified on the winc side today;
+the Jobdar-side work is what you own. Do it in order — each step gates the next.
 
 ## What changed on the winc side (facts, not to re-derive)
 
@@ -9,10 +9,10 @@ the Jobfaro-side work is what you own. Do it in order — each step gates the ne
   pin: v1.40.0 (2026-09-03) and v1.41.0 (2026-09-24). **`internal/cli/eval.go` is byte-identical
   across both** — the eval profile (`winc serve --eval`, reasoning off, greedy, q8_0 KV,
   16384 ctx, `/v1/chat/completions` with `response_format=json_schema`, `/v1/messages`, `/health`)
-  has not changed. This is a zero-code-change upgrade for the Jobfaro client.
+  has not changed. This is a zero-code-change upgrade for the Jobdar client.
 - **Upstream llama.cpp changed its release scheme on 2026-08-21.** Any winc older than v1.40.0
   cannot install or update an engine (`/releases/latest` now returns a versioned pointer, and new
-  engines print a `--version` line the old parser read as build 0). A fresh `jobfaro backend
+  engines print a `--version` line the old parser read as build 0). A fresh `jobdar backend
   --install` on a machine with an old winc will fail at `winc setup`. winc >= 1.40.0 fixes it.
 - **Engine fallback pin is now b11146** (llama.cpp v0.5.0). Between b10621 and b11146 upstream
   fixed Gated-DeltaNet normalization for the Qwen3.5 line — the family the eval model
@@ -31,10 +31,10 @@ the Jobfaro-side work is what you own. Do it in order — each step gates the ne
    Rule from memory: never restart :8080 on a master build (master has no `--eval`).
 3. `winc update` — accept the engine refresh b10621 -> b11146. Confirm with
    `~/winc.cpp/bin/llama-server --version` (expect `build 11146`).
-4. `winc serve --eval qwen3.5-4b`, then `jobfaro backend --check`. The canary must return a
+4. `winc serve --eval qwen3.5-4b`, then `jobdar backend --check`. The canary must return a
    conformant JSON verdict (clear fit -> Apply band, clear non-fit -> Dont). Assert the engine
    behind the serve from the process list, not from the binary on disk.
-5. Record in the Jobfaro CHANGELOG which winc + engine build the canary ran on.
+5. Record in the Jobdar CHANGELOG which winc + engine build the canary ran on.
 
 ## Step 2 — Re-run the eval bench on the new engine (the real gate, ~1 hour)
 
@@ -46,15 +46,15 @@ The GDN fix can move verdicts. Use the existing harness, unchanged:
 - If it passes, note "eval bench re-validated on b11146" in CHANGELOG/ROADMAP. If it fails, stop
   and report the diff before touching the prompt — the prompt is not the variable that changed.
 
-## Step 3 — Fix the stale pin in Jobfaro docs (docs-only, one commit)
+## Step 3 — Fix the stale pin in Jobdar docs (docs-only, one commit)
 
 ROADMAP.md (lines ~545, 561, 566, 571) and docs/eval-tuning-research.md still say the winc-jobdar
-dependency is `1.21.3-jobfaro.4`. Update to `1.41.0-jobdar.1` and add one sentence: "winc >= 1.40.0
+dependency is `1.21.3-jobdar.4`. Update to `1.41.0-jobdar.1` and add one sentence: "winc >= 1.40.0
 is required for engine install/update after llama.cpp's 2026-08-21 release-scheme change." Search
 `docs/` and `README` for any `--mlock` or `extra_server_args` suggestion and drop it (flag removed
 upstream). Version bump: patch (docs only) per the versioning rule.
 
-## Step 4 — Harden `jobfaro backend --install` against old winc (small code change)
+## Step 4 — Harden `jobdar backend --install` against old winc (small code change)
 
 `lib/commands/backend.mjs` `install()` prints found-winc and delegates to `winc setup`. Add a
 minimum-version check: if `wincVersion()` parses below 1.40.0, print that `winc setup` will fail to
@@ -86,14 +86,14 @@ only 18% faster end-to-end; llama.rn (b9769) can't run it on-device. qwen3.5-4b 
 ## Out of scope / do not do
 
 - Do not switch the eval model. qwen3.5-4b stays until Step 5's bench says otherwise.
-- Do not edit eval.go or anything in ~/winc.cpp from the Jobfaro session.
+- Do not edit eval.go or anything in ~/winc.cpp from the Jobdar session.
 - Do not merge winc master into the branch or "fold" the branch — that is a rejected design.
 - Do not empty Trash or delete models.
 
 ## Verification checklist to report back
 
 - [x] `winc --version` = 1.41.0-jobdar.1 and `llama-server --version` = build 11146 (2026-09-24)
-- [x] `jobfaro backend --check` canary green (apply 4.1 round-trip), engine asserted from the running llama-server
+- [x] `jobdar backend --check` canary green (apply 4.1 round-trip), engine asserted from the running llama-server
 - [x] ab-eval bench: 5/11/34 on b11146 = baseline 5/11/34; 27/30 agreement both; 0 moves, 0 flips → **PASS** (CHANGELOG 1.61.1)
 - [x] docs pin updated + CHANGELOG entry + version bump (v1.60.1; also restored rename-mutated historical tags)
 - [x] backend --install minimum-version guard + test (v1.61.0; live-verified both ways)

@@ -56,7 +56,7 @@ Published numbers, for orientation only (different task than rubric-grading fit 
   `compare-shipped.mjs` (in the spark dir) so every model is judged under the same rubric. Rows a model
   failed to parse are dropped from *both* sides of that model's comparison — the qwen column therefore
   varies slightly per pairing; the "vs qwen" numbers are the like-for-like ones.
-- **Canary** (`jobfaro backend --check`, the clear-fit probe qwen scores 4.1–4.2 Apply): Gemma 3.8, Granite
+- **Canary** (`jobdar backend --check`, the clear-fit probe qwen scores 4.1–4.2 Apply): Gemma 3.8, Granite
   3.8, Qwen-9B 3.8 (all Research), LFM 3.1 (Don't). The first hint, confirmed below.
 
 ## Result — scored on good jobs, not more jobs

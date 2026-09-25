@@ -1,6 +1,6 @@
-# Jobfaro Desktop — beta tester guide
+# Jobdar Desktop — beta tester guide
 
-> One double-clickable app for Mac and Windows: the full Jobfaro engine plus the same GUI as the
+> One double-clickable app for Mac and Windows: the full Jobdar engine plus the same GUI as the
 > phone app, running entirely on your machine. You search real employer job boards, the local AI
 > scores each role against your résumé, and you answer one question per role — **"Would you
 > apply?"** — with a thumbs up or down. At the end you export a **beta report** (a small text
@@ -14,18 +14,18 @@ Ask for the build for your machine (they're in the repo's `apps/desktop/dist-bui
 
 | Your machine | File |
 |---|---|
-| Mac (Apple Silicon — M1 and later) | `Jobfaro-beta-<v>-mac-arm64.zip` |
-| Mac (Intel) | `Jobfaro-beta-<v>-mac-x64.zip` |
-| Windows (typical PC) | `Jobfaro-beta-<v>-win-x64.exe` |
-| Windows on ARM | `Jobfaro-beta-<v>-win-arm64.exe` |
+| Mac (Apple Silicon — M1 and later) | `Jobdar-beta-<v>-mac-arm64.zip` |
+| Mac (Intel) | `Jobdar-beta-<v>-mac-x64.zip` |
+| Windows (typical PC) | `Jobdar-beta-<v>-win-x64.exe` |
+| Windows on ARM | `Jobdar-beta-<v>-win-arm64.exe` |
 
 The beta builds are **unsigned**, so the OS will warn you once:
 
-- **Mac:** unzip, drag `Jobfaro.app` anywhere (Applications is fine), then **right-click → Open →
+- **Mac:** unzip, drag `Jobdar.app` anywhere (Applications is fine), then **right-click → Open →
   Open** the first time (a plain double-click may be blocked).
 - **Windows:** run the `.exe`; if SmartScreen appears, click **More info → Run anyway**.
 
-Your data (résumé, found roles, ratings) lives in `~/.jobfaro` on your machine and never leaves it.
+Your data (résumé, found roles, ratings) lives in `~/.jobdar` on your machine and never leaves it.
 
 ## 2. Set up the local AI (one time, ~10 minutes mostly download)
 
@@ -47,16 +47,16 @@ Then start the model (leave this window open while you test):
 winc serve --eval qwen3.5-4b
 ```
 
-The first run downloads the model (a few GB). If Jobfaro shows a "backend down" banner, this step
+The first run downloads the model (a few GB). If Jobdar shows a "backend down" banner, this step
 isn't running yet — start it and the banner clears on its own.
 
 ## 3. The test session (30–60 minutes)
 
-1. **Open Jobfaro** → upload your résumé (PDF/DOCX) or set region + level by hand. After an upload
+1. **Open Jobdar** → upload your résumé (PDF/DOCX) or set region + level by hand. After an upload
    the app shows what it detected (name, area, level) and opens the preferences for you to confirm —
    your own picks always win, and uploading a *different* résumé clears any old fit scores honestly.
 2. **Search tab** → describe what you want (tap one of the examples if you're unsure — the recipe is
-   *kind of work + level + where + any must-haves*) → *Start searching*. Jobfaro scans real employer
+   *kind of work + level + where + any must-haves*) → *Start searching*. Jobdar scans real employer
    job boards and ranks what it finds.
 3. **Apply tab** → **⚡ Score top 10 matches** (or score roles one by one). Each card gets a
    band — Apply / Research / Don't — with a colored edge stripe; tap **"Why this score"** on any

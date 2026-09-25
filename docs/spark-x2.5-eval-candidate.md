@@ -16,7 +16,7 @@
   `--chat-template-file` (Spark's template ships in its GGUF). `-m` asserted from the process list.
 - **Reasoning-off honored:** a json_schema probe returned conformant JSON with **no `reasoning_content`**
   and no `<think>` leak (Spark's thinking is ON by default; the template-level `--reasoning off` disables
-  it). `jobfaro backend --check` canary: round-trip OK — but the fit probe scored **3.7 research** where
+  it). `jobdar backend --check` canary: round-trip OK — but the fit probe scored **3.7 research** where
   qwen scores 4.1 apply, the first hint below.
 - **Bench:** the existing harness unchanged — `data/eval-bench-2026-08-28/ab-eval.mjs`, shipped **v2**
   prompt arm, 50 live labeled rows, labels 5 apply / 9 research / 36 dont, greedy. Runs live in

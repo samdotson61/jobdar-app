@@ -13,7 +13,7 @@ async function exportBetaReport(): Promise<void> {
   const blob = new Blob([await r.text()], { type: 'text/markdown' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `jobfaro-beta-report-${new Date().toISOString().slice(0, 10)}.md`;
+  a.download = `jobdar-beta-report-${new Date().toISOString().slice(0, 10)}.md`;
   a.click();
   URL.revokeObjectURL(a.href);
 }

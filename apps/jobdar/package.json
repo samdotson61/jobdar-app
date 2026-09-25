@@ -1,9 +1,9 @@
 {
-  "name": "@jobfaro/app",
+  "name": "@jobdar/app",
   "main": "expo-router/entry",
-  "version": "1.24.0",
+  "version": "1.25.0",
   "dependencies": {
-    "@jobfaro/engine": "workspace:*",
+    "@jobdar/engine": "workspace:*",
     "@react-native-async-storage/async-storage": "2.2.0",
     "expo": "~56.0.12",
     "expo-build-properties": "~56.0.22",

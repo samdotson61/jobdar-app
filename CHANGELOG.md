@@ -1,8 +1,38 @@
 # Changelog
 
-All notable changes to Jobfaro are documented here. The format follows
-[Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and Jobfaro adheres to
+All notable changes to Jobdar are documented here. The format follows
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and Jobdar adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [1.63.0] — 2026-09-25
+
+**RENAMED BACK: Jobfaro → Jobdar, everywhere.** App `@jobdar/app` **1.25.0**, desktop **0.3.0**; 163 tests green.
+
+Two facts changed since the 2026-07-16 rename. **jobfaro.com is now a live third-party business** (registered
+2026-07-25 — nine days after we took the name — and serving a roofing-contractor CRM called "JobFaro"), so the
+name we had picked for being clear was no longer clear. And prospective users, asked cold, said "Jobdar" — job +
+radar, the metaphor the product already wears (the 📡 sweep, the radar-beacon icon, `scan`/`recheck`) — was the
+better name. Still pre-publish, so this is once more a clean break with zero user migration: nothing was ever
+published under either name. Verified 2026-09-25: npm `jobdar` free; `jobdar.app` / `.io` / `.ai` unregistered.
+
+- **Everything user-visible and every identifier**, mirroring 1.49.0 in reverse: package `jobdar`, bin
+  `bin/jobdar`, short alias **`jd`** (`jd scan` ≡ `jobdar scan`; `jf` still resolves for one release and
+  goes away in 1.64), slash command `/jobdar`, packages `@jobdar/engine` + `@jobdar/app` + `@jobdar/server`
+  + `jobdar-desktop`, app name/slug/scheme `jobdar` (deep links `jobdar://`), **bundle ID `com.jobdar.app`**
+  (iOS + Android — no App Store Connect record existed, so this is free), desktop `com.jobdar.desktop` /
+  `Jobdar.app` / `Jobdar-beta-*` artifacts, data home `~/.jobdar`, env vars `JOBDAR_*`, storage keys
+  `jobdar-*`, GitHub repo **samdotson61/jobdar-app** (the July URLs redirect).
+- **Compat shims, loud and temporary (removed in 1.64):** a stale `JOBFARO_*` export is mirrored onto its
+  `JOBDAR_*` name with one stderr line; an existing `~/.jobfaro` is used as the data home only while
+  `~/.jobdar` is absent; `loadApiKey` still reads a `JOBFARO_API_KEY=` line `init` wrote in 1.49–1.62.
+  `jobdar doctor` names both situations with the exact fix (EN/ES). Four new tests cover the shims and
+  assert that the only "jobfaro" left in the UI strings is a migration hint.
+- **History kept truthful, not rewritten:** the 1.49.0 / 1.49.1 / 1.50.0 entries still describe the
+  Jobdar→Jobfaro rename as it happened (with a pointer here); the July blanket rename had mutated real
+  winc tag names (`1.21.x-jobdar.N`) into ones that never existed — this pass restores every one of them.
+- Deliberately unchanged, as before: the `winc-jobdar` branch (already the right name), `USAJOBS_*` keys,
+  git history. ROADMAP 0.2 records the round trip and the reason.
+- Housekeeping en route: ROADMAP header date and the known-gaps "current as of" line brought to 1.63.0.
 
 ## [1.62.2] — 2026-09-24
 
@@ -25,7 +55,7 @@ only, no code.
 
 **Eval rubric: logistics + education weights halved (the "half-weight fix").** Raw weights now
 skills 35 / experience 25 / level_fit 20 / **logistics 5 / education 5**; `scoreFromJudgments` normalizes by
-the total, so the effective shares are 39 / 28 / 22 / 5.6 / 5.6. App `@jobfaro/app` **1.24.0**; 159 tests.
+the total, so the effective shares are 39 / 28 / 22 / 5.6 / 5.6. App `@jobdar/app` **1.24.0**; 159 tests.
 
 - **Why:** on the 50-row labeled bench (shipped v2 prompt, qwen3.5-4b, engine b11146) those two criteria
   were mostly noise — the model rated logistics "strong" on nearly every row regardless of the job. Halving
@@ -102,7 +132,7 @@ cross-engine `compare-engines.mjs` scripts the acceptance rule). Docs-only recor
 
 ## [1.61.0] — 2026-09-24
 
-**`jobfaro backend --install` refuses a too-old winc up front (Step 4 of docs/winc-1.41-upgrade-plan.md).**
+**`jobdar backend --install` refuses a too-old winc up front (Step 4 of docs/winc-1.41-upgrade-plan.md).**
 Since llama.cpp's 2026-08-21 release-scheme change, any winc below 1.40.0 can no longer fetch an engine —
 `winc setup` would fail mid-install. `install()` now compares the found winc against `MIN_WINC = 1.40.0`
 and, when older, says so (EN/ES) with the fix (`winc update` for git-clone installs, or reinstall the
@@ -115,7 +145,7 @@ live-verified both ways: a stubbed `winc 1.21.4-jobdar.4` on PATH is stopped wit
 ## [1.60.1] — 2026-09-24
 
 **Docs: winc dependency pin `1.41.0-jobdar.1` + engine b11146 (Step 1+3 of docs/winc-1.41-upgrade-plan.md).**
-- Backend re-canaried today on **winc 1.41.0-jobdar.1 (66262ba) + llama.cpp engine b11146**: `jobfaro
+- Backend re-canaried today on **winc 1.41.0-jobdar.1 (66262ba) + llama.cpp engine b11146**: `jobdar
   backend --check` round-trip green (apply 4.1 on the fit probe), engine asserted from the running
   `llama-server`. The eval profile (`winc serve --eval`) is byte-identical across v1.40/1.41 — zero client
   code change.
@@ -226,13 +256,13 @@ search (now it shows them).
 
 ### Fixed
 
-- **Spotlight really does show one Jobfaro now.** Desktop 0.2.2. 1.57.1 kept the unpacked
+- **Spotlight really does show one Jobdar now.** Desktop 0.2.2. 1.57.1 kept the unpacked
   `mac-arm64` bundle in `dist-build/` for smoke-driving — and Spotlight indexes any `.app` on disk
   regardless of LaunchServices, so the duplicate persisted. `dist-build/` now holds **zero** unpacked
   bundles (distributables only): packaged smoke-testing moved to **`npm run smoke:packed`** (unzips
   the native zip into the temp dir, which Spotlight doesn't index, runs `--smoke`, cleans up), and
   `install:mac` extracts from the zip the same way. Verified: `mdfind` lists exactly
-  `/Applications/Jobfaro.app`.
+  `/Applications/Jobdar.app`.
 - **The grayed-out "Discover more companies (winc)" now explains itself** (app 1.21.1): it's
   disabled until you describe what you want in the intent box (discovery hunts using your words) —
   a dim hint under the button says so, EN/ES, instead of leaving a silent dead control.
@@ -242,12 +272,12 @@ search (now it shows them).
 ### Fixed
 
 - **"The app no longer opens" / "there are two of them."** Desktop 0.2.1. Packaging left multiple
-  UNPACKED `Jobfaro.app` bundles in `dist-build/` (native + Intel + Windows dirs), so Spotlight and
+  UNPACKED `Jobdar.app` bundles in `dist-build/` (native + Intel + Windows dirs), so Spotlight and
   Launchpad listed duplicates — and `dist:all`'s clean rebuild deletes/recreates them, stranding
   stale LaunchServices entries that look like the app but won't launch. Now: `dist:all` prunes every
   unpacked bundle except the native `mac-arm64` one (kept for local smoke-driving; the zips/exes are
   the distributables), and a new **`npm run install:mac`** installs the canonical copy to
-  `/Applications/Jobfaro.app` and fixes the LaunchServices registrations — one Jobfaro, always
+  `/Applications/Jobdar.app` and fixes the LaunchServices registrations — one Jobdar, always
   openable. Applied on this machine.
 
 ## [1.57.0] — 2026-08-28
@@ -269,15 +299,15 @@ the one thing a tester must do (answer "Would you apply?").
 - **Search tab scope chips fold behind a live summary line** ("Midwest — Entry — Any · Adjust ▾")
   that always shows the CURRENT selections — nothing hidden, three chip rows less noise. EN/ES.
 - **Desktop build is idempotent + portable (0.2.0)**: the vendored engine tarball now has the
-  STABLE name `vendor/jobfaro-engine.tgz`, so the committed dependency string survives every engine
+  STABLE name `vendor/jobdar-engine.tgz`, so the committed dependency string survives every engine
   version bump and a fresh clone bootstraps with one command (`node prepare-engine.mjs`); re-running
   converges. New `npm run dist:all` = clean → vendor → GUI → all six installers. Launch-anywhere
   verified: the packed .app smoke-passes from a foreign directory (no baked paths; data home stays
-  `~/.jobfaro`); upgrades keep state (stable port → stable origin, userData + data home survive).
+  `~/.jobdar`); upgrades keep state (stable port → stable origin, userData + data home survive).
 
 ### Housekeeping (this machine, not the repo)
 
-- Swept 7.9GB of stale Xcode DerivedData, including the last pre-rename **jobdar** simulator build —
+- Swept 7.9GB of stale Xcode DerivedData, including the last pre-July-rename **jobdar** simulator build —
   zero `Jobdar.app`/stale `Jobfaro.app` bundles remain outside `dist-build/`.
 
 ## [1.56.1] — 2026-08-28
@@ -288,7 +318,7 @@ the one thing a tester must do (answer "Would you apply?").
   empty list on a brand-new machine, and silently "found" zero roles — the native app has seeded
   zero-config from the region employer catalog since Phase 10, but serve (and therefore the web GUI
   and the new desktop app) never got the parity. Caught driving the packed desktop app as a fresh
-  tester. `/scan` now seeds `defaultPortalsForRegions()` (exactly what `jobfaro seed --region <r>
+  tester. `/scan` now seeds `defaultPortalsForRegions()` (exactly what `jobdar seed --region <r>
   --write` materializes) and persists it, so the tester's first "Find matching roles" hits real boards.
 - **Desktop 0.1.1/0.1.2 + app 1.20.1 — three more live-drive catches** (found running the packed app
   end-to-end as a fresh tester, with the human watching):
@@ -307,11 +337,11 @@ the one thing a tester must do (answer "Would you apply?").
 
 ## [1.56.0] — 2026-08-28
 
-**Jobfaro Desktop (beta 0.1.0) — Mac + Windows.** One double-clickable app for beta testers: the
-real `jobfaro serve` engine runs **in-process** on a free loopback port (the same code the CLI
+**Jobdar Desktop (beta 0.1.0) — Mac + Windows.** One double-clickable app for beta testers: the
+real `jobdar serve` engine runs **in-process** on a free loopback port (the same code the CLI
 runs, vendored via `npm pack` — nothing forked) and hosts the exported Expo web app from the
 **same origin**, so there's no CORS, no token, and the GUI is byte-identical to the phone app.
-Tester data lives in their `~/.jobfaro`; job links open in their real browser; the packed app is
+Tester data lives in their `~/.jobdar`; job links open in their real browser; the packed app is
 read-only and ships no personal data. 151 tests green.
 
 ### Added
@@ -322,7 +352,7 @@ read-only and ships no personal data. 151 tests green.
   headless self-test — boots the engine, loads the GUI, probes the API through the same port,
   clicks through onboarding to the Apply tab, and captures real screenshots; verified against both
   the dev tree and the **packed** .app.
-- **`jobfaro serve --gui <dir>`** — serve also hosts a static web-app bundle from the API's own
+- **`jobdar serve --gui <dir>`** — serve also hosts a static web-app bundle from the API's own
   origin (GET-only, path-confined, API routes win; unknown routes fall back to `index.html`).
   Works standalone too: export the app for web, point `--gui` at it, open the printed URL.
 - **Cold-start restore on serve-backed surfaces**: the app's Apply queue now rehydrates from the
@@ -348,12 +378,12 @@ tester can answer — and the session now exports as an analyzable, PII-free art
   but never scored as agreement** ("I'd apply" doesn't contradict "look closer first"). The raw
   answer and the derived thumb are both kept (`would_apply` column, ledger stays back-compatible),
   so `calibrate --feedback` and the report each get their axis. `POST /eval/feedback` accepts both
-  shapes on serve and the on-device backend; the CLI's `jobfaro feedback --good|--bad` keeps its
+  shapes on serve and the on-device backend; the CLI's `jobdar feedback --good|--bad` keeps its
   direct verdict-agreement meaning.
 
 ### Added
 
-- **`jobfaro report`** — writes the beta report to `data/reports/beta-report-<date>.md` + `.json`:
+- **`jobdar report`** — writes the beta report to `data/reports/beta-report-<date>.md` + `.json`:
   funnel aggregates (scanned/prescreened/scored, band distribution, liveness, provenance), the
   would-apply answers per role, the derived agreement rate per band, and an honest-limits footer.
   **No personal data**: no résumé content, no name — only region/level/tuning settings (tested).
@@ -378,12 +408,12 @@ verdict. 148 tests green.
 
 ### Added
 
-- **`jobfaro feedback <url | company-or-role> --good|--bad`** — rate a recorded verdict from the
+- **`jobdar feedback <url | company-or-role> --good|--bad`** — rate a recorded verdict from the
   terminal. Labels land in the local `data/eval_feedback.tsv` (never leaves the machine), each save
-  prints the running agreement tally, and at 10+ labels it points at `jobfaro calibrate --feedback`.
+  prints the running agreement tally, and at 10+ labels it points at `jobdar calibrate --feedback`.
   Ambiguous text targets list the candidates instead of guessing; unevaluated roles are refused
   honestly (a label describes a verdict, so the verdict must exist). EN/ES.
-- **`jobfaro calibrate` is finally runnable out of the box.** It fell back to exit 1 forever because
+- **`jobdar calibrate` is finally runnable out of the box.** It fell back to exit 1 forever because
   no calibration fixture ever shipped. Now: `--file` wins, else your own `data/calibration.json`,
   else a **bundled 12-item synthetic starter set** (`test/fixtures/calibration-set.json` — self-
   contained JD+CV pairs covering seniority traps, license gates, transferable bridges, the
@@ -400,7 +430,7 @@ green at this cut.
 
 ### Added
 
-- **`jobfaro recheck`** — re-verifies that scored listings are still on their boards. Default scope:
+- **`jobdar recheck`** — re-verifies that scored listings are still on their boards. Default scope:
   evaluated, un-tracked Apply/Research rows (the ones you act on); `--all` for every scored row,
   `--url` for one. Powered by the provider contract itself: a real JD fetch = **live**; a provider
   HTTP 403/404/410 = **gone** (Workday's CXS API 403s unposted jobs, Greenhouse/iCIMS 404 closed
@@ -409,7 +439,7 @@ green at this cut.
   nothing is deleted — but leave the eval queue and render honestly everywhere: dimmed "gone ✗" in
   the TUI, a "no longer posted" pill in the app (which also stops offering to score them), and a
   yellow summary line. EN/ES, radar progress, `POST /recheck` on serve + the on-device backend.
-- **Scan-side liveness for free.** A `jobfaro scan` already sees each visited board's full posting
+- **Scan-side liveness for free.** A `jobdar scan` already sees each visited board's full posting
   list — so evaluated/tracked rows on scanned hosts now get a live/gone stamp as a by-product.
   Host-scoped (rows on unvisited boards are untouched, so `--company` scans are safe) and computed
   from the **pre-filter** board list, so a still-posted role your level/region toggles exclude can
@@ -478,7 +508,7 @@ JDs, hand-banded, before shipping (old prompt byte-replicated as the control; fu
 
 ### Changed
 
-- **`jobfaro prescreen` runs batched by default.** JD fetches now group into per-host queues:
+- **`jobdar prescreen` runs batched by default.** JD fetches now group into per-host queues:
   within a host, requests stay sequential with the same 800 ms politeness spacing as before, but
   up to 8 host queues run concurrently — a 50-portal sweep finishes roughly an order of magnitude
   faster with identical per-host manners. `--lanes N` tunes the concurrency; `--serial` restores
@@ -489,11 +519,11 @@ JDs, hand-banded, before shipping (old prompt byte-replicated as the control; fu
 ## [1.50.0] — 2026-07-16
 
 **Rename-resilience: a moved/renamed checkout now diagnoses and heals itself.** 141 tests green.
-Motivated by the Jobdar→Jobfaro folder rename, which silently broke the global `jobfaro`/`jf`
+Motivated by the Jobdar→Jobfaro folder rename (reverted in 1.63.0), which silently broke the global `jobfaro`/`jf`
 commands (the `npm link` symlinks bake the absolute path — as do CocoaPods xcconfigs and
 expo-modules-jsi's package-local `.DerivedData`).
 
-- **`jobfaro doctor` checks the global command wiring** (POSIX; npm's Windows shims aren't
+- **`jobdar doctor` checks the global command wiring** (POSIX; npm's Windows shims aren't
   symlinks): finds `jobfaro`/`jf` on PATH and verifies they resolve into *this* checkout.
   Four honest states — ok, not installed (optional, with the `npm link` tip), **broken link**
   (names the stale target + the fix), and points-at-a-different-install. Warn-only, never fails
@@ -509,7 +539,7 @@ expo-modules-jsi's package-local `.DerivedData`).
 
 **TestFlight build prep — everything short of Sam's logins.** 140 tests green.
 
-- **install.sh:** plain `DIR=` now overrides the target too (`JOBFARO_DIR` still wins; found live when
+- **install.sh:** plain `DIR=` now overrides the target too (`JOBDAR_DIR` still wins; found live when
   the E2E test's `DIR=` was silently ignored) — override verified live; usage documented in the header.
 - **Real icon set** (replacing the Expo template defaults): a radar-beacon "faro" in the app's own
   palette — navy field, cyan rings, bright sweep with fading trail, green blip — generated for all
@@ -538,6 +568,7 @@ refreshed: description (Jobfaro wording, `jf` mention, fully-local iOS) + 9 topi
 **RENAMED: Jobdar → Jobfaro** ("faro" = lighthouse — a fitting beacon for a bilingual job radar; all
 domains available). Pre-TestFlight timing on purpose: nothing was published under the old name, so this
 is a clean break with zero user migration. App `@jobfaro/app` **1.18.0**; 140 tests green.
+**Reverted in 1.63.0 (2026-09-25)** — every identifier below went back to `jobdar`; see that entry.
 
 - Everything user-visible and every identifier: package `jobfaro` (npm name verified available), bin
   `bin/jobfaro`, **NEW `jf` alias** (`jf scan`, `jf eval …` — same binary), slash command `/jobfaro`,
@@ -547,22 +578,22 @@ is a clean break with zero user migration. App `@jobfaro/app` **1.18.0**; 140 te
 - Deliberately unchanged: the `winc-jobdar` branch name in winc.cpp (an internal dev-dependency label,
   not user-facing) and `USAJOBS_*` keys (the provider's name). Git history keeps the old name.
 - The stale Expo/EAS projectId (bound to the old slug) was removed — run `eas init` once to mint the
-  Jobfaro project before the first TestFlight build.
+  Jobdar project before the first TestFlight build.
 
 ## [1.48.1] — 2026-07-10
 
 **Fix: a dead job link no longer dumps a stack trace.** Boards expire postings fast (two of this
-week's pipeline URLs died within hours of each other), and `jobfaro tailor <query>` hitting one crashed
+week's pipeline URLs died within hours of each other), and `jobdar tailor <query>` hitting one crashed
 with a raw `Error: HTTP 404` + stack — the opposite of honest, friendly failure. **140 tests** (+1).
 
 - New shared `lib/commands/_jd.mjs` `resolveJdSafe()` — tailor and outreach `--draft` (URL, pipeline
   row, and local-file paths all) now print one clean bilingual line instead: *"Couldn't fetch that
   posting (HTTP 404) — the listing may have closed. Open {url} in a browser to check."* — and exit
-  nonzero without a stack. (`bin/jobfaro`'s global handler still stack-dumps genuinely unexpected
+  nonzero without a stack. (`bin/jobdar`'s global handler still stack-dumps genuinely unexpected
   errors; a closed listing just isn't one.)
 - **Tailor now hands you a way forward:** the matcher keeps *every* row your query hit
   (`findRoleMatches`, exported + tested), so when the first match's posting is gone it lists up to
-  three other matching roles with ready-to-run `jobfaro tailor --url …` lines.
+  three other matching roles with ready-to-run `jobdar tailor --url …` lines.
 - `eval` was already safe (its guidance/auto paths catch fetch errors) — verified, unchanged.
 - Bonus fix caught by the verification: **`outreach --draft <url|company>` (the documented form) never
   worked** — the value-less `--draft` flag ate the target as its value, so the command answered "name
@@ -571,8 +602,8 @@ with a raw `Error: HTTP 404` + stack — the opposite of honest, friendly failur
 
 ## [1.48.0] — 2026-07-09
 
-**The radar sweep everywhere + batch eval — Jobfaro should feel fun, not like a chore.** Every
-long-running CLI verb now animates the 📡 radar; `jobfaro eval --next N` batch-scores the queue; and
+**The radar sweep everywhere + batch eval — Jobdar should feel fun, not like a chore.** Every
+long-running CLI verb now animates the 📡 radar; `jobdar eval --next N` batch-scores the queue; and
 every eval ends by saying where your jobs report is. CLI-only (app untouched at `1.17.0`); **139
 tests** (+4). Fun is now a written product principle (ROADMAP Phase 10) that the app inherits:
 delight from motion and personality, never from claiming progress that didn't happen.
@@ -583,7 +614,7 @@ delight from motion and personality, never from claiming progress that didn't ha
   Batches polling, the Playwright PDF render — get the **indeterminate sweep**: a bouncing blip with
   true elapsed time, because a percent nobody measured would be a lie.
 
-- **`jobfaro eval --next 5 | 10 | 15`** — a numeric `--next` auto-scores that many roles off the
+- **`jobdar eval --next 5 | 10 | 15`** — a numeric `--next` auto-scores that many roles off the
   prescreen-ranked pending queue (any number works, hard-**capped at 50** per run with an honest
   capping note: "Capping this run at 50 roles (you asked for {n})"). Bare `--next` (no number) keeps
   its exact guidance meaning — the AI-CLI model loop in `modes/eval.md` is untouched. Composes with
@@ -595,13 +626,13 @@ delight from motion and personality, never from claiming progress that didn't ha
   a live PTY). TTY-only by construction: pipes/CI keep the plain per-item lines. Persistent ✓ lines
   print above the live bar via `radar.log`.
 - **The report footer — after every eval, both languages:** where the jobs report lives
-  (`data/pipeline.tsv` in the active jobfaro home), how to view it (`jobfaro tracker` · `jobfaro tui` ·
-  `jobfaro dashboard`), and — only while roles remain pending — the quick batch sizes
+  (`data/pipeline.tsv` in the active jobdar home), how to view it (`jobdar tracker` · `jobdar tui` ·
+  `jobdar dashboard`), and — only while roles remain pending — the quick batch sizes
   (`--next 5 · 10 · 15`, up to 50) with the real pending count. Printed on the model `--save` path,
   the live auto loop, and the Batches path alike.
-- Backend-down guidance now also offers `jobfaro backend --install` (not just `--check`) — the
+- Backend-down guidance now also offers `jobdar backend --install` (not just `--check`) — the
   first-time user's actual next step.
-- Live-verified against winc/qwen3.5-4b on a sandboxed `JOBFARO_HOME` (real 5,036-row pipeline copy):
+- Live-verified against winc/qwen3.5-4b on a sandboxed `JOBDAR_HOME` (real 5,036-row pipeline copy):
   real verdicts with pay bands, honest ✗ ticks on dead June-era JD links, the `--next 99` capping
   note, and Spanish footer parity.
 
@@ -611,23 +642,23 @@ delight from motion and personality, never from claiming progress that didn't ha
 string: the scanner User-Agent). Full-state audit first: local == `origin/main` == `987487f`, 135/135
 tests green, version lockstep verified across all manifests.
 
-- **Every install path pointed at a GitHub org that doesn't exist.** `getjobfaro` (the ROADMAP Step 0.2
+- **Every install path pointed at a GitHub org that doesn't exist.** `getjobdar` (the ROADMAP Step 0.2
   placeholder) was never created, so the one-command installers (`install.sh` / `install.ps1`), the
   getting-started guides (EN/ES), `package.json` repository/homepage/bugs, the plugin + marketplace
   manifests, and the scanner User-Agent all 404'd. Everything now points at the real public repo,
-  **`samdotson61/jobfaro-app`** — cloneable today. The branded-org call for 1.0 stays Sam's (RELEASING.md
+  **`samdotson61/jobdar-app`** — cloneable today. The branded-org call for 1.0 stays Sam's (RELEASING.md
   now carries a "GitHub home" decision note with the one-pass URL-sweep grep).
-- **README (EN/ES) no longer leads with an install that 404s.** `npm i -g jobfaro` isn't published yet —
+- **README (EN/ES) no longer leads with an install that 404s.** `npm i -g jobdar` isn't published yet —
   the README now leads with the working installer one-liner + clone path and marks npm as arriving with
   the 1.0 publish.
 - **README (EN/ES): "Two surfaces" → "Three surfaces."** The iPhone app — fully on-device since 1.47,
-  **TestFlight beta next, the easiest way to try Jobfaro** — now sits between the CLI (available now) and
-  the web app (later, jobfaro.ai). The stale pre-1.0 "Next steps" section (it still described the Phase
+  **TestFlight beta next, the easiest way to try Jobdar** — now sits between the CLI (available now) and
+  the web app (later, jobdar.ai). The stale pre-1.0 "Next steps" section (it still described the Phase
   0–6 MVP cut line) is replaced with the real remaining list: TestFlight L6 → npm publish + closed beta →
-  feedback recalibration → jobfaro.ai + Android.
+  feedback recalibration → jobdar.ai + Android.
 - **Getting-started (EN/ES) now answers "where does the model come from?"** New model-paths block under
-  the eval step — `jobfaro backend --install` (free, private, on-device; `--check` verifies) or your AI
-  CLI's `/jobfaro` slash commands — plus the app-beta pointer up top; troubleshooting gains a
+  the eval step — `jobdar backend --install` (free, private, on-device; `--check` verifies) or your AI
+  CLI's `/jobdar` slash commands — plus the app-beta pointer up top; troubleshooting gains a
   model-missing row.
 - **Stale claims corrected to v1.47 truth:** ROADMAP banner (said "Next build phase: Phase 8d", was
   dated 2026-06-12, and overclaimed "seven providers, all live-verified" — it's six live-verified + the
@@ -641,7 +672,7 @@ tests green, version lockstep verified across all manifests.
 
 ## [1.47.0] — 2026-07-08
 
-**Phase 10 L1–L5: the app runs FULLY LOCAL on the phone — no Mac, no serve.** App `@jobfaro/app`
+**Phase 10 L1–L5: the app runs FULLY LOCAL on the phone — no Mac, no serve.** App `@jobdar/app`
 **1.17.0**; CLI tests **135**. Native now defaults to the ON-DEVICE backend; web stays serve-backed;
 a Settings screen flips either way (persisted).
 
@@ -652,7 +683,7 @@ a Settings screen flips either way (persisted).
   outreach TSV, cv.md, profile JSON) — a future phone⇄Mac export is a file copy.
 - **CLI-side pure splits (no behavior change, tests green):** `lib/pipeline_pure.mjs` +
   `lib/outreach_pure.mjs` (fs shells re-export), `providers/_creds.mjs` (usajobs reads creds through an
-  injectable seam — provider graph is now fs-free; bin/jobfaro + scan.mjs wire the config source),
+  injectable seam — provider graph is now fs-free; bin/jobdar + scan.mjs wire the config source),
   `packages/engine` exports pipeline logic, outreach rules/drafting, providers, and a generated
   `seed.mjs` employer catalog (`scripts/gen-seed.mjs`, parity-tested).
 - **L2 — native scanning/prescreen:** engine providers fetch boards directly (no CORS on native),
@@ -671,13 +702,13 @@ a Settings screen flips either way (persisted).
   is kept out of the WEB bundle via platform-split `llm.native.ts`/`llm.web.ts` (verified: no initLlama
   in the exported web JS).
 - TestFlight: eas.json profiles already present; remaining steps are account-bound (App Store Connect
-  record, `eas login`, icon) — see ROADMAP Phase 10 L6 + ~/Documents/Jobfaro-Beta.md.
+  record, `eas login`, icon) — see ROADMAP Phase 10 L6 + ~/Documents/Jobdar-Beta.md.
 
 ## [1.46.0] — 2026-07-08
 
 **Phase 10 kickoff: fully-local iPhone — L0 spike PASSED (GO).** Direction locked by Sam: fully-local
-iOS first (no Mac, no serve), then the web app / jobfaro.ai, then Android via the same stack. App
-`@jobfaro/app` **1.16.0**; CLI unchanged at runtime (version lockstep only). Plan: `~/Documents/Jobfaro-Beta.md`
+iOS first (no Mac, no serve), then the web app / jobdar.ai, then Android via the same stack. App
+`@jobdar/app` **1.16.0**; CLI unchanged at runtime (version lockstep only). Plan: `~/Documents/Jobdar-Beta.md`
 + ROADMAP Phase 10.
 
 - **L0 spike (go/no-go): PASSED.** llama.rn 0.12.5 (config plugin + expo-build-properties) in a dev
@@ -687,7 +718,7 @@ iOS first (no Mac, no serve), then the web app / jobfaro.ai, then Android via th
   same band, same clamp; the 0.4 delta is one sub-rating step from chat-template/llama.cpp-build
   differences (both greedy → systematic, not noise). Init 8.7s for the 2.4GB model; generation 63.7s
   on **simulator CPU** (no Metal in the sim — device numbers TBD on hardware).
-- New dev-only spike route `app/spike.tsx` (`jobfaro://spike`, not linked from tabs) — reusable for
+- New dev-only spike route `app/spike.tsx` (`jobdar://spike`, not linked from tabs) — reusable for
   on-device parity checks on real hardware.
 - Native scaffolding: `ios/`/`android/` gitignored (Expo CNG — regenerated by prebuild); llama.rn ships
   a prebuilt xcframework (no llama.cpp source builds). ExternalLink typed-routes cast fixed.
@@ -698,7 +729,7 @@ iOS first (no Mac, no serve), then the web app / jobfaro.ai, then Android via th
 ## [1.45.0] — 2026-07-06
 
 **Web–native parity + gap-plugging** — the web app and the native app now behave identically, and the
-documented known-gaps list is brought up to what's actually true. App `@jobfaro/app` **1.15.0**.
+documented known-gaps list is brought up to what's actually true. App `@jobdar/app` **1.15.0**.
 
 - **Native persistence (AsyncStorage).** State now persists on BOTH platforms: web keeps synchronous
   `localStorage` (same key — existing users keep their state, no hydration flash), native uses
@@ -707,7 +738,7 @@ documented known-gaps list is brought up to what's actually true. App `@jobfaro/
 - **Native résumé upload.** The picked file's bytes are read per-platform — web: `fetch(blob:)` →
   `btoa` (unchanged); native: the SDK-56 `expo-file-system` `File.base64()` API (`fetch(file://)` is
   unreliable on native). Same `POST /import/upload` path and behavior on both.
-- **Backend-down banner.** When `jobfaro serve` is unreachable the Search tab (and onboarding) show an
+- **Backend-down banner.** When `jobdar serve` is unreachable the Search tab (and onboarding) show an
   honest banner with the command to run and a one-tap **Retry** — a browser/native app cannot start a
   local process itself, so it says so instead of failing silently.
 - **List pagination.** The Search list renders in pages of 30 with "Show more (N remaining)" — a
@@ -722,8 +753,8 @@ documented known-gaps list is brought up to what's actually true. App `@jobfaro/
 
 ## [1.44.0] — 2026-07-02
 
-**Immigration-sponsorship toggle** — for the users Jobfaro is built for (international students, new
-Americans, workforce entrants). App `@jobfaro/app` **1.14.0**; `test-all.mjs` **133**.
+**Immigration-sponsorship toggle** — for the users Jobdar is built for (international students, new
+Americans, workforce entrants). App `@jobdar/app` **1.14.0**; `test-all.mjs` **133**.
 
 - **"Need visa sponsorship" toggle** (Search tab + onboarding, EN/ES). A personal status only the user
   can assert — never inferred from a résumé. Honest three-stance design because **most JDs are silent**:
@@ -733,27 +764,27 @@ Americans, workforce entrants). App `@jobfaro/app` **1.14.0**; `test-all.mjs` **
   - JD explicitly **offers** ("visa sponsorship available", "we sponsor H-1B") → a green **"✓ Sponsors
     visa"** indicator on the role card (positive channel — never a point-costing flag);
   - JD silent → untouched, no stance claimed either way.
-  Toggle OFF keeps the old behavior (an explicit "no" is a soft flag — Jobfaro can't know your status).
+  Toggle OFF keeps the old behavior (an explicit "no" is a soft flag — Jobdar can't know your status).
 - **Engine:** `extractSponsorship` now three-stance (`no`/`sponsors`/`unknown`, negative wins, `flagged`
   kept for back-compat); `screenDecision` gates on `needs_sponsorship`; new profile default
   `needs_sponsorship: false`; serve `/prescreen` + `/evaluate` accept `needsSponsorship`; `POST/GET
   /profile` persist/return it; new pipeline column **`notes`** (positive JD-stated indicators, currently
   `sponsors-visa`; display-only, never a screen input; legacy files parse fine).
-- **Fix:** CLI `jobfaro prescreen` now passes the role **title** into the gate (`prescreenRole`), so the
+- **Fix:** CLI `jobdar prescreen` now passes the role **title** into the gate (`prescreenRole`), so the
   hard-identity field gate (accountant/nurse/attorney titles) fires on the CLI path like it already did
   via serve — it silently never fired on the CLI before.
 
 ## [1.43.0] — 2026-07-02
 
 **Recommendations delivery** — closing out the eval-evaluation work: a real feedback loop, batch scoring,
-a new coverage provider, and npm ship-prep. App `@jobfaro/app` **1.13.0**; `test-all.mjs` **130** (+ a
+a new coverage provider, and npm ship-prep. App `@jobdar/app` **1.13.0**; `test-all.mjs` **130** (+ a
 `feedbackStats` unit test, a USAJobs fixture test, and a serve `/eval/feedback` round-trip in the
 subprocess test).
 
 - **Eval-feedback loop → labeled set → recalibration.** A 👍/👎 on any Apply verdict is a human label:
   the app persists it and `POST /eval/feedback` appends `(url, company, role, score, band, thumb, date)`
   to the local, gitignored `data/eval_feedback.tsv` (de-duped by url — you can change your mind). New
-  `jobfaro calibrate --feedback` reports the evaluator's real agreement rate + the list of roles it got
+  `jobdar calibrate --feedback` reports the evaluator's real agreement rate + the list of roles it got
   wrong, **with no backend needed**. This is the data path to recalibrating the bimodal band thresholds
   *from evidence* instead of guessing them. New `lib/feedback.mjs`; serve `POST`/`GET /eval/feedback`.
 - **Batch Apply scoring.** A "⚡ Score top N matches" button in the Apply tab evaluates the top relevant
@@ -768,13 +799,13 @@ subprocess test).
   real key) — the pure parse/map/assemble helpers are fixture-tested; the network path needs a live key.
 - **npm ship-prep.** `prepublishOnly` gates publish on a green suite; `npm pack --dry-run` audited clean
   (95 files, no personal data — `eval_feedback.tsv` / `credentials.env` are under the ignored `data/*`).
-  New `RELEASING.md` checklist. Confirmed the unscoped npm name `jobfaro` is **available**. Flagged the
+  New `RELEASING.md` checklist. Confirmed the unscoped npm name `jobdar` is **available**. Flagged the
   human-only calls (claim-name-vs-scope, closed-beta timing, license) for Sam.
 
 ## [1.42.0] — 2026-06-16
 
 **Eval-calibration pass** — from an honest evaluation of the scorer against a cross-persona matrix (PM /
-SWE / analyst résumés × PM / ML-eng / marketing / VP roles). App `@jobfaro/app` **1.12.0**; `test-all.mjs`
+SWE / analyst résumés × PM / ML-eng / marketing / VP roles). App `@jobdar/app` **1.12.0**; `test-all.mjs`
 **128** (clamp/granularity tests updated).
 - **5-level ratings** (`strong/good/partial/weak/none` = 1/.75/.5/.25/0, was 3-level). The extra steps
   smooth the score lattice so a genuine early-career fit can land in the **Research band (3.5–3.9)** instead
@@ -789,7 +820,7 @@ SWE / analyst résumés × PM / ML-eng / marketing / VP roles). App `@jobfaro/ap
   adjacent-skill credit.
 - **`/evaluate` guards an empty JD** (added earlier this cycle) — an unfetchable listing returns an honest
   "couldn't assess" instead of a résumé-blind false Apply.
-- **`jobfaro calibrate` gained a score-distribution report** (Apply/Research/Don't population — surfaces a
+- **`jobdar calibrate` gained a score-distribution report** (Apply/Research/Don't population — surfaces a
   bimodal evaluator at a glance) and **per-item `cv`** so one calibration set can cover multiple personas.
 
   *Honest finding:* these fix the code-side calibration (the lattice can now reach Research, the clamp
@@ -801,7 +832,7 @@ SWE / analyst résumés × PM / ML-eng / marketing / VP roles). App `@jobfaro/ap
 
 ## [1.41.0] — 2026-06-16
 
-**Onboarding + profile persistence + a doctor check** (closes three documented gaps). App `@jobfaro/app`
+**Onboarding + profile persistence + a doctor check** (closes three documented gaps). App `@jobdar/app`
 **1.11.0**; `test-all.mjs` **128** (+ POST /profile + doctor coverage).
 - **First-run onboarding screen.** On a true first boot the app shows a welcome → upload-résumé (or set
   region/level/salary manually, or "continue as <name>" if a saved CLI profile exists) → start searching.
@@ -810,7 +841,7 @@ SWE / analyst résumés × PM / ML-eng / marketing / VP roles). App `@jobfaro/ap
   transferable, language) to `config/profile.yml` (merge + atomic-write; **never** the API key or
   inference_url). The app calls it after a résumé upload, so an uploaded identity is durable across
   devices/cleared browser storage, and onboarding can offer "continue as <name>".
-- **`jobfaro doctor` now checks résumé-import tools** — detects `unzip` (.docx) and `pdftotext`/poppler
+- **`jobdar doctor` now checks résumé-import tools** — detects `unzip` (.docx) and `pdftotext`/poppler
   (.pdf) and prints the exact install command when poppler is missing (the previously-undetected PDF-upload
   prerequisite).
 - **`/evaluate` guards an empty JD** — a role whose description can't be fetched (expired / JS-rendered) no
@@ -837,11 +868,11 @@ beta) still open. Docs only — no code change. (CLI banner also caught up from 
 region/level choices, intent, results, verdicts, drafts, outreach ledger) is persisted to the browser via
 zustand's `persist` middleware. A genuine **first boot has no stored key → blank**; once the user uploads a
 résumé or makes a selection, it's saved and **restored on the next load**. Only durable user state is
-persisted — transient runtime flags (serve-up, busy, progress) are not. App `@jobfaro/app` **1.10.0**.
+persisted — transient runtime flags (serve-up, busy, progress) are not. App `@jobdar/app` **1.10.0**.
 
 ## [1.39.0] — 2026-06-16
 
-**Blank-start app + target-salary selector.** App `@jobfaro/app` **1.9.0**; `test-all.mjs` **128**.
+**Blank-start app + target-salary selector.** App `@jobdar/app` **1.9.0**; `test-all.mjs` **128**.
 - **The app no longer seeds any user identity on load.** It previously hydrated the local `config/profile.yml`
   (name/region/level) and `data/cv.md`, so it opened as "Sam Dotson." Now it starts **blank** — no name, no
   region/level selected, no résumé, no roles — and `hydrate()` only checks that serve is reachable. The
@@ -863,14 +894,14 @@ backend and returns them, and the app **seeds the profile from the résumé**: t
 **region** (derived from the résumé's location via new `regionForLocation`) and **level** update too — but
 only when the user hasn't manually chosen them, so a chip the user toggled always wins. If the résumé moves
 the region/level, the search re-scans for the new scope; either way the roles are re-fit to the new résumé.
-App `@jobfaro/app` **1.8.0**; `test-all.mjs` **128**. (Profile changes are session-scoped — a reload re-reads
+App `@jobdar/app` **1.8.0**; `test-all.mjs` **128**. (Profile changes are session-scoped — a reload re-reads
 the saved `config/profile.yml`; persisting an uploaded identity back to config is a future option.)
 
 ## [1.37.0] — 2026-06-16
 
 **Résumé upload actually handles .docx and .pdf.** The app previously read uploads as text and rejected
 anything binary ("Paste your text or use a .txt"). Now the GUI reads the picked file's bytes and serve
-parses them with the real `docparse` extractor. App `@jobfaro/app` **1.7.0**.
+parses them with the real `docparse` extractor. App `@jobdar/app` **1.7.0**.
 - **New serve `POST /import/upload {name, base64}`** — writes the bytes to the confined `data/uploads/` dir
   (sanitized name), runs `importDocument` (docx via `unzip`, pdf via `pdftotext`, txt/md direct), persists
   the extracted text as the active résumé, and returns it. A file it can't read returns an honest error
@@ -888,7 +919,7 @@ neutrally ("Using your saved résumé"); and when there's genuinely none it prom
 
 ## [1.36.0] — 2026-06-16
 
-**Search-tab refinements.** App `@jobfaro/app` **1.6.0**; `test-all.mjs` **127** (+1 regionPriority test).
+**Search-tab refinements.** App `@jobdar/app` **1.6.0**; `test-all.mjs` **127** (+1 regionPriority test).
 - **The 0–100 score is gone from the Search tab** — each role shows only its **fit indicator** (Likely
   fit / Worth a look / Skip). The numeric score is reserved for the evaluation (Apply) stage; the prescreen
   score is still computed internally (it drives the fit tier + a hidden ranking tiebreak). The "Score" sort
@@ -913,12 +944,12 @@ neutrally ("Using your saved résumé"); and when there's genuinely none it prom
   (region/level) changes or the pipeline is empty; editing the intent just re-ranks + prescreens the
   already-discovered roles. Scan results also render immediately (relevance-ranked) before prescreen enriches.
 - **Smoother progress.** The "Find matching roles" bar now advances continuously (a 250 ms ticker, monotonic)
-  between server round-trips instead of jumping per batch. App `@jobfaro/app` **1.5.1**.
+  between server round-trips instead of jumping per batch. App `@jobdar/app` **1.5.1**.
 
 ## [1.35.0] — 2026-06-16
 
 **Phases 9.3+/9.4 — tunable search, BM25-lite relevance, and intelligent company discovery.** Builds on
-the LinkedIn/Indeed retrieve-then-rank methodology, adapted to local-first + winc. Lands as `@jobfaro/app`
+the LinkedIn/Indeed retrieve-then-rank methodology, adapted to local-first + winc. Lands as `@jobdar/app`
 **1.5.0**; `test-all.mjs` **126** (+2 discovery tests).
 
 ### Tunable controls (Search tab)
@@ -934,7 +965,7 @@ the LinkedIn/Indeed retrieve-then-rank methodology, adapted to local-first + win
   so a real "Product Manager" clearly outranks a generic "Manager, Workforce Management."
 
 ### Intelligent discovery — `lib/discover.mjs` + serve `POST /discover`
-- The local model **suggests real employers** for the intent + region; Jobfaro deterministically probes their
+- The local model **suggests real employers** for the intent + region; Jobdar deterministically probes their
   **Greenhouse/Lever/Ashby** slug patterns and keeps **only boards that actually return jobs** (live-verified
   via the real provider fetch — a hallucinated company simply never resolves). Verified boards are added to
   the portal seed (`savePortals`) and scanned. Keyless, local, privacy-preserving — no crawler, no API key.
@@ -945,15 +976,15 @@ the LinkedIn/Indeed retrieve-then-rank methodology, adapted to local-first + win
 
 **Phase 9.3 — intent-driven search.** The Search tab now leads with *"Tell us what you're looking for"*
 instead of a résumé box, and uses winc + the scanner to find and rank matching roles. Lands as
-`@jobfaro/app` **1.4.0**; `test-all.mjs` **124** (+2 search tests; serve test covers `/search/parse`).
+`@jobdar/app` **1.4.0**; `test-all.mjs` **124** (+2 search tests; serve test covers `/search/parse`).
 
-- **New `lib/search.mjs`** (re-exported via `@jobfaro/engine`): `parseIntent` turns the free-text request
+- **New `lib/search.mjs`** (re-exported via `@jobdar/engine`): `parseIntent` turns the free-text request
   into `{titles, keywords, exclude, level?, regions?}` with **one winc call** (expands "PM" → product
   manager / product owner / program manager / associate PM …), degrading to a deterministic keyword parse
   when winc is down — search never 503s. `relevanceScore`/`expandQueryTerms` are pure + instant.
 - **`serve`:** new `POST /search/parse {intent}`; `POST /prescreen` accepts parsed `terms` and spends its
   limited budget on the **intent-relevant** roles first (and skips roles the intent excludes).
-- **App (`apps/jobfaro`):**
+- **App (`apps/jobdar`):**
   - The top of Search is now a *"Tell us what you're looking for…"* field + an **Upload résumé** button
     (the editable résumé box and the **Refresh** button are removed).
   - **Progress on "Find matching roles":** the button fills 0→100% as the staged search runs (parse intent
@@ -967,12 +998,12 @@ instead of a résumé box, and uses winc + the scanner to find and rank matching
 
 **Security + correctness hardening pass** (from a full multi-agent bug audit of the 9.x surface). The
 `serve` HTTP façade and a handful of pure-logic gates got fixed; `test-all.mjs` **122** (+6 regression
-tests; the serve subprocess test now also covers the security fixes). App lands as **`@jobfaro/app` 1.3.0**.
+tests; the serve subprocess test now also covers the security fixes). App lands as **`@jobdar/app` 1.3.0**.
 
 ### Security — `lib/commands/serve.mjs`
 - **`POST /import` is now path-confined.** It passed the request-body `file` straight to `readFileSync`,
   so any reachable local file (`~/.ssh/id_rsa`, `~/.aws/credentials`, …) could be read over HTTP. It now
-  rejects (403) any path outside the jobfaro data home.
+  rejects (403) any path outside the jobdar data home.
 - **CORS no longer reflects arbitrary Origins.** The Origin is echoed only for private/loopback/LAN hosts,
   so a public website the user has open can't read `/cv·/profile·/pipeline` cross-origin on the default
   loopback bind. (The header comment claimed this was already the case — now it actually is.)
@@ -1002,19 +1033,19 @@ tests; the serve subprocess test now also covers the security fixes). App lands 
 - **ReDoS:** bounded the salary comma-group, the iCIMS location, and the `parseVerdict` regexes.
 - **app:** the uploaded résumé reaches serve; a failed scan no longer blanks the list; the per-op spinner
   no longer clears for a still-running action; a server-rejected outreach log reverts the optimistic entry.
-- **CLI:** `jobfaro init --transferable=no` is honored (was coerced to `true`).
+- **CLI:** `jobdar init --transferable=no` is honored (was coerced to `true`).
 - **`apps/server`** `/scan` calls the provider correctly (`resolveProvider` returns `{provider, match}`).
 - Docs: ROADMAP status banner corrected to the real CLI version (was drifted at 1.31.0).
 
 ## [Unreleased]
 
-### Phase 9.0 — the apps now run the REAL engine (no mirror) — `@jobfaro/app` 1.1.0
+### Phase 9.0 — the apps now run the REAL engine (no mirror) — `@jobdar/app` 1.1.0
 
-The repo is now a **pnpm workspace**. A new private **`@jobfaro/engine`** package re-exports the pure
-(fs-free) `lib/` modules, and the Expo app (`apps/jobfaro`) imports it — so the web/native app is driven by
+The repo is now a **pnpm workspace**. A new private **`@jobdar/engine`** package re-exports the pure
+(fs-free) `lib/` modules, and the Expo app (`apps/jobdar`) imports it — so the web/native app is driven by
 the **exact** level filter, prescreen gates, decomposed-rubric weights, 0–5 score math, band thresholds,
 clamp, and pay resolution the CLI runs. The app's hand-written engine *mirror* is **deleted**; `src/engine.ts`
-is now a thin adapter over `@jobfaro/engine`. A rule fixed in `lib/` is inherited by the app for free.
+is now a thin adapter over `@jobdar/engine`. A rule fixed in `lib/` is inherited by the app for free.
 
 - **Fixes the level mismatch** an entry/mid candidate was shown senior/director roles. The app's Search
   now calls the real `filterByLevel` → "Director Data Science", "Senior Director, FP&A", "Sr. Applied
@@ -1027,16 +1058,16 @@ is now a thin adapter over `@jobfaro/engine`. A rule fixed in `lib/` is inherite
   band + `paySummary`); only the rubric "judge" remains a transparent keyword stand-in until on-device
   WebLLM (9.3). Nothing fabricates; the gates can't be bypassed.
 - CLI runtime unchanged — `lib/`, `bin/`, `commands/` byte-identical; `test-all.mjs` green (**115**).
-  CLI semver stays **1.31.0** (no CLI runtime change); the change lands as `@jobfaro/app` **1.1.0**.
-- Infra: `pnpm-workspace.yaml`, `packages/engine/`, `apps/jobfaro/metro.config.js` (workspace-aware Metro),
-  `apps/jobfaro/types/jobfaro-engine.d.ts`. Config/fs-coupled modules (pipeline/outreach stores) stay in
+  CLI semver stays **1.31.0** (no CLI runtime change); the change lands as `@jobdar/app` **1.1.0**.
+- Infra: `pnpm-workspace.yaml`, `packages/engine/`, `apps/jobdar/metro.config.js` (workspace-aware Metro),
+  `apps/jobdar/types/jobdar-engine.d.ts`. Config/fs-coupled modules (pipeline/outreach stores) stay in
   `lib/` and are reached through the app's own Store adapter — they are not part of the engine surface yet.
 
 ## [1.32.0] — 2026-06-15
 
-**Phase 9.1 — `jobfaro serve` becomes the full pipeline façade (the GUI backend), + LAN access.** The
+**Phase 9.1 — `jobdar serve` becomes the full pipeline façade (the GUI backend), + LAN access.** The
 locked Phase 9 architecture: all surfaces (web, desktop, mobile) are thin GUIs that point **by default at
-the local jobfaro CLI + winc engine as the entire full stack** — the model is always server-side; cloud
+the local jobdar CLI + winc engine as the entire full stack** — the model is always server-side; cloud
 model API keys become a pluggable **Pro-tier** upgrade later (see ROADMAP). `serve` (the HTTP façade over
 `lib/engine.mjs`) grew from 3 endpoints to the whole pipeline so the apps just call it:
 
@@ -1047,20 +1078,20 @@ model API keys become a pluggable **Pro-tier** upgrade later (see ROADMAP). `ser
   + `POST /eval/save` (`pendingQueue` → real-model score → `upsertEval`, status→evaluated), `POST
   /tracker/set` (`updateStatusByUrl`), `POST /outreach/log` (cadence-checked `canContact`/`canFollowup` →
   `appendOutreach`). Existing `/health`, `/evaluate`, `/import` unchanged.
-- **LAN access for the phone:** `jobfaro serve --host 0.0.0.0` flips on a **required bearer token**
+- **LAN access for the phone:** `jobdar serve --host 0.0.0.0` flips on a **required bearer token**
   (auto-minted and printed, or `--token <x>`); CORS reflects the caller's Origin and allows `Authorization`.
   Default stays **loopback 127.0.0.1** (open, localhost-pinned) — opening the LAN is a deliberate, gated act.
   Prints the Mac's LAN URL so the iPhone on the same Wi-Fi can drive it.
-- **Tests:** `test-all.mjs` **116** (+1: a subprocess, `JOBFARO_HOME`-isolated serve integration test —
+- **Tests:** `test-all.mjs` **116** (+1: a subprocess, `JOBDAR_HOME`-isolated serve integration test —
   auth gate 401/200, pipeline/profile/cv reads, a real `pipeline.tsv` status mutation, 404; no external net).
 - **Model-generation endpoints added** (`POST /tailor`, `POST /outreach/draft`) — real-model grounded CV/
   cover + outreach note, `503 {reason}` when winc is down. CORS now reflects the caller's Origin (the GUI is
   served from a different port than serve) so the app can actually reach it.
-- **App repointed onto serve (`@jobfaro/app` 1.2.0):** `apps/jobfaro/src/serve.ts` (typed client) + `store.ts`
+- **App repointed onto serve (`@jobdar/app` 1.2.0):** `apps/jobdar/src/serve.ts` (typed client) + `store.ts`
   rewired so every action calls serve — Search hydrates from `/pipeline·/profile·/cv`, scan→`/scan`+`/prescreen`,
   score→`/evaluate`+`/eval/save`, tailor→`/tailor`, draft→`/outreach/draft`, log→`/outreach/log`. Verified in
   the iPhone 14 simulator: Search renders the **746 real pipeline roles** + the real profile/résumé from serve.
-  `@jobfaro/engine` is now used only for derived UI. Then cleaned up: **deleted the dead stand-ins**
+  `@jobdar/engine` is now used only for derived UI. Then cleaned up: **deleted the dead stand-ins**
   (`engine.ts` trimmed to types + band + cadence + i18n; `data.ts`/`SAMPLE_*` removed), fixed the stale
   "demo data" banner, and gave the Search tab a **search bar + sort (Score default / Newest / A–Z) +
   filter chips (All/Fit/Maybe/Skip)** — auto-sorts by score, stays searchable/filterable.
@@ -1085,7 +1116,7 @@ Engine (`lib/prescreen.mjs` — deterministic, code-owned, NEVER bridged by the 
 - **+4 tests** including a NEGATIVE (a real accountant still passes a plain accountant role — no
   over-gating) and "transferable cannot bypass a required CPA".
 
-App (`apps/jobfaro`):
+App (`apps/jobdar`):
 - Mirrors the same hard gate in `src/engine.ts` (prescreen + the evaluate clamp).
 - **Seeds real jobs**: `SAMPLE_JOBS` is now **20 real public postings** (from the validated salary corpus —
   Relativity, Enova, Sprout Social, 84.51°, Carvana, Censys… spanning finance / IT / engineering / data /
@@ -1099,17 +1130,17 @@ App (`apps/jobfaro`):
 Engine (CLI behavior-neutral — `test-all.mjs` green, 111):
 - The scoring path is now **config-free**. Band thresholds extracted to a new pure
   [`lib/bands.mjs`](lib/bands.mjs); [`lib/inference.mjs`](lib/inference.mjs) no longer imports `config.mjs`
-  (the API key reads from env; `bin/jobfaro` seeds it from the gitignored `data/credentials.env` at startup
-  so `jobfaro init`'s saved key still works); `eval_engine` imports `band`/`BANDS` from `bands.mjs`;
+  (the API key reads from env; `bin/jobdar` seeds it from the gitignored `data/credentials.env` at startup
+  so `jobdar init`'s saved key still works); `eval_engine` imports `band`/`BANDS` from `bands.mjs`;
   `evaluations.mjs` re-exports them for back-compat. Result: `eval_engine` / `prescreen` / `salary` /
   `dates` / `tailor` / `inference` import **zero** config — the whole scoring closure is now
   **browser-bundle-ready**. This is the unblock for the apps to run the *real* engine; the remaining wiring
   needs the pnpm-workspace packaging (Metro blocks relative-escape imports), so the app currently mirrors
   the engine contracts 1:1 (identical band thresholds + rubric keys/weights).
 
-App (`apps/jobfaro`):
+App (`apps/jobdar`):
 - **Native development build** configured: `expo-dev-client` + `eas.json` (development /
-  development-simulator / preview / production profiles) + iOS/Android bundle id `com.jobfaro.app`. Build on
+  development-simulator / preview / production profiles) + iOS/Android bundle id `com.jobdar.app`. Build on
   a real iPhone via EAS (cloud, no local Xcode) — guide in [`apps/README.md`](apps/README.md); works around
   the Expo Go SDK mismatch. Web output switched to a client-rendered SPA (`single`) — right for a PWA.
 
@@ -1119,7 +1150,7 @@ App (`apps/jobfaro`):
 
 **Phase 9 app — UX (increment 1 follow-up).** App-only; CLI unchanged (`test-all.mjs` green, 111).
 
-- `apps/jobfaro`: NEW **Upload résumé** button (`expo-document-picker`) — reads `.txt`/`.md` résumés on web
+- `apps/jobdar`: NEW **Upload résumé** button (`expo-document-picker`) — reads `.txt`/`.md` résumés on web
   and loads them into the pipeline. PDF/DOCX (binary) files are detected and the user is told the
   deterministic parse (unpdf/mammoth) arrives in Milestone 9.2 — paste text or use a `.txt` for now.
 - **Load a sample** now **cycles through 5 distinct personas** (data / marketing / customer-success /
@@ -1132,7 +1163,7 @@ App (`apps/jobfaro`):
 **Phase 9 — apps, increment 1.** The web + mobile app surfaces enter the repo. (CLI code unchanged; this
 minor marks Phase 9 execution starting.)
 
-- New **`apps/jobfaro`** — an Expo (React Native + react-native-web) three-tab app (**Search → Apply →
+- New **`apps/jobdar`** — an Expo (React Native + react-native-web) three-tab app (**Search → Apply →
   Follow-up**), one codebase for web PWA + native iOS/Android. Runs on Mac (`pnpm web`) and iPhone
   (`pnpm start` → Expo Go). Increment 1 uses a faithful TypeScript port of the **deterministic contracts** —
   band thresholds (Apply ≥4.0 / Research ≥3.5), the decomposed-rubric weights, prescreen gates, cadence
@@ -1142,7 +1173,7 @@ minor marks Phase 9 execution starting.)
   service reusing `providers/*.mjs` **unchanged**; `GET /health` lists the live providers, `POST /fetch-jd`
   + `POST /scan` carry **no résumé/score field** (privacy by structure). Deploys to Fly/Render in prod.
 - Run guide: [`apps/README.md`](apps/README.md); architecture: [`docs/phase9-architecture.md`](docs/phase9-architecture.md).
-- **Remaining (next milestones):** the `@jobfaro/engine` fs-extraction so the apps share the *real* engine
+- **Remaining (next milestones):** the `@jobdar/engine` fs-extraction so the apps share the *real* engine
   (9.0), WebLLM/WebGPU + `llama.rn` on-device inference (9.3/9.4), live scan wiring + résumé upload→parse,
   EAS native builds + push (9.5). CLI `test-all.mjs` still green (111).
 
@@ -1151,7 +1182,7 @@ minor marks Phase 9 execution starting.)
 **Docs (Phase 9 plan):** persist the finalized web + mobile app build plan as the canonical spec — no code change.
 
 - New [`docs/phase9-architecture.md`](docs/phase9-architecture.md): the full Phase 9 architecture — one
-  shared `@jobfaro/engine` package (CLI + apps), one **Expo** codebase (React Native + react-native-web → web
+  shared `@jobdar/engine` package (CLI + apps), one **Expo** codebase (React Native + react-native-web → web
   PWA + native iOS/Android), the PII-free scanner as an **always-on Node service (Fly/Render)**, the additive
   `kind:'local-embedded'` inference backend (WebLLM/WebGPU on web, `llama.rn`/MLC on native) that resolves
   the loopback-URL guard, the three-tab UX mapped 1:1 to engine verbs, the `Store`/`DocExtract` ports, and
@@ -1166,7 +1197,7 @@ Docs-only; 111 tests green. **Phase 9 execution awaiting go.**
 
 ## [1.28.1] — 2026-06-15
 
-**Fix (tailor/outreach — placeholder sign-off):** `jobfaro tailor` could emit a cover letter that signed off
+**Fix (tailor/outreach — placeholder sign-off):** `jobdar tailor` could emit a cover letter that signed off
 with the literal `[name]` placeholder instead of the candidate's name (observed live 2026-06-15:
 `"Sincerely,\n[name]"`). Root cause: the résumé is run through `stripPII` for eval fairness, which replaces
 the candidate's name with the sentinel token `[name]`, so a small model copies that token into the sign-off
@@ -1185,11 +1216,11 @@ rather than inventing a name. This was a send-blocking UX bug, **not** a grounde
 
 ## [1.28.0] — 2026-06-15
 
-**Feature (Phase 8f.2 — model-drafted outreach):** `jobfaro outreach --draft` generates a **grounded,
+**Feature (Phase 8f.2 — model-drafted outreach):** `jobdar outreach --draft` generates a **grounded,
 steerable** networking note via the same engine as `tailor`, completing Phase 8f. Outreach previously had
 no model draft — only people-finder links, a `lintDraft` validator, and the AI-CLI brain prompt.
 
-- **`jobfaro outreach --draft <company|url|--jd file> --person "Name" [--channel linkedin|email]`** — a new
+- **`jobdar outreach --draft <company|url|--jd file> --person "Name" [--channel linkedin|email]`** — a new
   grounded `draftOutreach` engine verb ([`lib/outreach.mjs`](lib/outreach.mjs)) mirrors `tailorRole`:
   guaranteed-JSON on capable local backends, ONE real fit reason drawn from the résumé + ONE low-pressure
   ask, addresses the recipient by first name, at `temperature: 0`.
@@ -1199,7 +1230,7 @@ no model draft — only people-finder links, a `lintDraft` validator, and the AI
 - **Gated through the existing `lintDraft`** — one firmer retry on a length/placeholder/missing-name
   failure, and any remaining problems are surfaced (never a silent "looks good"). Cadence (`canContact`)
   **warns** when the role's contact cap is used but never blocks: **drafting ≠ sending**, so `--draft`
-  never touches the cadence ledger (you still send it yourself and `jobfaro outreach --log`).
+  never touches the cadence ledger (you still send it yourself and `jobdar outreach --log`).
 - `contentHash` gains an optional `extra` arg (folds recipient + channel into the outreach hash; tailor
   hashes unchanged). `draftOutreach` is exported on the engine contract (additive — engine stays 1.0).
 - **Tests:** +2 (grounded prompt + JSON message + lint gate via a mock backend; `contentHash` extra
@@ -1210,7 +1241,7 @@ _Phase 8f complete (8f.1 + 8f.2). Next: Phase 9 (the three-tab app) over the 8e 
 
 ## [1.27.0] — 2026-06-14
 
-**Feature (Phase 8f.1 — steerable customization):** `jobfaro tailor` is now **re-runnable and steerable
+**Feature (Phase 8f.1 — steerable customization):** `jobdar tailor` is now **re-runnable and steerable
 with natural-language directives**, at low temperature so re-running is deterministic.
 
 - **`--instruct "<directive>"`** — shape tone, emphasis, length, or structure ("warmer," "one paragraph
@@ -1219,7 +1250,7 @@ with natural-language directives**, at low temperature so re-running is determin
 - **Grounded by construction.** Directives are appended *after* the grounding rules with a fixed clause:
   they may only shape the writing, never add employers/titles/dates/degrees/skills/metrics absent from the
   résumé (`directiveBlock` in [`lib/tailor.mjs`](lib/tailor.mjs)).
-- **Low temperature.** The tailor path now pins `temperature: 0` across **all** backends — Jobfaro
+- **Low temperature.** The tailor path now pins `temperature: 0` across **all** backends — Jobdar
   previously sent no sampling param, so ollama/llamafile/API ran at provider defaults. New `temperature`
   passthrough in `callMessages`/`callOpenAI` ([`lib/inference.mjs`](lib/inference.mjs)); normal eval/agent
   calls are unchanged.
@@ -1238,7 +1269,7 @@ with natural-language directives**, at low temperature so re-running is determin
   no-op re-run → new variant → `--list`); a live-model adversarial-groundedness check is pending a
   running backend.
 
-_Next: Phase 8f.2 (`1.28.0`) — a grounded `draftOutreach` verb behind `jobfaro outreach --draft`._
+_Next: Phase 8f.2 (`1.28.0`) — a grounded `draftOutreach` verb behind `jobdar outreach --draft`._
 
 ## [1.26.2] — 2026-06-14
 
@@ -1255,8 +1286,8 @@ _Next: Phase 8f.2 (`1.28.0`) — a grounded `draftOutreach` verb behind `jobfaro
   concurrent sessions (this repo is shared) from clobbering each other's temp file. Regenerable render
   outputs (`pdf`, `tailor`) are left as-is by design.
 - **Friendly invalid-YAML error.** `readYaml` ([`lib/config.mjs`](lib/config.mjs)) now wraps `yaml.load`
-  and throws a `userFacing` error (`<file> is not valid YAML — <reason>. … re-run \`jobfaro init\``); the
-  top-level handler in [`bin/jobfaro`](bin/jobfaro) prints `userFacing` messages as a clean one-liner
+  and throws a `userFacing` error (`<file> is not valid YAML — <reason>. … re-run \`jobdar init\``); the
+  top-level handler in [`bin/jobdar`](bin/jobdar) prints `userFacing` messages as a clean one-liner
   instead of a raw `YAMLException` stack trace. Previously a single typo in `profile.yml` crashed every
   command with a stack trace.
 - **Tests:** +2 (`atomicWrite` overwrites in place / leaves no orphan `.tmp`; a malformed `profile.yml`
@@ -1268,8 +1299,8 @@ stable URL key through the alias map); this hardens *how* the bytes hit disk.
 ## [1.26.1] — 2026-06-14
 
 **Docs:** an adversarial cross-repo doc audit found the Getting Started guides still omitted the new
-`jobfaro tailor` command (shipped 1.26.0). Step 7 of [`docs/getting-started.md`](docs/getting-started.md)
-and [`.es.md`](docs/getting-started.es.md) now cover `jobfaro tailor` (AI summary + cover letter) → `jobfaro
+`jobdar tailor` command (shipped 1.26.0). Step 7 of [`docs/getting-started.md`](docs/getting-started.md)
+and [`.es.md`](docs/getting-started.es.md) now cover `jobdar tailor` (AI summary + cover letter) → `jobdar
 pdf` (render), EN/ES at parity. Everything else (version lockstep, engine/eval/tailor docs, READMEs,
 CHANGELOG, ROADMAP, and winc-jobdar docs) audited current.
 
@@ -1280,7 +1311,7 @@ grad's résumé across all three local tiers: the CV/cover-letter tailoring had 
 rendered flat, and the 4B sometimes truncated its cover letter. All three fixed.
 
 ### Added
-- **`tailor` engine verb + `jobfaro tailor` command** — the Apply-stage "Customize" model step (previously
+- **`tailor` engine verb + `jobdar tailor` command** — the Apply-stage "Customize" model step (previously
   only an AI-CLI prompt with no driver). Produces a grounded, role-targeted CV summary + a complete cover
   letter + truthful keywords via the guaranteed-JSON path, so even the 2B stays GROUNDED (selects/
   summarizes from the résumé — never fabricates; verified 0 fabrications across 2b/e2b/4b). Returns
@@ -1300,8 +1331,8 @@ rendered flat, and the 4B sometimes truncated its cover letter. All three fixed.
 
 ## [1.25.0] — 2026-06-14
 
-**Guaranteed-JSON evals on local backends** — the Jobfaro half of the low-end tuning win (pairs with
-winc `1.21.4-jobfaro.4`'s greedy eval profile).
+**Guaranteed-JSON evals on local backends** — the Jobdar half of the low-end tuning win (pairs with
+winc `1.21.4-jobdar.4`'s greedy eval profile).
 
 ### Changed
 - Local eval backends (winc / ollama / llamafile — `active.jsonEval`) now run evals through the
@@ -1309,11 +1340,11 @@ winc `1.21.4-jobfaro.4`'s greedy eval profile).
   eliminating parse failures. `callBackend` routes any `responseFormat` call to `callOpenAI` (so winc's
   Messages-protocol backend still reaches its JSON endpoint); `evalRole` auto-selects it with a graceful
   fallback to `/v1/messages` on error. The Anthropic api stays on Messages (no `/v1/chat/completions`).
-  Opt out with `eval_grammar: false`. Centralized in `evalRole`, so the CLI, `jobfaro serve`, and the
+  Opt out with `eval_grammar: false`. Centralized in `evalRole`, so the CLI, `jobdar serve`, and the
   engine contract all benefit. No engine-contract signature change (`ENGINE_VERSION` stays 1.0).
 - New `eval_grammar` profile default (`true`); `active.jsonEval` capability on backends.
 
-### Verified on-device (end-to-end through Jobfaro's real pipeline, N=3)
+### Verified on-device (end-to-end through Jobdar's real pipeline, N=3)
 With winc's greedy eval profile, **qwen3.5-2b-Q4: 100% / 0 parse-fails / 0 dangerous** (24 evals, was
 65% / 4-fails) — at **half the e2b footprint** (1.6 vs 3.1 GiB); **e2b + 4B held 100% / 0-fails** (no
 regression); greedy confirmed (`--temp 0 --top-k 1`) on the server. **Caveat (per adversarial review):**
@@ -1336,8 +1367,8 @@ validate on a larger diverse JD set + human spot-check + a temp>0 comparison (se
   **low-end tuning study** — `temp-0 + guaranteed-JSON` takes qwen3.5-2b-Q4 to a stable
   **100% / 0 parse-fails / 0 dangerous** at **half the e2b footprint** (1.6 vs 3.1 GiB), which
   would drop the trustworthy-eval floor to a 2 GB-class machine. Records that neither lever works
-  alone and that shipping needs a coordinated winc temp-0 pin + Jobfaro JSON-schema routing.
-- (winc side, separately: `winc-jobdar` 1.21.4-jobfaro.3 corrected two stale eval-picker claims —
+  alone and that shipping needs a coordinated winc temp-0 pin + Jobdar JSON-schema routing.
+- (winc side, separately: `winc-jobdar` 1.21.4-jobdar.3 corrected two stale eval-picker claims —
   e2b is not "half the VRAM" of the 4B, and 2B-Q8 is not less accurate than Q4.)
 
 ## [1.24.3] — 2026-06-14
@@ -1414,11 +1445,11 @@ adjacent fit it was *lowering* the score. Both are corrected; the bar is unchang
 **Transferable-skills toggle** — strongly-targeted cross-field matching for new grads & career changers.
 
 ### Added
-- **`transferable_skills` profile toggle** (+ `eval --auto --transferable`; `jobfaro init` defaults it ON
+- **`transferable_skills` profile toggle** (+ `eval --auto --transferable`; `jobdar init` defaults it ON
   for the `career_changer` / `no_degree` profiles). When on, BOTH AI layers credit transferable/adjacent
   skills that genuinely map to a role — the Search **pre-confirm** (passes real cross-field bridges, still
   skips stretches) and the **eval rubric** (skills/experience sub-judgments cite the résumé item and the
-  requirement it bridges). Threaded through `lib/engine.mjs evaluate` + the `jobfaro serve /evaluate` body;
+  requirement it bridges). Threaded through `lib/engine.mjs evaluate` + the `jobdar serve /evaluate` body;
   exposed as the Phase 9 Search-tab toggle.
 - **It does NOT lower the bar** — it changes WHAT counts as a fit, not how many roles pass: a transferable
   (not direct) skill is at most a partial match, aspirational stretches are still skipped, "quality over
@@ -1447,7 +1478,7 @@ blank and never model-produced.
   never invents pay. `resolvePay` is exposed on the engine contract.
 - 2 new offline tests (97 → 99). EN/ES + modes parity maintained.
 
-Deferred (Phase 8d remainder): `jobfaro offer` interactive capture (8d.1), the live BLS bulk-download
+Deferred (Phase 8d remainder): `jobdar offer` interactive capture (8d.1), the live BLS bulk-download
 (`lib/bls.mjs`, 8d.2b — the seed floor substitutes offline), and multi-offer `--compare` (8d.4).
 
 ## [1.22.0] — 2026-06-14
@@ -1459,8 +1490,8 @@ programmatic seam so the CLI, web, and mobile are thin callers — readying Phas
 - **`lib/engine.mjs` (8e.1) — the engine contract:** import → scan → evaluate → track → build as
   no-console-I/O functions (structured returns + `onProgress`). `importDocument`, `scan`, `evaluate`
   (with optional pre-confirm + escalate), `preConfirm`, track verbs (`recordVerdict` / `advanceStatus` /
-  `prune`), `buildCv`, backend selection. `jobfaro import` is now a thin caller over it (extract, not rewrite).
-- **`jobfaro serve` (8e.2):** the verbs as JSON over localhost (default `127.0.0.1:4320`; CORS localhost) —
+  `prune`), `buildCv`, backend selection. `jobdar import` is now a thin caller over it (extract, not rewrite).
+- **`jobdar serve` (8e.2):** the verbs as JSON over localhost (default `127.0.0.1:4320`; CORS localhost) —
   `GET /health`, `POST /evaluate`, `POST /import`. The one socket the web/mobile front-ends talk to.
 - **`docs/engine.md` (8e.3):** the versioned contract — verb signatures + the Job/Verdict/Import shapes;
   `ENGINE_VERSION` bumps on a breaking change. Phase 9 builds against this doc, never internals.
@@ -1482,10 +1513,10 @@ Verified end-to-end on-device (winc / Qwen3.5-4B) with two real résumés.
   (word/document.xml, macOS `textutil` fallback), PDF via `pdftotext` when present (else an honest
   DOCX/text hint), `.txt`/`.md` passthrough; near-empty/image PDFs fail honestly (8c.4). No new npm
   deps; the web/serverless path swaps unpdf/mammoth in behind `extractText()`.
-- **`jobfaro import <file>` (8c.2):** extract locally → the inference backend structures the PROFILE
+- **`jobdar import <file>` (8c.2):** extract locally → the inference backend structures the PROFILE
   (name / metro / level / skills) → writes `data/cv.md` (the real extracted text — the model NEVER
   rewrites the résumé) + a prefilled `config/profile.yml`; confirm summary, saves on `--write`. Falls
-  back to a deterministic heuristic with no backend. `jobfaro eval <file.pdf|docx>` (8c.3) reads a local JD too.
+  back to a deterministic heuristic with no backend. `jobdar eval <file.pdf|docx>` (8c.3) reads a local JD too.
 - **Light AI pre-confirm (`eval --auto --confirm`):** a cheap on-device yes/maybe/no triage between the
   zero-token `prescreen` and the heavy decomposed `eval` — skips clearly-wrong roles (with a quoted
   reason, never silently) to cut full-eval passes. This is the Phase 9 Search-tab thinner, shared by CLI + app.
@@ -1502,7 +1533,7 @@ Remaining Phase 8: 8a.9 (escalation, optional), 8d (offer + keyless BLS pay), 8e
 ## [1.20.0] — 2026-06-14
 
 **Phase 8a — automated evaluation (the daily-use unlock); Phase 8 is now feature-complete (8a + 8b).**
-Jobfaro scores roles itself: the MODEL judges fit on a decomposed rubric while CODE owns the number and
+Jobdar scores roles itself: the MODEL judges fit on a decomposed rubric while CODE owns the number and
 the gates. Live-verified against `winc serve --eval` (Qwen3.5-4B) — the model returned conformant
 decomposed JSON and the §3 pipeline clamped a non-matching role to Don't.
 
@@ -1516,10 +1547,10 @@ decomposed JSON and the §3 pipeline clamped a non-matching role to Don't.
   never contains a salary number — pay is merged post-model from `lib/salary.mjs`. Robust JSON parse with
   optional `response_format` guaranteed-JSON (8a.4a). Fairness (8a.6): the CV slice is PII-stripped and a
   degree requirement never auto-zeros under `no_degree`.
-- **`jobfaro eval --auto [<url> | --next | --all-pending]` (8a.1–8a.3)** — scores roles against the
+- **`jobdar eval --auto [<url> | --next | --all-pending]` (8a.1–8a.3)** — scores roles against the
   configured backend and records each verdict via the existing `--save` path; walks the prescreen-ranked
   queue, one JD per request; minimal-slice (JD + PII-stripped CV excerpt only).
-- **`jobfaro calibrate` (8a.5)** — opt-in live scorer over a hand-banded set (`data/calibration.json`),
+- **`jobdar calibrate` (8a.5)** — opt-in live scorer over a hand-banded set (`data/calibration.json`),
   reporting per-tier band agreement; every clamp override is logged to a gitignored `data/clamp-log.jsonl`
   (no CV text). The pure agreement/scoring functions are unit-tested; the live scorer is a command, never `npm test`.
 - **Batch economics (8a.7) + prompt caching (8a.8):** `eval --auto --all-pending --batch` submits one
@@ -1540,7 +1571,7 @@ decomposed JSON and the §3 pipeline clamped a non-matching role to Don't.
 
 Deferred: 8a.9 (targeted escalation ladder) — the roadmap marks it optional; a follow-up. The grammar-JSON
 path (8a.4a) is wired but defaults to robust prompt-parse on backends without `response_format` (this
-machine's winc.cpp jobfaro.3).
+machine's winc.cpp jobdar.3).
 
 ## [1.19.0] — 2026-06-13
 
@@ -1557,9 +1588,9 @@ scoring a canary role, zero external network.
   runs one role and `parseVerdict` reads the modes/eval.md score/band/recommendation; the Messages-API
   `usage` block is captured for per-eval token transparency. Loopback-only for the no-TLS local path;
   HTTPS + key enforced for api.
-- **`jobfaro backend` command (EN/ES)** — `backend` (status: backend, URL, live-or-not), `backend --check`
+- **`jobdar backend` command (EN/ES)** — `backend` (status: backend, URL, live-or-not), `backend --check`
   (the verification gate: `/health` + one real eval round-trip, printing score/band/model/tokens), and
-  `backend --install` (delegates the model pull + serve to winc; jobfaro orchestrates + verifies, and
+  `backend --install` (delegates the model pull + serve to winc; jobdar orchestrates + verifies, and
   prints the exact install path when winc is absent).
 - **8b.3 — alternate local runtimes (Ollama / llamafile).** `inference_runtime: winc | ollama | llamafile`
   behind the same interface: winc speaks the Messages API; Ollama/llamafile speak OpenAI chat-completions,
@@ -1569,7 +1600,7 @@ scoring a canary role, zero external network.
   offline tests via loopback mock servers (74 → 85 passing, still no network).
 
 ### Changed
-- **Default backend flipped to `local` (winc.cpp)** in `PROFILE_DEFAULTS` and the `jobfaro init` wizard
+- **Default backend flipped to `local` (winc.cpp)** in `PROFILE_DEFAULTS` and the `jobdar init` wizard
   (local is now listed first and is the default; api is the opt-in accuracy upgrade) — private, no key,
   no cost out of the box. New `inference_url` profile field (blank → winc default `http://127.0.0.1:8080`).
 
@@ -1584,7 +1615,7 @@ scoring a canary role, zero external network.
 
 Scope notes: 8b.5 (confidential-cloud) remains future (documented-only); the full
 `eval --auto` batch UX is Phase 8a, which reuses this exact client with a different base URL. winc.cpp
-itself ships from its own repo (the `winc-jobdar` branch) — these are the Jobfaro-side integration pieces.
+itself ships from its own repo (the `winc-jobdar` branch) — these are the Jobdar-side integration pieces.
 
 ## [1.18.1] — 2026-06-13
 
@@ -1620,7 +1651,7 @@ acceptance set), then adversarially verified — 95% extraction precision after 
   `target_salary` + `score_weights.salary`. **Never a gate** — pay only nudges the prescreen rank.
 - **`lib/dates.mjs` — résumé date normalization (7.8.2, rec-spec §3a).** `normalizeResumeDates(text,
   today)` resolves an open-ended "Present"/"Current" in a date range to today's month-year (prose
-  untouched), so an eval can't misread "Mar 2025 – Present" as future employment. `jobfaro eval` now
+  untouched), so an eval can't misread "Mar 2025 – Present" as future employment. `jobdar eval` now
   prints the current date; `modes/eval.md` instructs the model to use it.
 - **Near-duplicate dedup (7.8.3, rec-spec §5).** `mergeScanned` now collapses a second posting of the
   same role (normalized company + title + canonical metro, via the new `regions.mjs canonicalLocation`)
@@ -1668,16 +1699,16 @@ Planning only — no code.
 
 ## [1.17.0] — 2026-06-13
 
-Roadmap: reconcile with the updated `rec-spec.md` + winc-jobdar `1.21.3-jobfaro.4`. Planning only — no
+Roadmap: reconcile with the updated `rec-spec.md` + winc-jobdar `1.21.3-jobdar.4`. Planning only — no
 code. Brings the measured §3 eval-pipeline refinements (a 72-eval A/B/C/D study) and the now-shipped
 winc grammar path into the Phase 8 plan so implementation can begin against a flush roadmap.
 
 ### Added
 - **8a.4a — grammar-constrained structured output:** the eval call uses winc's
   `POST /v1/chat/completions` with `response_format=json_schema` (the 8a.4 schema) for guaranteed valid
-  JSON. **Winc side is already shipped** (winc-jobdar 1.21.3-jobfaro.4: the eval profile advertises the
+  JSON. **Winc side is already shipped** (winc-jobdar 1.21.3-jobdar.4: the eval profile advertises the
   endpoint on ready; the router preserves `response_format` across both paths, regression-tested). Other
-  jobfaro calls stay on `/v1/messages`.
+  jobdar calls stay on `/v1/messages`.
 - **8a.4b — in-band requirements-check (measured win):** the eval schema adds a `required` block
   (`{min_years, certs[], degree, candidate_meets_all}`) filled FIRST; best form passes prescreen's
   quote-backed requirements into the prompt and has the model fill only `candidate_meets_all`. Measured
@@ -1690,7 +1721,7 @@ winc grammar path into the Phase 8 plan so implementation can begin against a fl
   (e.g. "PMP required") from flag → hard gate for users who lack it.
 
 ### Changed
-- **winc dependency pinned to `1.21.3-jobfaro.4`** (was jobfaro.3) and the 8b contract note now documents
+- **winc dependency pinned to `1.21.3-jobdar.4`** (was jobdar.3) and the 8b contract note now documents
   **two surfaces** — `/v1/messages` (general) + the guaranteed-JSON `/v1/chat/completions` eval path.
 - Milestone-table eval-tuning range widened `8a.4–8a.8` → `8a.4–8a.9`.
 - `rec-spec.md` now carries a STATUS header marking it absorbed into the roadmap (roadmap is
@@ -1700,7 +1731,7 @@ winc grammar path into the Phase 8 plan so implementation can begin against a fl
 
 Roadmap: fold in the 2026-06-13 eval + pay-data study (`rec-spec.md`) and pin the winc dependency to
 the `winc-jobdar` branch. Planning only — no code yet; every item is a roadmap step for the phases
-below. Verified against the live code + the newest winc-jobdar (`1.21.3-jobfaro.3`) by a 7-track
+below. Verified against the live code + the newest winc-jobdar (`1.21.3-jobdar.3`) by a 7-track
 cross-analysis.
 
 ### Added
@@ -1710,9 +1741,9 @@ cross-analysis.
   near-duplicate dedup in `mergeScanned` (company+title+canonical-location, alias-on-survivor), a
   config/rubric cleanup of the removed-`lib/scoring.mjs` residue, and the Windows test-fixture
   migration. Drawn from the study's measured defects; reuses the shipped prescreen conventions.
-- **Phase 8b — new step 8b.0:** `jobfaro backend --install` one-command bootstrap (winc setup → tiered
+- **Phase 8b — new step 8b.0:** `jobdar backend --install` one-command bootstrap (winc setup → tiered
   model pull → `winc serve --eval` → `/health` canary), target fully-featured < 10 min; the Phase 9
-  first-run prototype. Plus the cross-repo ask for prebuilt `-jobfaro.N` releases.
+  first-run prototype. Plus the cross-repo ask for prebuilt `-jobdar.N` releases.
 - **Phase 8d — new sub-steps 8d.2a/8d.2b:** `lib/pay.mjs` three-layer `resolvePay` (stated → comparable
   → BLS, mandatory source label) and `lib/bls.mjs` on-demand fetcher with a national-adjusted fallback;
   the §2c hard split (model routes SOC/seniority, software owns every number).
@@ -1722,7 +1753,7 @@ cross-analysis.
 ### Changed
 - **Phase 8 reordered earlier still:** Phase 7.8 (zero-token) now precedes the 8b winc build; the
   milestone table renumbers around it.
-- **8b dependency pinned to the `winc-jobdar` branch** (`1.21.3-jobfaro.3`) + `winc serve --eval`; the
+- **8b dependency pinned to the `winc-jobdar` branch** (`1.21.3-jobdar.3`) + `winc serve --eval`; the
   stale "origin/master v1.4.5 / `winc serve`" note is replaced (master is now v1.21.2, and bare `serve`
   runs reasoning ON → empty content). 8b.2 liveness = `GET /health`; model choice delegated to winc's
   tiering (gemma4-e2b < 5 GiB / qwen3.5-4b ≥ 5 GiB; qwen3.5-2b floor-only). 8b.1 surfaces Messages-API
@@ -1731,7 +1762,7 @@ cross-analysis.
   gate/clamp **reuses the shipped `lib/prescreen.mjs` extractors — no new `lib/gate.mjs`**; reconcile the
   draft band thresholds (Apply ≥3.5) against the shipped scale (`BANDS`: Apply ≥4.0 / Research ≥3.5).
 - **REVISE 8a.5:** add the clamp-override log + per-tier agreement; move the live-backend scorer out of
-  `npm test` into an opt-in `jobfaro calibrate` (preserves the offline-test invariant).
+  `npm test` into an opt-in `jobdar calibrate` (preserves the offline-test invariant).
 - **REWRITE 8d.2:** from a static shipped `data/seed/wages.yml` to an on-demand growing
   `data/cache/wages.yml` (+ a small national-by-SOC seed floor); preserve the metro COL index 8d.3/8d.4
   depend on.
@@ -1742,7 +1773,7 @@ Phase 7.7 — apply-likelihood. Stop evaluating jobs you were never going to get
 the ones you might. Built from real beta pain (evals wasted on hard-gated roles).
 
 ### Added
-- **`jobfaro prescreen`** (`lib/prescreen.mjs`, `lib/commands/prescreen.mjs`) — the zero-token gate
+- **`jobdar prescreen`** (`lib/prescreen.mjs`, `lib/commands/prescreen.mjs`) — the zero-token gate
   between scan and eval. Fetches each pending role's JD politely (sequential, 800 ms pacing) and:
   - **screens hard gates with a QUOTED reason** — years-required vs your level(s) (entry >2 /
     mid >5 / senior >10; the lowest stated floor counts; "10 years of innovation" never matches),
@@ -1758,11 +1789,11 @@ the ones you might. Built from real beta pain (evals wasted on hard-gated roles)
     reason, and `eval --next --include-screened` re-admits them.
 - **`eval --next` now serves the prescreen-ranked queue** (likelihood desc, then freshness) and
   skips screened + human-tracked rows by default; tells you how many are screened out and why.
-- **`jobfaro outreach`** (`lib/outreach.mjs`, `lib/commands/outreach.mjs`) — the referral lever,
+- **`jobdar outreach`** (`lib/outreach.mjs`, `lib/commands/outreach.mjs`) — the referral lever,
   polite by construction:
   - **people-finder**: deterministic LinkedIn people-search LINKS (recruiters/TA; likely hiring
     manager via a level-stripped role title; company people). The user browses and picks —
-    **Jobfaro never scrapes LinkedIn and never sends a message.**
+    **Jobdar never scrapes LinkedIn and never sends a message.**
   - **cadence enforced in code**: a gitignored ledger (`data/outreach.tsv` — name/title/channel/
     date only) caps contacts at 2 per role, one thread per person, ONE follow-up ripe after ≥5
     business days (`--due` says when), hard stop after — no override flag exists for the stop.
@@ -1784,7 +1815,7 @@ the ones you might. Built from real beta pain (evals wasted on hard-gated roles)
   release.
 
 ### Fixed
-- `bin/jobfaro` now respects a command's `process.exitCode` — refusals (outreach cadence, tracker
+- `bin/jobdar` now respects a command's `process.exitCode` — refusals (outreach cadence, tracker
   `--set` misuse) previously printed an error but exited 0.
 
 ## [1.14.1] — 2026-06-10
@@ -1801,28 +1832,28 @@ Docs: the roadmap now shows at a glance what's shipped — plus the pending port
 ### Fixed
 - **Portability test no longer assumes a personal `config/profile.yml` exists** — that file is
   gitignored, so on a fresh clone (and CI) the 1.14.0 test failed even though the code was correct.
-  The test now asserts the resolution *rule*: profile present → repo-local home; absent → `~/.jobfaro`.
+  The test now asserts the resolution *rule*: profile present → repo-local home; absent → `~/.jobdar`.
 
 ## [1.14.0] — 2026-06-10
 
 Portability: one relocatable user-data home; no path coupling to the install dir.
 
 ### Added
-- **`JOBFARO_HOME`** — one variable relocates ALL user data (config + data + output). Resolution:
-  `JOBFARO_HOME` → repo-local mode (a checkout with its own `config/profile.yml` stays a self-contained,
-  movable unit) → **`~/.jobfaro`** (the default for global installs, so user data never lives inside
-  `node_modules` where an update would wipe it). Per-dir `JOBFARO_CONFIG_DIR`/`JOBFARO_DATA_DIR`/
-  `JOBFARO_OUTPUT_DIR` overrides still win. Moving devices = copying one folder — verified end-to-end
+- **`JOBDAR_HOME`** — one variable relocates ALL user data (config + data + output). Resolution:
+  `JOBDAR_HOME` → repo-local mode (a checkout with its own `config/profile.yml` stays a self-contained,
+  movable unit) → **`~/.jobdar`** (the default for global installs, so user data never lives inside
+  `node_modules` where an update would wipe it). Per-dir `JOBDAR_CONFIG_DIR`/`JOBDAR_DATA_DIR`/
+  `JOBDAR_OUTPUT_DIR` overrides still win. Moving devices = copying one folder — verified end-to-end
   (fresh init → scan → copy home → doctor/tui read everything on the "new device").
-- `jobfaro doctor` now prints the active user-data home.
+- `jobdar doctor` now prints the active user-data home.
 
 ### Fixed
 - **i18n tables decoupled from the user config dir** — they're a package asset and now always load from
-  the install root. Previously, pointing `JOBFARO_CONFIG_DIR` (or running with a fresh home) degraded
+  the install root. Previously, pointing `JOBDAR_CONFIG_DIR` (or running with a fresh home) degraded
   every UI string to its raw key (`cli.usage`). Regression-tested via subprocess.
-- `jobfaro init` / `jobfaro seed --write` create the config dir if missing (first run against a fresh
-  `JOBFARO_HOME` / `~/.jobfaro` no longer assumes the repo's `config/` exists).
-- `jobfaro pdf` prints output paths relative to your cwd instead of the install dir.
+- `jobdar init` / `jobdar seed --write` create the config dir if missing (first run against a fresh
+  `JOBDAR_HOME` / `~/.jobdar` no longer assumes the repo's `config/` exists).
+- `jobdar pdf` prints output paths relative to your cwd instead of the install dir.
 - Version lockstep: `.claude-plugin/plugin.json` and the doc banners caught up (the 1.13.0 release bumped
   `package.json` only).
 
@@ -1845,8 +1876,8 @@ research in hand, and a slightly faster scan.
 - **ROADMAP: build-order implementation guide** covering everything unfinished — closed beta (7.6) →
   8a automated eval (+ new 8a.5 calibration set, 8a.6 fairness guards) → 8b winc.cpp-default backend →
   **new Phase 8c** (PDF résumé/JD understanding via deterministic extraction + model structuring),
-  **new Phase 8d** (offer evaluation with shipped BLS wage context, `jobfaro offer`), **new Phase 8e**
-  (the headless engine contract — `lib/engine.mjs` + `jobfaro serve` — that the web **and mobile** apps
+  **new Phase 8d** (offer evaluation with shipped BLS wage context, `jobdar offer`), **new Phase 8e**
+  (the headless engine contract — `lib/engine.mjs` + `jobdar serve` — that the web **and mobile** apps
   plug into) → 7.5 npm publish → Phase 9 (retitled web **and mobile** apps, new step 9.8).
 - **Eval-tuning research notes** (`docs/eval-tuning-research.md`) — decomposed rubric design with
   weights and band thresholds, calibration-set practice, fairness guards for the no-degree path,
@@ -1859,7 +1890,7 @@ Privacy hotfix: personal config must never reach git or npm.
 ### Security
 - **`config/profile.yml` and `config/portals.yml` are now gitignored and untracked** (plus any
   `profile.yml.*` backups). The profile carries PII — name, metro, target salary — and the portal list
-  reveals your job-search targets; both are created locally by `jobfaro init` (from your answers or an
+  reveals your job-search targets; both are created locally by `jobdar init` (from your answers or an
   uploaded résumé) and stay on your machine. The repo ships PII-free **`config/profile.example.yml` /
   `config/portals.example.yml`** templates instead.
 - **npm `files` no longer packs `config/` wholesale** — only `config/i18n/` + the two example templates
@@ -1907,14 +1938,14 @@ The TUI becomes a workspace, the tracker becomes real, and the pipeline learns f
   and **`a` = mark applied**, plus a `from–to of N` position indicator. Scroll/cursor clamp against the
   *filtered* view (no more scrolling into blank space under a band filter).
 - **Tracker unified with the pipeline** — `applied` (and any canonical state: interviewing, offer, …) is
-  now a pipeline **status**: set it from the TUI (`a`) or `jobfaro tracker --set <url> <state>` (ES aliases
-  accepted). `jobfaro tracker` and the dashboard's tracker card + funnel "Applied" stage read straight from
+  now a pipeline **status**: set it from the TUI (`a`) or `jobdar tracker --set <url> <state>` (ES aliases
+  accepted). `jobdar tracker` and the dashboard's tracker card + funnel "Applied" stage read straight from
   the pipeline — the dead never-written `tracker.tsv` is gone, and an eval refresh never demotes a
   human-tracked status.
 - **Freshness** — the pipeline persists each role's **`posted`** (board date) and **`first_seen`** (when
   scan found it); `scan --prune` drops stale `scanned` rows that left every board (your evaluated/applied
   rows are never pruned; ignored under `--company` scans where it would over-prune).
-- **`jobfaro eval --next`** — pops the freshest pending role (posted desc, then first_seen) and prints its
+- **`jobdar eval --next`** — pops the freshest pending role (posted desc, then first_seen) and prints its
   JD, so the model loop is "next → score → save" with no URL copying.
 - **Dashboard**: each pipeline row's role now links to the live posting.
 
@@ -1942,7 +1973,7 @@ Dashboard polish: sortable columns + sector & location breakdowns.
 
 ## [1.9.0] — 2026-06-05
 
-`jobfaro dashboard` now mirrors the TUI and adds an analytics section with charts.
+`jobdar dashboard` now mirrors the TUI and adds an analytics section with charts.
 
 ### Added
 - The web dashboard surfaces the **scored pipeline** (TUI parity): every role with its fit score, band,
@@ -1972,19 +2003,19 @@ economy — especially **healthcare** — was missing. Added 35 live-verified he
   - **Southeast (new region coverage) +11**: Vanderbilt UMC, Ochsner, Baptist Health (KY / Jacksonville /
     Montgomery), AdventHealth, Methodist Le Bonheur, Prisma, Piedmont, Bayfront + Lowe's.
   - **Southwest +3**: Cook Children's, USAA, Banner Health.
-- Each was verified live **against Jobfaro's own Workday/iCIMS providers** (not just curl) and its identity
+- Each was verified live **against Jobdar's own Workday/iCIMS providers** (not just curl) and its identity
   confirmed by job location — excluding token traps (e.g. an HCA tenant serving only UK roles, Aurora-NJ
   vs Aurora-WI) and JS-only/empty boards the zero-token path can't read.
 
 ### Fixed
-- **`jobfaro seed` curation filters**: `--sector` is now honored, and `--metro` matches case-insensitively as
+- **`jobdar seed` curation filters**: `--sector` is now honored, and `--metro` matches case-insensitively as
   a *contains* (so `--metro Cincinnati` finds "Cincinnati, OH"), with `;` separating multiple metros
   (a metro is itself "City, ST", so the old comma-split was wrong).
 
 ### Notes
 - These are large employers — a full multi-region scan now fetches a lot. Curate with
-  `jobfaro seed --region <r> [--sector healthcare] [--metro "Cincinnati"] --write`, or scan one via
-  `jobfaro scan --company "<name>"`. Some systems run Taleo/Phenom/Oracle (not Workday/iCIMS) and were
+  `jobdar seed --region <r> [--sector healthcare] [--metro "Cincinnati"] --write`, or scan one via
+  `jobdar scan --company "<name>"`. Some systems run Taleo/Phenom/Oracle (not Workday/iCIMS) and were
   excluded; a couple of iCIMS tenants are JS-only and need `--playwright`.
 
 ## [1.7.0] — 2026-06-05
@@ -2002,7 +2033,7 @@ competition is lighter (the career-ops "apply local/smaller first" strategy).
   Nerdy) were excluded rather than added blind.
 
 ### Notes
-- `jobfaro seed --region midwest --write` materializes all 17 into `config/portals.yml`. A live scan
+- `jobdar seed --region midwest --write` materializes all 17 into `config/portals.yml`. A live scan
   discovered **~120** entry/mid Midwest + remote-US roles across them (up from ~48) — much of the new
   volume from less-fierce metros (Columbus, Ann Arbor, Indianapolis).
 
@@ -2016,7 +2047,7 @@ eval-time JD fetch — so evaluation works the same regardless of which ATS a ro
   Greenhouse via the board detail API, Workday via the CXS `…/job{externalPath}` detail endpoint, iCIMS
   via the role page's JSON-LD (in the `?in_iframe=1` view, where the JobPosting actually lives). A new
   `fetchJobDescription(url)` registry helper routes any job URL to the right provider.
-- **`jobfaro eval <url>` now fetches the JD for you** and prints it, so the model can score it without its
+- **`jobdar eval <url>` now fetches the JD for you** and prints it, so the model can score it without its
   own fetch tool (and the API / on-device backends in Phase 8 get the JD uniformly). Verified live:
   Greenhouse ~5.5k, Workday (Salesforce) ~7.5k, iCIMS (Covenant Health) ~4.1k chars.
 
@@ -2039,15 +2070,15 @@ Scan-vs-score split (career-ops architecture): the deterministic tool only **dis
 - **`scan` no longer scores.** It discovers + filters roles (by level — including the executive drop — and
   region) and writes them to the pipeline as `status: scanned` with **no fit score**. The old
   "Scored N → Apply/Research/Don't" summary is gone; scan now points you to `eval`.
-- **`jobfaro tui` shows discovered roles as "pending eval"** — no band/score until the model has scored
+- **`jobdar tui` shows discovered roles as "pending eval"** — no band/score until the model has scored
   them. Evaluated roles show the model's score + Apply/Research/Don't band, color-coded; a new `p` key
   filters to pending. (The web `dashboard` only ever showed the application tracker — unchanged.)
 - The eval rubric (`modes/_shared.md` + `modes/eval.md`, EN + ES) now scores on the **0.0–5.0** scale with
   **Apply / Research / Don't** bands (was 0–100 / Strong-Good-Stretch-Skip), matching the pipeline + TUI.
 
 ### Added
-- **`jobfaro eval` is no longer a stub.** Evaluation is model-backed (run it via your AI CLI); the model
-  records its verdict with **`jobfaro eval --save --url <u> --score <0.0–5.0> [--band …] [--company …]
+- **`jobdar eval` is no longer a stub.** Evaluation is model-backed (run it via your AI CLI); the model
+  records its verdict with **`jobdar eval --save --url <u> --score <0.0–5.0> [--band …] [--company …]
   [--role …] [--note …]`**, flipping the row to `status: evaluated`. Discovery stays authoritative for
   company/role/location, and a re-scan never clobbers a recorded verdict.
 - Pipeline store reshaped to `company · role · url · location · score · band · recommendation · status ·
@@ -2093,16 +2124,16 @@ résumé matched almost every role equally.
 ### Notes
 - The deterministic fit score is a **coarse first-pass filter**, not the final word: it ranks true fits to
   the top (product / data / engineering) and sinks off-domain roles (marketing / legal / sales / finance),
-  but a few keyword coincidences can still reach Apply. Run **`jobfaro eval <url>`** for the model's
+  but a few keyword coincidences can still reach Apply. Run **`jobdar eval <url>`** for the model's
   semantic fit — the real "would this résumé land it?" read (on-device model arrives in Phase 8).
-- Re-run `jobfaro scan` to re-score your pipeline under the new tuning.
+- Re-run `jobdar scan` to re-score your pipeline under the new tuning.
 
 ## [1.3.1] — 2026-06-05
 
 ### Fixed
 - Stale **"Status:" banners** at the tops of `README.md`, `README.es.md`, `AGENTS.md`, `CLAUDE.md`,
-  `commands/jobfaro.md`, and `.agents/skills/README.md` still read "Phase 0 scaffold" / "Phase 1" — they
-  now reflect **Phases 0–7 complete (1.3.x)**. Notably, `commands/jobfaro.md` no longer claims the `modes/`
+  `commands/jobdar.md`, and `.agents/skills/README.md` still read "Phase 0 scaffold" / "Phase 1" — they
+  now reflect **Phases 0–7 complete (1.3.x)**. Notably, `commands/jobdar.md` no longer claims the `modes/`
   brain is "skeletons until Phase 1"; it's fully authored (EN + ES). Docs-only — no code change.
 
 ## [1.3.0] — 2026-06-05
@@ -2110,12 +2141,12 @@ résumé matched almost every role equally.
 Résumé build (career-ops "Customize" stage) — completes the pipeline shape: **scan → score → build**.
 
 ### Added
-- **`jobfaro pdf [company]`** — renders your `cv.md` into a clean, **ATS-friendly HTML résumé** (single
+- **`jobdar pdf [company]`** — renders your `cv.md` into a clean, **ATS-friendly HTML résumé** (single
   column, standard fonts, semantic headings, no tables/images) under `output/`, tailored/flagged to a
   pipeline role (`--company` / `--url` / positional). Renders to **PDF when Playwright is installed**
   (lazy-imported, opt-in — the heavy dep stays optional); otherwise writes the HTML to print yourself.
 - `lib/cv_render.mjs` (zero-dependency markdown → ATS-HTML + role keyword matching). Deep content
-  tailoring stays the model's job (the `apply` mode); this stage renders it. `jobfaro pdf` is no longer
+  tailoring stays the model's job (the `apply` mode); this stage renders it. `jobdar pdf` is no longer
   a stub.
 
 ## [1.2.0] — 2026-06-05
@@ -2127,11 +2158,11 @@ Scan → **score** pipeline (career-ops method): scanned roles are scored 0.0–
   location, salary, seniority — mapped to **Apply (≥4.0) / Research (3.5–3.9) / Don't (<3.5)** bands,
   used as a filter. Location/seniority/salary are deterministic; the résumé dimension is a keyword
   *estimate* (flagged) until a model eval replaces it. Weights are editable in `profile.yml`.
-- **Salary** in `jobfaro init` + `profile.yml` (`target_salary`, `score_weights`).
+- **Salary** in `jobdar init` + `profile.yml` (`target_salary`, `score_weights`).
 - **Scored pipeline store** (`lib/evaluations.mjs` → `data/pipeline.tsv`): one row per job (url · 4
   sub-scores · composite · band · status), deduped by URL, status preserved on re-scan.
-- `jobfaro scan` now scores every kept role and writes the pipeline, reporting Apply/Research/Don't counts.
-- `jobfaro tui` now surfaces the scored pipeline: color-coded by band, sort (score / company / band) and
+- `jobdar scan` now scores every kept role and writes the pipeline, reporting Apply/Research/Don't counts.
+- `jobdar tui` now surfaces the scored pipeline: color-coded by band, sort (score / company / band) and
   filters (1/2/3 band · 0 all · c company), with band counts.
 
 ### Notes
@@ -2141,24 +2172,24 @@ Scan → **score** pipeline (career-ops method): scanned roles are scored 0.0–
 ## [1.1.0] — 2026-06-05
 
 ### Added
-- **`jobfaro tui`** — an interactive, zero-dependency terminal dashboard: region/level/language, a
+- **`jobdar tui`** — an interactive, zero-dependency terminal dashboard: region/level/language, a
   scrollable application tracker, and the configured portals. Keys: `r` refresh, `q` quit, ↑/↓ scroll.
 - The **web dashboard** now lists each portal (company · provider · clickable career link), shows a
   name pill, and auto-refreshes.
 - The dashboard link is surfaced everywhere — after `init`/`scan` and in the agent layer (AGENTS.md +
-  scan mode): `jobfaro tui` or `jobfaro dashboard` (http://localhost:4319).
+  scan mode): `jobdar tui` or `jobdar dashboard` (http://localhost:4319).
 
 ### Fixed
-- `jobfaro init` no longer skips prompts at a real terminal (stray type-ahead was consumed by the next
+- `jobdar init` no longer skips prompts at a real terminal (stray type-ahead was consumed by the next
   question, blanking the name). Selecting "My own API key" now prompts for the key and stores it in a
   **gitignored** `data/credentials.env` — never in the tracked `profile.yml`.
 
 ## [1.0.0] — 2026-06-05
 
-Phase 7 — quality, dashboard, and the 1.0 CLI. **First stable release of the Jobfaro CLI.**
+Phase 7 — quality, dashboard, and the 1.0 CLI. **First stable release of the Jobdar CLI.**
 
 ### Added
-- **`jobfaro dashboard`** — a zero-dependency localhost web view (bilingual) of your pipeline: active
+- **`jobdar dashboard`** — a zero-dependency localhost web view (bilingual) of your pipeline: active
   region + level(s) + language, the application tracker, and configured portals. Read-only; never
   phones home.
 - **Security policy** (`SECURITY.md`) and a **legal / privacy / responsible-use** page (`docs/legal.md`).
@@ -2170,16 +2201,16 @@ Phase 7 — quality, dashboard, and the 1.0 CLI. **First stable release of the J
   **Zero telemetry** — the only outbound requests are to the public job boards you configure.
 
 ### Release notes (EN)
-Jobfaro 1.0 is a bilingual (English / Español) US job-search CLI for new grads and people entering the
+Jobdar 1.0 is a bilingual (English / Español) US job-search CLI for new grads and people entering the
 workforce — including no-degree paths. It scans Workday, iCIMS, and Greenhouse employers (live-verified),
 filters by your level and region (Midwest by default), tracks applications, and onboards you in minutes
-with `jobfaro init`. Your résumé stays on your machine.
+with `jobdar init`. Your résumé stays on your machine.
 
 ### Notas de la versión (ES)
-Jobfaro 1.0 es una CLI bilingüe (inglés / español) de búsqueda de empleo en EE. UU. para recién
+Jobdar 1.0 es una CLI bilingüe (inglés / español) de búsqueda de empleo en EE. UU. para recién
 graduados y personas que se incorporan al mundo laboral — incluida la vía sin título. Escanea
 empleadores de Workday, iCIMS y Greenhouse (verificados en vivo), filtra por tu nivel y región (Medio
-Oeste por defecto), registra solicitudes y te configura en minutos con `jobfaro init`. Tu currículum se
+Oeste por defecto), registra solicitudes y te configura en minutos con `jobdar init`. Tu currículum se
 queda en tu máquina.
 
 ### Pending (external)
@@ -2192,12 +2223,12 @@ queda en tu máquina.
 Phase 6 — effortless install & onboarding. Completes the MVP cut line.
 
 ### Added
-- **`jobfaro init`** — a bilingual interactive setup wizard (`lib/commands/init.mjs` + a zero-dep
+- **`jobdar init`** — a bilingual interactive setup wizard (`lib/commands/init.mjs` + a zero-dep
   prompt helper that buffers piped input so it's scriptable). Asks language / metro / region / level /
   tuning / inference, then writes `profile.yml` AND materializes `portals.yml` from the region seed
   catalog — no YAML editing. Non-interactive `--defaults`/`--yes` + flag overrides (`--region`,
   `--levels`, `--name`, …) for installers and the agent layer.
-- **Zero-config first scan:** after `init`, `jobfaro scan` works immediately (seeded portals;
+- **Zero-config first scan:** after `init`, `jobdar scan` works immediately (seeded portals;
   Playwright/PDF stay optional).
 - **One-command install:** `install.sh` (macOS/Linux), `install.ps1` (Windows), and a `.devcontainer/`.
 - **Résumé bootstrap** (`lib/resume.mjs`): a pasted/text résumé → `data/cv.md` + prefilled name/metro
@@ -2207,7 +2238,7 @@ Phase 6 — effortless install & onboarding. Completes the MVP cut line.
 
 ### Verified
 - The wizard ran end-to-end via scripted input in **both languages** → wrote a valid profile and 5
-  seeded Midwest portals, and `jobfaro scan` worked immediately. No YAML editing on the non-dev path.
+  seeded Midwest portals, and `jobdar scan` worked immediately. No YAML editing on the non-dev path.
 
 ## [0.6.0] — 2026-06-05
 
@@ -2221,7 +2252,7 @@ Phase 5 — region toggle (Midwest default) + region-aware employer seeds + geo 
 - `data/seed/employers.yml`: a region-tagged employer catalog, **Midwest seeded first** (Enova,
   project44, Hudl, StockX, Jamf — Chicago / Lincoln / Detroit / Minneapolis) plus a partial Southwest
   set — all live-verified to return public postings.
-- `jobfaro seed [--region <r>] [--metro <m>] [--write]` (`lib/seed.mjs` + `lib/commands/seed.mjs`):
+- `jobdar seed [--region <r>] [--metro <m>] [--write]` (`lib/seed.mjs` + `lib/commands/seed.mjs`):
   previews or materializes matching employers into `config/portals.yml` — no hand-editing.
 - Region + seed tests covering the gate (Phoenix→AZ, Columbus→OH, offshore blocked, remote-US kept,
   nationwide, midwest↔southwest swap).
@@ -2277,8 +2308,8 @@ manufacturers). iCIMS has no public JSON API, so the default path parses public 
   parses real iCIMS `iCIMS_JobCardItem` rows (h3 title, query-stripped URLs); paginates via `pr`,
   dedupes by URL, resolves relative URLs, decodes entities.
   SSRF-guarded (`*.icims.com`, HTTPS) and politely paced.
-- Opt-in **Playwright** render path for JS-rendered iCIMS widgets (`jobfaro scan --playwright` or
-  `JOBFARO_PLAYWRIGHT=1`), sequential and lazy-imported so the default install stays light.
+- Opt-in **Playwright** render path for JS-rendered iCIMS widgets (`jobdar scan --playwright` or
+  `JOBDAR_PLAYWRIGHT=1`), sequential and lazy-imported so the default install stays light.
 - Documented (off-by-default) OAuth2 Job Portal API stub for users with employer credentials.
 - `lib/html.mjs` (JSON-LD extraction, entity decode, tag strip) + iCIMS fixture tests.
 
@@ -2294,7 +2325,7 @@ manufacturers). iCIMS has no public JSON API, so the default path parses public 
 
 ## [0.3.0] — 2026-06-05
 
-Phase 2 — Workday provider. Jobfaro can now scan the single most common US enterprise ATS,
+Phase 2 — Workday provider. Jobdar can now scan the single most common US enterprise ATS,
 zero-token, through the public Workday CXS API.
 
 ### Added
@@ -2336,13 +2367,13 @@ first-class peer; no display strings are hardcoded in code.
 ## [0.1.0] — 2026-06-05
 
 Phase 0 — Foundation & branding. The repo installs, passes `doctor`, and runs a dry-run
-scan; Jobfaro-branded throughout; scope locked to EN/ES with a Midwest-default region and an
+scan; Jobdar-branded throughout; scope locked to EN/ES with a Midwest-default region and an
 entry-default level.
 
 ### Added
 - Two-layer scaffold: a deterministic Node.js layer (`scan.mjs` + `providers/`, `doctor.mjs`,
   tracker) and the Markdown agent brain (`AGENTS.md`, `CLAUDE.md`, `modes/`).
-- `jobfaro` CLI entrypoint (`bin/jobfaro`) with a subcommand router; `scan`, `doctor`, and
+- `jobdar` CLI entrypoint (`bin/jobdar`) with a subcommand router; `scan`, `doctor`, and
   `tracker` implemented; `init`/`eval`/`pipeline`/`pdf`/`dashboard`/`update` are honest stubs
   that name the phase delivering them.
 - Greenhouse scanner provider (reference implementation), the `{ id, detect, fetch }`
@@ -2352,13 +2383,13 @@ entry-default level.
 - Default config: `config/profile.yml` (Midwest region, entry level, English; no PII) and a
   stub `config/portals.yml`; canonical application states in `templates/states.yml`.
 - `doctor` treats PDF and Playwright as **optional** (warn, never fail).
-- Claude Code plugin manifest (`.claude-plugin/`), the `/jobfaro` slash command, and the
+- Claude Code plugin manifest (`.claude-plugin/`), the `/jobdar` slash command, and the
   `.agents/skills/` placeholder.
 - Repo hygiene: Apache-2.0 `LICENSE` + `NOTICE`, `.gitignore`, a GitHub CI workflow, and
   issue/PR templates. Zero-dependency test runner (`test-all.mjs`).
 
 ### Notes
-- The GitHub org/repo (`getjobfaro/jobfaro`) and the npm name are placeholders pending Step 0.2
+- The GitHub org/repo (`getjobdar/jobdar`) and the npm name are placeholders pending Step 0.2
   (formal trademark search + domain/org grab).
 - The plugin manifest should be validated against the current Claude Code plugin spec before
   publishing (Phase 7.5).

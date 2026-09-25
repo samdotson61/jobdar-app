@@ -9,14 +9,14 @@ labels: bug
 A clear description of the bug.
 
 **Steps to reproduce**
-1. Run `jobfaro ...`
+1. Run `jobdar ...`
 2. ...
 
 **Expected vs. actual**
-What you expected, and what happened instead. Paste the output of `jobfaro doctor`.
+What you expected, and what happened instead. Paste the output of `jobdar doctor`.
 
 **Environment**
-- Jobfaro version (`jobfaro --version`):
+- Jobdar version (`jobdar --version`):
 - Node version (`node --version`):
 - OS:
 - Language (en/es):

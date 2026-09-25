@@ -12,9 +12,9 @@ importers:
         specifier: ^4.1.0
         version: 4.2.0
 
-  apps/jobfaro:
+  apps/jobdar:
     dependencies:
-      '@jobfaro/engine':
+      '@jobdar/engine':
         specifier: workspace:*
         version: link:../../packages/engine
       '@react-native-async-storage/async-storage':

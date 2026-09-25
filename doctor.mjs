@@ -1,14 +1,14 @@
-// Jobfaro — environment & setup check.
+// Jobdar — environment & setup check.
 // Hard requirements fail (x); heavy extras (PDF, Playwright) are OPTIONAL and
 // only warn (Phase 0.5), so a fresh, no-PDF install still passes cleanly.
 //
 // Run directly:  node doctor.mjs [--lang en|es]
-// Or via the CLI: jobfaro doctor
+// Or via the CLI: jobdar doctor
 
 import { existsSync, lstatSync, realpathSync, readlinkSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 import path from 'node:path'
-import { loadProfile, paths, SUPPORTED_LANGUAGES, fileExists, ROOT } from './lib/config.mjs'
+import { loadProfile, paths, SUPPORTED_LANGUAGES, fileExists, ROOT, legacyHomeInUse, legacyEnvHonored } from './lib/config.mjs'
 import { getT } from './lib/i18n.mjs'
 import { parseFlags, resolveLang, isDirectRun } from './lib/cli.mjs'
 import { providerIds } from './providers/_contract.mjs'
@@ -77,8 +77,11 @@ export async function runDoctor(argv = []) {
   // Dependencies — if config.mjs imported, js-yaml resolved, so we're good here.
   ok(t('doctor.deps_ok'))
 
-  // Where user data lives (portable: JOBFARO_HOME > repo-local checkout > ~/.jobfaro).
+  // Where user data lives (portable: JOBDAR_HOME > repo-local checkout > ~/.jobdar).
   ok(t('doctor.home', { home: paths.home }))
+  // 1.63.0 compat: a pre-revert ~/.jobfaro (or JOBFARO_* export) still works, but say so — and say the fix.
+  if (legacyHomeInUse) warn(t('doctor.home_legacy', { home: paths.home }))
+  if (legacyEnvHonored.length) warn(t('doctor.env_legacy', { vars: legacyEnvHonored.join(', ') }))
 
   // Config files (warn, don't fail — `init` will create them).
   if (fileExists(paths.profile) && fileExists(paths.portals)) {
@@ -105,14 +108,14 @@ export async function runDoctor(argv = []) {
   }
   warn(t('doctor.pdf_optional'))
 
-  // Global commands (optional): warn when `jobfaro`/`jf` on PATH are dangling or
+  // Global commands (optional): warn when `jobdar`/`jd` on PATH are dangling or
   // point at another copy — the after-a-move failure is otherwise silent. npm's
   // Windows shims are .cmd wrappers, not symlinks, so this check is POSIX-only.
   if (process.platform !== 'win32') {
     const pathDirs = (process.env.PATH || '').split(path.delimiter)
-    const statuses = ['jobfaro', 'jf'].map((cmd) => ({ cmd, ...globalCommandStatus(cmd, { pathDirs, repoRoot: ROOT }) }))
-    if (statuses.every((s) => s.status === 'ok')) ok(t('doctor.link_ok', { cmds: 'jobfaro, jf' }))
-    else if (statuses.every((s) => s.status === 'missing')) warn(t('doctor.link_missing', { cmds: 'jobfaro, jf' }))
+    const statuses = ['jobdar', 'jd'].map((cmd) => ({ cmd, ...globalCommandStatus(cmd, { pathDirs, repoRoot: ROOT }) }))
+    if (statuses.every((s) => s.status === 'ok')) ok(t('doctor.link_ok', { cmds: 'jobdar, jd' }))
+    else if (statuses.every((s) => s.status === 'missing')) warn(t('doctor.link_missing', { cmds: 'jobdar, jd' }))
     else {
       for (const s of statuses) {
         if (s.status === 'ok') ok(t('doctor.link_ok', { cmds: s.cmd }))

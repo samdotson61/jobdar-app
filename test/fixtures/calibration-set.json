@@ -1,7 +1,7 @@
 [
   {
     "label": "starter-set note (read me)",
-    "note": "Jobfaro's STARTER calibration set (1.54.0): 12 synthetic, self-contained JD+CV pairs with hand-banded expectations. `jobfaro calibrate` falls back to this when data/calibration.json doesn't exist — a smoke check that the engine's bands still behave, NOT the N>=50 real-label set the eval-tuning doc calls for (that grows from `jobfaro feedback` thumbs). Each item carries its own cv so expectations don't depend on the user's résumé. This first item has no jd on purpose: calibrate reports it as skipped, proving the skip path stays honest.",
+    "note": "Jobdar's STARTER calibration set (1.54.0): 12 synthetic, self-contained JD+CV pairs with hand-banded expectations. `jobdar calibrate` falls back to this when data/calibration.json doesn't exist — a smoke check that the engine's bands still behave, NOT the N>=50 real-label set the eval-tuning doc calls for (that grows from `jobdar feedback` thumbs). Each item carries its own cv so expectations don't depend on the user's résumé. This first item has no jd on purpose: calibrate reports it as skipped, proving the skip path stays honest.",
     "expect": "dont"
   },
   {

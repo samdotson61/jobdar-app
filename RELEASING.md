@@ -1,7 +1,7 @@
-# Releasing Jobfaro
+# Releasing Jobdar
 
-The CLI ships to npm as the `jobfaro` package (the Expo app in `apps/jobfaro/` is **not** part of the
-npm package — it's a separate GUI over `jobfaro serve`). This checklist covers a CLI release.
+The CLI ships to npm as the `jobdar` package (the Expo app in `apps/jobdar/` is **not** part of the
+npm package — it's a separate GUI over `jobdar serve`). This checklist covers a CLI release.
 
 ## Every release — the mechanical checklist
 
@@ -36,45 +36,45 @@ Then draft a GitHub release from the tag, pasting the CHANGELOG entry.
 
 These gate a real 1.0 and need a human call; the checklist above is ready the moment they're settled:
 
-- **npm name / namespace.** `jobfaro` (unscoped) is **available** on the registry as of 2026-07-16 (verified at the rename)
-  (`npm view jobfaro` → 404). Options: claim `jobfaro` now, or publish under a scope
-  (`@sdotson/jobfaro` / an org scope). Unscoped is the cleaner install (`npm i -g jobfaro`) but is a
+- **npm name / namespace.** `jobdar` (unscoped) is **available** on the registry as of 2026-09-25 (re-verified at the Jobdar revert)
+  (`npm view jobdar` → 404). Options: claim `jobdar` now, or publish under a scope
+  (`@sdotson/jobdar` / an org scope). Unscoped is the cleaner install (`npm i -g jobdar`) but is a
   land-grab you can't undo casually. Decide before first publish.
 - **Public vs. closed beta.** The repo is already public, but publishing to npm invites `npm i -g`
   installs from strangers. Recommend a **closed beta** first (share the tarball or a scoped prerelease
   `1.0.0-beta.0` with `--tag beta`) so the eval quality and onboarding get real-user feedback before a
-  headline 1.0. The feedback loop (`jobfaro calibrate --feedback`) is built precisely to harvest that.
+  headline 1.0. The feedback loop (`jobdar calibrate --feedback`) is built precisely to harvest that.
 - **License confirmation.** Currently Apache-2.0. Fine to ship; just confirm it's the intended license
   for a public tool that touches employer job data.
 - **GitHub home.** Everything (installers, docs, package metadata, the scanner User-Agent) points at
-  the real public repo, `samdotson61/jobfaro-app` — so install instructions work today. If you claim a
-  branded org for 1.0 (ROADMAP Step 0.2 suggests e.g. `getjobfaro`), transfer the repo (GitHub redirects
+  the real public repo, `samdotson61/jobdar-app` — so install instructions work today. If you claim a
+  branded org for 1.0 (ROADMAP Step 0.2 suggests e.g. `getjobdar`), transfer the repo (GitHub redirects
   the old URLs) and sweep the references in one pass:
-  `grep -rn "samdotson61/jobfaro-app" --include="*.md" --include="*.json" --include="*.mjs" --include="*.sh" --include="*.ps1" .`
+  `grep -rn "samdotson61/jobdar-app" --include="*.md" --include="*.json" --include="*.mjs" --include="*.sh" --include="*.ps1" .`
 
 ## TestFlight (the iOS app) — the exact sequence
 
-App-side prep is DONE (bundle `com.jobfaro.app`, icons/splash, `ITSAppUsesNonExemptEncryption:false`,
+App-side prep is DONE (bundle `com.jobdar.app`, icons/splash, `ITSAppUsesNonExemptEncryption:false`,
 eas.json profiles, Release config verified compiling locally). The four account-bound steps:
 
 ```sh
-cd apps/jobfaro
+cd apps/jobdar
 eas login                       # your Expo account (free)
-eas init                        # mints the Jobfaro project id (the pre-rename one was removed)
+eas init                        # mints the Jobdar project id (the pre-rename one was removed)
 eas build -p ios --profile production   # cloud build; first run walks Apple credentials (paid account)
 eas submit -p ios --latest      # uploads to App Store Connect → TestFlight
 ```
 
 Before `eas submit`: create the app record once in App Store Connect (My Apps → “+” → New App →
-name **Jobfaro**, bundle ID **com.jobfaro.app**, SKU e.g. `jobfaro-ios`). Then TestFlight → add
+name **Jobdar**, bundle ID **com.jobdar.app**, SKU e.g. `jobdar-ios`). Then TestFlight → add
 yourself as an internal tester (instant, no review). External testers come later via Beta App Review
-(~24–48h) — see `~/Documents/Jobfaro-Beta.md` for the phased plan and the review-notes checklist.
-First thing on real hardware: open `jobfaro://spike` and run the on-device eval for true Metal timings.
+(~24–48h) — see `~/Documents/Jobdar-Beta.md` for the phased plan and the review-notes checklist.
+First thing on real hardware: open `jobdar://spike` and run the on-device eval for true Metal timings.
 
 ## Known non-blockers (documented, shippable as-is)
 
 See `ROADMAP.md` → "Known gaps & current limitations". None block a beta: PDF résumé import needs
-`poppler`/`pdftotext` on the host for the CLI/serve (flagged by `jobfaro doctor`; on-device the app asks
+`poppler`/`pdftotext` on the host for the CLI/serve (flagged by `jobdar doctor`; on-device the app asks
 for `.docx`/`.txt`), discovery is keyless ATS-probing (aggregators like USAJobs are opt-in BYO-key, not
 yet live-verified), the evaluator is bimodal on the small labeled set (the feedback loop is the path to
 recalibration once real thumbs accumulate), and the on-device hardware numbers (Metal speed, the in-app
@@ -88,15 +88,15 @@ their guide). Build steps, from a fresh clone:
 
 ```bash
 cd apps/desktop
-node prepare-engine.mjs   # bootstrap: npm-packs the repo root → vendor/jobfaro-engine.tgz (STABLE
+node prepare-engine.mjs   # bootstrap: npm-packs the repo root → vendor/jobdar-engine.tgz (STABLE
                           # name — the committed dependency string never changes) + installs all deps
 npx electron . --smoke    # dev-tree self-test: engine + GUI + API through one port, with screenshots
 npm run dist:all          # clean → vendor → GUI export → all six installers (mac arm64/x64,
                           # win x64/arm64) → prune ALL unpacked bundles (dist-build = distributables
-                          # only; any stray Jobfaro.app on indexed disk duplicates in Spotlight)
+                          # only; any stray Jobdar.app on indexed disk duplicates in Spotlight)
 npm run smoke:packed      # smoke the PACKAGED app — unzips the native zip into the temp dir
                           # (Spotlight-invisible), runs --smoke, cleans up
-npm run install:mac       # optional: install the canonical /Applications/Jobfaro.app for THIS Mac
+npm run install:mac       # optional: install the canonical /Applications/Jobdar.app for THIS Mac
                           # (registers it with LaunchServices; the one you double-click)
 ```
 
@@ -105,6 +105,6 @@ the beta (unsigned; the tester guide covers the OS warnings). The whole flow is 
 re-running any step converges — and `prepare-engine.mjs` is the one command a fresh clone needs
 before anything else (plain `npm install` fails until the gitignored tarball exists). Re-run it
 after ANY engine change or version bump — the packed app ships the vendored tarball, not the
-working tree. The packed app is launch-anywhere (no baked paths; data home `~/.jobfaro`) and
+working tree. The packed app is launch-anywhere (no baked paths; data home `~/.jobdar`) and
 upgrade-safe (stable engine port → stable origin, so onboarding/verdict state survives replacing
 the .app). Signing/notarization and a real icon are pre-1.0 items, not beta blockers.

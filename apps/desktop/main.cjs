@@ -1,9 +1,9 @@
-// Jobfaro Desktop (beta, 0.1.0) — the Electron shell. One process, three jobs:
-//   1. Run the REAL `jobfaro serve` engine in-process on a free loopback port (the same code the CLI
+// Jobdar Desktop (beta, 0.1.0) — the Electron shell. One process, three jobs:
+//   1. Run the REAL `jobdar serve` engine in-process on a free loopback port (the same code the CLI
 //      runs — nothing forked), with --gui pointing at the exported web app so GUI and API share one
 //      origin (no CORS, no token needed on loopback).
 //   2. Open a window on it, with ?serve=<that port> so the app pins its backend to this instance.
-//   3. Data lives in the tester's ~/.jobfaro (the engine's normal data home) — the packed app is
+//   3. Data lives in the tester's ~/.jobdar (the engine's normal data home) — the packed app is
 //      read-only and never holds personal data. Inference: winc on 127.0.0.1:8080, exactly like the
 //      CLI; without it the app shows its backend-down banner (see docs/desktop-beta.md).
 // `--smoke` runs a headless self-test: boot serve, load the GUI, probe the API through the same port,
@@ -16,8 +16,8 @@ const fs = require('node:fs')
 
 const SMOKE = process.argv.includes('--smoke')
 const GUI_DIR = path.join(__dirname, 'gui')
-// The engine ships as the real npm-packed `jobfaro` dependency; resolve its checkout root.
-const ENGINE_ROOT = path.dirname(require.resolve('jobfaro/package.json'))
+// The engine ships as the real npm-packed `jobdar` dependency; resolve its checkout root.
+const ENGINE_ROOT = path.dirname(require.resolve('jobdar/package.json'))
 
 // A STABLE port (0.1.2): the renderer's localStorage — onboarded flag, verdicts, thumbs highlights —
 // is scoped to the page ORIGIN, so a random port per launch made every restart look like a first run
@@ -41,12 +41,12 @@ async function pickPort() {
 }
 
 async function startEngine(port) {
-  // Seed the API key from the data home the way bin/jobfaro does, then start serve in-process.
+  // Seed the API key from the data home the way bin/jobdar does, then start serve in-process.
   const { loadApiKey } = await import(path.join(ENGINE_ROOT, 'lib', 'config.mjs'))
-  if (!process.env.JOBFARO_API_KEY) {
+  if (!process.env.JOBDAR_API_KEY) {
     try {
       const k = loadApiKey()
-      if (k) process.env.JOBFARO_API_KEY = k
+      if (k) process.env.JOBDAR_API_KEY = k
     } catch {
       /* no key — local winc is the default backend anyway */
     }
@@ -54,7 +54,7 @@ async function startEngine(port) {
   const { runServe } = await import(path.join(ENGINE_ROOT, 'lib', 'commands', 'serve.mjs'))
   // runServe resolves only on server error — run it un-awaited and poll the port for readiness.
   runServe(['--port', String(port), '--gui', GUI_DIR]).catch((e) => {
-    dialog.showErrorBox('Jobfaro engine failed', String((e && e.stack) || e))
+    dialog.showErrorBox('Jobdar engine failed', String((e && e.stack) || e))
     app.exit(1)
   })
   const deadline = Date.now() + 15000
@@ -76,7 +76,7 @@ async function main() {
   // their filename). Save straight to the OS Downloads folder and reveal the finished file, so the
   // tester never wonders where their report went.
   session.defaultSession.on('will-download', (_e, item) => {
-    const target = path.join(app.getPath('downloads'), item.getFilename() || 'jobfaro-download')
+    const target = path.join(app.getPath('downloads'), item.getFilename() || 'jobdar-download')
     item.setSavePath(target)
     item.once('done', (_ev, state) => {
       if (state === 'completed' && !SMOKE) shell.showItemInFolder(target)
@@ -90,7 +90,7 @@ async function main() {
     width: 1200,
     height: 820,
     show: !SMOKE,
-    title: 'Jobfaro (beta)',
+    title: 'Jobdar (beta)',
     webPreferences: { contextIsolation: true, nodeIntegration: false },
   })
   win.removeMenu?.()
@@ -149,7 +149,7 @@ app.whenReady().then(() => {
       app.exit(1)
       return
     }
-    dialog.showErrorBox('Jobfaro failed to start', String((e && e.stack) || e))
+    dialog.showErrorBox('Jobdar failed to start', String((e && e.stack) || e))
     app.exit(1)
   })
 })
