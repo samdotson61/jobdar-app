@@ -160,6 +160,9 @@ stays as is.
 - Spark's correct rejection of #6 is a single data point that a second opinion on *borderline Apply*
   rows could catch qwen false-Applies. That is the 8a.9 escalation seam (`isBorderline`), and it would be
   measured, not assumed — the current labeled set has too few Apply rows (5) to size it.
+- Same-day sequel: four more candidates (Granite 4.2 3B, Gemma 4 E4B, LFM2.5-8B-A1B, Qwen3.5-9B) benched
+  the same way in [`eval-model-alternatives.md`](eval-model-alternatives.md) — all worse than qwen3.5-4b at
+  the Apply end; Spark's row is reproduced there for reference.
 - Any re-test of Spark should wait for a chat template / quant revision from the publisher; nothing in
   this run suggests a prompt change on our side would fix under-acceptance (the prompt is the shipped v2
   that qwen scores 27/30 on).

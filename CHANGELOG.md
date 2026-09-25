@@ -4,6 +4,17 @@ All notable changes to Jobfaro are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and Jobfaro adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.62.1] — 2026-09-24
+
+**Docs: eval-model alternatives benched — none better than qwen3.5-4b.** New
+[`docs/eval-model-alternatives.md`](docs/eval-model-alternatives.md): Granite 4.2 3B, Gemma 4 E4B, LFM2.5-8B-A1B
+and Qwen3.5-9B run on the same harness / rows / engine (b11146) / v2 prompt as the shipped model and re-scored
+under the 1.62.0 weights. Apply precision: qwen3.5-4b **4/5** (4 of 5 real fits found, 39/50 agreement) vs
+Granite 1/1 (1 fit found), Qwen-9B 2/6 (4 false Applies, 6 unparsed rows), Gemma E4B and LFM **0 Applies on 50
+rows**. LFM is 2.9× faster and ignores `--reasoning off` (empty output under the eval profile); Granite's
+json_schema grammar breaks if thinking-off flags are added. **No model change**; eval picker untouched. Docs
+only, no code.
+
 ## [1.62.0] — 2026-09-24
 
 **Eval rubric: logistics + education weights halved (the "half-weight fix").** Raw weights now
