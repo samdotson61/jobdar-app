@@ -6,7 +6,7 @@ import {
 } from './engine';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { backendMode, serveGet, servePost, serveHealth } from './serve';
-import { regionForLocation, termsFromResume, relevanceScore } from '@jobfaro/engine';
+import { regionForLocation, termsFromResume, relevanceScore, SUBCRITERIA } from '@jobfaro/engine';
 
 // The app holds NO engine logic — it renders what `jobfaro serve` (the real CLI + winc) returns. Every
 // action is a thin call to serve; `@jobfaro/engine` is used only for derived UI (band colors, cadence labels).
@@ -103,7 +103,12 @@ const startTicker = (set: any, get: any) => {
   }, 250);
   return () => clearInterval(id);
 };
-const WEIGHTS: Record<string, number> = { skills: 0.35, experience: 0.25, level_fit: 0.2, logistics: 0.1, education: 0.1 };
+// Criterion shares for the verdict breakdown — derived from the engine's SUBCRITERIA (normalized), never a
+// second copy: the percentages the user sees are exactly the weights the score used.
+const WEIGHTS: Record<string, number> = (() => {
+  const total = (SUBCRITERIA as { key: string; weight: number }[]).reduce((a, s) => a + s.weight, 0);
+  return Object.fromEntries((SUBCRITERIA as { key: string; weight: number }[]).map((s) => [s.key, s.weight / total]));
+})();
 
 
 // Pick the shortlist winc triages (1.22.1): the most promising un-gated rows by relevance tier, then

@@ -104,6 +104,12 @@ Sub-criteria (model returns `strong | partial | none` + one quoted JD line of ev
 | `education_gate` | 10% | **soft** under `no_degree` (flag, never auto-zero, per 4.5) |
 
 Code (not the model) maps categories → numbers, applies weights → **0–5 score**, then bands.
+> **Superseded (2026-09-24, CLI 1.62.0):** logistics and education were **halved** — raw weights now
+> 35 / 25 / 20 / **5 / 5**, normalized by the code to effective shares **39 / 28 / 22 / 5.6 / 5.6**. On the
+> 50-row labeled bench (v2 prompt, qwen3.5-4b, engine b11146) those two criteria were mostly noise: label
+> agreement rose **32 → 39/50** with Apply precision/recall unchanged (4/5), and the Research band stopped
+> collecting labeled-Don't admin roles parked at exactly 3.5. Evidence + the rejected alternative (Spark-X2.5)
+> in [`spark-x2.5-eval-candidate.md`](spark-x2.5-eval-candidate.md).
 > **Superseded (2026-08-28):** this section's draft thresholds (Apply ≥ 3.5 / Research 2.0–3.4) were
 > **dropped before ship** — the shipped scale is **Apply ≥ 4.0 · Research ≥ 3.5 · else Don't**,
 > hardcoded in `lib/bands.mjs` (single source of truth; NOT profile-configurable), decided 2026-06-13

@@ -1170,13 +1170,13 @@ const ALL = (r) => ({ skills: { rating: r }, experience: { rating: r }, level_fi
 test('8a: scoreFromJudgments computes the weighted 0–5 (code owns the number, not the model)', () => {
   assert.equal(scoreFromJudgments(ALL('strong')), 5.0)
   assert.equal(scoreFromJudgments(ALL('none')), 0.0)
-  // skills strong .35 + exp partial .125 + level strong .20 + logistics none 0 + edu partial .05 = .725 → 3.6
-  assert.equal(scoreFromJudgments({ skills: { rating: 'strong' }, experience: { rating: 'partial' }, level_fit: { rating: 'strong' }, logistics: { rating: 'none' }, education: { rating: 'partial' } }), 3.6)
+  // skills strong .35 + exp partial .125 + level strong .20 + logistics none 0 + edu partial .025 = .70 / .90 → 3.9 (1.62.0 half-weights)
+  assert.equal(scoreFromJudgments({ skills: { rating: 'strong' }, experience: { rating: 'partial' }, level_fit: { rating: 'strong' }, logistics: { rating: 'none' }, education: { rating: 'partial' } }), 3.9)
   assert.equal(scoreFromJudgments({}), 0.0) // missing → none
   // 5-level granularity (1.41.x): good=.75, weak=.25 fill the middle so realistic fits reach the Research band
   assert.equal(scoreFromJudgments(ALL('good')), 3.8) // 0.75 * 5 = 3.75 → 3.8
-  // skills good + exp weak + level strong + log strong + edu good = 0.70 → 3.5 (a genuine early-career fit lands in Research)
-  assert.equal(scoreFromJudgments({ skills: { rating: 'good' }, experience: { rating: 'weak' }, level_fit: { rating: 'strong' }, logistics: { rating: 'strong' }, education: { rating: 'good' } }), 3.5)
+  // skills good + exp weak + level strong + log strong + edu good = .6125 / .90 → 3.4 — a strong logistics rating no longer lifts a weak-experience fit into Research on its own (1.62.0)
+  assert.equal(scoreFromJudgments({ skills: { rating: 'good' }, experience: { rating: 'weak' }, level_fit: { rating: 'strong' }, logistics: { rating: 'strong' }, education: { rating: 'good' } }), 3.4)
 })
 
 test('8a: parseEvalJson extracts the verdict object; stripPII scrubs the CV slice', () => {

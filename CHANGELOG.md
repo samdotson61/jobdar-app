@@ -4,6 +4,30 @@ All notable changes to Jobfaro are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and Jobfaro adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.62.0] — 2026-09-24
+
+**Eval rubric: logistics + education weights halved (the "half-weight fix").** Raw weights now
+skills 35 / experience 25 / level_fit 20 / **logistics 5 / education 5**; `scoreFromJudgments` normalizes by
+the total, so the effective shares are 39 / 28 / 22 / 5.6 / 5.6. App `@jobfaro/app` **1.24.0**; 159 tests.
+
+- **Why:** on the 50-row labeled bench (shipped v2 prompt, qwen3.5-4b, engine b11146) those two criteria
+  were mostly noise — the model rated logistics "strong" on nearly every row regardless of the job. Halving
+  them lifts label agreement **32 → 39/50** with Apply precision and recall **unchanged (4/5)**; the eight
+  labeled-Don't admin-support roles that sat in the Research band at exactly 3.5 drop to Don't; one
+  labeled-Research row (#1) is lost. Half and zero weights bench identically — half keeps the criteria
+  visible in the rubric. Verified through the shipped code path (reconstructed judgments →
+  `scoreFromJudgments` → bands), not just the counterfactual script.
+- **App parity:** the Apply tab's per-criterion percentages are now **derived from the engine's
+  `SUBCRITERIA`** (normalized) instead of a duplicated constant — the shares the user sees are exactly the
+  ones the score used (39% / 28% / 22% / 6% / 6%). The on-device backend inherits the change via
+  `buildVerdict`.
+- **Rounding:** `scoreFromJudgments` adds a 1e-9 epsilon before rounding — ratings are multiples of .25
+  and weights of .05, so true scores are exact decimals; the epsilon only cancels binary noise at .x5
+  boundaries (0.675/0.9 = 0.7499999… would otherwise round 3.75 down to 3.7).
+- Tests updated to the new arithmetic (3.6 → 3.9; the "logistics-strong lifts a weak-experience fit into
+  Research" example now lands at 3.4 — the intended effect). Docs: eval-tuning-research weights table
+  carries a superseded note; the evidence lives in `docs/spark-x2.5-eval-candidate.md`.
+
 ## [1.61.5] — 2026-09-24
 
 **Docs: the logistics/education weight fix tried on both models (counterfactual over unchanged ratings).**
