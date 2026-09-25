@@ -217,7 +217,7 @@ conformance/lint test keeps the scanner provider-pure so the same code stays por
 
 ## Known gaps & current limitations
 
-Current as of `@jobdar/app` 1.17.x / CLI 1.47.x — intentional/known, mirrored in
+Current as of `@jobdar/app` 1.25.x / CLI 1.63.x — intentional/known, mirrored in
 [ROADMAP.md](../ROADMAP.md#known-gaps--current-limitations). (Resolved since 1.10.0: first-run
 **onboarding shipped** in 1.41 — welcome → continue-as/upload/manual → search; **`POST /profile`
 shipped** in 1.41 — the app writes the chosen identity to `config/profile.yml`; the **`jobdar doctor`

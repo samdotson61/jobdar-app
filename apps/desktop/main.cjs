@@ -13,8 +13,30 @@ const { app, BrowserWindow, shell, dialog, session } = require('electron')
 const path = require('node:path')
 const net = require('node:net')
 const fs = require('node:fs')
+const os = require('node:os')
 
 const SMOKE = process.argv.includes('--smoke')
+
+// Per-user state (renderer localStorage: onboarded flag, verdicts, thumbs) lives in Electron's userData,
+// whose folder is named after the app. 0.3.1: (a) `--smoke` drives onboarding → Apply and must never
+// read or write a tester's real state, so it gets a throwaway folder; (b) the July→September builds
+// were named "jobfaro-desktop" — carry that folder over ONCE so an upgrading tester keeps their state
+// (RELEASING.md's upgrade-safe promise). Both must run before app 'ready'.
+if (SMOKE) {
+  app.setPath('userData', fs.mkdtempSync(path.join(os.tmpdir(), 'jobdar-smoke-userdata-')))
+} else {
+  try {
+    const cur = app.getPath('userData')
+    const legacy = path.join(path.dirname(cur), 'jobfaro-desktop')
+    const marker = (d) => fs.existsSync(path.join(d, 'Local Storage'))
+    if (!marker(cur) && marker(legacy)) {
+      fs.cpSync(legacy, cur, { recursive: true, force: false, errorOnExist: false })
+      console.log(`[jobdar] carried over saved state from ${legacy}`)
+    }
+  } catch (e) {
+    console.error('[jobdar] legacy state carry-over skipped:', (e && e.message) || e) // a fresh start is the honest fallback
+  }
+}
 const GUI_DIR = path.join(__dirname, 'gui')
 // The engine ships as the real npm-packed `jobdar` dependency; resolve its checkout root.
 const ENGINE_ROOT = path.dirname(require.resolve('jobdar/package.json'))
@@ -60,7 +82,7 @@ async function startEngine(port) {
   const deadline = Date.now() + 15000
   while (Date.now() < deadline) {
     try {
-      const r = await fetch(`http://127.0.0.1:${port}/pipeline`)
+      const r = await fetch(`http://127.0.0.1:${port}/pipeline`, { signal: AbortSignal.timeout(10000) })
       if (r.ok) return
     } catch {
       /* not up yet */
@@ -113,8 +135,8 @@ async function main() {
 
   if (SMOKE) {
     // Self-test: API reachable through the same origin + the GUI actually rendered.
-    const health = await fetch(`http://127.0.0.1:${port}/pipeline`)
-    const report = await fetch(`http://127.0.0.1:${port}/report`)
+    const health = await fetch(`http://127.0.0.1:${port}/pipeline`, { signal: AbortSignal.timeout(10000) })
+    const report = await fetch(`http://127.0.0.1:${port}/report`, { signal: AbortSignal.timeout(10000) })
     const title = await win.webContents.executeJavaScript('document.title || document.body.innerText.slice(0,80)')
     await new Promise((r) => setTimeout(r, 1500)) // let the app paint
     const snap = async (name) => {

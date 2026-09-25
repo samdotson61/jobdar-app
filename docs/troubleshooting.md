@@ -5,6 +5,7 @@ optional.
 
 | Symptom | Fix |
 |---|---|
+| `jd` runs something else (e.g. Homebrew's `jd` JSON-diff tool) | Two tools want `/opt/homebrew/bin/jd`; `jobdar doctor` reports which one won. Use `jobdar` (always yours), or uninstall the other `jd`. |
 | `command not found: jobdar` | Use `node bin/jobdar <cmd>`, or run `npm link` to put `jobdar` (and `jd`) on your PATH. |
 | `jobdar`/`jd` stopped working after the folder moved or was renamed | The `npm link` symlinks bake the old absolute path (so do CocoaPods and native build caches). Run `./scripts/after-move.sh` — it relinks the commands, purges the stale caches, and re-runs `pod install` + `doctor`. `jobdar doctor` names the broken link and this fix. |
 | `doctor` warns about Playwright / PDF | Optional — only some JS-rendered iCIMS sites need Playwright (`npm i playwright`); `jobdar pdf` always writes HTML, and Playwright adds the automatic PDF. You can still scan, eval, and track. |

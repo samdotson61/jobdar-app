@@ -38,8 +38,11 @@ separate one-time install of [winc.cpp](https://github.com/samdotson61/winc.cpp)
   git clone -b winc-jobdar https://github.com/samdotson61/winc.cpp && cd winc.cpp && ./install.sh
   ```
 
-- **Windows:** download a **winc-jobdar** release build from the winc.cpp releases page, then run
-  `winc setup`.
+- **Windows:** the eval profile lives on the `winc-jobdar` branch and is **not in the winc.cpp release
+  binaries yet**. Either build the branch from source (Go 1.22+: `git clone -b winc-jobdar
+  https://github.com/samdotson61/winc.cpp && cd winc.cpp && go build ./cmd/winc && .\winc setup`), or
+  point the app's Settings → backend at a Mac on your network that is running `jobdar serve --host 0.0.0.0`
+  (it prints the bearer token to paste). A packaged Windows backend is on the roadmap.
 
 Then start the model (leave this window open while you test):
 

@@ -33,7 +33,8 @@ try {
   /* native / no window */
 }
 // Persisted override (Settings) — loads fast; the pre-hydration default is correct per-platform anyway.
-AsyncStorage.getItem('jobdar-backend-config').then((raw) => {
+// 1.25.1: the July→September builds persisted under `jobfaro-backend-config`; read it once if the new key is empty.
+AsyncStorage.getItem('jobdar-backend-config').then((raw) => raw ?? AsyncStorage.getItem('jobfaro-backend-config')).then((raw) => {
   if (!raw) return;
   try {
     const c = JSON.parse(raw);
@@ -61,11 +62,28 @@ const headers = (): Record<string, string> => ({
   ...(TOKEN ? { authorization: `Bearer ${TOKEN}` } : {}),
 });
 
+// Long-running verbs (batch score, scan) legitimately take minutes; a wedged serve must still surface as
+// backend-down rather than a spinner forever. Hermes has no AbortSignal.timeout, so do it by hand.
+const CALL_TIMEOUT_MS = 600000;
+function parseBody(b: unknown): any {
+  if (typeof b !== 'string') return undefined;
+  try { return JSON.parse(b); } catch { return undefined; }
+}
 async function call(path: string, init?: RequestInit): Promise<any> {
   if (MODE === 'local') {
-    return localCall(path, init && init.method === 'POST' ? 'POST' : 'GET', init && typeof init.body === 'string' ? JSON.parse(init.body) : undefined);
+    return localCall(path, init && init.method === 'POST' ? 'POST' : 'GET', parseBody(init && init.body));
   }
-  const r = await fetch(`${BASE}${path}`, { ...init, headers: { ...headers(), ...((init && (init.headers as any)) || {}) } });
+  const ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  const timer = ctrl ? setTimeout(() => ctrl.abort(), CALL_TIMEOUT_MS) : null;
+  let r: Response;
+  try {
+    r = await fetch(`${BASE}${path}`, { ...init, ...(ctrl ? { signal: ctrl.signal } : {}), headers: { ...headers(), ...((init && (init.headers as any)) || {}) } });
+  } catch (e: any) {
+    // Network failure / timeout → the same tagged shape a 503 produces, so the backend-down banner shows.
+    return { ok: false, status: 0, error: e && e.name === 'AbortError' ? 'timeout' : String((e && e.message) || e) };
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
   const body = await r.json().catch(() => ({}));
   // Non-2xx (incl. 503 backend-down) returns a tagged object rather than throwing — callers branch on it.
   return r.ok ? body : { ok: false, status: r.status, ...body };

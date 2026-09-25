@@ -78,13 +78,29 @@ const num = (x: any) => Number(x) || 0;
 // Persist the user's own state on BOTH platforms — web and native behave identically. First boot has NO
 // stored key → the app starts blank; once the user uploads a résumé or makes a selection, the change is
 // saved and restored on the next load.
-//   web    → synchronous localStorage (unchanged key, so existing users keep their state, and hydration
+//   web    → synchronous localStorage (key `jobdar-app-v1`; a `jobfaro-app-v1` predecessor is read once — and hydration
 //            stays synchronous — no flash of the blank/onboarding state before the real one)
 //   native → AsyncStorage (zustand's createJSONStorage handles the Promise-returning variant)
 const stateStorage = {
+  // 1.25.1: state written by the July→September "Jobfaro" builds lives under `jobfaro-*`. If the new key is
+  // empty, read (and carry forward) the old one, so an upgrading tester keeps onboarding/verdicts/thumbs.
   getItem: (k: string): string | null | Promise<string | null> => {
-    try { if (typeof localStorage !== 'undefined') return localStorage.getItem(k); } catch { return null; }
-    return AsyncStorage.getItem(k).catch(() => null);
+    const legacy = k.startsWith('jobdar-') ? k.replace(/^jobdar-/, 'jobfaro-') : '';
+    try {
+      if (typeof localStorage !== 'undefined') {
+        const v = localStorage.getItem(k);
+        if (v != null || !legacy) return v;
+        const old = localStorage.getItem(legacy);
+        if (old != null) { try { localStorage.setItem(k, old); } catch { /* read-only storage: still return it */ } }
+        return old;
+      }
+    } catch { return null; }
+    return AsyncStorage.getItem(k).then(async (v) => {
+      if (v != null || !legacy) return v;
+      const old = await AsyncStorage.getItem(legacy);
+      if (old != null) await AsyncStorage.setItem(k, old).catch(() => {});
+      return old;
+    }).catch(() => null);
   },
   setItem: (k: string, v: string): void | Promise<void> => {
     try { if (typeof localStorage !== 'undefined') { localStorage.setItem(k, v); return; } } catch { return; /* private mode / no storage */ }

@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { Pressable, Text } from 'react-native';
+import { Pressable, Text, type ColorValue } from 'react-native';
 import { useStore } from '@/src/store';
 import { t } from '@/src/engine';
 import { C } from '@/src/ui';
@@ -7,7 +7,7 @@ import { C } from '@/src/ui';
 export default function TabLayout() {
   const lang = useStore((s) => s.profile.language);
   const setLang = useStore((s) => s.setLang);
-  const icon = (emoji: string) => ({ color }: { color: string }) => <Text style={{ fontSize: 18, color }}>{emoji}</Text>;
+  const icon = (emoji: string) => ({ color }: { color: ColorValue }) => <Text style={{ fontSize: 18, color }}>{emoji}</Text>;
   return (
     <Tabs
       screenOptions={{

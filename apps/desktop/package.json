@@ -1,6 +1,6 @@
 {
   "name": "jobdar-desktop",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "private": true,
   "description": "Jobdar Desktop (beta) — the full local job-search engine + the app GUI in one double-clickable window, for Mac and Windows beta testers.",
   "main": "main.cjs",

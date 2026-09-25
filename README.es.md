@@ -14,7 +14,7 @@ puesto frente a tu currículum, adapta un CV y una carta de presentación compat
 registra cada postulación.
 
 > **Estado:** Fases 0–7, 5.5, 7.7, 7.8, 8b, 8a, 8c, 8e + 8f **completas**, **Fase 10 L0–L5 entregada** —
-> **Jobdar CLI `1.63.0`** + **app `1.25.0`**: núcleo bilingüe; **seis escáneres
+> **Jobdar CLI `1.63.1`** + **app `1.25.1`**: núcleo bilingüe; **seis escáneres
 > verificados en vivo** (Workday, iCIMS, Greenhouse, Lever, Ashby + un lector JSON-LD opcional) más un
 > agregador federal **USAJobs** opcional (con tu propia clave gratuita); selectores
 > de nivel y región y el asistente `jobdar init`; la tubería completa **descubrir → prefiltrar → evaluar →
@@ -46,7 +46,7 @@ web). El modelo que hace el trabajo es **intercambiable**:
 
 El escáner solo toca ofertas de empleo **públicas** — nunca tu currículum — así que **no alojamos
 datos personales**. Eso protege tu privacidad y limita nuestra responsabilidad. Consulta
-**[SECURITY.md](SECURITY.md)** y **[Legal y uso responsable](docs/legal.md)** para conocer todo el enfoque.
+**[SECURITY.md](SECURITY.md)** y **[Legal y uso responsable](docs/legal.md)** para conocer todo el enfoque (cero telemetría, escáneres con protección anti-SSRF).
 
 **Tu perfil nunca llega a un repositorio.** `config/profile.yml` (nombre, área metropolitana, salario
 objetivo — creado por `jobdar init` a partir de tus respuestas o tu currículum) y `config/portals.yml`

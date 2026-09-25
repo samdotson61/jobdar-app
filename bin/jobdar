@@ -7,6 +7,7 @@
 import { loadProfile, loadApiKey, loadUsaJobsCreds } from '../lib/config.mjs'
 import { setUsaJobsCredsSource } from '../providers/_creds.mjs'
 import { getT } from '../lib/i18n.mjs'
+import '../lib/http_node.mjs' // DNS-rebinding guard for the scanners (Node-only; the app keeps the name-level guard)
 
 // Wire key-gated providers to the CLI's credential store (providers themselves stay fs-free — Phase 10).
 setUsaJobsCredsSource(loadUsaJobsCreds)

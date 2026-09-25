@@ -4,6 +4,50 @@ All notable changes to Jobdar are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and Jobdar adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.63.1] — 2026-09-25
+
+**Security + hygiene pass from the 2026-09-25 audit (re-verified after the rename).** App `1.25.1`,
+desktop `0.3.1`; 164 tests.
+
+- **`jobdar serve` answers loopback `Host` values only** (`127.0.0.1` / `localhost` / `::1` → else
+  `421`). The token-less loopback bind was open to DNS rebinding: a page whose DNS flips to 127.0.0.1 is
+  same-origin in the browser's eyes, so the CORS guard could not stop it — but its requests carry the
+  attacker's hostname. Non-loopback binds keep the mandatory token (which already defeats rebinding).
+- **Auth is `Authorization: Bearer` only.** `?token=` is no longer accepted — it landed in access logs,
+  browser history and Referer headers. The GUI always sent the header; the CLI hint and the 401 text say so.
+- **SSRF: resolve-then-check.** `lib/http.mjs` gains a resolver seam (`setHostResolver`); Node entry
+  points (CLI, `serve` — hence the desktop app — and the scanner proxy) install `lib/http_node.mjs`, so a
+  hostname that resolves to a loopback/private/link-local/CGNAT address is refused **before** any request.
+  `isBlockedHost` now also blocks `100.64.0.0/10` and hex-form IPv4-mapped IPv6 (`::ffff:7f00:1`). The
+  native app keeps the name-level guard (Metro can't bundle `node:dns`) — stated in SECURITY.md.
+- **Every network hop is bounded:** the Anthropic Batches create/poll/results calls (60 s / 30 s / 300 s),
+  the desktop shell's engine probes (10 s) and the app's serve client (10 min, then the backend-down
+  shape instead of a spinner forever). `@jobdar/server` gets the same 2 MB body cap as `serve`.
+- **App-side state carry-over the 1.63.0 rename missed:** the persisted store (`jobdar-app-v1`) and the
+  backend config read their `jobfaro-*` predecessors when the new key is empty; the desktop shell copies
+  a `jobfaro-desktop` userData folder to `jobdar-desktop` once (before `ready`). `@jobdar/server` honors
+  a stale `JOBFARO_APP_ORIGIN` with the same loud line; `install.sh`/`install.ps1` honor `JOBFARO_DIR` /
+  `JOBFARO_REPO`. (Removed together with the CLI shims in 1.64.)
+- **The desktop `--smoke` self-test now runs in a throwaway userData folder** — it drives onboarding →
+  Apply and had been doing so inside the real profile.
+- **Packaging:** `docs/reports/` (internal analysis, gitignored) was shipping in the npm tarball and
+  hence inside the desktop bundle because `files` listed `docs/` — now excluded, and CI fails if the
+  packed file list ever contains reports, credentials, a profile or a résumé. Stale lockfiles removed
+  (root `package-lock.json`, the nested `apps/jobdar/pnpm-lock.yaml`); pnpm's root lock is canonical,
+  the desktop's npm lock stays by design.
+- **CI typechecks the app** (new `typecheck` job: pnpm, `--ignore-scripts`, `tsc --noEmit`); the three
+  pre-existing `ColorValue` errors in the tab layout fixed so it starts green.
+- **SECURITY.md rewritten** to match the code: all seven providers' allowlists, the private-range block by
+  name and by address (with its honest limits), what leaves the machine and when (incl. the API backend
+  and USAJobs), the two local servers, secrets at rest.
+- Docs lockstep: every "current version" line (CLAUDE.md, AGENTS.md, the slash command, skills README,
+  phase9-architecture) brought to 1.63.1; getting-started's alias line no longer runs into the Windows
+  heading and says when `jd` exists (after `npm link`); troubleshooting covers a `jd` already on PATH
+  (Homebrew's JSON-diff tool) — `jobdar` always works; ROADMAP 0.2 lists all three domains being
+  registered (`jobdar.app` / `.io` / `.ai`); the desktop-beta Windows step no longer points at a
+  "winc-jobdar release" that does not exist (the eval profile lives on the branch; Windows testers
+  build from source or point Settings at a Mac's serve); README.es regains the telemetry/SSRF parity line.
+
 ## [1.63.0] — 2026-09-25
 
 **RENAMED BACK: Jobfaro → Jobdar, everywhere.** App `@jobdar/app` **1.25.0**, desktop **0.3.0**; 163 tests green.
@@ -27,9 +71,14 @@ published under either name. Verified 2026-09-25: npm `jobdar` free; `jobdar.app
   `~/.jobdar` is absent; `loadApiKey` still reads a `JOBFARO_API_KEY=` line `init` wrote in 1.49–1.62.
   `jobdar doctor` names both situations with the exact fix (EN/ES). Four new tests cover the shims and
   assert that the only "jobfaro" left in the UI strings is a migration hint.
-- **History kept truthful, not rewritten:** the 1.49.0 / 1.49.1 / 1.50.0 entries still describe the
-  Jobdar→Jobfaro rename as it happened (with a pointer here); the July blanket rename had mutated real
-  winc tag names (`1.21.x-jobdar.N`) into ones that never existed — this pass restores every one of them.
+- **History: product name unified, rename facts preserved.** Every entry now calls the product Jobdar
+  (the July pass did the same in reverse), but the four entries that describe the July rename itself
+  (1.49.0 / 1.49.1 / 1.49.2 / 1.50.0) keep the Jobfaro-era identifiers they introduced, with a pointer
+  here. The July blanket rename had also mutated real winc tag names (`1.21.x-jobdar.N`) into ones that
+  never existed — this pass restores every one of them.
+- **`pnpm-workspace.yaml` now excludes `apps/desktop`.** A root `pnpm install` had rewritten the
+  desktop's `node_modules` into a pnpm layout (and grown the lockfile by 2.5k lines); the desktop is
+  npm-managed on purpose (vendored engine tarball — electron-builder can't traverse a `file:` symlink).
 - Deliberately unchanged, as before: the `winc-jobdar` branch (already the right name), `USAJOBS_*` keys,
   git history. ROADMAP 0.2 records the round trip and the reason.
 - Housekeeping en route: ROADMAP header date and the known-gaps "current as of" line brought to 1.63.0.
@@ -523,7 +572,7 @@ Motivated by the Jobdar→Jobfaro folder rename (reverted in 1.63.0), which sile
 commands (the `npm link` symlinks bake the absolute path — as do CocoaPods xcconfigs and
 expo-modules-jsi's package-local `.DerivedData`).
 
-- **`jobdar doctor` checks the global command wiring** (POSIX; npm's Windows shims aren't
+- **`jobfaro doctor` checks the global command wiring** (POSIX; npm's Windows shims aren't
   symlinks): finds `jobfaro`/`jf` on PATH and verifies they resolve into *this* checkout.
   Four honest states — ok, not installed (optional, with the `npm link` tip), **broken link**
   (names the stale target + the fix), and points-at-a-different-install. Warn-only, never fails
@@ -539,7 +588,7 @@ expo-modules-jsi's package-local `.DerivedData`).
 
 **TestFlight build prep — everything short of Sam's logins.** 140 tests green.
 
-- **install.sh:** plain `DIR=` now overrides the target too (`JOBDAR_DIR` still wins; found live when
+- **install.sh:** plain `DIR=` now overrides the target too (`JOBFARO_DIR` still wins; found live when
   the E2E test's `DIR=` was silently ignored) — override verified live; usage documented in the header.
 - **Real icon set** (replacing the Expo template defaults): a radar-beacon "faro" in the app's own
   palette — navy field, cyan rings, bright sweep with fading trail, green blip — generated for all
@@ -578,7 +627,7 @@ is a clean break with zero user migration. App `@jobfaro/app` **1.18.0**; 140 te
 - Deliberately unchanged: the `winc-jobdar` branch name in winc.cpp (an internal dev-dependency label,
   not user-facing) and `USAJOBS_*` keys (the provider's name). Git history keeps the old name.
 - The stale Expo/EAS projectId (bound to the old slug) was removed — run `eas init` once to mint the
-  Jobdar project before the first TestFlight build.
+  Jobfaro project before the first TestFlight build.
 
 ## [1.48.1] — 2026-07-10
 

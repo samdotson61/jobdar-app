@@ -13,8 +13,10 @@ if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
   exit 1
 }
 
-$Repo = if ($env:JOBDAR_REPO) { $env:JOBDAR_REPO } else { "https://github.com/samdotson61/jobdar-app.git" }
-$Dir = if ($env:JOBDAR_DIR) { $env:JOBDAR_DIR } else { Join-Path $HOME "jobdar" }
+# 1.63.1 compat: a pre-revert JOBFARO_* variable still steers the install — say so (gone in 1.64).
+if ($env:JOBFARO_REPO -or $env:JOBFARO_DIR) { Write-Warning "legacy JOBFARO_REPO/JOBFARO_DIR honored — rename to JOBDAR_* (support ends in 1.64)" }
+$Repo = if ($env:JOBDAR_REPO) { $env:JOBDAR_REPO } elseif ($env:JOBFARO_REPO) { $env:JOBFARO_REPO } else { "https://github.com/samdotson61/jobdar-app.git" }
+$Dir = if ($env:JOBDAR_DIR) { $env:JOBDAR_DIR } elseif ($env:JOBFARO_DIR) { $env:JOBFARO_DIR } else { Join-Path $HOME "jobdar" }
 
 if (Test-Path (Join-Path $Dir ".git")) {
   Write-Host "Updating $Dir…"; git -C $Dir pull --ff-only

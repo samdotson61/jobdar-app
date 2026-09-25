@@ -16,7 +16,8 @@ máquina y funciona en inglés o español. Esta es la ruta de 5 minutos de cero 
 curl -fsSL https://raw.githubusercontent.com/samdotson61/jobdar-app/main/install.sh | bash
 ```
 
-Cada comando de abajo también funciona con el alias corto `jd` (p. ej. `jd scan` ≡ `jobdar scan`).
+Cuando `npm link` haya puesto `jobdar` en tu PATH, también funciona su alias corto `jd` (`jd scan` ≡ `jobdar scan`); mientras tanto, `node bin/jobdar <comando>` desde la carpeta hace lo mismo.
+
 **Windows (PowerShell)**
 ```powershell
 irm https://raw.githubusercontent.com/samdotson61/jobdar-app/main/install.ps1 | iex

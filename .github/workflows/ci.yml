@@ -16,7 +16,26 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
+      # The CLI path a user takes (README: clone + npm install); the root has one runtime dep.
       - run: npm install --no-audit --no-fund
       - run: npm run doctor
       - run: npm test
       - run: node scan.mjs --dry-run
+      # The published package must never carry local reports/data (1.63.1 caught docs/reports/ shipping).
+      - run: '! npm pack --dry-run 2>&1 | grep -E "docs/reports/|credentials|profile\.yml$|cv\.md"'
+
+  typecheck:
+    # The Expo app (pnpm workspace). --ignore-scripts skips native postinstalls (llama.rn xcframework);
+    # tsc needs only the type packages.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - run: pnpm -C apps/jobdar exec tsc --noEmit -p tsconfig.json

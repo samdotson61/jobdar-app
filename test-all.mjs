@@ -1523,12 +1523,15 @@ test('serve: HTTP façade — auth gate, pipeline/profile/cv reads, tracker writ
   const PORT = 40000 + (process.pid % 20000)
   const TOKEN = 'test-tok-123'
   const base = `http://127.0.0.1:${PORT}`
+  // 1.63.1: auth is Bearer-only — every call sends the header; a query-string token must be refused.
+  const H = { authorization: `Bearer ${TOKEN}` }
+  const f = (p, init = {}) => fetch(`${base}${p}`, { ...init, headers: { ...H, ...(init.headers || {}) } })
   const child = spawn(process.execPath, [path.join(PKG_ROOT, 'bin', 'jobdar'), 'serve', '--port', String(PORT), '--token', TOKEN], { env: { ...process.env, JOBDAR_HOME: home }, stdio: 'ignore' })
   try {
     let up = false
     for (let i = 0; i < 60 && !up; i++) {
       try {
-        if ((await fetch(`${base}/profile?token=${TOKEN}`)).status === 200) up = true
+        if ((await f(`/profile`)).status === 200) up = true
       } catch {
         /* not listening yet */
       }
@@ -1536,59 +1539,72 @@ test('serve: HTTP façade — auth gate, pipeline/profile/cv reads, tracker writ
     }
     assert.ok(up, 'serve did not come up')
     assert.equal((await fetch(`${base}/pipeline`)).status, 401) // token required, none sent
-    const pj = await (await fetch(`${base}/pipeline?token=${TOKEN}`)).json()
+    assert.equal((await fetch(`${base}/pipeline?token=${TOKEN}`)).status, 401) // 1.63.1: ?token= no longer accepted (it leaks into logs/history)
+    // 1.63.1 DNS-rebinding guard: a loopback bind answers loopback Host values only (CORS can't stop a
+    // same-origin-after-rebind page, but its requests carry the attacker's hostname).
+    const { request } = await import('node:http')
+    const rawStatus = (hostHeader) => new Promise((resolve, reject) => {
+      const rq = request({ host: '127.0.0.1', port: PORT, path: '/pipeline', headers: { host: hostHeader, ...H } }, (rs) => { rs.resume(); resolve(rs.statusCode) })
+      rq.on('error', reject)
+      rq.end()
+    })
+    assert.equal(await rawStatus('evil.example'), 421)
+    assert.equal(await rawStatus('evil.example:' + PORT), 421)
+    assert.equal(await rawStatus('localhost:' + PORT), 200)
+    assert.equal(await rawStatus('[::1]:' + PORT), 200)
+    const pj = await (await f(`/pipeline`)).json()
     assert.equal(pj.count, 1)
     assert.equal(pj.rows[0].url, 'https://acme.test/j/1')
     assert.equal(pj.rows[0].status, 'scanned')
-    const prof = await (await fetch(`${base}/profile?token=${TOKEN}`)).json()
+    const prof = await (await f(`/profile`)).json()
     assert.deepEqual(prof.target_levels, ['entry', 'mid'])
     assert.equal(prof.inference_url, undefined) // secrets/impl details never leave
     // POST /profile persists whitelisted identity fields; secrets in the body are ignored, not written
-    const profPost = await (await fetch(`${base}/profile?token=${TOKEN}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: 'Alex Rivera', target_regions: ['west'], target_levels: ['mid'], target_salary: 90000, needs_sponsorship: true, inference_url: 'http://evil', api_key: 'sekret' }) })).json()
+    const profPost = await (await f(`/profile`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: 'Alex Rivera', target_regions: ['west'], target_levels: ['mid'], target_salary: 90000, needs_sponsorship: true, inference_url: 'http://evil', api_key: 'sekret' }) })).json()
     assert.equal(profPost.ok, true)
-    const prof2 = await (await fetch(`${base}/profile?token=${TOKEN}`)).json()
+    const prof2 = await (await f(`/profile`)).json()
     assert.equal(prof2.name, 'Alex Rivera')
     assert.deepEqual(prof2.target_levels, ['mid'])
     assert.equal(prof2.target_salary, 90000)
     assert.equal(prof2.needs_sponsorship, true) // the sponsorship toggle persists like the other identity fields
     assert.equal(prof2.inference_url, undefined) // the inference_url in the POST body was NOT accepted/returned
-    const cvj = await (await fetch(`${base}/cv?token=${TOKEN}`)).json()
+    const cvj = await (await f(`/cv`)).json()
     assert.ok(cvj.loaded && cvj.content.includes('IT support'))
-    const ts = await (await fetch(`${base}/tracker/set?token=${TOKEN}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ url: 'https://acme.test/j/1', status: 'applied' }) })).json()
+    const ts = await (await f(`/tracker/set`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ url: 'https://acme.test/j/1', status: 'applied' }) })).json()
     assert.equal(ts.ok, true)
-    const after = await (await fetch(`${base}/pipeline?token=${TOKEN}`)).json()
+    const after = await (await f(`/pipeline`)).json()
     assert.equal(after.rows[0].status, 'applied') // real pipeline.tsv mutation persisted
     // security: /import refuses a path outside the jobdar home (arbitrary-file-read fix)
-    assert.equal((await fetch(`${base}/import?token=${TOKEN}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ file: '/etc/passwd' }) })).status, 403)
+    assert.equal((await f(`/import`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ file: '/etc/passwd' }) })).status, 403)
     // security: CORS is NOT reflected for a public origin, but IS for a localhost origin (reflective-CORS fix)
-    assert.equal((await fetch(`${base}/pipeline?token=${TOKEN}`, { headers: { origin: 'https://evil.example.com' } })).headers.get('access-control-allow-origin'), null)
-    assert.equal((await fetch(`${base}/pipeline?token=${TOKEN}`, { headers: { origin: 'http://localhost:8799' } })).headers.get('access-control-allow-origin'), 'http://localhost:8799')
+    assert.equal((await f(`/pipeline`, { headers: { origin: 'https://evil.example.com' } })).headers.get('access-control-allow-origin'), null)
+    assert.equal((await f(`/pipeline`, { headers: { origin: 'http://localhost:8799' } })).headers.get('access-control-allow-origin'), 'http://localhost:8799')
     // /tracker/set rejects an unknown status (taxonomy validation → no demote-to-scanned data loss)
-    assert.equal((await fetch(`${base}/tracker/set?token=${TOKEN}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ url: 'https://acme.test/j/1', status: 'not-a-real-status' }) })).status, 400)
+    assert.equal((await f(`/tracker/set`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ url: 'https://acme.test/j/1', status: 'not-a-real-status' }) })).status, 400)
     // POST /cv persists the GUI's résumé so scan/prescreen/eval judge against the same text
-    assert.equal((await (await fetch(`${base}/cv?token=${TOKEN}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ content: '# New CV\n\nMarketing coordinator, campaigns and analytics.' }) })).json()).ok, true)
-    assert.ok((await (await fetch(`${base}/cv?token=${TOKEN}`)).json()).content.includes('Marketing coordinator'))
+    assert.equal((await (await f(`/cv`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ content: '# New CV\n\nMarketing coordinator, campaigns and analytics.' }) })).json()).ok, true)
+    assert.ok((await (await f(`/cv`)).json()).content.includes('Marketing coordinator'))
     // /search/parse works without a backend (deterministic keyword fallback) — search must never 503
-    const sp = await (await fetch(`${base}/search/parse?token=${TOKEN}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ intent: 'junior data analyst, midwest' }) })).json()
+    const sp = await (await f(`/search/parse`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ intent: 'junior data analyst, midwest' }) })).json()
     assert.equal(sp.ok, true)
     assert.ok(Array.isArray(sp.keywords) && sp.keywords.includes('analyst'))
     // /import/upload parses uploaded bytes, sanitizes the name (no path traversal), and persists the text
-    const upRes = await (await fetch(`${base}/import/upload?token=${TOKEN}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: '../../evil name.txt', base64: Buffer.from('# Uploaded Person\n\nMarketing analyst with SQL and dashboards.').toString('base64') }) })).json()
+    const upRes = await (await f(`/import/upload`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: '../../evil name.txt', base64: Buffer.from('# Uploaded Person\n\nMarketing analyst with SQL and dashboards.').toString('base64') }) })).json()
     assert.equal(upRes.ok, true)
     assert.ok(upRes.name && !upRes.name.includes('/') && !upRes.name.includes('..')) // file name sanitized
     assert.ok(upRes.text.includes('Marketing analyst'))
     assert.ok(upRes.fields && typeof upRes.fields === 'object') // identity fields returned so the app can seed the profile
-    assert.ok((await (await fetch(`${base}/cv?token=${TOKEN}`)).json()).content.includes('Marketing analyst')) // persisted as the active résumé
+    assert.ok((await (await f(`/cv`)).json()).content.includes('Marketing analyst')) // persisted as the active résumé
     // POST /eval/feedback records a thumbs verdict-rating; GET reports the agreement the calibrator reads
-    assert.equal((await fetch(`${base}/eval/feedback?token=${TOKEN}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ url: 'https://acme.test/j/1', thumb: 'bogus' }) })).status, 400) // thumb must be up|down
-    assert.equal((await (await fetch(`${base}/eval/feedback?token=${TOKEN}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ url: 'https://acme.test/j/1', thumb: 'up', band: 'apply', score: 4.4, role: 'Junior Analyst' }) })).json()).ok, true)
-    await fetch(`${base}/eval/feedback?token=${TOKEN}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ url: 'https://acme.test/j/2', thumb: 'down', band: 'dont', score: 2.1 }) })
-    const fb = await (await fetch(`${base}/eval/feedback?token=${TOKEN}`)).json()
+    assert.equal((await f(`/eval/feedback`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ url: 'https://acme.test/j/1', thumb: 'bogus' }) })).status, 400) // thumb must be up|down
+    assert.equal((await (await f(`/eval/feedback`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ url: 'https://acme.test/j/1', thumb: 'up', band: 'apply', score: 4.4, role: 'Junior Analyst' }) })).json()).ok, true)
+    await f(`/eval/feedback`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ url: 'https://acme.test/j/2', thumb: 'down', band: 'dont', score: 2.1 }) })
+    const fb = await (await f(`/eval/feedback`)).json()
     assert.equal(fb.n, 2); assert.equal(fb.up, 1); assert.equal(fb.down, 1); assert.equal(fb.agreement, 50)
-    await fetch(`${base}/eval/feedback?token=${TOKEN}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ url: 'https://acme.test/j/1', thumb: 'down' }) }) // change of mind → de-dup by url, not a new row
-    const fb2 = await (await fetch(`${base}/eval/feedback?token=${TOKEN}`)).json()
+    await f(`/eval/feedback`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ url: 'https://acme.test/j/1', thumb: 'down' }) }) // change of mind → de-dup by url, not a new row
+    const fb2 = await (await f(`/eval/feedback`)).json()
     assert.equal(fb2.n, 2); assert.equal(fb2.down, 2) // still 2 rows, the flipped one replaced
-    assert.equal((await fetch(`${base}/nope?token=${TOKEN}`)).status, 404)
+    assert.equal((await f(`/nope`)).status, 404)
   } finally {
     child.kill('SIGKILL')
     rmSync(home, { recursive: true, force: true })
@@ -2276,6 +2292,33 @@ test('1.63.0 revert: the package is jobdar with bins jobdar + jd (jf kept one re
     const allowed = (strings.match(/\.jobfaro|JOBFARO_\*|npm rm -g jobdar jobfaro/g) || []).length
     assert.equal(stray, allowed, `${lang}: every "jobfaro" in the UI strings must be a migration hint`)
   }
+})
+
+test('1.63.1 SSRF: CGNAT + hex IPv4-mapped literals are blocked, and a hostname that resolves private is refused through the resolver seam', async () => {
+  const { isBlockedHost, setHostResolver, assertResolvesPublic, fetchJson } = await import('./lib/http.mjs')
+  for (const h of ['100.64.0.1', '100.127.255.255', '::ffff:7f00:1', '::ffff:a00:1', '::ffff:127.0.0.1', '169.254.169.254', '[::1]']) assert.equal(isBlockedHost(h), true, h)
+  for (const h of ['100.128.0.1', '100.63.255.255', '::ffff:808:808', '8.8.8.8', 'boards-api.greenhouse.io']) assert.equal(isBlockedHost(h), false, h)
+  // No resolver installed (the native app's situation): the name-level guard alone applies.
+  setHostResolver(null)
+  assert.equal(await assertResolvesPublic('boards-api.greenhouse.io'), null)
+  try {
+    // A resolver that says the allowed name points at loopback → refused BEFORE any request is sent.
+    setHostResolver(async () => ['127.0.0.1'])
+    await assert.rejects(() => assertResolvesPublic('boards-api.greenhouse.io'), /private\/loopback address \(127\.0\.0\.1\)/)
+    await assert.rejects(() => fetchJson('https://boards-api.greenhouse.io/v1/boards/acme/jobs', { hostAllowlist: [/(^|\.)greenhouse\.io$/] }), /private\/loopback/)
+    setHostResolver(async () => ['3.3.3.3', '::ffff:a00:1']) // one public, one private → still refused
+    await assert.rejects(() => assertResolvesPublic('x.example'), /private\/loopback/)
+    setHostResolver(async () => ['3.3.3.3'])
+    assert.deepEqual(await assertResolvesPublic('x.example'), ['3.3.3.3'])
+    setHostResolver(async () => { const e = new Error('nope'); e.code = 'ENOTFOUND'; throw e })
+    await assert.rejects(() => assertResolvesPublic('x.example'), /Could not resolve x\.example: ENOTFOUND/)
+  } finally {
+    setHostResolver(null)
+  }
+  // The Node wiring module installs a real resolver (lib/http_node.mjs) — localhost resolves private.
+  await import('./lib/http_node.mjs')
+  await assert.rejects(() => assertResolvesPublic('localhost'), /private\/loopback/)
+  setHostResolver(null)
 })
 
 test('doctor: globalCommandStatus classifies PATH entries — ok / broken (moved checkout) / elsewhere / missing', () => {

@@ -6,9 +6,16 @@
 // to the app origin; here it runs on loopback for local testing. `jobdar serve` is the power-user form.
 import http from 'node:http';
 import { fetchJobDescription, resolveProvider, providerIds } from '../../providers/_contract.mjs';
+import '../../lib/http_node.mjs'; // DNS-rebinding guard (resolve-then-check) for the providers
 
 const PORT = Number(process.env.PORT || 4320);
+// 1.63.1: honor a pre-revert JOBFARO_APP_ORIGIN export too — loudly, never silently (compat, gone in 1.64).
+if (!process.env.JOBDAR_APP_ORIGIN && process.env.JOBFARO_APP_ORIGIN) {
+  process.env.JOBDAR_APP_ORIGIN = process.env.JOBFARO_APP_ORIGIN;
+  console.error('[jobdar] legacy env honored: JOBFARO_APP_ORIGIN→JOBDAR_APP_ORIGIN — rename it (support ends in 1.64)');
+}
 const ORIGIN = process.env.JOBDAR_APP_ORIGIN || '*'; // lock to your app origin in production
+const MAX_BODY = 2_000_000; // same cap as `jobdar serve` — an oversized body is dropped, never buffered
 
 const send = (res, code, obj) => {
   res.writeHead(code, {
@@ -20,7 +27,11 @@ const send = (res, code, obj) => {
   res.end(JSON.stringify(obj));
 };
 const body = (req) => new Promise((resolve) => {
-  let b = ''; req.on('data', (c) => (b += c)); req.on('end', () => { try { resolve(JSON.parse(b || '{}')); } catch { resolve({}); } });
+  let b = ''; let done = false;
+  const finish = (v) => { if (!done) { done = true; resolve(v); } };
+  req.on('data', (c) => { if (done) return; b += c; if (b.length > MAX_BODY) { req.destroy(); finish({}); } });
+  req.on('end', () => { try { finish(JSON.parse(b || '{}')); } catch { finish({}); } });
+  req.on('error', () => finish({}));
 });
 
 const server = http.createServer(async (req, res) => {
