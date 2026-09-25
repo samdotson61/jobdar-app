@@ -99,9 +99,10 @@ speed candidates (LFM, Granite) buy a 2–3× faster queue by never saying yes; 
 (Gemma E4B, Qwen 9B) are either silent or less discriminating. The eval picker on the winc-jobdar branch
 stays as is; nothing in `eval.go` changes.
 
-Downloads made today stay on disk (Granite 2.3 GB, Gemma E4B 5.0 GB + mmproj, Qwen 9B 5.7 GB + mmproj,
-LFM 5.3 GB) per the standing "do not delete models" rule; they are listed in `winc ls` if space matters
-later.
+Today's three downloads (Granite 2.3 GB, Gemma E4B 5.0 GB + mmproj, Qwen 9B 5.7 GB + mmproj, ~14.9 GB)
+were removed the same evening on Sam's call (`winc -r`, plus the two orphaned mmproj files by hand).
+LFM2.5-8B-A1B was already on disk (July 24, a winc catalog measurement fixture) and stays. Re-running any
+of these is a `winc -d <alias>` away.
 
 ## What this tells us about the eval, not just the models
 

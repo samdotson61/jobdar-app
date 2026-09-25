@@ -4,6 +4,12 @@ All notable changes to Jobfaro are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and Jobfaro adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.62.2] — 2026-09-24
+
+**Docs: model-alternatives note corrected on disk state.** The three candidates downloaded for the 1.62.1 bench
+(Granite 4.2 3B, Gemma 4 E4B, Qwen3.5-9B, with their mmproj files — ~14.9 GB) were removed the same evening on
+Sam's call; LFM2.5-8B-A1B predates the session (a July winc fixture) and stays. Docs only.
+
 ## [1.62.1] — 2026-09-24
 
 **Docs: eval-model alternatives benched — none better than qwen3.5-4b.** New
