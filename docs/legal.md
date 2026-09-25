@@ -29,4 +29,5 @@ responsible for how you use it, including compliance with each site's Terms of S
 Jobdar is an independent implementation. Its one runtime dependency (`js-yaml`, MIT) retains its own
 license. Any future reused open-source code is credited here and in `NOTICE`.
 
-> A Spanish translation of this page is planned; the privacy summary also appears in `README.es.md`.
+> This page is English-only for now; the privacy summary is also in `README.es.md` (Spanish). A full
+> Spanish version is not scheduled — say so if you need one.

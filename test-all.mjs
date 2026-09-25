@@ -342,6 +342,16 @@ test('seed: region selection returns that region and swaps cleanly (gate)', () =
   assert.ok(sw.includes('Carvana') && sw.includes('Axon'))
   assert.equal(mw.some((c) => sw.includes(c)), false) // disjoint -> toggle swaps employers
   assert.ok(toPortals(selectEmployers({ regions: ['midwest'] })).every((p) => p.company && p.careers_url))
+  // 1.63.2: the README has advertised Northeast and West since June; the catalog now actually has them
+  // (every entry live-verified 2026-09-25), so the toggle can't land a user on an empty scan.
+  const ne = selectEmployers({ regions: ['northeast'] })
+  const we = selectEmployers({ regions: ['west'] })
+  assert.ok(ne.length >= 15 && we.length >= 15, `northeast ${ne.length} / west ${we.length}`)
+  assert.ok(ne.some((e) => e.company === 'Datadog') && we.some((e) => e.company === 'Stripe'))
+  assert.ok(ne.every((e) => e.region === 'northeast') && we.every((e) => e.region === 'west'))
+  const all = selectEmployers({ regions: ['nationwide'] })
+  assert.equal(new Set(all.map((e) => e.company)).size, all.length, 'no duplicate companies across regions')
+  assert.equal(new Set(all.map((e) => e.careers_url)).size, all.length, 'no duplicate careers_url across regions')
 })
 
 test('portability: package assets resolve from ROOT; user dirs follow JOBDAR_HOME', () => {

@@ -14,7 +14,7 @@ puesto frente a tu currículum, adapta un CV y una carta de presentación compat
 registra cada postulación.
 
 > **Estado:** Fases 0–7, 5.5, 7.7, 7.8, 8b, 8a, 8c, 8e + 8f **completas**, **Fase 10 L0–L5 entregada** —
-> **Jobdar CLI `1.63.1`** + **app `1.25.1`**: núcleo bilingüe; **seis escáneres
+> **Jobdar CLI `1.63.2`** + **app `1.25.2`**: núcleo bilingüe; **seis escáneres
 > verificados en vivo** (Workday, iCIMS, Greenhouse, Lever, Ashby + un lector JSON-LD opcional) más un
 > agregador federal **USAJobs** opcional (con tu propia clave gratuita); selectores
 > de nivel y región y el asistente `jobdar init`; la tubería completa **descubrir → prefiltrar → evaluar →
@@ -28,8 +28,8 @@ registra cada postulación.
 > currículum ATS adaptado; una TUI desplazable con cursor + un panel web con analíticas; frescura
 > (`posted` / `first_seen`, `scan --prune`). Y la **app de iPhone ya ejecuta toda la tubería
 > completamente en el teléfono** — escaneo nativo, evaluación/adaptación/contacto en el dispositivo vía
-> llama.rn, un gestor de modelos integrado — **sin Mac, sin servidor; el siguiente paso es una beta por
-> TestFlight**. Pendiente para el 1.0 de la CLI: publicar en npm + marketplace, y luego una beta cerrada.
+> llama.rn, un gestor de modelos integrado — **sin Mac, sin servidor. TestFlight aún no ha empezado**
+> (espera el registro en App Store Connect — Fase 10 L6). Pendiente para el 1.0 de la CLI: publicar en npm + marketplace, y luego una beta cerrada.
 > Consulta **[ROADMAP.md](ROADMAP.md)** para el plan completo y
 > **[CHANGELOG.md](CHANGELOG.md)** para lo ya entregado.
 
@@ -71,10 +71,10 @@ idioma y el catálogo de empleadores viajan con el código, así que funcionan d
   la máquina del probador. Los probadores responden **"¿Postularías?"** en cada puesto puntuado y exportan
   un **informe beta sin datos personales** que analizamos para mejorar el evaluador. Ver
   [docs/desktop-beta.md](docs/desktop-beta.md).
-- **App de iPhone (beta pronto — la forma más fácil de probar Jobdar)** — toda la tubería corre **en el
+- **App de iPhone (construida y funcionando por completo en el dispositivo — todavía no en TestFlight)** — toda la tubería corre **en el
   teléfono**: escanear → prefiltrar → evaluar → adaptar → contactar, con el modelo descargado dentro de
-  la app. Sin Mac, sin servidor, sin cuenta; tu currículum nunca sale del dispositivo. El siguiente paso
-  es una **beta por TestFlight**
+  la app. Sin Mac, sin servidor, sin cuenta; tu currículum nunca sale del dispositivo. **TestFlight es el
+  siguiente paso y aún no ha empezado** (registro en App Store Connect + `eas init`)
   ([Fase 10](ROADMAP.md#phase-10--fully-local-iphone-active-direction-locked-2026-07-08)); Android llega
   después con la misma base.
 - **Aplicación web (después — [Fase 9](ROADMAP.md#phase-9--web-and-mobile-apps-future--post-10),
@@ -154,7 +154,7 @@ nivel intermedio, o activa senior (que entonces se clasifica con normalidad, sin
   llegar los resultados, ETA medidos y tiempo transcurrido real — nunca un porcentaje inventado. El
   mismo lenguaje de radar llegará a la app.
 - **Fácil para cualquiera** — un asistente de configuración guiado y bilingüe para la CLI hoy; la app de
-  iPhone totalmente en el dispositivo (beta por TestFlight pronto), y después una app web amigable, para
+  iPhone totalmente en el dispositivo (TestFlight pendiente), y después una app web amigable, para
   personas no técnicas.
 
 ## Próximos pasos

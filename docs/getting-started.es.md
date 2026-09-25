@@ -6,8 +6,8 @@ Jobdar encuentra empleos de nivel inicial en EE. UU. que encajan contigo, mantie
 máquina y funciona en inglés o español. Esta es la ruta de 5 minutos de cero a tu primer escaneo.
 
 > **¿Prefieres una app?** La app de iPhone — toda la tubería corriendo de forma privada en tu teléfono —
-> llegará **pronto en beta por TestFlight**, y será la forma más fácil de probar Jobdar. Hoy, la CLI de
-> abajo es el camino.
+> está construida, pero **todavía no está en TestFlight**. Hoy el camino es la CLI de abajo, o la
+> [beta de escritorio](desktop-beta.md) para Mac y Windows.
 
 ## 1. Instalar (un comando)
 

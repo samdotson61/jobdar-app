@@ -12,7 +12,7 @@ dominate US enterprise employers), evaluates each role against your résumé, ta
 cover letter, and tracks every application.
 
 > **Status:** Phases 0–7, 5.5, 7.7, 7.8, 8b, 8a, 8c, 8e + 8f **complete**, **Phase 10 L0–L5 shipped** —
-> **Jobdar CLI `1.63.1`** + **app `1.25.1`**: bilingual core; **six live-verified
+> **Jobdar CLI `1.63.2`** + **app `1.25.2`**: bilingual core; **six live-verified
 > scanner providers** (Workday, iCIMS, Greenhouse, Lever, Ashby + an opt-in JSON-LD reader) plus an opt-in
 > **USAJobs** federal aggregator (BYO free key); level + region
 > toggles and the `jobdar init` wizard; the full **discover → prescreen → evaluate → track → build** pipeline —
@@ -25,7 +25,8 @@ cover letter, and tracks every application.
 > builds the tailored ATS résumé; a scrollable cursor-driven `jobdar tui` workspace + a web dashboard with
 > analytics; freshness tracking (`posted` / `first_seen`, `scan --prune`). And the **iPhone app now runs
 > the whole pipeline fully on the phone** — native scanning, on-device eval/tailor/outreach via llama.rn,
-> an in-app model manager — **no Mac, no server; a TestFlight beta is the next step**. Remaining for the
+> an in-app model manager — **no Mac, no server. TestFlight has not started yet** (it waits on the App
+> Store Connect record — Phase 10 L6). Remaining for the
 > 1.0 CLI ship: npm publish + marketplace, then a closed beta. See **[ROADMAP.md](ROADMAP.md)** for the
 > full build plan and **[CHANGELOG.md](CHANGELOG.md)** for what's shipped.
 
@@ -65,9 +66,10 @@ the code, so they work from any location.
   as the phone app in one double-clickable window, running entirely on the tester's machine. Testers
   answer **"Would you apply?"** on each scored role and export a **PII-free beta report** we analyze to
   improve the evaluator. See [docs/desktop-beta.md](docs/desktop-beta.md).
-- **iPhone app (beta soon — the easiest way to try Jobdar)** — the whole pipeline runs **on the phone**:
+- **iPhone app (built and running fully on-device — not on TestFlight yet)** — the whole pipeline runs **on the phone**:
   scan → prescreen → evaluate → tailor → outreach, with the model downloaded in-app. No Mac, no server,
-  no account; your résumé never leaves the device. A **TestFlight beta** is the next step
+  no account; your résumé never leaves the device. **TestFlight is the next step and has not started**
+  (account setup: App Store Connect record + `eas init`)
   ([Phase 10](ROADMAP.md#phase-10--fully-local-iphone-active-direction-locked-2026-07-08)); Android
   follows on the same stack.
 - **Web app (later — [Phase 9](ROADMAP.md#phase-9--web-and-mobile-apps-future--post-10), jobdar.ai)** — a
@@ -138,7 +140,7 @@ your first scan — `jobdar init` walks you through it in English or Spanish, no
   tailor, outreach drafts, calibrate, PDF render): honest tallies that grow as results land, measured
   ETAs and true elapsed time — never an invented percent. The same radar language is headed into the app.
 - **Easy for anyone** — a guided, bilingual setup wizard for the CLI today; the fully-on-device iPhone
-  app (TestFlight beta soon), then a friendly web app, for non-technical users.
+  app (TestFlight pending), then a friendly web app, for non-technical users.
 
 ## Next steps
 

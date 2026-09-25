@@ -5,9 +5,9 @@
 Jobdar finds entry-level US jobs that fit you, keeps your data on your machine, and works in English
 or Spanish. Here's the 5-minute path from zero to your first scan.
 
-> **Prefer an app?** The iPhone app — the whole pipeline running privately on your phone — is headed
-> to a **TestFlight beta soon**, and will be the easiest way to try Jobdar. Today, the CLI below is
-> the way in.
+> **Prefer an app?** The iPhone app — the whole pipeline running privately on your phone — is built,
+> but **not on TestFlight yet**. Today the way in is the CLI below, or the
+> [desktop beta](desktop-beta.md) for Mac and Windows.
 
 ## 1. Install (one command)
 

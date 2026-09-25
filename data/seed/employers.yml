@@ -1,7 +1,8 @@
 # Jobdar — region-aware employer catalog (Phase 5). Seeded Midwest-first; other regions fill in
 # over time. Each entry: company, careers_url (provider auto-detected), region, metro, sector.
 # `jobdar seed --region <r> [--write]` materializes matching entries into config/portals.yml.
-# All entries below were live-verified to return public postings (2026-06-05).
+# Entries were live-verified to return public postings on the date noted in each section (2026-06-05 /
+# 2026-06-09 / 2026-09-25 — Northeast and West added 2026-09-25).
 employers:
   # --- Midwest (default) ---
   - company: "Enova"
@@ -359,3 +360,237 @@ employers:
     region: southwest
     metro: "Phoenix, AZ"
     sector: healthcare
+
+  # --- Northeast (Boston / NYC / Philadelphia / Pittsburgh / Hartford / Buffalo) — live-verified 2026-09-25 (each URL returned public postings through the real provider) ---
+  - company: "HubSpot"
+    careers_url: "https://job-boards.greenhouse.io/hubspotjobs"
+    region: northeast
+    metro: "Boston, MA"
+    sector: software
+  - company: "Toast"
+    careers_url: "https://job-boards.greenhouse.io/toast"
+    region: northeast
+    metro: "Boston, MA"
+    sector: fintech
+  - company: "Klaviyo"
+    careers_url: "https://job-boards.greenhouse.io/klaviyo"
+    region: northeast
+    metro: "Boston, MA"
+    sector: software
+  - company: "CarGurus"
+    careers_url: "https://job-boards.greenhouse.io/cargurus"
+    region: northeast
+    metro: "Boston, MA"
+    sector: automotive-tech
+  - company: "Datadog"
+    careers_url: "https://job-boards.greenhouse.io/datadog"
+    region: northeast
+    metro: "New York, NY"
+    sector: software
+  - company: "Squarespace"
+    careers_url: "https://job-boards.greenhouse.io/squarespace"
+    region: northeast
+    metro: "New York, NY"
+    sector: software
+  - company: "MongoDB"
+    careers_url: "https://job-boards.greenhouse.io/mongodb"
+    region: northeast
+    metro: "New York, NY"
+    sector: software
+  - company: "DigitalOcean"
+    careers_url: "https://job-boards.greenhouse.io/digitalocean98"
+    region: northeast
+    metro: "New York, NY"
+    sector: cloud
+  - company: "Justworks"
+    careers_url: "https://job-boards.greenhouse.io/justworks"
+    region: northeast
+    metro: "New York, NY"
+    sector: hr-tech
+  - company: "Oscar Health"
+    careers_url: "https://job-boards.greenhouse.io/oscar"
+    region: northeast
+    metro: "New York, NY"
+    sector: health-insurance
+  - company: "Peloton"
+    careers_url: "https://job-boards.greenhouse.io/peloton"
+    region: northeast
+    metro: "New York, NY"
+    sector: fitness
+  - company: "Betterment"
+    careers_url: "https://job-boards.greenhouse.io/betterment"
+    region: northeast
+    metro: "New York, NY"
+    sector: fintech
+  - company: "Ramp"
+    careers_url: "https://jobs.ashbyhq.com/ramp"
+    region: northeast
+    metro: "New York, NY"
+    sector: fintech
+  - company: "Duolingo"
+    careers_url: "https://job-boards.greenhouse.io/duolingo"
+    region: northeast
+    metro: "Pittsburgh, PA"
+    sector: edtech
+  - company: "PNC"
+    careers_url: "https://pnc.wd5.myworkdayjobs.com/External"
+    region: northeast
+    metro: "Pittsburgh, PA"
+    sector: banking
+  - company: "Highmark Health"
+    careers_url: "https://highmarkhealth.wd1.myworkdayjobs.com/highmark"
+    region: northeast
+    metro: "Pittsburgh, PA"
+    sector: healthcare
+  - company: "NewYork-Presbyterian"
+    careers_url: "https://nyp.wd1.myworkdayjobs.com/NYPCareers"
+    region: northeast
+    metro: "New York, NY"
+    sector: healthcare
+  - company: "Travelers"
+    careers_url: "https://travelers.wd5.myworkdayjobs.com/External"
+    region: northeast
+    metro: "Hartford, CT"
+    sector: insurance
+  - company: "M&T Bank"
+    careers_url: "https://mtb.wd5.myworkdayjobs.com/MTB"
+    region: northeast
+    metro: "Buffalo, NY"
+    sector: banking
+  - company: "Vertex Pharmaceuticals"
+    careers_url: "https://vrtx.wd501.myworkdayjobs.com/vertex_careers"
+    region: northeast
+    metro: "Boston, MA"
+    sector: biotech
+  - company: "Moderna"
+    careers_url: "https://modernatx.wd1.myworkdayjobs.com/M_tx"
+    region: northeast
+    metro: "Cambridge, MA"
+    sector: biotech
+
+  # --- West (Bay Area / Seattle / Portland / LA / Denver) — live-verified 2026-09-25 (each URL returned public postings through the real provider) ---
+  - company: "Airbnb"
+    careers_url: "https://job-boards.greenhouse.io/airbnb"
+    region: west
+    metro: "San Francisco, CA"
+    sector: travel-tech
+  - company: "Stripe"
+    careers_url: "https://job-boards.greenhouse.io/stripe"
+    region: west
+    metro: "San Francisco, CA"
+    sector: fintech
+  - company: "Lyft"
+    careers_url: "https://job-boards.greenhouse.io/lyft"
+    region: west
+    metro: "San Francisco, CA"
+    sector: mobility
+  - company: "Pinterest"
+    careers_url: "https://job-boards.greenhouse.io/pinterest"
+    region: west
+    metro: "San Francisco, CA"
+    sector: social
+  - company: "Dropbox"
+    careers_url: "https://job-boards.greenhouse.io/dropbox"
+    region: west
+    metro: "San Francisco, CA"
+    sector: software
+  - company: "Coinbase"
+    careers_url: "https://job-boards.greenhouse.io/coinbase"
+    region: west
+    metro: "San Francisco, CA"
+    sector: fintech
+  - company: "Figma"
+    careers_url: "https://job-boards.greenhouse.io/figma"
+    region: west
+    metro: "San Francisco, CA"
+    sector: software
+  - company: "Asana"
+    careers_url: "https://job-boards.greenhouse.io/asana"
+    region: west
+    metro: "San Francisco, CA"
+    sector: software
+  - company: "DoorDash"
+    careers_url: "https://job-boards.greenhouse.io/doordashusa"
+    region: west
+    metro: "San Francisco, CA"
+    sector: delivery
+  - company: "Gusto"
+    careers_url: "https://job-boards.greenhouse.io/gusto"
+    region: west
+    metro: "San Francisco, CA"
+    sector: hr-tech
+  - company: "Reddit"
+    careers_url: "https://job-boards.greenhouse.io/reddit"
+    region: west
+    metro: "San Francisco, CA"
+    sector: social
+  - company: "Robinhood"
+    careers_url: "https://job-boards.greenhouse.io/robinhood"
+    region: west
+    metro: "Menlo Park, CA"
+    sector: fintech
+  - company: "Anthropic"
+    careers_url: "https://job-boards.greenhouse.io/anthropic"
+    region: west
+    metro: "San Francisco, CA"
+    sector: ai
+  - company: "Notion"
+    careers_url: "https://jobs.ashbyhq.com/notion"
+    region: west
+    metro: "San Francisco, CA"
+    sector: software
+  - company: "OpenAI"
+    careers_url: "https://jobs.ashbyhq.com/openai"
+    region: west
+    metro: "San Francisco, CA"
+    sector: ai
+  - company: "Intel"
+    careers_url: "https://intel.wd1.myworkdayjobs.com/External"
+    region: west
+    metro: "Portland, OR"
+    sector: semiconductors
+  - company: "Boeing"
+    careers_url: "https://boeing.wd1.myworkdayjobs.com/EXTERNAL_CAREERS"
+    region: west
+    metro: "Seattle, WA"
+    sector: aerospace
+  - company: "Adobe"
+    careers_url: "https://adobe.wd5.myworkdayjobs.com/external_experienced"
+    region: west
+    metro: "San Jose, CA"
+    sector: software
+  - company: "Salesforce"
+    careers_url: "https://salesforce.wd12.myworkdayjobs.com/External_Career_Site"
+    region: west
+    metro: "San Francisco, CA"
+    sector: software
+  - company: "Workday"
+    careers_url: "https://workday.wd5.myworkdayjobs.com/Workday"
+    region: west
+    metro: "Pleasanton, CA"
+    sector: software
+  - company: "Zillow"
+    careers_url: "https://zillow.wd5.myworkdayjobs.com/Zillow_Group_External"
+    region: west
+    metro: "Seattle, WA"
+    sector: real-estate
+  - company: "T-Mobile"
+    careers_url: "https://tmobile.wd1.myworkdayjobs.com/External"
+    region: west
+    metro: "Bellevue, WA"
+    sector: telecom
+  - company: "Chevron"
+    careers_url: "https://chevron.wd5.myworkdayjobs.com/jobs"
+    region: west
+    metro: "San Ramon, CA"
+    sector: energy
+  - company: "Guild"
+    careers_url: "https://job-boards.greenhouse.io/guild"
+    region: west
+    metro: "Denver, CO"
+    sector: edtech
+  - company: "Hulu / Disney"
+    careers_url: "https://disney.wd5.myworkdayjobs.com/disneycareer"
+    region: west
+    metro: "Burbank, CA"
+    sector: media

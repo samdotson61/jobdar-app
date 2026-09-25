@@ -4,6 +4,31 @@ All notable changes to Jobdar are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and Jobdar adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.63.2] — 2026-09-25
+
+**Northeast and West are real regions now, and the docs stop promising things that haven't happened.**
+App `1.25.2`, desktop `0.3.2` (both carry the new catalog); 164 tests.
+
+- **Employer catalog: 68 → 114.** The README had advertised Northeast and West since June while the
+  catalog had **zero** employers in either — the region toggle landed users on an empty scan. Added
+  **21 Northeast** (Boston / NYC / Philadelphia / Pittsburgh / Hartford / Buffalo) and **25 West**
+  (Bay Area / Seattle / Portland / LA / Denver) employers, each one **live-verified today through the real
+  provider code** (87 candidates probed + 50 alternate Workday site names; only URLs that returned public
+  postings were kept). Mix: Greenhouse (HubSpot, Toast, Datadog, MongoDB, Oscar Health, Airbnb, Stripe,
+  DoorDash, Coinbase…), Ashby (Ramp, Notion, OpenAI — the catalog's first Ashby rows), Workday (PNC,
+  Highmark, NewYork-Presbyterian, Travelers, M&T, Intel, Boeing, Adobe, Salesforce, Zillow, T-Mobile,
+  Chevron, Disney…). Honest gap: most large **health systems and retailers** on Workday in these regions
+  reject the public CXS call (HTTP 422 — site-name guesses; the same class as the 5.5.4 quirk tenants),
+  so the two new regions skew tech/finance for now; the seed test now requires ≥15 employers per region,
+  region-disjoint, no duplicate company or URL anywhere in the catalog.
+- **Stale copy sweep (EN + ES):** "TestFlight beta soon" (said since July) → "built and running fully
+  on-device — **not on TestFlight yet**" with what it waits on (README ×4, getting-started); ROADMAP no
+  longer claims `npx jobdar` works before the npm publish or that on-device inference arrives "once
+  Phase 8 lands" (it shipped in 8b); `docs/legal.md` no longer promises a Spanish translation nobody has
+  scheduled; getting-started points app-curious readers at the desktop beta that exists today.
+- Docs lockstep: status lines to 1.63.2 / app 1.25.2; ROADMAP Open Decision 4 (regions) records what was
+  seeded and the Workday 422 finding.
+
 ## [1.63.1] — 2026-09-25
 
 **Security + hygiene pass from the 2026-09-25 audit (re-verified after the rename).** App `1.25.1`,
