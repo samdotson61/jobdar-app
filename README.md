@@ -12,7 +12,7 @@ dominate US enterprise employers), evaluates each role against your résumé, ta
 cover letter, and tracks every application.
 
 > **Status:** Phases 0–7, 5.5, 7.7, 7.8, 8b, 8a, 8c, 8e + 8f **complete**, **Phase 10 L0–L5 shipped** —
-> **Jobdar CLI `1.64.3`** + **app `1.26.1`** + **desktop `0.4.2`** — the desktop app now installs like any
+> **Jobdar CLI `1.65.0`** + **app `1.27.0`** + **desktop `0.5.0`** — the desktop app now installs like any
 > other app: download, open, and **one click sets up the free private AI (no terminal)**. Bilingual core; **six live-verified
 > scanner providers** (Workday, iCIMS, Greenhouse, Lever, Ashby + an opt-in JSON-LD reader) plus an opt-in
 > **USAJobs** federal aggregator (BYO free key); level + region
@@ -39,10 +39,10 @@ No terminal, no account, no API key. About 15 minutes the first time, most of it
 
    | Your computer | File |
    |---|---|
-   | Mac with Apple Silicon (M1 or later) | `Jobdar-beta-0.4.2-mac-arm64.zip` |
-   | Mac with Intel | `Jobdar-beta-0.4.2-mac-x64.zip` |
-   | Windows PC | `Jobdar-beta-0.4.2-win-x64.exe` |
-   | Windows on ARM | `Jobdar-beta-0.4.2-win-arm64.exe` |
+   | Mac with Apple Silicon (M1 or later) | `Jobdar-beta-0.5.0-mac-arm64.zip` |
+   | Mac with Intel | `Jobdar-beta-0.5.0-mac-x64.zip` |
+   | Windows PC | `Jobdar-beta-0.5.0-win-x64.exe` |
+   | Windows on ARM | `Jobdar-beta-0.5.0-win-arm64.exe` |
 
 2. **Install it.**
    - **Mac:** double-click the zip, drag **Jobdar** into **Applications**, and open it. The beta isn't
@@ -166,7 +166,8 @@ your first scan — `jobdar init` walks you through it in English or Spanish, no
 - **Discover → prescreen → evaluate pipeline** — `scan` finds and filters roles but **never scores them**; `jobdar prescreen` screens hard gates (years required, active clearance, degree gates) **with a quoted reason — never silently** — and ranks the rest by skill overlap + freshness; the model's `jobdar eval` scores fit **0–5** against your résumé and records an **Apply / Research / Don't** band. `jobdar tui` shows discovered roles as *pending eval* until the model has scored them. **Honest scope:** a score judges the *listing text* against your résumé — Jobdar doesn't verify the employer behind it, and every eval report says so; `jobdar recheck` re-verifies that scored listings are still posted (dead ones show "no longer posted" instead of a green Apply badge) — and since 1.60.0 the surfaces verify for themselves: `tui`, `dashboard`, and `report` auto-check any Apply/Research row without a same-day board check before showing it (`--no-verify` skips, e.g. offline), so a dead posting is never presented as an opportunity — and `jobdar feedback` collects your 👍/👎 so `calibrate --feedback` can measure — not guess — how often the evaluator is right.
 - **A warm contact beats a cold application** — `jobdar outreach` builds LinkedIn people-search links (you browse and choose; Jobdar never scrapes or sends), drafts stay yours to send, and the polite cadence — 2 people per role, ONE follow-up after 5+ business days, then stop — is enforced in code.
 - **Region toggle** — Midwest by default; switch to Northeast/Southeast/Southwest/West/nationwide and the seeds, location filters, and search adapt.
-- **Level toggle** — entry by default; mid first-class; senior opt-in (ranks normally when chosen).
+- **Level toggle** — entry by default; mid first-class; senior opt-in (ranks normally when chosen). Picking
+  mid or senior **adds** roles — entry-level roles are never filtered out.
 - **A dedicated no-degree path** — surfaces skills-based, apprenticeship, and "or equivalent experience" roles.
 - **Transferable-skills toggle** — for career-changers and new grads: credits genuine adjacent skills toward a role's requirements and treats an "X+ years in [field]" ask as bridgeable, not a hard wall — without lowering the bar (`transferable_skills` / `eval --transferable`).
 - **Private by design** — local data + on-device model by default; no résumé ever hosted by us.

@@ -2682,6 +2682,40 @@ test('1.64.3 AI relaunch: setup() reports "starting" synchronously when the mode
   rmSync(home, { recursive: true, force: true })
 })
 
+test('levels: entry-level roles are never filtered out — mid/senior selections ADD roles (1.65.0)', () => {
+  const d = levelDecision('Logistics Coordinator I', ['mid'])
+  assert.equal(d.include, true, 'an auto-detected Mid must not hide entry roles (the résumé\'s own stated target)')
+  assert.equal(levelDecision('Entry Level Marketing Coordinator', ['senior']).include, true)
+  assert.equal(filterByLevel([{ title: 'Junior Analyst' }, { title: 'Senior Staff Engineer' }], ['mid']).kept.map((j) => j.title).join(), 'Junior Analyst')
+  assert.equal(levelDecision('Senior Staff Engineer', ['entry']).include, false, 'senior stays opt-in')
+})
+
+test('regions: the offline place table places towns the state/metro rules miss, marks foreign ones, never drops a US match on a guess (1.65.0)', async () => {
+  const { parseLocation, locationMatches, regionForLocation } = await import('./lib/regions.mjs')
+  assert.deepEqual(parseLocation('Beavercreek').usStates, ['OH'])
+  assert.equal(parseLocation('Beavercreek').placed, true)
+  assert.equal(regionForLocation('Greater Cincinnati Area'), 'midwest')
+  for (const f of ['Sosnowiec, Silesian', 'Munich, Bavarian', 'Hamburg, Germany', 'London', 'Paris']) {
+    assert.equal(parseLocation(f).foreign, true, f)
+    assert.equal(locationMatches(f, ['midwest']), false, f)
+  }
+  // shared US names: every candidate state is kept, so a role matches if ANY is in the region
+  assert.ok(parseLocation('Springfield').usStates.includes('IL'))
+  assert.equal(locationMatches('Dayton', ['midwest']), true)
+  assert.equal(locationMatches('Newport', ['northeast']), true) // RI
+  // US-state evidence still wins, and truly unknown strings are still kept
+  assert.deepEqual(parseLocation('London, KY').usStates, ['KY'])
+  // a named COUNTRY is never a same-named US town (the audit's São Paulo → IN, Mexico City → MO)
+  for (const f of ['São Paulo, São Paulo, Brazil', 'Mexico City, Mexico', 'UK', 'Remote in APJ Region']) {
+    assert.deepEqual(parseLocation(f).usStates, [], f)
+    assert.equal(parseLocation(f).foreign, true, f)
+  }
+  assert.deepEqual(parseLocation('Brazil, IN').usStates, ['IN'])
+  assert.deepEqual(parseLocation('DMV Area').usStates, ['DC'])
+  assert.equal(locationMatches('Remote', ['midwest']), true)
+  assert.equal(locationMatches('2 Locations', ['midwest']), true)
+})
+
 let passed = 0
 let failed = 0
 for (const { name, fn } of tests) {
