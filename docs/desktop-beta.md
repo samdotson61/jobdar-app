@@ -48,7 +48,7 @@ time)**:
   résumé and search while it downloads**; only scoring waits for it.
 - Keep Jobdar open until it finishes. If the download is interrupted, click **Try again** — it resumes
   where it stopped.
-- It needs about **4 GB of free disk space**; the app checks first and tells you if there isn't enough.
+- It needs about **5 GB of free disk space**; the app checks first and tells you if there isn't enough.
 - After that, the AI **starts by itself** whenever you open Jobdar (a few seconds) and **stops when you
   quit**, so it never runs in the background.
 
@@ -97,7 +97,7 @@ anything else personal — only your region/level settings.
 |---|---|
 | Mac: *"Apple could not verify 'Jobdar'…"* | Expected once — follow the **Open Anyway** steps in section 1. |
 | Mac: *"'Jobdar' is damaged and can't be opened"* | You have a pre-0.4.0 build — get 0.4.0 or later. |
-| "Not enough free disk space" | Free up space until at least 4 GB is available, then **Try again**. |
+| "Not enough free disk space" | Free up space until at least 5 GB is available, then **Try again**. |
 | "The AI couldn't start: …" | Click **Try again**. If it repeats, quit and reopen Jobdar; the engine's log is `~/.jobdar/ai/llama-server.log` — send it with your report. |
 | Download stalls or fails | Check your internet connection and click **Try again** — the download resumes. |
 | "Scoring paused — the AI isn't ready yet" | The AI is still downloading or starting — watch the progress card above, then score again. |
@@ -107,9 +107,11 @@ anything else personal — only your region/level settings.
 
 - **Unsigned builds** (the one-time Open Anyway / SmartScreen step) and the default Electron icon. A
   Developer ID–signed, notarized Mac build needs the Apple Developer account (see RELEASING.md).
-- **Windows builds are produced and packaged, but have not yet been run on real Windows hardware** —
-  every flow above was verified on macOS (Apple Silicon). Windows-specific parts (the bundled AI's GPU
-  choice, the installer) are untested; please report anything odd.
+- **Windows x64 was first verified on real hardware in 0.4.1** (Windows 11, NVIDIA GPU): AI setup,
+  PDF/Word résumés, search, scoring, follow-up drafts, quit and relaunch all work — and 0.4.1 fixes a
+  bug that stopped every earlier Windows build from starting at all. Still untested: the `.exe`
+  installer itself (the same app was run from the zip), Windows on ARM, and machines without an NVIDIA
+  GPU. Please report anything odd.
 - The AI needs roughly 3–4 GB of free memory while it runs; on an 8 GB machine, close heavy apps.
 - Scores judge the listing text against your résumé — the employer itself isn't verified.
 - The employer catalog is strongest in the Midwest (the default region); some regions skew toward tech

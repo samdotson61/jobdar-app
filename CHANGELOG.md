@@ -4,6 +4,42 @@ All notable changes to Jobdar are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and Jobdar adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.64.2] — 2026-09-29
+
+**The desktop app's first run on real Windows hardware — and it couldn't start there.** Desktop `0.4.1`;
+174 tests, now passing on Windows too. **The public `desktop-v0.4.0` Windows downloads (both installers
+and both portable zips) are affected by the start-up bug below — replace them with 0.4.1;** the Mac
+builds are unaffected by it.
+
+Driven on Windows 11 x64 (RTX 5070 Ti) with the same two first-time users as 1.64.0 — the new grad
+(PDF résumé) and the no-degree shift lead (Word résumé) — through the real 2.7 GB model download,
+search, batch scoring, "Why this score", a drafted follow-up note, EN/ES, quit and relaunch; then the
+packaged `win-x64` zip through `smoke:packed`.
+
+- **Fixed: the Windows desktop app never started its engine.** `main.cjs` loaded the engine with
+  `import(<absolute path>)`; on Windows `C:\…` parses as an unknown `c:` URL scheme
+  (`ERR_UNSUPPORTED_ESM_URL_SCHEME`), so every Windows build failed at launch. The three engine imports
+  now go through `pathToFileURL` — the identical URL on macOS, a valid one on Windows (including from
+  inside the packaged `app.asar`).
+- **`npm run smoke:packed` runs on Windows.** It was macOS-only (`ditto`, the mac zip); on Windows it
+  extracts the `win-<arch>` zip with Windows' own `tar.exe` and runs `Jobdar.exe --smoke`.
+- **The test suite passes on Windows** (CI is Linux-only, so these had never run there): the fake-home
+  test now sets `USERPROFILE` (what `os.homedir()` reads on Windows), and the two SIGINT-path winc-manager
+  tests pin `platform: 'linux'` (on win32 the manager correctly hard-kills instead).
+- **The AI setup downloads what it says — and the check asks for enough disk.** "Set up the AI (2.7 GB)"
+  actually fetched ~5.2 GB: the winc engine (1.1 GB for the Windows CUDA build) plus, beyond the model,
+  a DFlash drafter head (0.69 GB — winc's "also download it?" prompt defaults to yes with no terminal)
+  and a vision projector (0.67 GB), which the eval server then loaded into memory for text-only scoring.
+  With the bundled **winc 1.41.0-jobdar.2** the setup runs `winc -d qwen3.5-4b --eval` (the model only)
+  and the eval profile runs with no projector and no speculation (DFlash and ngram off — with the
+  projector loaded nothing speculated, so dropping it alone had switched ngram on: measured 4% draft
+  acceptance, pure overhead; the scoring path now matches the bench-validated one). The free-space check rises from 4 GB to **5 GB**
+  (it had assumed a ~0.5 GB engine). Installs made with 1.64.0 keep the two extra files on disk (unused
+  now); delete `~/.jobdar/ai/models/Qwen3.5-4B-DFlash.gguf` and `…-mmproj.gguf` to reclaim 1.4 GB.
+- Verified working on Windows, unchanged: one-click AI setup (download → CUDA llama-server → ready), PDF
+  via the bundled pdf.js and `.docx` via the built-in zip reader with nothing installed, quit stops winc
+  **and** its llama-server (no orphans), relaunch restarts the AI in under 10 s with every score kept.
+
 ## [1.64.1] — 2026-09-29
 
 **Docs: the desktop app has a public download.** The first GitHub release,

@@ -14,7 +14,7 @@ puesto frente a tu currículum, adapta un CV y una carta de presentación compat
 registra cada postulación.
 
 > **Estado:** Fases 0–7, 5.5, 7.7, 7.8, 8b, 8a, 8c, 8e + 8f **completas**, **Fase 10 L0–L5 entregada** —
-> **Jobdar CLI `1.64.1`** + **app `1.26.0`** + **escritorio `0.4.0`** — la app de escritorio ahora se instala
+> **Jobdar CLI `1.64.2`** + **app `1.26.0`** + **escritorio `0.4.1`** — la app de escritorio ahora se instala
 > como cualquier otra: descárgala, ábrela y **un clic configura la IA privada y gratuita (sin terminal)**.
 > Núcleo bilingüe; **seis escáneres
 > verificados en vivo** (Workday, iCIMS, Greenhouse, Lever, Ashby + un lector JSON-LD opcional) más un
@@ -39,14 +39,14 @@ registra cada postulación.
 
 Sin terminal, sin cuenta, sin clave de API. Unos 15 minutos la primera vez, casi todo es una descarga.
 
-1. **Descarga el archivo para tu computadora** desde la **[página de Releases](https://github.com/samdotson61/jobdar-app/releases)** (la más reciente: *Jobdar Desktop 0.4.0 (beta)*):
+1. **Consigue el archivo para tu computadora** en tu invitación a la beta:
 
    | Tu computadora | Archivo |
    |---|---|
-   | Mac con Apple Silicon (M1 o posterior) | `Jobdar-beta-0.4.0-mac-arm64.zip` |
-   | Mac con Intel | `Jobdar-beta-0.4.0-mac-x64.zip` |
-   | PC con Windows | `Jobdar-beta-0.4.0-win-x64.exe` |
-   | Windows en ARM | `Jobdar-beta-0.4.0-win-arm64.exe` |
+   | Mac con Apple Silicon (M1 o posterior) | `Jobdar-beta-0.4.1-mac-arm64.zip` |
+   | Mac con Intel | `Jobdar-beta-0.4.1-mac-x64.zip` |
+   | PC con Windows | `Jobdar-beta-0.4.1-win-x64.exe` |
+   | Windows en ARM | `Jobdar-beta-0.4.1-win-arm64.exe` |
 
 2. **Instálala.**
    - **Mac:** haz doble clic en el zip, arrastra **Jobdar** a **Aplicaciones** y ábrela. La beta aún no está
@@ -197,9 +197,8 @@ nivel intermedio, o activa senior (que entonces se clasifica con normalidad, sin
 ## Próximos pasos
 
 La línea de corte del MVP ya está entregada (mira el estado de arriba). Lo que queda, en orden: una **build de
-Mac firmada con Developer ID y notarizada** de la app de escritorio (así desaparece el paso único de "Abrir de
-todos modos" — necesita la cuenta de Apple Developer; las descargas públicas ya están en la
-[página de Releases](https://github.com/samdotson61/jobdar-app/releases)), la **beta
+Mac firmada con Developer ID y notarizada, y una página pública de descarga** para la app de escritorio (así
+desaparece el paso único de "Abrir de todos modos" — necesita la cuenta de Apple Developer), la **beta
 por TestFlight** de la app de iPhone ([Fase 10 L6](ROADMAP.md#phase-10--fully-local-iphone-active-direction-locked-2026-07-08)
 — pasos de cuenta), la **publicación en npm + marketplace** y una **beta cerrada** de la CLI (las
 decisiones de nombre / organización / licencia están en [RELEASING.md](RELEASING.md)), la recalibración

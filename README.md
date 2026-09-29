@@ -12,7 +12,7 @@ dominate US enterprise employers), evaluates each role against your résumé, ta
 cover letter, and tracks every application.
 
 > **Status:** Phases 0–7, 5.5, 7.7, 7.8, 8b, 8a, 8c, 8e + 8f **complete**, **Phase 10 L0–L5 shipped** —
-> **Jobdar CLI `1.64.1`** + **app `1.26.0`** + **desktop `0.4.0`** — the desktop app now installs like any
+> **Jobdar CLI `1.64.2`** + **app `1.26.0`** + **desktop `0.4.1`** — the desktop app now installs like any
 > other app: download, open, and **one click sets up the free private AI (no terminal)**. Bilingual core; **six live-verified
 > scanner providers** (Workday, iCIMS, Greenhouse, Lever, Ashby + an opt-in JSON-LD reader) plus an opt-in
 > **USAJobs** federal aggregator (BYO free key); level + region
@@ -35,14 +35,14 @@ cover letter, and tracks every application.
 
 No terminal, no account, no API key. About 15 minutes the first time, most of it one download.
 
-1. **Download the file for your computer** from the **[Releases page](https://github.com/samdotson61/jobdar-app/releases)** (latest: *Jobdar Desktop 0.4.0 (beta)*):
+1. **Get the file for your computer** from your beta invite:
 
    | Your computer | File |
    |---|---|
-   | Mac with Apple Silicon (M1 or later) | `Jobdar-beta-0.4.0-mac-arm64.zip` |
-   | Mac with Intel | `Jobdar-beta-0.4.0-mac-x64.zip` |
-   | Windows PC | `Jobdar-beta-0.4.0-win-x64.exe` |
-   | Windows on ARM | `Jobdar-beta-0.4.0-win-arm64.exe` |
+   | Mac with Apple Silicon (M1 or later) | `Jobdar-beta-0.4.1-mac-arm64.zip` |
+   | Mac with Intel | `Jobdar-beta-0.4.1-mac-x64.zip` |
+   | Windows PC | `Jobdar-beta-0.4.1-win-x64.exe` |
+   | Windows on ARM | `Jobdar-beta-0.4.1-win-arm64.exe` |
 
 2. **Install it.**
    - **Mac:** double-click the zip, drag **Jobdar** into **Applications**, and open it. The beta isn't
@@ -180,8 +180,8 @@ your first scan — `jobdar init` walks you through it in English or Spanish, no
 ## Next steps
 
 The MVP cut line is long shipped (see the status above). What remains, in order: a **Developer ID–signed,
-notarized Mac build** of the desktop app (so the one-time "Open Anyway" step disappears — needs the Apple
-Developer account; public downloads are already on the [Releases page](https://github.com/samdotson61/jobdar-app/releases)), the **TestFlight beta**
+notarized Mac build and a public download page** for the desktop app (so the one-time "Open Anyway" step
+disappears — needs the Apple Developer account), the **TestFlight beta**
 of the iPhone app ([Phase 10 L6](ROADMAP.md#phase-10--fully-local-iphone-active-direction-locked-2026-07-08)
 — account steps), the **npm publish + marketplace** listing and a **closed beta** of the CLI (name / org /
 license calls tracked in [RELEASING.md](RELEASING.md)), evaluator recalibration from real 👍/👎 feedback

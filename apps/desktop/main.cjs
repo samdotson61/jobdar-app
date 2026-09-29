@@ -36,6 +36,9 @@ const BUNDLED_WINC = app.isPackaged
   : path.join(__dirname, 'winc-bin', `${process.platform === 'win32' ? 'win' : 'mac'}-${process.arch}`, WINC_EXE)
 // The engine ships as the real npm-packed `jobdar` dependency; resolve its checkout root.
 const ENGINE_ROOT = path.dirname(require.resolve('jobdar/package.json'))
+// ESM import() needs a file:// URL — a bare absolute path works on macOS but on Windows `C:\...` parses as
+// an unknown 'c:' URL scheme (ERR_UNSUPPORTED_ESM_URL_SCHEME), so the engine never started there.
+const importEngine = (...rel) => import(require('node:url').pathToFileURL(path.join(ENGINE_ROOT, ...rel)).href)
 
 // A STABLE port (0.1.2): the renderer's localStorage — onboarded flag, verdicts, thumbs highlights —
 // is scoped to the page ORIGIN, so a random port per launch made every restart look like a first run
@@ -83,11 +86,11 @@ async function chooseAi(loadProfile) {
 
 async function startEngine(port) {
   // Seed the API key from the data home the way bin/jobdar does, then start serve in-process.
-  const { loadApiKey, loadProfile } = await import(path.join(ENGINE_ROOT, 'lib', 'config.mjs'))
+  const { loadApiKey, loadProfile } = await importEngine('lib', 'config.mjs')
   const aiMode = await chooseAi(loadProfile)
   let ai = null
   if (aiMode === 'managed') {
-    const { getManagedWinc } = await import(path.join(ENGINE_ROOT, 'lib', 'winc_manager.mjs'))
+    const { getManagedWinc } = await importEngine('lib', 'winc_manager.mjs')
     ai = getManagedWinc()
     process.env.JOBDAR_INFERENCE_URL = ai.prepare() // winc.toml written → the port the engine should call
   }
@@ -100,7 +103,7 @@ async function startEngine(port) {
       /* no key — local winc is the default backend anyway */
     }
   }
-  const { runServe } = await import(path.join(ENGINE_ROOT, 'lib', 'commands', 'serve.mjs'))
+  const { runServe } = await importEngine('lib', 'commands', 'serve.mjs')
   // runServe resolves only on server error — run it un-awaited and poll the port for readiness.
   runServe(['--port', String(port), '--gui', GUI_DIR]).catch((e) => {
     dialog.showErrorBox('Jobdar engine failed', String((e && e.stack) || e))

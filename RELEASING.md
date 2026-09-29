@@ -99,7 +99,7 @@ npx electron . --smoke    # dev-tree self-test: engine + GUI + API through one p
 npm run dist:all          # clean → vendor → winc → GUI export → all six installers (mac arm64/x64,
                           # win x64/arm64) → prune ALL unpacked bundles (dist-build = distributables
                           # only; any stray Jobdar.app on indexed disk duplicates in Spotlight)
-npm run smoke:packed      # smoke the PACKAGED app — unzips the native zip into the temp dir
+npm run smoke:packed      # smoke the PACKAGED app (macOS or Windows, 0.4.1) — unzips the native zip into the temp dir
                           # (Spotlight-invisible), runs --smoke, cleans up
 npm run install:mac       # optional: install the canonical /Applications/Jobdar.app for THIS Mac
                           # (registers it with LaunchServices; the one you double-click)
