@@ -14,7 +14,9 @@ puesto frente a tu currículum, adapta un CV y una carta de presentación compat
 registra cada postulación.
 
 > **Estado:** Fases 0–7, 5.5, 7.7, 7.8, 8b, 8a, 8c, 8e + 8f **completas**, **Fase 10 L0–L5 entregada** —
-> **Jobdar CLI `1.63.2`** + **app `1.25.2`**: núcleo bilingüe; **seis escáneres
+> **Jobdar CLI `1.64.0`** + **app `1.26.0`** + **escritorio `0.4.0`** — la app de escritorio ahora se instala
+> como cualquier otra: descárgala, ábrela y **un clic configura la IA privada y gratuita (sin terminal)**.
+> Núcleo bilingüe; **seis escáneres
 > verificados en vivo** (Workday, iCIMS, Greenhouse, Lever, Ashby + un lector JSON-LD opcional) más un
 > agregador federal **USAJobs** opcional (con tu propia clave gratuita); selectores
 > de nivel y región y el asistente `jobdar init`; la tubería completa **descubrir → prefiltrar → evaluar →
@@ -32,6 +34,38 @@ registra cada postulación.
 > (espera el registro en App Store Connect — Fase 10 L6). Pendiente para el 1.0 de la CLI: publicar en npm + marketplace, y luego una beta cerrada.
 > Consulta **[ROADMAP.md](ROADMAP.md)** para el plan completo y
 > **[CHANGELOG.md](CHANGELOG.md)** para lo ya entregado.
+
+## La forma más fácil de empezar: la app de escritorio (Mac + Windows, beta)
+
+Sin terminal, sin cuenta, sin clave de API. Unos 15 minutos la primera vez, casi todo es una descarga.
+
+1. **Consigue el archivo para tu computadora** en tu invitación a la beta:
+
+   | Tu computadora | Archivo |
+   |---|---|
+   | Mac con Apple Silicon (M1 o posterior) | `Jobdar-beta-0.4.0-mac-arm64.zip` |
+   | Mac con Intel | `Jobdar-beta-0.4.0-mac-x64.zip` |
+   | PC con Windows | `Jobdar-beta-0.4.0-win-x64.exe` |
+   | Windows en ARM | `Jobdar-beta-0.4.0-win-arm64.exe` |
+
+2. **Instálala.**
+   - **Mac:** haz doble clic en el zip, arrastra **Jobdar** a **Aplicaciones** y ábrela. La beta aún no está
+     notarizada por Apple, así que la primera vez macOS dice *"Apple no pudo verificar que 'Jobdar' esté libre
+     de malware"* — haz clic en **Listo**, abre **Ajustes del Sistema → Privacidad y seguridad**, baja hasta
+     el final, haz clic en **Abrir de todos modos** junto a Jobdar y confirma con tu contraseña. Solo se hace
+     una vez. (En macOS 14 o anterior: clic derecho en Jobdar → **Abrir** → **Abrir**.)
+   - **Windows:** ejecuta el `.exe`. Si aparece SmartScreen, haz clic en **Más información → Ejecutar de
+     todas formas**.
+3. **En la app:** sube tu currículum (PDF o Word — o solo elige tu región y nivel) y haz clic en
+   **Configurar la IA (2.7 GB, una sola vez)**. Eso descarga la IA pequeña que evalúa empleos **en tu
+   computadora**; puedes buscar mientras se descarga, y después arranca sola cada vez que abres Jobdar.
+4. **Buscar → Postular → Evaluar.** Cada puesto evaluado dice *por qué* (Postula / Investiga / No), y puedes
+   adaptar tu currículum o redactar una nota cortés para alguien de la empresa.
+
+Todo — tu currículum, tus resultados y la IA — se queda en una sola carpeta de tu computadora, `~/.jobdar`
+(la IA vive en `~/.jobdar/ai`). Para desinstalar, borra la app y esa carpeta. La guía completa para
+probadores, con solución de problemas y qué contiene el informe beta, está en
+**[docs/desktop-beta.md](docs/desktop-beta.md)** (en inglés).
 
 ## Tus datos se quedan en local
 
@@ -66,10 +100,13 @@ idioma y el catálogo de empleadores viajan con el código, así que funcionan d
 - **CLI (disponible hoy — la columna vertebral)** — local primero. Escanear, prefiltrar y registrar no
   necesitan modelo; `jobdar backend --install` agrega el modelo local privado y gratuito para
   evaluar/adaptar, o usa tu propia CLI/API de IA.
-- **App de escritorio (builds beta para Mac + Windows — la superficie de pruebas)** — el motor completo +
-  la misma interfaz que la app del teléfono en una sola ventana de doble clic, corriendo por completo en
-  la máquina del probador. Los probadores responden **"¿Postularías?"** en cada puesto puntuado y exportan
-  un **informe beta sin datos personales** que analizamos para mejorar el evaluador. Ver
+- **App de escritorio (builds beta para Mac + Windows — la forma más fácil de empezar, y la superficie de
+  pruebas)** — el motor completo + la misma interfaz que la app del teléfono en una sola ventana de doble
+  clic, corriendo por completo en tu máquina. **Incluye el motor de IA local**: un clic descarga el modelo
+  (2.7 GB, una vez) con una barra de progreso real, y luego la IA arranca y se detiene con la app — sin
+  terminal en ningún paso (0.4.0). Los probadores responden **"¿Postularías?"** en cada puesto puntuado y
+  exportan un **informe beta sin datos personales** que analizamos para mejorar el evaluador. Ver
+  [los pasos de arriba](#la-forma-más-fácil-de-empezar-la-app-de-escritorio-mac--windows-beta) y
   [docs/desktop-beta.md](docs/desktop-beta.md).
 - **App de iPhone (construida y funcionando por completo en el dispositivo — todavía no en TestFlight)** — toda la tubería corre **en el
   teléfono**: escanear → prefiltrar → evaluar → adaptar → contactar, con el modelo descargado dentro de
@@ -153,13 +190,15 @@ nivel intermedio, o activa senior (que entonces se clasifica con normalidad, sin
   evaluar, adaptar, borradores de contacto, calibrar, render de PDF): recuentos honestos que crecen al
   llegar los resultados, ETA medidos y tiempo transcurrido real — nunca un porcentaje inventado. El
   mismo lenguaje de radar llegará a la app.
-- **Fácil para cualquiera** — un asistente de configuración guiado y bilingüe para la CLI hoy; la app de
-  iPhone totalmente en el dispositivo (TestFlight pendiente), y después una app web amigable, para
-  personas no técnicas.
+- **Fácil para cualquiera** — una app de escritorio de doble clic con IA privada de un clic (sin terminal) y
+  un asistente de configuración guiado y bilingüe para la CLI hoy; la app de iPhone totalmente en el
+  dispositivo (TestFlight pendiente), y después una app web amigable, para personas no técnicas.
 
 ## Próximos pasos
 
-La línea de corte del MVP ya está entregada (mira el estado de arriba). Lo que queda, en orden: la **beta
+La línea de corte del MVP ya está entregada (mira el estado de arriba). Lo que queda, en orden: una **build de
+Mac firmada con Developer ID y notarizada, y una página pública de descarga** para la app de escritorio (así
+desaparece el paso único de "Abrir de todos modos" — necesita la cuenta de Apple Developer), la **beta
 por TestFlight** de la app de iPhone ([Fase 10 L6](ROADMAP.md#phase-10--fully-local-iphone-active-direction-locked-2026-07-08)
 — pasos de cuenta), la **publicación en npm + marketplace** y una **beta cerrada** de la CLI (las
 decisiones de nombre / organización / licencia están en [RELEASING.md](RELEASING.md)), la recalibración

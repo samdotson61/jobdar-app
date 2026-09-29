@@ -5,9 +5,10 @@
 Jobdar encuentra empleos de nivel inicial en EE. UU. que encajan contigo, mantiene tus datos en tu
 máquina y funciona en inglés o español. Esta es la ruta de 5 minutos de cero a tu primer escaneo.
 
-> **¿Prefieres una app?** La app de iPhone — toda la tubería corriendo de forma privada en tu teléfono —
-> está construida, pero **todavía no está en TestFlight**. Hoy el camino es la CLI de abajo, o la
-> [beta de escritorio](desktop-beta.md) para Mac y Windows.
+> **¿Prefieres una app? ¿No usas la terminal?** Usa la **[app de escritorio](desktop-beta.md)** para Mac y
+> Windows en lugar de esta guía — descárgala, ábrela y un clic configura la IA privada; sin terminal en
+> ningún paso (pasos en el [README](../README.es.md#la-forma-más-fácil-de-empezar-la-app-de-escritorio-mac--windows-beta)).
+> La app de iPhone está construida pero **todavía no está en TestFlight**. El resto de esta página es la CLI.
 
 ## 1. Instalar (un comando)
 

@@ -4,6 +4,7 @@ import { useStore } from '@/src/store';
 import { serveBase, backendMode } from '@/src/serve';
 import { t } from '@/src/engine';
 import { Btn, C, Card, Field, H, Pill, Sub, bandColor } from '@/src/ui';
+import { AiBanner } from '@/src/AiBanner';
 
 // Export the beta report (1.55.0, web/desktop only): fetch the PII-free markdown from serve and hand it
 // to the browser as a download — works identically in a plain browser tab and the Electron shell.
@@ -26,6 +27,8 @@ export default function Apply() {
   const scoring = useStore((s) => s.scoring);
   const rechecking = useStore((s) => s.rechecking);
   const tailored = useStore((s) => s.tailored);
+  const modelUp = useStore((s) => s.modelUp);
+  const scoreNote = useStore((s) => s.scoreNote);
   const { scoreOne, scoreTopN, rateVerdict, tailorOne, recheckListings } = useStore.getState();
   const lang = profile.language;
   const [dir, setDir] = useState<Record<string, string>>({});
@@ -36,9 +39,11 @@ export default function Apply() {
   return (
     <ScrollView style={{ backgroundColor: C.bg }} contentContainerStyle={{ padding: 16, paddingBottom: 56 }}>
       <H>{t(lang, 'apply.title')}</H>
-      <Sub>{queue.length ? `${queue.length} roles past pre-confirm.` : 'Run Search first to build the queue.'}  ·  {t(lang, 'common.demo')}</Sub>
+      <Sub>{queue.length ? t(lang, 'apply.queueCount', { n: queue.length }) : t(lang, 'apply.queueEmpty')}  ·  {t(lang, 'common.demo')}</Sub>
       {/* Honest scope (1.52.0): scores judge listing text vs résumé — nothing here vets the employer. */}
       <Text style={{ color: C.dim, fontSize: 11, marginBottom: 8 }}>{t(lang, 'apply.notVerified')}</Text>
+      {/* 1.64.0: scoring needs the AI — the same status card as Search (desktop: one-click setup). */}
+      <AiBanner />
 
       {/* Action hierarchy (1.21.0 calm-down): ONE primary — batch scoring. Re-check and Export are
           occasional utilities and share a quiet row; three stacked full-width primaries buried the
@@ -46,9 +51,13 @@ export default function Apply() {
       {unscored > 0 ? (
         <Btn
           label={scoring ? t(lang, 'apply.scoring') : t(lang, 'apply.scoreTop', { n: Math.min(unscored, 10) })}
-          disabled={scoring}
+          disabled={scoring || (backendMode() === 'serve' && !modelUp)}
           onPress={() => scoreTopN(10)}
         />
+      ) : null}
+      {/* Why the last pass stopped or skipped roles — never a silent no-op (1.64.0). */}
+      {scoreNote && !scoring ? (
+        <Text style={{ color: C.warn, fontSize: 12, marginBottom: 6 }}>{t(lang, scoreNote.key, scoreNote.vars)}</Text>
       ) : null}
       <View style={{ flexDirection: 'row', gap: 8 }}>
         {Object.keys(verdicts).length > 0 ? (

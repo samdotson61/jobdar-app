@@ -8,7 +8,7 @@
 import { existsSync, lstatSync, realpathSync, readlinkSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 import path from 'node:path'
-import { loadProfile, paths, SUPPORTED_LANGUAGES, fileExists, ROOT, legacyHomeInUse, legacyEnvHonored } from './lib/config.mjs'
+import { loadProfile, paths, SUPPORTED_LANGUAGES, fileExists, ROOT } from './lib/config.mjs'
 import { getT } from './lib/i18n.mjs'
 import { parseFlags, resolveLang, isDirectRun } from './lib/cli.mjs'
 import { providerIds } from './providers/_contract.mjs'
@@ -79,9 +79,6 @@ export async function runDoctor(argv = []) {
 
   // Where user data lives (portable: JOBDAR_HOME > repo-local checkout > ~/.jobdar).
   ok(t('doctor.home', { home: paths.home }))
-  // 1.63.0 compat: a pre-revert ~/.jobfaro (or JOBFARO_* export) still works, but say so — and say the fix.
-  if (legacyHomeInUse) warn(t('doctor.home_legacy', { home: paths.home }))
-  if (legacyEnvHonored.length) warn(t('doctor.env_legacy', { vars: legacyEnvHonored.join(', ') }))
 
   // Config files (warn, don't fail — `init` will create them).
   if (fileExists(paths.profile) && fileExists(paths.portals)) {
@@ -126,15 +123,12 @@ export async function runDoctor(argv = []) {
     }
   }
 
-  // Résumé import/upload tools (optional): .docx needs `unzip` (ubiquitous), .pdf needs `pdftotext` (poppler).
+  // Résumé import/upload (1.64.0): .docx is read in-process (no `unzip`); .pdf uses `pdftotext` when present,
+  // else macOS's built-in PDFKit — so only a non-Mac CLI without poppler can't read PDFs (the desktop app
+  // ships its own PDF reader for Windows).
   const hasBin = (cmd, args) => { try { execFileSync(cmd, args, { stdio: 'ignore' }); return true } catch { return false } }
-  const hasUnzip = hasBin('unzip', ['-v'])
-  const hasPdftotext = hasBin('pdftotext', ['-v'])
-  if (hasUnzip && hasPdftotext) ok(t('doctor.resume_import_ok'))
-  else {
-    if (!hasPdftotext) warn(t('doctor.pdftotext_optional'))
-    if (!hasUnzip) warn(t('doctor.unzip_optional'))
-  }
+  if (process.platform === 'darwin' || hasBin('pdftotext', ['-v'])) ok(t('doctor.resume_import_ok'))
+  else warn(t('doctor.pdftotext_optional'))
 
   // Summary.
   console.log('')

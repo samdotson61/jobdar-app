@@ -1,6 +1,6 @@
 # Jobdar apps (Phases 9–10)
 
-Two surfaces over the engine, driven by the real **`@jobdar/engine`** (pnpm workspace) — not a
+Three surfaces over the engine (the desktop shell is the third — see `apps/desktop` below), driven by the real **`@jobdar/engine`** (pnpm workspace) — not a
 re-implementation. As of **1.47 (Phase 10 L1–L5)** the native app is **fully local on the phone**: it
 scans real boards directly, stores the pipeline in CLI-format files on-device, and runs
 evaluate/tailor/outreach-drafts through **llama.rn** with the same eval profile winc serves. Web stays
@@ -33,6 +33,15 @@ pnpm web                # → http://localhost:8081  (test on your Mac browser)
   `pnpm exec expo export -p web`, serve `dist/` (`cd dist && python3 -m http.server 8799`), then open it
   in Safari on the phone (`http://<mac-LAN-ip>:8799`) or the simulator
   (`xcrun simctl openurl "iPhone 14" http://localhost:8799`). For true native, build a dev build (below).
+
+## `apps/desktop` — Jobdar Desktop (Electron, Mac + Windows beta)
+
+The exported web build of `apps/jobdar` plus the real `jobdar serve` engine in one double-clickable app —
+and, since desktop 0.4.0, **the local AI runtime**: a winc-jobdar binary per OS/arch
+(`prepare-winc.mjs` → `Resources/winc/`) that the in-app **Set up the AI** button provisions into
+`~/.jobdar/ai` and that starts/stops with the app (`lib/winc_manager.mjs`). Also ships `pdfjs-dist` so
+PDF résumés parse on Windows with nothing installed. Build + smoke steps: [RELEASING.md](../RELEASING.md#desktop-beta-builds-1560-appsdesktop);
+tester guide: [docs/desktop-beta.md](../docs/desktop-beta.md).
 
 ## `apps/server` — the scanner-proxy (Phase 9.1, local form)
 

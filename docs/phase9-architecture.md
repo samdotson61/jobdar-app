@@ -132,7 +132,7 @@ interface DocExtract { extractText(fileOrBuffer): {ext, text, error?} }
 
 | Surface | Store impl | DocExtract impl |
 |---|---|---|
-| CLI (Node) | fs + `atomicWrite` (current) | `pdftotext`/`unzip`/`textutil` (current) |
+| CLI (Node) | fs + `atomicWrite` (current) | built-in zip reader (docx) + `pdftotext` → macOS PDFKit → pdf.js if present (current, 1.64.0) |
 | Web | **IndexedDB** (rows) + **OPFS** (`cv.md` blob) | **unpdf** (pdf.js) + **mammoth** + txt/md |
 | Native | **expo-sqlite** + **expo-file-system** | native pickers + **unpdf-wasm**/mammoth |
 
@@ -217,7 +217,7 @@ conformance/lint test keeps the scanner provider-pure so the same code stays por
 
 ## Known gaps & current limitations
 
-Current as of `@jobdar/app` 1.25.x / CLI 1.63.x — intentional/known, mirrored in
+Current as of `@jobdar/app` 1.26.x / CLI 1.64.x — intentional/known, mirrored in
 [ROADMAP.md](../ROADMAP.md#known-gaps--current-limitations). (Resolved since 1.10.0: first-run
 **onboarding shipped** in 1.41 — welcome → continue-as/upload/manual → search; **`POST /profile`
 shipped** in 1.41 — the app writes the chosen identity to `config/profile.yml`; the **`jobdar doctor`
@@ -242,11 +242,11 @@ items below now describe the web app and the optional Mac-companion mode, not na
   override. On-device honest limits: intent parse = deterministic keyword fallback, `/discover` returns
   not-available, and the in-app model-download UX + real-device Metal speed are unexercised until the
   TestFlight beta (Phase 10 L6).
-- **PDF upload depends on `pdftotext` (poppler) on the serve host.** `POST /import/upload` writes the bytes
-  to the confined `data/uploads/` dir and runs the deterministic `docparse` extractor — `.docx` via `unzip`,
-  `.pdf` via `pdftotext`, `.txt/.md` direct. The host needs poppler for PDF (`brew install poppler` /
-  `apt-get install poppler-utils`); `jobdar doctor` flags it when missing, and the upload returns an honest
-  error. Scanned/image-only PDFs have no embedded text and cannot be parsed. On the **on-device native
+- **PDF upload on a non-Mac CLI serve host needs `pdftotext` (poppler).** `POST /import/upload` writes the
+  bytes to the confined `data/uploads/` dir and runs the deterministic `docparse` extractor — `.docx` via a
+  built-in zip reader (1.64.0; no `unzip`), `.pdf` via `pdftotext` → macOS PDFKit → pdf.js when the host
+  ships `pdfjs-dist` (the desktop app does), `.txt/.md` direct. Only a Linux/Windows CLI host without
+  poppler can't read PDFs; `jobdar doctor` flags it and the upload returns an honest error. Scanned/image-only PDFs have no embedded text and cannot be parsed. On the **on-device native
   backend** (1.47), PDF parsing is deferred entirely with an honest "export as .docx/.txt" error —
   `.docx` parses on-device via fflate; there is no pdftotext on iOS.
 - **Discovery is keyless ATS-probing, not an aggregator.** Company discovery (winc suggests → probe

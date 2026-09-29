@@ -4,6 +4,80 @@ All notable changes to Jobdar are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and Jobdar adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.64.0] — 2026-09-29
+
+**The desktop app installs and runs for someone who has never opened a terminal.** App `1.26.0`, desktop
+`0.4.0`; 174 tests.
+
+Found by installing the packaged app the way a tester gets it — a downloaded, quarantined zip opened
+through LaunchServices with an empty profile and data home — and driving it start to finish as two
+first-time users: a new-grad marketing major (PDF résumé) and a warehouse shift lead with no college
+degree (Word résumé), with the real 2.7 GB model download each time. Every fix below was re-verified in
+the rebuilt package.
+
+- **One-click private AI — no terminal.** The desktop app now **bundles the winc-jobdar runtime** (built
+  per OS/arch by the new `apps/desktop/prepare-winc.mjs`; it refuses any non-`-jobdar.N` build, because
+  master can't `serve --eval`). A first-run card — *"One more step: set up the private AI"* — offers
+  **Set up the AI (2.7 GB, one time)**; the click is the consent. `lib/winc_manager.mjs` then runs
+  `winc -d qwen3.5-4b` + `winc serve --eval qwen3.5-4b` under `WINC_HOME=~/.jobdar/ai` on its own port
+  (43211, clear of the usual :8080), and `jobdar serve` reports the phase and **real download progress**
+  on `/health` (`backend.setup`) — "Downloading the AI model — 42% (1.1 of 2.7 GB) · about 2 min left".
+  Search works while it downloads. Once downloaded, the AI **starts with the app** (≈6 s) and **stops
+  when you quit** (SIGINT, so winc stops its llama-server; quitting mid-download stops the download,
+  which resumes next time). A 4 GB free-space check runs first; an AI already on :8080 or a configured
+  `inference_url` is used instead. Measured on this Mac: click → ready in 2m10–2m30. Before: testers had
+  to `git clone` winc, run its installer and keep `winc serve --eval` running in a terminal.
+- **The Mac bundle is sealed.** electron-builder's `identity: null` had left it unsealed — `codesign
+  --verify` failed ("code has no resources but signature indicates they must be present") and Apple's
+  `syspolicy_check` rated that **Fatal**, which a downloaded copy meets as *"'Jobdar' is damaged"*. The
+  new `after-pack.cjs` ad-hoc seals every Mac build and verifies it; the only Fatal left is notarization
+  (needs the Apple Developer account). The app clears the quarantine flag on its own bundled winc so an
+  approved app can launch it.
+- **Résumés parse on a stock machine.** `.docx` is read by a built-in zip reader (`node:zlib`) instead of
+  the system `unzip` (Windows has none); `.pdf` falls back from `pdftotext` to **macOS's built-in PDFKit**
+  and then to **pdf.js**, which the desktop app ships — so PDF upload no longer needs Homebrew poppler
+  (this Mac had only passed because Homebrew was on the GUI PATH). `jobdar doctor` and the error text say
+  so; only a Linux/Windows CLI without poppler still can't read PDFs.
+- **No more silent failures.** With the AI down, the desktop showed no warning at all and **⚡ Score top
+  N** failed silently (every 503 swallowed as "no verdict"). One shared status card now sits on Search
+  and Apply (setup offer / progress / starting / "couldn't start: <winc's own words>" / disk space), the
+  score button waits for the AI, and a pass that can't run says *"Scoring paused — the AI isn't ready
+  yet."* Per-role failures are counted, not hidden.
+- **Your choices reach the scorer.** `jobdar serve` read the profile **once at startup**, so on a first
+  run every GUI choice (levels, the uploaded name, tuning) was invisible to the evaluator and prescreen
+  until a restart — it now reloads after each `POST /profile`, and level/region/salary taps save (only
+  sponsorship did). An upload during the AI download — the normal desktop first run — left the level
+  **empty, which searched every level including senior** (a $150k product-marketing-manager role landed
+  in a new grad's list); it now falls back to the documented default, Entry, and says so: *"Entry (the
+  default — change it below)"*.
+- **A no-degree path you can reach.** The app had no way to select `tuning_profile: no_degree`. A
+  deterministic `noCollegeDegree()` reads the résumé (explicit "no college degree", or a diploma/GED with
+  no degree named); the upload note says *"no college degree — a degree ask counts as a stretch, never a
+  wall"*, a **No college degree** chip toggles it, and `POST /profile` accepts `tuning_profile`.
+- **Search that explains itself.** In typed-intent searches the AI's "not your lane" rows stayed in the
+  default view (#2 of the list); they now sit under **Skip** with their reasons, the AI's fits rank first,
+  screened rows sink, and the *"The AI read the top N…"* summary shows — the same rules résumé mode had.
+  Intent keywords no longer include place names or filler (`columbus`, `ohio`, `no`, `required`,
+  `degree`), which had made every Columbus posting "relevant" to a warehouse lead. Two screen reasons
+  showed raw keys (`prescreen.reason_credential`, `prescreen.reason_field`) and every reason printed
+  twice — labeled EN/ES now (a test covers every gate kind), printed once. "winc" in Search copy → "the AI".
+- **Follow-up honesty.** Drafting with no recipient produced *"Hi Derek,"* — from Derek — and passed every
+  check; a recipient is now required, an unnamed prompt opens with "Hi there,", and a new `self_greeting`
+  lint catches it. **"Log sent contact" had a hard-coded fallback that wrote a made-up person ("Alex Kim")
+  into the outreach ledger** — removed; a name is required. Lint problems rendered as `[object Object]`
+  → plain EN/ES; a "Drafting…" state; the tab's English-only strings moved to i18n.
+- **Removed as announced in 1.63:** the Jobfaro-era compat shims — `JOBFARO_*` env mirroring, the
+  `~/.jobfaro` data-home fallback, `JOBFARO_API_KEY=` in credentials, the `jf` bin alias, the app's
+  `jobfaro-*` storage-key carry-over, the desktop's `jobfaro-desktop` userData copy, `JOBFARO_APP_ORIGIN`,
+  and the installers' `JOBFARO_DIR`/`JOBFARO_REPO`; doctor's two migration warnings retired with them.
+- Docs lockstep: README + README.es gain **"The easiest way in: the desktop app"** (download table,
+  current macOS *Open Anyway* steps, one-click AI, where data lives, uninstall); `docs/desktop-beta.md`
+  rewritten around the no-terminal flow with troubleshooting and honest limits (Windows builds are
+  produced but **not yet run on real Windows hardware**); RELEASING (Go for `prepare-winc`, the sealing
+  step, the notarization path), ROADMAP (status, known gaps, 8b), SECURITY (the AI's downloads and
+  loopback port), troubleshooting, getting-started (EN/ES), apps/README, phase9-architecture; every
+  version line to 1.64.0 / app 1.26.0 / desktop 0.4.0.
+
 ## [1.63.2] — 2026-09-25
 
 **Northeast and West are real regions now, and the docs stop promising things that haven't happened.**

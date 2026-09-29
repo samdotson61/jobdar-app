@@ -84,14 +84,19 @@ first-run onboarding shipped 1.41; app persistence is per-device on both platfor
 ## Desktop beta builds (1.56.0, `apps/desktop/`)
 
 The double-clickable Mac/Windows beta for testers ([docs/desktop-beta.md](docs/desktop-beta.md) is
-their guide). Build steps, from a fresh clone:
+their guide). Since 0.4.0 it **bundles the winc-jobdar runtime** (the one-click private AI), so the build
+needs **Go** (1.22+) as well as Node. Build steps, from a fresh clone:
 
 ```bash
 cd apps/desktop
 node prepare-engine.mjs   # bootstrap: npm-packs the repo root → vendor/jobdar-engine.tgz (STABLE
                           # name — the committed dependency string never changes) + installs all deps
-npx electron . --smoke    # dev-tree self-test: engine + GUI + API through one port, with screenshots
-npm run dist:all          # clean → vendor → GUI export → all six installers (mac arm64/x64,
+node prepare-winc.mjs     # cross-compile winc from the winc-jobdar branch (WINC_SRC, else ~/winc.cpp,
+                          # else a fresh clone) → winc-bin/{mac,win}-{arm64,x64}/ (gitignored); refuses
+                          # anything that isn't a -jobdar.N build (master can't `serve --eval`)
+npx electron . --smoke    # dev-tree self-test: engine + GUI + API through one port + the bundled winc
+                          # runs + /health reports the managed AI, with screenshots
+npm run dist:all          # clean → vendor → winc → GUI export → all six installers (mac arm64/x64,
                           # win x64/arm64) → prune ALL unpacked bundles (dist-build = distributables
                           # only; any stray Jobdar.app on indexed disk duplicates in Spotlight)
 npm run smoke:packed      # smoke the PACKAGED app — unzips the native zip into the temp dir
@@ -107,4 +112,14 @@ before anything else (plain `npm install` fails until the gitignored tarball exi
 after ANY engine change or version bump — the packed app ships the vendored tarball, not the
 working tree. The packed app is launch-anywhere (no baked paths; data home `~/.jobdar`) and
 upgrade-safe (stable engine port → stable origin, so onboarding/verdict state survives replacing
-the .app). Signing/notarization and a real icon are pre-1.0 items, not beta blockers.
+the .app).
+
+**Mac signing (0.4.0):** `after-pack.cjs` ad-hoc **seals** every Mac bundle (`codesign --force --deep
+--sign -`, then `codesign --verify --deep --strict`) — before it, electron-builder's `identity: null` left
+the bundle unsealed, which Apple's `syspolicy_check distribution` rated Fatal and a downloaded copy met
+as "damaged". Check a build with `syspolicy_check distribution <Jobdar.app>`: the only remaining Fatal
+should be the missing notarization ticket. **Developer ID signing + notarization** (Sam's Apple
+Developer account) is what removes the tester's one-time "Open Anyway" step: set `mac.identity`, enable
+the hardened runtime with entitlements that allow the bundled winc to run and spawn `llama-server`, and
+notarize (`notarytool`) — then re-verify the in-app AI setup on the notarized build. A real icon and
+Windows code signing are also pre-1.0 items, not beta blockers.

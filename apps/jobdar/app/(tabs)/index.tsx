@@ -8,6 +8,7 @@ import { useStore } from '@/src/store';
 import { t, type Lang } from '@/src/engine';
 import { relevanceScore, levelDecision, locationMatches, regionPriority, parseSalaryText } from '@jobdar/engine';
 import { Btn, C, Card, Field, H, Pill, Sub, confirmColor } from '@/src/ui';
+import { AiBanner } from '@/src/AiBanner';
 
 const REGION_OPTS = ['midwest', 'northeast', 'southeast', 'southwest', 'west', 'nationwide'];
 const LEVEL_OPTS = ['entry', 'mid', 'senior'];
@@ -46,9 +47,7 @@ export default function Search() {
   const resumeFile = useStore((s) => s.resumeFile);
   const onboarded = useStore((s) => s.onboarded);
   const savedProfileName = useStore((s) => s.savedProfileName);
-  const serveUp = useStore((s) => s.serveUp);
-  const modelUp = useStore((s) => s.modelUp);
-  const { uploadResume, runSearch, discover, toggleTransferable, toggleSponsorship, toggleRegion, toggleLevel, setSalary, setIntent, setOnboarded, continueAsSaved, hydrate } = useStore.getState();
+  const { uploadResume, runSearch, discover, toggleTransferable, toggleSponsorship, toggleNoDegree, toggleRegion, toggleLevel, setSalary, setIntent, setOnboarded, continueAsSaved, hydrate } = useStore.getState();
   const lang = profile.language;
   const [msg, setMsg] = useState('');
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -78,13 +77,22 @@ export default function Search() {
       if (filter === 'skip') rows = rows.filter((j) => j.aiConfirm === 'skip' || (j.confirm ?? 'skip') === 'skip');
       else rows = rows.filter((j) => j.aiConfirm !== 'skip' && (rel(j) > 0 || j.aiConfirm === 'fit' || j.aiConfirm === 'maybe'));
     }
-    else if (active) rows = rows.filter((j) => rel(j) > 0 || j.confirm === 'fit'); // cut roles irrelevant to the intent
+    else if (active) {
+      // Typed intent (1.64.0: same AI-triage rules as résumé mode — the drive-test found "not your lane"
+      // rows still sitting at #2 of the default view here): cut roles irrelevant to the intent, and move
+      // the AI's skips under the Skip filter with their reasons.
+      if (filter === 'skip') rows = rows.filter((j) => j.aiConfirm === 'skip' || (j.confirm ?? 'skip') === 'skip');
+      else rows = rows.filter((j) => j.aiConfirm !== 'skip' && (rel(j) > 0 || j.confirm === 'fit' || j.aiConfirm === 'fit' || j.aiConfirm === 'maybe'));
+    }
     if (filter !== 'all') rows = rows.filter((j) => (j.confirm ?? 'skip') === filter);
     // Best-match order leads with region timezone priority (in-region first, out-of-timezone remote last —
     // a "remote out of Columbus" role no longer floats to the top when "West" is selected), then intent
     // relevance, then the fit tier (the prescreen score stays internal — it's only a hidden tiebreak now).
     const pr = (j: any) => regionPriority(j.location, profile.regions);
     const fitRank = (j: any) => (j.confirm === 'fit' ? 2 : j.confirm === 'maybe' ? 1 : 0);
+    // The model's semantic verdict leads when present (fit above everything, skip below everything) —
+    // word overlap can't tell "Inside Sales" from "Desktop Support" for an IT résumé; the model can.
+    const aiRank = (j: any) => (j.aiConfirm === 'fit' ? 2 : j.aiConfirm === 'maybe' ? 1 : j.aiConfirm === 'skip' ? -1 : 0);
     const out = [...rows];
     if (sortBy === 'fresh') out.sort((a, b) => String(b.postedOn || '').localeCompare(String(a.postedOn || '')));
     else if (sortBy === 'company') out.sort((a, b) => a.company.localeCompare(b.company));
@@ -95,9 +103,6 @@ export default function Search() {
     // its own words-first ordering below.
     else if (terms?.fromResume) {
       const relTier = (j: any) => { const r = rel(j); return r >= 2.5 ? 2 : r > 0 ? 1 : 0; };
-      // winc's semantic verdict leads when present (fit above everything, skip below everything) —
-      // word overlap can't tell "Inside Sales" from "Desktop Support" for an IT résumé; the model can.
-      const aiRank = (j: any) => (j.aiConfirm === 'fit' ? 2 : j.aiConfirm === 'maybe' ? 1 : j.aiConfirm === 'skip' ? -1 : 0);
       out.sort((a, b) =>
         pr(b) - pr(a) ||
         Number(Boolean(a.gate)) - Number(Boolean(b.gate)) ||
@@ -109,8 +114,9 @@ export default function Search() {
     }
     else out.sort((a, b) =>
       pr(b) - pr(a) ||
+      Number(Boolean(a.gate)) - Number(Boolean(b.gate)) || // screened (⛔, reason quoted) sinks below the rest
+      aiRank(b) - aiRank(a) ||
       (active ? rel(b) - rel(a) : 0) ||
-      Number(Boolean(a.gate)) - Number(Boolean(b.gate)) ||
       fitRank(b) - fitRank(a) ||
       b.prescreen - a.prescreen);
     return out;
@@ -148,8 +154,8 @@ export default function Search() {
         // the person sees exactly what was detected, what applied, and that their own picks win.
         const d = r.detected || {};
         const place = d.location || (d.region ? t(lang, `region.${d.region}`) : '');
-        const lvl = d.level ? t(lang, `level.${d.level}`) : '';
-        const parts = [d.name, place, lvl].filter(Boolean).join(' · ');
+        const lvl = d.level ? t(lang, `level.${d.level}`) : r.applied?.levelDefaulted ? `${t(lang, 'level.entry')} ${t(lang, 'search.levelDefault')}` : '';
+        const parts = [d.name, place, lvl, d.noDegree ? t(lang, 'search.noDegreeNote') : ''].filter(Boolean).join(' · ');
         let note = parts ? t(lang, 'search.detected', { parts }) : t(lang, 'search.detectedNone');
         if (r.clearedVerdicts) note += '  ' + t(lang, 'search.staleScores', { n: r.clearedVerdicts });
         setMsg(note);
@@ -166,21 +172,8 @@ export default function Search() {
     </Pressable>
   );
 
-  // Honest backend status. serve mode: unreachable façade → say so with the command + Retry. local
-  // (on-device) mode: the façade is the app itself, so the only gap is the model — search works without
-  // it, scoring doesn't; point at Settings to download it once.
-  const localMode = backendMode() === 'local';
-  const backendBanner = !serveUp ? (
-    <Card style={{ borderColor: C.warn }}>
-      <Text style={{ color: C.warn, fontSize: 13, lineHeight: 18 }}>{t(lang, 'search.backendDown')}</Text>
-      <Btn kind="ghost" label={t(lang, 'common.retry')} onPress={hydrate} />
-    </Card>
-  ) : localMode && !modelUp ? (
-    <Card style={{ borderColor: C.warn }}>
-      <Text style={{ color: C.warn, fontSize: 13, lineHeight: 18 }}>{t(lang, 'search.modelMissing')}</Text>
-      <Btn kind="ghost" label={t(lang, 'common.settings')} onPress={() => router.push('/settings' as any)} />
-    </Card>
-  ) : null;
+  // Honest backend/AI status (1.64.0: one shared card — incl. the desktop's one-click AI setup).
+  const backendBanner = <AiBanner />;
 
   // First-run onboarding (shown until the user uploads a résumé, makes a choice, or skips). A genuine first
   // boot has onboarded:false; it persists once dismissed. Offers "continue as <name>" if a saved CLI profile
@@ -207,6 +200,7 @@ export default function Search() {
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 2 }}>
             {LEVEL_OPTS.map((l) => (<Chip key={l} label={t(lang, `level.${l}`)} active={profile.levels.includes(l)} on={() => toggleLevel(l)} color={C.tint} />))}
             <Chip label={t(lang, 'search.sponsorship')} active={profile.sponsorship} on={toggleSponsorship} color={C.good} />
+            <Chip label={t(lang, 'search.noDegree')} active={Boolean(profile.noDegree)} on={toggleNoDegree} color={C.good} />
           </View>
           <Text style={{ color: C.dim, fontSize: 12, marginTop: 6 }}>{t(lang, 'common.salary')}</Text>
           <SalaryInput lang={lang} value={profile.salary || 0} onSet={setSalary} />
@@ -264,7 +258,7 @@ export default function Search() {
         <Pressable onPress={() => setFiltersOpen((x) => !x)} hitSlop={6} style={{ marginTop: 8 }}>
           <Text style={{ color: C.dim, fontSize: 12 }}>
             {profile.regions.map((r) => t(lang, `region.${r}`)).join(' · ') || t(lang, 'region.midwest')}
-            {' — '}{profile.levels.map((l) => t(lang, `level.${l}`)).join(' · ')}
+            {' — '}{profile.levels.length ? profile.levels.map((l) => t(lang, `level.${l}`)).join(' · ') : t(lang, 'search.allLevels')}
             {' — '}{(profile.salary || 0) === 0 ? t(lang, 'salary.any') : `$${Math.round((profile.salary || 0) / 1000)}k+`}
             {'   '}<Text style={{ color: C.tint, fontWeight: '600' }}>{filtersOpen ? `${t(lang, 'search.filtersHide')} ▴` : `${t(lang, 'search.filtersShow')} ▾`}</Text>
           </Text>
@@ -296,6 +290,14 @@ export default function Search() {
               label={`${t(lang, 'search.sponsorship')} ${profile.sponsorship ? '✓' : '○'}`}
               color={profile.sponsorship ? C.good : C.chip}
               text={profile.sponsorship ? C.good : C.dim}
+            />
+          </Pressable>
+          {/* 1.64.0: the no-degree path — a degree ask becomes a stretch flag, never a screen-out. */}
+          <Pressable onPress={toggleNoDegree}>
+            <Pill
+              label={`${t(lang, 'search.noDegree')} ${profile.noDegree ? '✓' : '○'}`}
+              color={profile.noDegree ? C.good : C.chip}
+              text={profile.noDegree ? C.good : C.dim}
             />
           </Pressable>
         </View>
@@ -339,7 +341,7 @@ export default function Search() {
       </View>
       {/* Triage summary (1.22.1): what winc concluded, in one honest line — and when the boards hold
           little in the person's lane, SAY so and point at Discover instead of padding the list. */}
-      {terms?.fromResume ? (() => {
+      {terms ? (() => {
         const ai = scored.filter((j) => j.aiConfirm);
         if (!ai.length) return null;
         const f2 = ai.filter((j) => j.aiConfirm === 'fit').length;
@@ -364,7 +366,8 @@ export default function Search() {
             {j.sponsors ? <Pill label={t(lang, 'search.sponsors')} color={C.good} text={C.good} /> : null}
             {j.gate ? <Pill label={`⛔ ${j.gate}`} color={C.bad} text={C.bad} /> : null}
           </View>
-          <Text style={{ color: C.dim, marginTop: 6, fontSize: 12 }}>{j.screenReason}</Text>
+          {/* The gate pill already quotes a screened row's reason — don't print it twice (1.64.0 drive-test). */}
+          {j.screenReason && j.screenReason !== j.gate ? <Text style={{ color: C.dim, marginTop: 6, fontSize: 12 }}>{j.screenReason}</Text> : null}
         </Card>
       ))}
       {visible.length > shown ? (

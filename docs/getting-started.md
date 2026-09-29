@@ -5,9 +5,10 @@
 Jobdar finds entry-level US jobs that fit you, keeps your data on your machine, and works in English
 or Spanish. Here's the 5-minute path from zero to your first scan.
 
-> **Prefer an app?** The iPhone app — the whole pipeline running privately on your phone — is built,
-> but **not on TestFlight yet**. Today the way in is the CLI below, or the
-> [desktop beta](desktop-beta.md) for Mac and Windows.
+> **Prefer an app? Not a terminal person?** Use the **[desktop app](desktop-beta.md)** for Mac and
+> Windows instead of this guide — download, open, and one click sets up the private AI; no terminal at
+> any step (steps in the [README](../README.md#the-easiest-way-in-the-desktop-app-mac--windows-beta)).
+> The iPhone app is built but **not on TestFlight yet**. The rest of this page is the CLI.
 
 ## 1. Install (one command)
 
@@ -28,10 +29,10 @@ git clone https://github.com/samdotson61/jobdar-app && cd jobdar-app && npm inst
 ```
 
 **Optional tools** (Jobdar tells you when a feature needs one — run `node bin/jobdar doctor`):
-- **Résumé import/upload:** `.docx` uses the system `unzip` (already present almost everywhere); **`.pdf`
-  needs `pdftotext` from poppler** — `brew install poppler` (macOS) or `apt-get install poppler-utils`
-  (Debian/Ubuntu). Without it, a PDF upload returns an honest "couldn't read that file." Scanned/image-only
-  PDFs have no embedded text and can't be parsed — export a text PDF or use `.docx`/`.txt`.
+- **Résumé import/upload:** `.docx` needs nothing; `.pdf` works out of the box on a Mac (built-in PDF
+  reader). On Linux/Windows the CLI needs **`pdftotext` from poppler** for PDFs (`apt-get install
+  poppler-utils`) — without it, a PDF upload returns an honest "no PDF reader." Scanned/image-only PDFs have
+  no embedded text and can't be parsed — export a text PDF or use `.docx`/`.txt`.
 - **PDF résumé export** (`jobdar pdf`) and some JS-rendered iCIMS sites: `npm i playwright`.
 
 ## 2. Set up (the wizard)

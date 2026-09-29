@@ -33,8 +33,7 @@ try {
   /* native / no window */
 }
 // Persisted override (Settings) — loads fast; the pre-hydration default is correct per-platform anyway.
-// 1.25.1: the July→September builds persisted under `jobfaro-backend-config`; read it once if the new key is empty.
-AsyncStorage.getItem('jobdar-backend-config').then((raw) => raw ?? AsyncStorage.getItem('jobfaro-backend-config')).then((raw) => {
+AsyncStorage.getItem('jobdar-backend-config').then((raw) => {
   if (!raw) return;
   try {
     const c = JSON.parse(raw);

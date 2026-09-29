@@ -4,3 +4,5 @@ dist-build/
 vendor/
 smoke.png
 smoke-apply.png
+winc-bin/
+.winc-src/

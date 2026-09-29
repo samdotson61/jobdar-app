@@ -30,3 +30,6 @@ Thumbs.db
 # Local environment
 .env
 .env.local
+
+# The desktop app's managed local AI (engine + model, GBs) when the data home is a checkout
+ai/

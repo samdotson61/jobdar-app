@@ -12,6 +12,12 @@ import { regionForLocation, termsFromResume, relevanceScore, SUBCRITERIA } from 
 // action is a thin call to serve; `@jobdar/engine` is used only for derived UI (band colors, cadence labels).
 
 export interface Contact { url: string; person: string; date: string; kind: 'contact' | 'followup' }
+// 1.64.0: the desktop app's managed private AI (serve /health backend.setup) — phase + honest progress.
+export interface AiSetup {
+  managed: boolean; phase: 'idle' | 'downloading' | 'engine' | 'starting' | 'ready' | 'error' | 'stopping';
+  pct: number | null; doneGB: number | null; totalGB: number | null; etaSec: number | null;
+  error: string | null; code: string | null; freeGB: number | null; needGB: number; modelPresent: boolean; sizeGB: number;
+}
 export interface SearchTerms { keywords: string[]; titles: string[]; exclude: string[]; level?: string; regions?: string[]; fromResume?: boolean }
 
 interface State {
@@ -22,6 +28,8 @@ interface State {
   searchTerms: SearchTerms | null; // parsed intent (winc/keywords) — drives relevance ranking + cutting
   serveUp: boolean;
   modelUp: boolean;             // local mode: the on-device model is installed (health backend.up)
+  aiSetup: AiSetup | null;      // serve mode: the host-managed AI (desktop) — null when serve manages none
+  scoreNote: { key: string; vars?: Record<string, number> } | null; // why the last scoring pass stopped/skipped (i18n key)
   busy: string | null;          // url/operation currently in flight (for spinners)
   scoring: boolean;             // a batch score-top-N pass is running
   rechecking: boolean;          // a listing-liveness re-check is running (1.53.0)
@@ -30,6 +38,7 @@ interface State {
   lastScope: string;            // region+level signature the last scan ran with (re-scan when it changes)
   regionsUserSet: boolean;      // the user manually chose regions → a résumé upload won't override them
   levelsUserSet: boolean;       // the user manually chose levels  → a résumé upload won't override them
+  noDegreeUserSet: boolean;     // the user toggled "No college degree" → a résumé upload won't override it
   onboarded: boolean;           // false on a true first boot → the onboarding screen shows (persisted)
   savedProfileName: string;     // peek of config/profile.yml's name (for a "continue as <name>" offer); not persisted
   scored: Scored[];
@@ -42,6 +51,7 @@ interface State {
   setLang: (l: Lang) => void;
   toggleTransferable: () => void;
   toggleSponsorship: () => void;       // "I need visa sponsorship" — re-gates the list (explicit-no roles screen out)
+  toggleNoDegree: () => void;          // 1.64.0: the no_degree path (degree asks = a stretch, never a wall) — persisted as tuning_profile
   toggleRegion: (r: string) => void;   // tune the search scope — re-scans on the next "Find matching roles"
   toggleLevel: (l: string) => void;
   setSalary: (n: number) => void;      // preferred target salary (0 = any) — nudges prescreen rank + pay band
@@ -51,8 +61,8 @@ interface State {
   uploadResume: (fileName: string, base64: string) => Promise<{
     ok: boolean; error?: string;
     // What the résumé told us (1.22.0) — so the UI can SHOW the rebuilt profile and invite confirmation.
-    detected?: { name?: string; location?: string; region?: string; level?: string };
-    applied?: { region: boolean; level: boolean }; // false = the user's own manual pick won
+    detected?: { name?: string; location?: string; region?: string; level?: string; noDegree?: boolean };
+    applied?: { region: boolean; level: boolean; levelDefaulted?: boolean }; // false = the user's own manual pick won
     clearedVerdicts?: number; // fit scores judged against the OLD résumé were dropped (stale)
   }>;
   saveProfileToCli: () => void;        // persist the chosen identity to config/profile.yml (durable across devices/reloads)
@@ -60,6 +70,7 @@ interface State {
   continueAsSaved: () => void;         // load a saved CLI profile (config/profile.yml + cv.md) into the app
   loadSampleCv: () => void;     // repurposed: re-pull live state from serve
   hydrate: () => void;
+  startAi: () => void;          // desktop: one-click private-AI setup (the button IS the consent to download)
   runSearch: () => void;        // parse intent → scan → prescreen (intent-relevant first), with progress
   rescore: () => void;          // re-prescreen the relevant rows against the current résumé (re-upload)
   discover: () => void;         // winc suggests companies for the intent → probe ATS → scan the new boards
@@ -75,32 +86,34 @@ interface State {
 const today = () => new Date().toISOString().slice(0, 10);
 const num = (x: any) => Number(x) || 0;
 
+// Follow the managed AI's setup (download → engine → starting) by polling /health until it settles.
+const inFlight = (a: AiSetup | null) => Boolean(a && (a.phase === 'downloading' || a.phase === 'engine' || a.phase === 'starting'));
+let aiTimer: ReturnType<typeof setInterval> | null = null;
+function pollAi(set: (p: Partial<State>) => void) {
+  if (aiTimer) return;
+  aiTimer = setInterval(async () => {
+    const h = await serveHealth();
+    const setup: AiSetup | null = (h.backend && h.backend.setup) || null;
+    const up = Boolean(h.backend && h.backend.up);
+    set({ serveUp: h.ok, modelUp: up, aiSetup: setup, ...(up ? { scoreNote: null } : {}) });
+    if (!h.ok || up || !inFlight(setup)) {
+      clearInterval(aiTimer!);
+      aiTimer = null;
+    }
+  }, 1500);
+}
+
 // Persist the user's own state on BOTH platforms — web and native behave identically. First boot has NO
 // stored key → the app starts blank; once the user uploads a résumé or makes a selection, the change is
 // saved and restored on the next load.
-//   web    → synchronous localStorage (key `jobdar-app-v1`; a `jobfaro-app-v1` predecessor is read once — and hydration
-//            stays synchronous — no flash of the blank/onboarding state before the real one)
+//   web    → synchronous localStorage (key `jobdar-app-v1`; hydration stays synchronous — no flash of the
+//            blank/onboarding state before the real one)
 //   native → AsyncStorage (zustand's createJSONStorage handles the Promise-returning variant)
 const stateStorage = {
-  // 1.25.1: state written by the July→September "Jobfaro" builds lives under `jobfaro-*`. If the new key is
-  // empty, read (and carry forward) the old one, so an upgrading tester keeps onboarding/verdicts/thumbs.
+  // (The 1.25.1 carry-over of the Jobfaro-era `jobfaro-*` keys was removed in 1.64.0, as announced.)
   getItem: (k: string): string | null | Promise<string | null> => {
-    const legacy = k.startsWith('jobdar-') ? k.replace(/^jobdar-/, 'jobfaro-') : '';
-    try {
-      if (typeof localStorage !== 'undefined') {
-        const v = localStorage.getItem(k);
-        if (v != null || !legacy) return v;
-        const old = localStorage.getItem(legacy);
-        if (old != null) { try { localStorage.setItem(k, old); } catch { /* read-only storage: still return it */ } }
-        return old;
-      }
-    } catch { return null; }
-    return AsyncStorage.getItem(k).then(async (v) => {
-      if (v != null || !legacy) return v;
-      const old = await AsyncStorage.getItem(legacy);
-      if (old != null) await AsyncStorage.setItem(k, old).catch(() => {});
-      return old;
-    }).catch(() => null);
+    try { if (typeof localStorage !== 'undefined') return localStorage.getItem(k); } catch { return null; }
+    return AsyncStorage.getItem(k).catch(() => null);
   },
   setItem: (k: string, v: string): void | Promise<void> => {
     try { if (typeof localStorage !== 'undefined') { localStorage.setItem(k, v); return; } } catch { return; /* private mode / no storage */ }
@@ -186,6 +199,8 @@ export const useStore = create<State>()(persist((set, get) => ({
   searchTerms: null,
   serveUp: false,
   modelUp: false,
+  aiSetup: null,
+  scoreNote: null,
   busy: null,
   scoring: false,
   rechecking: false,
@@ -194,6 +209,7 @@ export const useStore = create<State>()(persist((set, get) => ({
   lastScope: '',
   regionsUserSet: false,
   levelsUserSet: false,
+  noDegreeUserSet: false,
   onboarded: false,
   savedProfileName: '',
   scored: [],
@@ -212,20 +228,36 @@ export const useStore = create<State>()(persist((set, get) => ({
     get().saveProfileToCli();
     if (get().scored.length) get().rescore();
   },
+  toggleNoDegree: () => {
+    set((s) => ({ profile: { ...s.profile, noDegree: !s.profile.noDegree }, noDegreeUserSet: true }));
+    get().saveProfileToCli();
+    if (get().scored.length) get().rescore();
+  },
   // Region/level are the search SCOPE. Toggling keeps at least one selected; the next "Find matching
   // roles" re-scans with the new scope (lastScope mismatch forces it), and the visible list filters live.
-  toggleRegion: (r) => set((s) => {
-    const has = s.profile.regions.includes(r);
-    const regions = has ? s.profile.regions.filter((x) => x !== r) : [...s.profile.regions, r];
-    return { profile: { ...s.profile, regions: regions.length ? regions : s.profile.regions }, regionsUserSet: true };
-  }),
-  toggleLevel: (l) => set((s) => {
-    const has = s.profile.levels.includes(l);
-    const levels = has ? s.profile.levels.filter((x) => x !== l) : [...s.profile.levels, l];
-    return { profile: { ...s.profile, levels: levels.length ? levels : s.profile.levels }, levelsUserSet: true };
-  }),
+  // 1.64.0: each change is also saved to the profile the engine's evaluator reads — before, only
+  // sponsorship was, so a first-run user's level choice never reached the scorer.
+  toggleRegion: (r) => {
+    set((s) => {
+      const has = s.profile.regions.includes(r);
+      const regions = has ? s.profile.regions.filter((x) => x !== r) : [...s.profile.regions, r];
+      return { profile: { ...s.profile, regions: regions.length ? regions : s.profile.regions }, regionsUserSet: true };
+    });
+    get().saveProfileToCli();
+  },
+  toggleLevel: (l) => {
+    set((s) => {
+      const has = s.profile.levels.includes(l);
+      const levels = has ? s.profile.levels.filter((x) => x !== l) : [...s.profile.levels, l];
+      return { profile: { ...s.profile, levels: levels.length ? levels : s.profile.levels }, levelsUserSet: true };
+    });
+    get().saveProfileToCli();
+  },
   setCv: (cv) => set({ cv }),
-  setSalary: (n) => set((s) => ({ profile: { ...s.profile, salary: Number(n) || 0 } })),
+  setSalary: (n) => {
+    set((s) => ({ profile: { ...s.profile, salary: Number(n) || 0 } }));
+    get().saveProfileToCli();
+  },
   // Save the chosen identity to the CLI config (this machine) so it survives a cleared browser / new device.
   saveProfileToCli: () => {
     const p = get().profile;
@@ -233,6 +265,8 @@ export const useStore = create<State>()(persist((set, get) => ({
       name: p.name, language: p.language,
       target_regions: p.regions, target_levels: p.levels,
       target_salary: p.salary, transferable_skills: p.transferable, needs_sponsorship: p.sponsorship,
+      // Only once known (résumé-detected or toggled) — never clobber a CLI user's own tuning choice.
+      ...(typeof p.noDegree === 'boolean' ? { tuning_profile: p.noDegree ? 'no_degree' : 'new_grad' } : {}),
     }).catch(() => {});
   },
   setIntent: (intent) => set({ intent }),
@@ -256,7 +290,7 @@ export const useStore = create<State>()(persist((set, get) => ({
         // Seed the profile FROM the résumé so the UI reflects whose search this is — name always; region
         // (from the résumé's location) and level only when the user hasn't manually chosen them (their
         // choice wins). The chips + name pill render from profile, so the UI updates immediately.
-        const f = (r.fields || {}) as { name?: string; location?: string; level?: string };
+        const f = (r.fields || {}) as { name?: string; location?: string; level?: string; noDegree?: boolean | null };
         const s0 = get();
         const newProfile = { ...s0.profile };
         if (f.name && f.name.trim()) newProfile.name = f.name.trim();
@@ -265,6 +299,13 @@ export const useStore = create<State>()(persist((set, get) => ({
         if (regionApplied) newProfile.regions = [detectedRegion as string];
         const levelApplied = Boolean(!s0.levelsUserSet && f.level && ['entry', 'mid', 'senior'].includes(f.level));
         if (levelApplied) newProfile.levels = [f.level as string];
+        // 1.64.0: level unknown (the AI wasn't up to read it — the NORMAL case on a desktop first run, where
+        // the upload happens while the model downloads) → the documented default, entry, instead of an empty
+        // list that searched every level incl. senior (senior is opt-in). Disclosed in the upload note.
+        const levelDefaulted = !s0.levelsUserSet && !levelApplied && !newProfile.levels.length;
+        if (levelDefaulted) newProfile.levels = ['entry'];
+        // No college degree, stated on the résumé → the no_degree path (unless the user already chose).
+        if (!s0.noDegreeUserSet && typeof f.noDegree === 'boolean') newProfile.noDegree = f.noDegree;
         const scopeSig = (p: any) => `${[...p.regions].sort().join(',')}|${[...p.levels].sort().join(',')}`;
         const scopeChanged = scopeSig(newProfile) !== scopeSig(s0.profile);
         // A DIFFERENT résumé invalidates every fit score judged against the old one — keeping them
@@ -282,8 +323,8 @@ export const useStore = create<State>()(persist((set, get) => ({
         get().saveProfileToCli(); // an uploaded identity persists to config/profile.yml (durable)
         result = {
           ok: true,
-          detected: { name: f.name, location: f.location, region: detectedRegion || undefined, level: f.level },
-          applied: { region: regionApplied, level: levelApplied },
+          detected: { name: f.name, location: f.location, region: detectedRegion || undefined, level: f.level, noDegree: newProfile.noDegree === true && !s0.noDegreeUserSet },
+          applied: { region: regionApplied, level: levelApplied, levelDefaulted },
           clearedVerdicts,
         };
         bump(0.35);
@@ -318,12 +359,21 @@ export const useStore = create<State>()(persist((set, get) => ({
   },
   loadSampleCv: () => get().hydrate(),
 
+  startAi: async () => {
+    const r = await servePost('/backend/start', { confirm: true });
+    if (r && r.up) set({ modelUp: true });
+    if (r && r.setup) set({ aiSetup: r.setup });
+    pollAi(set);
+  },
+
   // BLANK START: the app does NOT seed identity from the local config/profile.yml or data/cv.md. We only
   // check that serve is reachable; the profile, résumé, and roles are filled by an uploaded résumé or the
   // user's own choices (region/level/salary/intent → "Find matching roles"). A real onboarding lands later.
   hydrate: async () => {
     const h = await serveHealth();
-    set({ serveUp: h.ok, modelUp: Boolean(h.backend && h.backend.up) });
+    set({ serveUp: h.ok, modelUp: Boolean(h.backend && h.backend.up), aiSetup: (h.backend && h.backend.setup) || null });
+    // The desktop auto-starts an already-downloaded AI at launch — follow it until it settles.
+    if (inFlight(get().aiSetup)) pollAi(set);
     // The pipeline FILE is the durable store — restore the list from it when the in-memory cache is
     // empty (e.g. after a cold start; the AsyncStorage cache is best-effort for multi-MB row sets).
     // Originally local-mode only; since 1.56.0 serve mode restores too — the desktop shell's in-process
@@ -358,6 +408,7 @@ export const useStore = create<State>()(persist((set, get) => ({
             levels: Array.isArray(prof.target_levels) ? prof.target_levels : s.profile.levels,
             transferable: Boolean(prof.transferable_skills),
             sponsorship: Boolean(prof.needs_sponsorship),
+            ...(prof.tuning_profile ? { noDegree: prof.tuning_profile === 'no_degree' } : {}),
             salary: Number(prof.target_salary) || 0,
           },
           cv: (cv && cv.content) || s.cv,
@@ -521,6 +572,12 @@ export const useStore = create<State>()(persist((set, get) => ({
     try {
       const cv = get().cv;
       const v = await servePost('/evaluate', { url, cv: cv || undefined, transferable: get().profile.transferable, targetSalary: get().profile.salary, needsSponsorship: get().profile.sponsorship });
+      if (v && v.ok === false && v.status === 503) {
+        // The AI isn't up: say so once (not a silent no-op), and let scoreTopN stop the batch.
+        set({ scoreNote: { key: 'apply.needsAi' }, modelUp: false });
+      } else if (!v || v.ok === false || v.score == null) {
+        set((s) => ({ scoreNote: { key: 'apply.someFailed', vars: { n: ((s.scoreNote && s.scoreNote.key === 'apply.someFailed' && s.scoreNote.vars?.n) || 0) + 1 } } }));
+      }
       if (v && v.ok !== false && v.score != null) {
         set((s) => ({ verdicts: { ...s.verdicts, [url]: verdictFromServe(v) } }));
         const row = get().scored.find((r) => r.url === url);
@@ -542,11 +599,12 @@ export const useStore = create<State>()(persist((set, get) => ({
       .slice(0, Math.max(1, n))
       .map((r) => r.url);
     if (!queue.length) return;
-    set({ scoring: true });
+    set({ scoring: true, scoreNote: null });
     const POOL = 3;
     let i = 0;
     const worker = async () => {
       while (i < queue.length) {
+        if (get().scoreNote && get().scoreNote!.key === 'apply.needsAi') return; // AI down — stop, don't hammer
         const url = queue[i++];
         await get().scoreOne(url);
       }
@@ -631,7 +689,7 @@ export const useStore = create<State>()(persist((set, get) => ({
   partialize: (s) => ({
     profile: s.profile, cv: s.cv, resumeFile: s.resumeFile,
     intent: s.intent, searchTerms: s.searchTerms, lastIntent: s.lastIntent, lastScope: s.lastScope,
-    regionsUserSet: s.regionsUserSet, levelsUserSet: s.levelsUserSet, onboarded: s.onboarded,
+    regionsUserSet: s.regionsUserSet, levelsUserSet: s.levelsUserSet, noDegreeUserSet: s.noDegreeUserSet, onboarded: s.onboarded,
     scored: s.scored, verdicts: s.verdicts, feedback: s.feedback, tailored: s.tailored, drafts: s.drafts, ledger: s.ledger,
   }),
 }));

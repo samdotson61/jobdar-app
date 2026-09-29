@@ -12,7 +12,8 @@ dominate US enterprise employers), evaluates each role against your résumé, ta
 cover letter, and tracks every application.
 
 > **Status:** Phases 0–7, 5.5, 7.7, 7.8, 8b, 8a, 8c, 8e + 8f **complete**, **Phase 10 L0–L5 shipped** —
-> **Jobdar CLI `1.63.2`** + **app `1.25.2`**: bilingual core; **six live-verified
+> **Jobdar CLI `1.64.0`** + **app `1.26.0`** + **desktop `0.4.0`** — the desktop app now installs like any
+> other app: download, open, and **one click sets up the free private AI (no terminal)**. Bilingual core; **six live-verified
 > scanner providers** (Workday, iCIMS, Greenhouse, Lever, Ashby + an opt-in JSON-LD reader) plus an opt-in
 > **USAJobs** federal aggregator (BYO free key); level + region
 > toggles and the `jobdar init` wizard; the full **discover → prescreen → evaluate → track → build** pipeline —
@@ -29,6 +30,36 @@ cover letter, and tracks every application.
 > Store Connect record — Phase 10 L6). Remaining for the
 > 1.0 CLI ship: npm publish + marketplace, then a closed beta. See **[ROADMAP.md](ROADMAP.md)** for the
 > full build plan and **[CHANGELOG.md](CHANGELOG.md)** for what's shipped.
+
+## The easiest way in: the desktop app (Mac + Windows, beta)
+
+No terminal, no account, no API key. About 15 minutes the first time, most of it one download.
+
+1. **Get the file for your computer** from your beta invite:
+
+   | Your computer | File |
+   |---|---|
+   | Mac with Apple Silicon (M1 or later) | `Jobdar-beta-0.4.0-mac-arm64.zip` |
+   | Mac with Intel | `Jobdar-beta-0.4.0-mac-x64.zip` |
+   | Windows PC | `Jobdar-beta-0.4.0-win-x64.exe` |
+   | Windows on ARM | `Jobdar-beta-0.4.0-win-arm64.exe` |
+
+2. **Install it.**
+   - **Mac:** double-click the zip, drag **Jobdar** into **Applications**, and open it. The beta isn't
+     notarized by Apple yet, so the first time macOS says *"Apple could not verify 'Jobdar' is free of
+     malware"* — click **Done**, then open **System Settings → Privacy & Security**, scroll down, click
+     **Open Anyway** next to Jobdar, and confirm with your password. You only do this once. (On macOS 14
+     or older: right-click Jobdar → **Open** → **Open**.)
+   - **Windows:** run the `.exe`. If SmartScreen appears, click **More info → Run anyway**.
+3. **In the app:** upload your résumé (PDF or Word — or just pick your region and level), then click
+   **Set up the AI (2.7 GB, one time)**. That downloads the small AI that scores jobs **on your computer**;
+   you can search while it downloads, and after that it starts by itself whenever you open Jobdar.
+4. **Search → Apply → Score.** Every scored role says *why* (Apply / Research / Don't), and you can tailor
+   your résumé or draft a polite note to someone at the company.
+
+Everything — your résumé, results, and the AI — stays in one folder on your computer, `~/.jobdar` (the AI
+lives in `~/.jobdar/ai`). To uninstall, delete the app and that folder. The full tester guide, including
+troubleshooting and what the beta report contains, is **[docs/desktop-beta.md](docs/desktop-beta.md)**.
 
 ## Your data stays local
 
@@ -62,10 +93,13 @@ the code, so they work from any location.
 - **CLI (available now — the backbone)** — local-first. Scanning, prescreening, and tracking need no
   model; `jobdar backend --install` adds the free private on-device model for eval/tailor, or bring your
   own AI CLI/API.
-- **Desktop app (beta builds for Mac + Windows — the tester surface)** — the full engine + the same GUI
-  as the phone app in one double-clickable window, running entirely on the tester's machine. Testers
+- **Desktop app (beta builds for Mac + Windows — the easiest way in, and the tester surface)** — the full
+  engine + the same GUI as the phone app in one double-clickable window, running entirely on your
+  machine. **It bundles the local AI runtime**: one click downloads the model (2.7 GB, once) with a real
+  progress bar, and the AI then starts and stops with the app — no terminal at any step (0.4.0). Testers
   answer **"Would you apply?"** on each scored role and export a **PII-free beta report** we analyze to
-  improve the evaluator. See [docs/desktop-beta.md](docs/desktop-beta.md).
+  improve the evaluator. See [the steps above](#the-easiest-way-in-the-desktop-app-mac--windows-beta) and
+  [docs/desktop-beta.md](docs/desktop-beta.md).
 - **iPhone app (built and running fully on-device — not on TestFlight yet)** — the whole pipeline runs **on the phone**:
   scan → prescreen → evaluate → tailor → outreach, with the model downloaded in-app. No Mac, no server,
   no account; your résumé never leaves the device. **TestFlight is the next step and has not started**
@@ -139,12 +173,15 @@ your first scan — `jobdar init` walks you through it in English or Spanish, no
 - **Fun, never fake** — the 📡 radar sweep animates every long-running step (scan, prescreen, eval,
   tailor, outreach drafts, calibrate, PDF render): honest tallies that grow as results land, measured
   ETAs and true elapsed time — never an invented percent. The same radar language is headed into the app.
-- **Easy for anyone** — a guided, bilingual setup wizard for the CLI today; the fully-on-device iPhone
-  app (TestFlight pending), then a friendly web app, for non-technical users.
+- **Easy for anyone** — a double-clickable desktop app with a one-click private AI (no terminal) and a
+  guided, bilingual setup wizard for the CLI today; the fully-on-device iPhone app (TestFlight pending),
+  then a friendly web app, for non-technical users.
 
 ## Next steps
 
-The MVP cut line is long shipped (see the status above). What remains, in order: the **TestFlight beta**
+The MVP cut line is long shipped (see the status above). What remains, in order: a **Developer ID–signed,
+notarized Mac build and a public download page** for the desktop app (so the one-time "Open Anyway" step
+disappears — needs the Apple Developer account), the **TestFlight beta**
 of the iPhone app ([Phase 10 L6](ROADMAP.md#phase-10--fully-local-iphone-active-direction-locked-2026-07-08)
 — account steps), the **npm publish + marketplace** listing and a **closed beta** of the CLI (name / org /
 license calls tracked in [RELEASING.md](RELEASING.md)), evaluator recalibration from real 👍/👎 feedback

@@ -17,6 +17,7 @@ stay on your machine. The network surface is small and each piece of it is locke
 | Scanner requests | `scan`, `prescreen`, `recheck`, `discover`, JD fetches | The job boards you configured (see allowlists below) | Nothing about you — URLs of public postings |
 | USAJobs (opt-in) | Only with a key in `data/credentials.env` | `data.usajobs.gov` | Your API key and, per their terms, the email it was registered under (as the User-Agent) |
 | On-device model (default) | `eval`, `tailor`, `outreach --draft` | `127.0.0.1` (winc.cpp / Ollama / llamafile) | JD + résumé — never off the machine |
+| Desktop AI setup (one click, once) | You click **Set up the AI** in the desktop app | Hugging Face (the model file) and GitHub (the llama.cpp engine), fetched by the bundled winc | Nothing about you — plain downloads, checksum-verified by winc where the host publishes one |
 | API backend (opt-in, BYO key) | Same verbs when `inference: api`/`auto` | The provider you chose (Anthropic by default; Batches API for `--all-pending`) | The minimal JD + CV slice, your key; zero-retention settings; never logged |
 | Install/update | `install.sh` / `git pull` / `npm install` | GitHub, npm | Nothing about you |
 
@@ -50,6 +51,11 @@ stay on your machine. The network surface is small and each piece of it is locke
   only for loopback/LAN origins, request bodies are capped at 2 MB, and `POST /import` is confined to
   the data home. The GUI URL form `?serve=…&token=…` is how the web build learns the token; it sends it
   as a header afterwards.
+- **The desktop app's AI** (1.64.0): the bundled winc serves the eval model on `127.0.0.1:43211`
+  (loopback only; the app's engine is its one client), lives in `~/.jobdar/ai`, and runs only while the
+  app is open — it starts with the app once set up and is stopped (SIGINT, which also stops its
+  llama-server) when you quit. The app clears macOS's quarantine flag on its own bundled winc binary
+  only, so an approved app can launch its helper.
 - **`@jobdar/server`** (the PII-free scanner proxy for a future hosted web app) exposes only
   `/health`, `/fetch-jd`, `/scan`; its request bodies have no field for a résumé or a score. Body cap
   2 MB; lock CORS with `JOBDAR_APP_ORIGIN` when deploying.

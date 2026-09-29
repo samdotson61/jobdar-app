@@ -9,11 +9,6 @@ import { fetchJobDescription, resolveProvider, providerIds } from '../../provide
 import '../../lib/http_node.mjs'; // DNS-rebinding guard (resolve-then-check) for the providers
 
 const PORT = Number(process.env.PORT || 4320);
-// 1.63.1: honor a pre-revert JOBFARO_APP_ORIGIN export too — loudly, never silently (compat, gone in 1.64).
-if (!process.env.JOBDAR_APP_ORIGIN && process.env.JOBFARO_APP_ORIGIN) {
-  process.env.JOBDAR_APP_ORIGIN = process.env.JOBFARO_APP_ORIGIN;
-  console.error('[jobdar] legacy env honored: JOBFARO_APP_ORIGIN→JOBDAR_APP_ORIGIN — rename it (support ends in 1.64)');
-}
 const ORIGIN = process.env.JOBDAR_APP_ORIGIN || '*'; // lock to your app origin in production
 const MAX_BODY = 2_000_000; // same cap as `jobdar serve` — an oversized body is dropped, never buffered
 

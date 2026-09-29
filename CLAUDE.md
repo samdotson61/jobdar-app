@@ -12,7 +12,7 @@ This repo is **Jobdar** — a bilingual US job-search command center. Start with
 work this repo — if local is behind, pull (or reconcile) BEFORE editing, and never claim a semver
 number until you've confirmed origin hasn't already used it. Every change bumps the version by size
 (patch/minor/major) in lockstep across `package.json` + `.claude-plugin/plugin.json` +
-`package-lock.json` + `CHANGELOG.md` + the `ROADMAP.md`/README/banner status lines — a bump that
+`apps/jobdar/package.json` (app) + `apps/desktop/package.json` (desktop; re-vendor the engine) + `CHANGELOG.md` + the `ROADMAP.md`/README/banner status lines — a bump that
 touches only `package.json` is a bug.
 
 Scope is locked: American English + Spanish; Midwest-default region; entry-default level
@@ -20,5 +20,5 @@ Scope is locked: American English + Spanish; Midwest-default region; entry-defau
 touches public job data.
 
 > Status: Phases 0–7, 5.5, 7.7, 7.8, 8b, 8a, 8c, 8e + 8f complete + Phase 10 L0–L5 (fully-local iPhone
-> app; L6 TestFlight = Sam's account steps) — Jobdar CLI 1.63.2 · app 1.25.2 (see `ROADMAP.md` / `CHANGELOG.md`).
+> app; L6 TestFlight = Sam's account steps) — Jobdar CLI 1.64.0 · app 1.26.0 · desktop 0.4.0 (see `ROADMAP.md` / `CHANGELOG.md`).
 > Scan discovers + filters roles; the model's `eval` scores fit — the scanner never scores.
