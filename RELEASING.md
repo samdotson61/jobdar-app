@@ -105,8 +105,19 @@ npm run install:mac       # optional: install the canonical /Applications/Jobdar
                           # (registers it with LaunchServices; the one you double-click)
 ```
 
-Artifacts land in `apps/desktop/dist-build/` (gitignored) — distribute the zips/exe directly for
-the beta (unsigned; the tester guide covers the OS warnings). The whole flow is idempotent —
+Artifacts land in `apps/desktop/dist-build/` (gitignored). **Publish them as a GitHub release**
+(first one: `desktop-v0.4.0`, 2026-09-29) — tag `desktop-v<desktop version>` on the pushed commit that
+built them, marked pre-release while builds are unsigned, with the four installers + two portable
+Windows zips (not the `.blockmap`s) and their SHA-256s in the notes:
+
+```bash
+cd apps/desktop/dist-build && shasum -a 256 *.zip *.exe        # paste into the notes
+gh release create desktop-v0.4.0 --target "$(git rev-parse HEAD)" --prerelease \
+  --title "Jobdar Desktop 0.4.0 (beta)" --notes-file notes.md *.zip *.exe   # target = FULL sha
+```
+
+The READMEs and the tester guide link the Releases page, not a version, so they stay correct (the
+filenames in their download tables carry the version — bump those with the desktop version). The whole flow is idempotent —
 re-running any step converges — and `prepare-engine.mjs` is the one command a fresh clone needs
 before anything else (plain `npm install` fails until the gitignored tarball exists). Re-run it
 after ANY engine change or version bump — the packed app ships the vendored tarball, not the

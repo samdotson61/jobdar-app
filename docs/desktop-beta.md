@@ -9,8 +9,9 @@
 
 ## 1. Install the app
 
-Get the build for your machine from the beta invite (maintainers: they're in `apps/desktop/dist-build/`
-after `npm run dist:all` — see [RELEASING.md](../RELEASING.md)):
+Download the build for your machine from the **[Releases page](https://github.com/samdotson61/jobdar-app/releases)** (each release lists SHA-256
+checksums; maintainers: builds land in `apps/desktop/dist-build/` after `npm run dist:all` and are
+published per [RELEASING.md](../RELEASING.md)):
 
 | Your machine | File |
 |---|---|

@@ -4,6 +4,16 @@ All notable changes to Jobdar are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and Jobdar adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.64.1] — 2026-09-29
+
+**Docs: the desktop app has a public download.** The first GitHub release,
+[`desktop-v0.4.0`](https://github.com/samdotson61/jobdar-app/releases/tag/desktop-v0.4.0) (pre-release —
+unsigned beta), carries the four installers + two portable Windows zips built from 1.64.0, with SHA-256s
+and layman install steps in its notes. README + README.es + `docs/desktop-beta.md` now send people to the
+Releases page instead of "your beta invite"; RELEASING documents the publish step (tag
+`desktop-v<version>` on the full commit SHA — `gh` rejects a short one); the "public download page" item
+leaves the README's next steps. Docs only — app `1.26.0` and desktop `0.4.0` unchanged.
+
 ## [1.64.0] — 2026-09-29
 
 **The desktop app installs and runs for someone who has never opened a terminal.** App `1.26.0`, desktop
