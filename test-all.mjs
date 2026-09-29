@@ -2579,6 +2579,109 @@ test('winc manager: quitting mid-download stops the download (SIGINT, .part resu
   rmSync(home, { recursive: true, force: true })
 })
 
+// ── 1.64.3: fixes from the first Windows drive-test ──────────────────────────────────────────────────
+// Uploaded résumés (docparse output) carry roles as PLAIN lines under "## Experience" and state their
+// target in prose — the two personas below are the drive-test résumés, as the upload path structures them.
+const MAYA_CV = `# Maya Torres
+Cincinnati, OH · maya.torres.example@example.com · (513) 555-0142
+## Summary
+Recent marketing graduate who turns data into campaigns. Comfortable with Excel, Google Analytics and social media scheduling tools; bilingual English/Spanish. Looking for an entry-level marketing coordinator or marketing analyst role.
+## Education
+University of Cincinnati — B.B.A. in Marketing, minor in Business Analytics, May 2026 · GPA 3.5
+## Experience
+Marketing Intern — Cincinnati Food Bank Network, Cincinnati, OH · Jan 2026 – May 2026
+Planned and scheduled 60+ social posts across Instagram, Facebook and LinkedIn.
+Barista — Coffee Emporium, Cincinnati, OH · Jun 2022 – Aug 2024
+## Skills
+Excel (pivot tables, VLOOKUP), Canva, Hootsuite, Mailchimp, Tableau`
+const DEREK_CV = `# Derek Wallace
+Columbus, OH · derek.wallace.example@example.com · (614) 555-0187
+## Summary
+Dependable warehouse and retail team lead with six years of hands-on experience in shipping, receiving and inventory. Forklift certified, OSHA 10. No college degree — I learn fast on the job. Looking for a warehouse lead, inventory control, or logistics coordinator role, or a paid apprenticeship.
+## Experience
+Shift Lead — Kroger, Columbus, OH · Mar 2023 – Present
+- Lead a crew of 8 on the overnight stocking shift.
+Warehouse Associate — Amazon Fulfillment Center, Etna, OH · Jun 2019 – Feb 2023
+## Skills
+Inventory control, shipping and receiving, forklift and pallet jack, RF scanners, scheduling`
+
+test('1.64.3 targeting: an UPLOADED résumé yields title phrases — its stated target roles first, then plain-line experience titles', async () => {
+  const { targetRolesFromResume } = await import('./lib/search.mjs')
+  assert.deepEqual(targetRolesFromResume(MAYA_CV), ['marketing coordinator', 'marketing analyst'])
+  assert.deepEqual(targetRolesFromResume(DEREK_CV), ['warehouse lead', 'inventory control', 'logistics coordinator', 'apprenticeship'])
+  const m = termsFromResume(MAYA_CV)
+  assert.deepEqual(m.titles.slice(0, 4), ['marketing coordinator', 'marketing analyst', 'marketing intern', 'barista'])
+  const d = termsFromResume(DEREK_CV)
+  assert.ok(d.titles.includes('shift lead') && d.titles.includes('warehouse associate'), d.titles.join('|'))
+  assert.ok(!d.titles.some((t) => /lead a crew/.test(t)), 'bullets are accomplishments, not roles')
+  // identity + school never become domain keywords (the name heading, the Education line's city)
+  for (const w of ['maya', 'torres', 'university', 'cincinnati', 'paid']) assert.ok(!m.keywords.includes(w) && !d.keywords.includes(w), `keyword leak: ${w}`)
+})
+
+test('1.64.3 relevance tiers: each persona ranks their own lane — the other person\'s roles and generic ones are tier 0; never the location', async () => {
+  const { relevanceTier, relevanceText } = await import('./lib/search.mjs')
+  const maya = { ...termsFromResume(MAYA_CV), fromResume: true }
+  const derek = { ...termsFromResume(DEREK_CV), fromResume: true }
+  const tier = (role, terms, company = 'Fifth Third Bank', location = 'Cincinnati, OH') => relevanceTier(relevanceText({ role, company, location }, terms), terms)
+  assert.equal(tier('Marketing Coordinator', maya), 2)
+  assert.equal(tier('Social Media Coordinator', maya), 1)
+  for (const r of ['Machine Operator', 'Vault Teller I M-F 11am-4pm', 'Securities Analyst I - Ops', 'Warehouse Lead - 2nd Shift', 'FC Cincinnati Ticketing Sales & Service']) assert.equal(tier(r, maya), 0, r)
+  assert.equal(tier('Enterprise Logistics Coordinator', derek), 2)
+  assert.equal(tier('Warehouse Lead - 2nd Shift', derek), 2)
+  assert.equal(tier('Forklift Operator', derek), 1, 'one SPECIFIC keyword (8+ letters) is a real match')
+  for (const r of ['Social Media Coordinator', 'Marketing Analyst', 'Machine Operator', 'Product Manager- Data Domain (P4410)', 'Certified Nursing Assistant', 'Scheduling Specialist', 'Certified Medical Assistant in Training']) assert.equal(tier(r, derek), 0, r) // "Forklift certified" ≠ a CNA lane
+  // résumé mode judges the title only; a typed intent may name an employer; the location never counts
+  assert.equal(relevanceText({ role: 'Teller', company: 'Fifth Third Bank', location: 'Columbus, OH' }, maya), 'Teller')
+  assert.equal(relevanceText({ role: 'Teller', company: 'Fifth Third Bank', location: 'Columbus, OH' }, { keywords: ['bank'] }), 'Teller Fifth Third Bank')
+  assert.equal(relevanceTier('Teller Fifth Third Bank', { keywords: ['bank'], titles: [], exclude: [] }), 1, 'a typed one-word intent: one hit counts')
+  // relevanceScore is unchanged (the Search tab's within-tier order)
+  assert.equal(relevanceScore('Marketing Coordinator', maya) > relevanceScore('Social Media Coordinator', maya), true)
+})
+
+test('1.64.3 AI download ETA: withheld until the transfer has run 8 s AND moved 1% (no "about 2195 min left" at 0%)', async () => {
+  const { settledEta } = await import('./lib/winc_manager.mjs')
+  assert.equal(settledEta(131700, 0, 1000), null)
+  assert.equal(settledEta(131700, 0, 20000), null, '0% is never settled')
+  assert.equal(settledEta(90, 5, 3000), null, 'too early')
+  assert.equal(settledEta(90, 5, 9000), 90)
+  assert.equal(settledEta(null, 50, 60000), null)
+})
+
+test('1.64.3 AI files: unused DFlash head + projector are reclaimed ONLY from an AI home this app created', async () => {
+  const { removeUnusedAiFiles, MANAGED_UNUSED_FILES, MANAGED_MODEL_FILE } = await import('./lib/winc_manager.mjs')
+  const mk = (toml) => {
+    const home = mkdtempSync(path.join(tmpdir(), 'jobdar-ai-'))
+    mkdirSync(path.join(home, 'models'))
+    for (const f of [MANAGED_MODEL_FILE, ...MANAGED_UNUSED_FILES, `${MANAGED_UNUSED_FILES[1]}.part`]) writeFileSync(path.join(home, 'models', f), 'x')
+    if (toml != null) writeFileSync(path.join(home, 'winc.toml'), toml)
+    return home
+  }
+  const own = mk('# Written by Jobdar Desktop — the app\'s private AI server.\n[general]\nport = 43211\n')
+  assert.deepEqual(removeUnusedAiFiles(own).sort(), [...MANAGED_UNUSED_FILES, `${MANAGED_UNUSED_FILES[1]}.part`].sort())
+  assert.deepEqual(readdirSync(path.join(own, 'models')), [MANAGED_MODEL_FILE], 'the model itself stays')
+  const theirs = mk('[general]\nport = 8080\n') // someone's own winc home (JOBDAR_WINC_HOME) — vision wanted there
+  assert.deepEqual(removeUnusedAiFiles(theirs), [])
+  const none = mk(null)
+  assert.deepEqual(removeUnusedAiFiles(none), [])
+  assert.equal(readdirSync(path.join(theirs, 'models')).length, 4)
+  for (const h of [own, theirs, none]) rmSync(h, { recursive: true, force: true })
+})
+
+test('1.64.3 AI relaunch: setup() reports "starting" synchronously when the model is on disk (a GUI loading during the adopt probe follows it)', async () => {
+  const { createWincManager, MANAGED_MODEL_FILE } = await import('./lib/winc_manager.mjs')
+  const home = mkdtempSync(path.join(tmpdir(), 'jobdar-ai-'))
+  mkdirSync(path.join(home, 'models'))
+  writeFileSync(path.join(home, 'models', MANAGED_MODEL_FILE), 'x')
+  let release
+  const slow = new Promise((r) => { release = r })
+  const mgr = createWincManager({ bin: '/app/winc', home, port: 43295, url: 'http://127.0.0.1:43295' }, { spawn: () => { throw new Error('not reached') }, health: async () => { await slow; return true } })
+  assert.equal(mgr.setup().phase, 'starting', 'in flight before the adopt probe resolves')
+  release()
+  for (let i = 0; i < 200 && mgr.status().phase !== 'ready'; i++) await new Promise((r) => setTimeout(r, 5))
+  assert.equal(mgr.status().phase, 'ready', 'adopted the already-running server')
+  rmSync(home, { recursive: true, force: true })
+})
+
 let passed = 0
 let failed = 0
 for (const { name, fn } of tests) {

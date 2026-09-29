@@ -205,7 +205,17 @@ async function main() {
     const applied = await clickText('Apply')
     await new Promise((r) => setTimeout(r, 8000)) // hydration + first cards
     const shot2 = await snap('smoke-apply.png')
+    const onApply = await win.webContents.executeJavaScript('location.pathname')
     if (!/^winc \S+-jobdar\.\d+/.test(wincV)) throw new Error(`bundled winc not runnable: ${wincV}`)
+    // 0.4.2: every check FAILS the smoke — before, only the winc line could, so a build with no GUI at all
+    // printed "SMOKE OK" with gui "{"error":"not found"}" (caught on the first Windows run).
+    const fails = []
+    if (!fs.existsSync(path.join(GUI_DIR, 'index.html'))) fails.push(`no GUI bundle at ${GUI_DIR} (run build-gui.mjs)`)
+    if (health.status !== 200) fails.push(`/pipeline answered ${health.status}`)
+    if (report.status !== 200) fails.push(`/report answered ${report.status}`)
+    if (/"error"\s*:\s*"not found"/.test(String(title)) || !/jobdar/i.test(String(title))) fails.push(`the window didn't render the app (got "${String(title).slice(0, 60)}")`)
+    if (!applied || onApply !== '/apply') fails.push(`couldn't reach the Apply tab (clicked ${applied}, at ${onApply})`)
+    if (fails.length) throw new Error(fails.join('; '))
     console.log(`SMOKE OK — api ${health.status}, report ${report.status}, ${wincV}, AI setup ${setupPhase}, gui "${String(title).slice(0, 60)}", onboard→apply ${cont}/${applied}, screenshots ${shot1} + ${shot2}`)
     app.exit(0)
     return

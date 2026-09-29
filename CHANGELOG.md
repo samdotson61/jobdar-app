@@ -4,6 +4,42 @@ All notable changes to Jobdar are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and Jobdar adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.64.3] — 2026-09-29
+
+**The follow-ups from the first Windows drive-test.** App `1.26.1`, desktop `0.4.2`; 179 tests (CI now runs
+them on Windows too). Re-driven live on Windows 11 with the same two personas.
+
+- **Apply scores the right person's roles.** After a new résumé, the Apply list and "Score top N" had kept
+  — and scored — the previous person's roles (a warehouse lead got "Social Media Coordinator"), because
+  both drew from prescreen chips that outlive a résumé change. They now share one queue (`applyQueue`):
+  rows relevant to the current résumé/intent, or the AI's fit/maybe, inside the chosen regions/levels
+  (the same live filter Search applies — the Apply list had held a warehouse job in Poland). Screened,
+  gone and AI-skipped rows never belong; a role you already scored stays.
+- **Uploaded résumés rank their own lane.** `termsFromResume` found no job titles in an uploaded résumé
+  (docparse writes roles as plain lines, not `###` headers) and shredded "Looking for a warehouse lead,
+  inventory control, or logistics coordinator role" into loose words. It now reads the stated target
+  roles (`targetRolesFromResume`, leading the title list) and plain-line Experience titles, and keeps the
+  name heading and Education lines out of the keywords. Relevance is judged on the job title (+ company
+  for a typed intent) — never the location — and a résumé match needs a title phrase, two keywords with
+  at least one lane word, or one specific lane word (`relevanceTier`): "Machine Operator", "Vault Teller"
+  and "Certified Nursing Assistant" no longer rank beside a marketing grad's or a forklift lead's real fits.
+- **A reload no longer loses the engine.** Tab navigation drops the `?serve=` the desktop shell passes, so
+  Ctrl+R showed "Can't reach the backend" beside a healthy engine; the pin now lives in sessionStorage.
+- **The download ETA waits for a real rate** (`settledEta`): no more "about 2195 min left" at 0% — nothing
+  for the first 8 s / 1%, then a steady estimate.
+- **Relaunch never strands the AI card on "Start the AI".** `setup()` reports `starting` synchronously,
+  before its up-to-2.5 s adopt probe, so a page loading meanwhile follows the start.
+- **0.4.0-era installs get 1.4 GB back.** On start the app deletes the unused DFlash head + vision
+  projector from an AI folder it created (marked by its own `winc.toml` header — a `JOBDAR_WINC_HOME`
+  pointed at someone's own winc is never touched).
+- **The desktop smoke fails when it should.** It printed "SMOKE OK" with no GUI built; now a missing GUI
+  bundle, a non-200 API, an error page, or not reaching the Apply tab each fail it.
+- **CI runs `test` on `windows-latest`** as well as Ubuntu (Node 20 + 22).
+
+Not changed, for a decision: an auto-detected **Mid** level filters out titles the engine classes as
+entry — including a résumé's own stated target ("logistics coordinator") — in Search and now Apply alike;
+and locations the engine can't place (e.g. "Sosnowiec, Silesian") are kept by design.
+
 ## [1.64.2] — 2026-09-29
 
 **The desktop app's first run on real Windows hardware — and it couldn't start there.** Desktop `0.4.1`;

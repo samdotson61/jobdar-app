@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Platform, Pressable, ScrollView, Text, View } from 'react-native';
-import { useStore } from '@/src/store';
+import { useStore, applyQueue } from '@/src/store';
 import { serveBase, backendMode } from '@/src/serve';
 import { t } from '@/src/engine';
 import { Btn, C, Card, Field, H, Pill, Sub, bandColor } from '@/src/ui';
@@ -33,7 +33,9 @@ export default function Apply() {
   const lang = profile.language;
   const [dir, setDir] = useState<Record<string, string>>({});
   const [open, setOpen] = useState<Record<string, boolean>>({});
-  const queue = scored.filter((j) => j.confirm !== 'skip');
+  const searchTerms = useStore((s) => s.searchTerms);
+  // 1.64.3: the same queue "Score top N" draws from — relevance to the CURRENT résumé/intent, not stale chips.
+  const queue = useMemo(() => applyQueue(scored, verdicts, searchTerms, profile), [scored, verdicts, searchTerms, profile]);
   const unscored = queue.filter((j) => !verdicts[j.url]).length;
 
   return (

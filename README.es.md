@@ -14,7 +14,7 @@ puesto frente a tu currículum, adapta un CV y una carta de presentación compat
 registra cada postulación.
 
 > **Estado:** Fases 0–7, 5.5, 7.7, 7.8, 8b, 8a, 8c, 8e + 8f **completas**, **Fase 10 L0–L5 entregada** —
-> **Jobdar CLI `1.64.2`** + **app `1.26.0`** + **escritorio `0.4.1`** — la app de escritorio ahora se instala
+> **Jobdar CLI `1.64.3`** + **app `1.26.1`** + **escritorio `0.4.2`** — la app de escritorio ahora se instala
 > como cualquier otra: descárgala, ábrela y **un clic configura la IA privada y gratuita (sin terminal)**.
 > Núcleo bilingüe; **seis escáneres
 > verificados en vivo** (Workday, iCIMS, Greenhouse, Lever, Ashby + un lector JSON-LD opcional) más un
@@ -43,10 +43,10 @@ Sin terminal, sin cuenta, sin clave de API. Unos 15 minutos la primera vez, casi
 
    | Tu computadora | Archivo |
    |---|---|
-   | Mac con Apple Silicon (M1 o posterior) | `Jobdar-beta-0.4.1-mac-arm64.zip` |
-   | Mac con Intel | `Jobdar-beta-0.4.1-mac-x64.zip` |
-   | PC con Windows | `Jobdar-beta-0.4.1-win-x64.exe` |
-   | Windows en ARM | `Jobdar-beta-0.4.1-win-arm64.exe` |
+   | Mac con Apple Silicon (M1 o posterior) | `Jobdar-beta-0.4.2-mac-arm64.zip` |
+   | Mac con Intel | `Jobdar-beta-0.4.2-mac-x64.zip` |
+   | PC con Windows | `Jobdar-beta-0.4.2-win-x64.exe` |
+   | Windows en ARM | `Jobdar-beta-0.4.2-win-arm64.exe` |
 
 2. **Instálala.**
    - **Mac:** haz doble clic en el zip, arrastra **Jobdar** a **Aplicaciones** y ábrela. La beta aún no está

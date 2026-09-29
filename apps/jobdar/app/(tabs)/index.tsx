@@ -6,7 +6,7 @@ import { router } from 'expo-router';
 import { backendMode } from '@/src/serve';
 import { useStore } from '@/src/store';
 import { t, type Lang } from '@/src/engine';
-import { relevanceScore, levelDecision, locationMatches, regionPriority, parseSalaryText } from '@jobdar/engine';
+import { relevanceScore, relevanceTier, relevanceText, levelDecision, locationMatches, regionPriority, parseSalaryText } from '@jobdar/engine';
 import { Btn, C, Card, Field, H, Pill, Sub, confirmColor } from '@/src/ui';
 import { AiBanner } from '@/src/AiBanner';
 
@@ -63,7 +63,9 @@ export default function Search() {
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
     const active = !!terms && (((terms.keywords?.length ?? 0) > 0) || ((terms.titles?.length ?? 0) > 0));
-    const rel = (j: any) => (active ? relevanceScore(`${j.role} ${j.company} ${j.location}`, terms) : 0);
+    // 1.64.3: judged on the title (+ company for a typed intent), never the location — see relevanceText.
+    const rel = (j: any) => (active ? relevanceScore(relevanceText(j, terms), terms) : 0);
+    const relTier = (j: any) => (active ? relevanceTier(relevanceText(j, terms), terms) : 0);
     let rows = scored.filter((j) => !q || `${j.role} ${j.company} ${j.location}`.toLowerCase().includes(q));
     // Honor the selected region + level live (the same engine filters the scan uses), so tuning the scope
     // narrows the list instantly; the next "Find matching roles" re-scans to pull in more for that scope.
@@ -75,7 +77,7 @@ export default function Search() {
       // AI-skips stay one tap away under the Skip filter WITH their reasons (honest, not hidden) —
       // stale "Strong signals" chips alone no longer buy a spot (that's how Inside Sales outranked IT).
       if (filter === 'skip') rows = rows.filter((j) => j.aiConfirm === 'skip' || (j.confirm ?? 'skip') === 'skip');
-      else rows = rows.filter((j) => j.aiConfirm !== 'skip' && (rel(j) > 0 || j.aiConfirm === 'fit' || j.aiConfirm === 'maybe'));
+      else rows = rows.filter((j) => j.aiConfirm !== 'skip' && (relTier(j) > 0 || j.aiConfirm === 'fit' || j.aiConfirm === 'maybe'));
     }
     else if (active) {
       // Typed intent (1.64.0: same AI-triage rules as résumé mode — the drive-test found "not your lane"
@@ -102,7 +104,6 @@ export default function Search() {
     // "outranked" IT ones). Within a tier, fit + fresh prescreen order honestly. Typed intent keeps
     // its own words-first ordering below.
     else if (terms?.fromResume) {
-      const relTier = (j: any) => { const r = rel(j); return r >= 2.5 ? 2 : r > 0 ? 1 : 0; };
       out.sort((a, b) =>
         pr(b) - pr(a) ||
         Number(Boolean(a.gate)) - Number(Boolean(b.gate)) ||

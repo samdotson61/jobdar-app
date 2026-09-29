@@ -7,9 +7,13 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    # Windows too (1.64.3): with Linux-only CI, three tests that could never pass on Windows went unseen
+    # until the first Windows drive-test — and so did a desktop build that couldn't start there.
+    runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
+        os: [ubuntu-latest, windows-latest]
         node: [20, 22]
     steps:
       - uses: actions/checkout@v4
@@ -23,6 +27,7 @@ jobs:
       - run: node scan.mjs --dry-run
       # The published package must never carry local reports/data (1.63.1 caught docs/reports/ shipping).
       - run: '! npm pack --dry-run 2>&1 | grep -E "docs/reports/|credentials|profile\.yml$|cv\.md"'
+        shell: bash # Git Bash on windows-latest (the default there is PowerShell, which has no `!`/grep)
 
   typecheck:
     # The Expo app (pnpm workspace). --ignore-scripts skips native postinstalls (llama.rn xcframework);

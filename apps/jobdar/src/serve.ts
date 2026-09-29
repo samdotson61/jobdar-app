@@ -29,8 +29,20 @@ try {
     }
     if (q.get('token')) TOKEN = q.get('token') as string;
   }
+  // 1.64.3: the pin survives a RELOAD of this window. Tab navigation drops the query (/apply has no
+  // ?serve=), so Ctrl+R in the desktop app reloaded against the 4320 default and showed "Can't reach the
+  // backend" beside a perfectly healthy engine. sessionStorage is per-window and outlives reloads.
+  // @ts-ignore — web only
+  const ss = typeof window !== 'undefined' ? window.sessionStorage : undefined;
+  if (ss) {
+    if (URL_PINNED) ss.setItem('jobdar-serve-pin', JSON.stringify({ base: BASE, token: TOKEN }));
+    else {
+      const pin = JSON.parse(ss.getItem('jobdar-serve-pin') || 'null');
+      if (pin && typeof pin.base === 'string' && pin.base) { BASE = pin.base; TOKEN = pin.token || ''; MODE = 'serve'; URL_PINNED = true; }
+    }
+  }
 } catch {
-  /* native / no window */
+  /* native / no window / storage blocked */
 }
 // Persisted override (Settings) — loads fast; the pre-hydration default is correct per-platform anyway.
 AsyncStorage.getItem('jobdar-backend-config').then((raw) => {

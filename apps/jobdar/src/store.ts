@@ -6,7 +6,7 @@ import {
 } from './engine';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { backendMode, serveGet, servePost, serveHealth } from './serve';
-import { regionForLocation, termsFromResume, relevanceScore, SUBCRITERIA } from '@jobdar/engine';
+import { regionForLocation, termsFromResume, relevanceScore, relevanceTier, relevanceText, levelDecision, locationMatches, SUBCRITERIA } from '@jobdar/engine';
 
 // The app holds NO engine logic — it renders what `jobdar serve` (the real CLI + winc) returns. Every
 // action is a thin call to serve; `@jobdar/engine` is used only for derived UI (band colors, cadence labels).
@@ -144,13 +144,35 @@ const WEIGHTS: Record<string, number> = (() => {
 // prescreen — the same order the résumé-mode list leads with, so the triage spend lands on what the
 // person will actually see first.
 const pickConfirmCandidates = (rows: Scored[], terms: SearchTerms | null, n: number): string[] => {
-  const rel = (j: Scored) => (terms ? relevanceScore(`${j.role} ${j.company} ${j.location}`, terms) : 0);
-  const tier = (j: Scored) => { const r = rel(j); return r >= 2.5 ? 2 : r > 0 ? 1 : 0; };
+  const rel = (j: Scored) => (terms ? relevanceScore(relevanceText(j, terms), terms) : 0);
+  const tier = (j: Scored) => (terms ? relevanceTier(relevanceText(j, terms), terms) : 0);
   return rows
     .filter((j) => !j.gate && !j.listingGone)
     .sort((a, b) => tier(b) - tier(a) || rel(b) - rel(a) || b.prescreen - a.prescreen)
     .slice(0, n)
     .map((j) => j.url);
+};
+
+// The Apply list AND what "Score top N" scores (1.64.3 — one definition, so they can't drift). With
+// search terms (résumé-derived or typed) a row belongs here by RELEVANCE to them or the AI's fit/maybe —
+// never by a prescreen chip alone: prescreen scores outlive a résumé change (only the 30 most relevant
+// rows are re-fit on upload), which is how a warehouse lead's Apply list kept — and scored — the
+// previous person's "Social Media Coordinator". Screened (gate), gone and AI-skipped rows never belong,
+// nor rows outside the chosen regions/levels (the same live filter Search applies — a Midwest search's
+// Apply list held a warehouse job in Poland). A role already scored stays (its verdict is the person's
+// work). Order: AI verdict, relevance, prescreen.
+export const applyQueue = (rows: Scored[], verdicts: Record<string, Verdict>, terms: SearchTerms | null, profile?: Pick<Profile, 'regions' | 'levels'>): Scored[] => {
+  const active = !!terms && (((terms.keywords?.length ?? 0) > 0) || ((terms.titles?.length ?? 0) > 0));
+  const tier = (j: Scored) => (active ? relevanceTier(relevanceText(j, terms), terms) : 0);
+  const rel = (j: Scored) => (active ? relevanceScore(relevanceText(j, terms), terms) : 0);
+  const ai = (j: Scored) => (j.aiConfirm === 'fit' ? 2 : j.aiConfirm === 'maybe' ? 1 : 0);
+  const inScope = (j: Scored) => !profile ||
+    ((profile.levels.length === 0 || levelDecision(j.role, profile.levels).include) &&
+     (profile.regions.length === 0 || locationMatches(j.location, profile.regions)));
+  return rows
+    .filter((j) => verdicts[j.url] || (!j.gate && !j.listingGone && j.aiConfirm !== 'skip' && inScope(j) &&
+      (active ? tier(j) > 0 || ai(j) > 0 : j.confirm !== 'skip')))
+    .sort((a, b) => ai(b) - ai(a) || tier(b) - tier(a) || rel(b) - rel(a) || b.prescreen - a.prescreen);
 };
 
 // Map a real pipeline.tsv row (from serve) → the app's Scored shape the Search tab renders.
@@ -373,6 +395,8 @@ export const useStore = create<State>()(persist((set, get) => ({
     const h = await serveHealth();
     set({ serveUp: h.ok, modelUp: Boolean(h.backend && h.backend.up), aiSetup: (h.backend && h.backend.setup) || null });
     // The desktop auto-starts an already-downloaded AI at launch — follow it until it settles.
+    // (1.64.3: the manager now reports 'starting' synchronously from setup(), which the desktop calls before
+    // this page loads — so a launch-time start is always in flight here, never a stale 'idle'.)
     if (inFlight(get().aiSetup)) pollAi(set);
     // The pipeline FILE is the durable store — restore the list from it when the in-memory cache is
     // empty (e.g. after a cold start; the AsyncStorage cache is best-effort for multi-MB row sets).
@@ -594,8 +618,8 @@ export const useStore = create<State>()(persist((set, get) => ({
   // Batch-eval the top-N most relevant unscored roles instead of one tap each. Bounded concurrency (pool 3)
   // keeps winc responsive; each result lands as it finishes so the list fills in progressively.
   scoreTopN: async (n) => {
-    const queue = get().scored
-      .filter((r) => r.confirm !== 'skip' && !get().verdicts[r.url])
+    const queue = applyQueue(get().scored, get().verdicts, get().searchTerms, get().profile)
+      .filter((r) => !get().verdicts[r.url])
       .slice(0, Math.max(1, n))
       .map((r) => r.url);
     if (!queue.length) return;
