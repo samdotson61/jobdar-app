@@ -2232,7 +2232,7 @@ test('fix: dead JD links — findRoleMatches keeps every match; resolveJdSafe ne
 
 test('1.64.0: the Jobfaro-era compat shims are gone — JOBFARO_* env, JOBFARO_API_KEY=, ~/.jobfaro are all ignored (as announced in 1.63)', () => {
   const fakeHome = mkdtempSync(path.join(tmpdir(), 'jobdar-fake-home-'))
-  const env = { ...process.env, HOME: fakeHome, JOBFARO_HOME: path.join(fakeHome, 'old') }
+  const env = { ...process.env, HOME: fakeHome, USERPROFILE: fakeHome, JOBFARO_HOME: path.join(fakeHome, 'old') } // os.homedir() reads USERPROFILE on Windows
   delete env.JOBDAR_HOME; delete env.JOBDAR_DATA_DIR; delete env.JOBDAR_CONFIG_DIR
   mkdirSync(path.join(fakeHome, '.jobfaro'))
   const r = spawnSync(process.execPath, ['-e', "import('./lib/config.mjs').then(m => console.log(JSON.stringify({ home: m.paths.home, keys: Object.keys(m).filter((k) => /legacy/i.test(k)) })))"], {
@@ -2402,7 +2402,7 @@ test('winc manager: download needs an explicit yes, reports real progress, then 
       setTimeout(() => { say('llama.cpp ready (metal backend)\n'); up = true }, 30)
     },
   })
-  const mgr = createWincManager({ bin: '/app/winc', home, port: 43299, url: 'http://127.0.0.1:43299' }, { spawn, health: async () => up, statfs: () => ({ bavail: 100e9, bsize: 1 }) })
+  const mgr = createWincManager({ bin: '/app/winc', home, port: 43299, url: 'http://127.0.0.1:43299' }, { spawn, health: async () => up, statfs: () => ({ bavail: 100e9, bsize: 1 }), platform: 'linux' }) // the SIGINT path; win32 hard-kills
   const gate = mgr.setup()
   assert.equal(gate.needsConfirm, true) // never a multi-GB download without a yes
   assert.equal(calls.length, 0)
@@ -2565,7 +2565,7 @@ test('winc manager: quitting mid-download stops the download (SIGINT, .part resu
   const { createWincManager } = await import('./lib/winc_manager.mjs')
   const home = mkdtempSync(path.join(tmpdir(), 'jobdar-ai-'))
   const { spawn, calls } = fakeWinc(home, { onDownload: (say) => say('  [##----]  12%  0.33/2.74 GB  20.0 MB/s  ETA 02:00   \r') })
-  const mgr = createWincManager({ bin: '/app/winc', home, port: 43296, url: 'http://127.0.0.1:43296' }, { spawn, health: async () => false, statfs: () => ({ bavail: 100e9, bsize: 1 }) })
+  const mgr = createWincManager({ bin: '/app/winc', home, port: 43296, url: 'http://127.0.0.1:43296' }, { spawn, health: async () => false, statfs: () => ({ bavail: 100e9, bsize: 1 }), platform: 'linux' }) // the SIGINT path; win32 hard-kills
   mgr.setup({ confirm: true })
   for (let i = 0; i < 200 && mgr.status().pct !== 12; i++) await new Promise((r) => setTimeout(r, 5))
   assert.equal(mgr.running, true, 'an in-flight download counts as running, so the app waits for it on quit')
