@@ -2716,6 +2716,41 @@ test('regions: the offline place table places towns the state/metro rules miss, 
   assert.equal(locationMatches('2 Locations', ['midwest']), true)
 })
 
+test('1.65.1 AI triage filler: laneScore ignores generic words — "Forklift certified" no longer buys "Certified Nursing Assistant" an AI read', async () => {
+  const { laneScore, relevanceScore } = await import('./lib/search.mjs')
+  const derek = { ...termsFromResume(DEREK_CV), fromResume: true }
+  for (const r of ['Certified Nursing Assistant - Night Shifts', 'Certified Medical Assistant (CMA/RMA)', 'Certified Surgical Tech']) {
+    assert.ok(relevanceScore(r, derek) > 0, `precondition: the old filler score liked ${r}`)
+    assert.equal(laneScore(r, derek), 0, r)
+  }
+  for (const r of ['Warehouse Lead', 'Inventory Technician', 'Shipping & Receiving Clerk', 'Pharmacy Warehouse Technician']) assert.ok(laneScore(r, derek) > 0, r)
+  // a typed intent is the user's own words — nothing discounted
+  assert.ok(laneScore('Certified Nursing Assistant', { keywords: ['certified', 'nursing'], titles: [], exclude: [] }) > 0)
+  assert.equal(laneScore('anything', null), 0)
+})
+
+test('1.65.1 desktop build: Windows installers are refused off Windows (Mac-built NSIS uninstaller fails its integrity check); the upgrade hook is wired', async () => {
+  const require = (await import('node:module')).createRequire(import.meta.url)
+  const afterPack = require('./apps/desktop/after-pack.cjs').default
+  const real = Object.getOwnPropertyDescriptor(process, 'platform')
+  try {
+    Object.defineProperty(process, 'platform', { value: 'darwin' })
+    await assert.rejects(afterPack({ electronPlatformName: 'win32' }), /must be built on Windows/)
+    Object.defineProperty(process, 'platform', { value: 'win32' })
+    assert.equal(await afterPack({ electronPlatformName: 'win32' }), undefined, 'on Windows the Windows build proceeds')
+  } finally {
+    Object.defineProperty(process, 'platform', real)
+  }
+  const pkg = JSON.parse(readFileSync(path.join(PKG_ROOT, 'apps/desktop/package.json'), 'utf8'))
+  assert.equal(pkg.build.nsis.include, 'installer.nsh')
+  const nsh = readFileSync(path.join(PKG_ROOT, 'apps/desktop/installer.nsh'), 'utf8')
+  assert.match(nsh, /!macro customUnInstallCheckCurrentUser/)
+  assert.match(nsh, /!macro customUnInstallCheck\b/)
+  for (const s of ['dist', 'dist:win', 'dist:mac']) assert.equal(pkg.scripts[s], 'node dist-native.mjs', s)
+  assert.match(pkg.scripts['dist:all'], /dist-native\.mjs/)
+  assert.ok(!/--win/.test(pkg.scripts['dist:all']), 'dist:all never cross-builds Windows')
+})
+
 let passed = 0
 let failed = 0
 for (const { name, fn } of tests) {

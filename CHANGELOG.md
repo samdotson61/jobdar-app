@@ -4,6 +4,34 @@ All notable changes to Jobdar are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and Jobdar adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.65.1] — 2026-09-29
+
+**Mechanically sound Windows releases, and the AI reads the right roles.** App `1.27.1`, desktop `0.5.1`;
+183 tests.
+
+- **The first `desktop-v0.5.0` Windows upload couldn't be uninstalled — or upgraded.** Built on the Mac,
+  its uninstaller failed NSIS's own check on real Windows ("Installer integrity check has failed"), so
+  Settings → Apps couldn't remove Jobdar, and any newer installer stopped with "Failed to uninstall old
+  application files: 2". electron-builder can't run Windows programs on a Mac and rebuilds the uninstaller
+  with a JS reader instead; the same commit built on Windows is fine. The 0.5.0 Windows files were
+  replaced with Windows-built ones (checksums updated in the release notes). To keep it from recurring:
+  - `after-pack.cjs` **refuses to build Windows installers off Windows**; `dist-native.mjs` builds each
+    machine's own targets (`dist`, `dist:win`, `dist:mac`, `dist:all` all use it).
+  - `installer.nsh` (`customUnInstallCheck*`): when the previous version's uninstaller fails, the installer
+    logs it and installs over it in place — so 0.5.1 also rescues anyone on the broken 0.5.0.
+  - `npm run smoke:installer` (Windows): silent install → the installed app's `--smoke` → silent uninstall
+    → nothing left; `--over-existing` tests an upgrade on purpose. RELEASING: one release, built by both
+    machines, assembled as a draft.
+- **The AI's triage reads go to your lane.** Past the real title matches, its 24-read shortlist was filled
+  by keyword score, so "Forklift certified" spent 20 reads on nursing/medical-assistant jobs for a
+  warehouse lead (2 fits out of 24). The filler now needs a lane word (`laneScore` — generic words like
+  "certified"/"training" don't count) or a prescreen fit, and stays inside the chosen regions/levels
+  (`inProfileScope`, shared with the Apply queue). The AI may read fewer than 24 — each skipped read was a
+  guaranteed "not your lane".
+
+Not a code fix: the Midwest employer catalog has few warehouse/logistics boards (4 such roles among
+1,093 for the warehouse persona) — widening it is catalog work.
+
 ## [1.65.0] — 2026-09-29
 
 **Entry-level roles are never filtered out, and job locations get placed.** App `1.27.0`, desktop `0.5.0`

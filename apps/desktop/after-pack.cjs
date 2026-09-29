@@ -10,6 +10,13 @@ const { execFileSync } = require('node:child_process')
 const path = require('node:path')
 
 exports.default = async function afterPack(ctx) {
+  // 0.5.1: Windows installers are built on Windows only. On a Mac electron-builder rebuilds the NSIS
+  // uninstaller with a JS reader instead of running it, and the first desktop-v0.5.0 upload's failed NSIS's
+  // integrity check on real Windows — Jobdar couldn't be uninstalled or upgraded. Stop the build here,
+  // before a broken installer can exist. (dist-native.mjs builds the right targets per machine.)
+  if (ctx.electronPlatformName === 'win32' && process.platform !== 'win32') {
+    throw new Error('Windows installers must be built on Windows (a Mac-built NSIS uninstaller fails its integrity check) — run `node dist-native.mjs` on the Windows PC')
+  }
   if (ctx.electronPlatformName !== 'darwin') return
   const appPath = path.join(ctx.appOutDir, `${ctx.packager.appInfo.productFilename}.app`)
   execFileSync('codesign', ['--force', '--deep', '--sign', '-', appPath], { stdio: 'inherit' })

@@ -6,7 +6,7 @@ import {
 } from './engine';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { backendMode, serveGet, servePost, serveHealth } from './serve';
-import { regionForLocation, termsFromResume, relevanceScore, relevanceTier, relevanceText, levelDecision, locationMatches, SUBCRITERIA } from '@jobdar/engine';
+import { regionForLocation, termsFromResume, relevanceScore, relevanceTier, relevanceText, laneScore, levelDecision, locationMatches, SUBCRITERIA } from '@jobdar/engine';
 
 // The app holds NO engine logic — it renders what `jobdar serve` (the real CLI + winc) returns. Every
 // action is a thin call to serve; `@jobdar/engine` is used only for derived UI (band colors, cadence labels).
@@ -143,12 +143,22 @@ const WEIGHTS: Record<string, number> = (() => {
 // Pick the shortlist winc triages (1.22.1): the most promising un-gated rows by relevance tier, then
 // prescreen — the same order the résumé-mode list leads with, so the triage spend lands on what the
 // person will actually see first.
-const pickConfirmCandidates = (rows: Scored[], terms: SearchTerms | null, n: number): string[] => {
-  const rel = (j: Scored) => (terms ? relevanceScore(relevanceText(j, terms), terms) : 0);
+// 1.65.1: past the real matches, the remaining reads go to rows that share at least one LANE word with the
+// résumé (laneScore) or whose JD overlap the prescreen already rated a fit — never to rows whose only link is
+// a generic word ("Forklift certified" → twenty "Certified Nursing Assistant" reads, 2 fits out of 24). The
+// AI may read fewer than n; each read it skips is one it would have spent saying "not your lane".
+// The Search tab's live region/level filter, as one predicate (1.65.1) — the Apply queue and the AI's triage
+// shortlist use it too, so neither spends effort on a role the person can't see.
+const inProfileScope = (j: Scored, profile?: Pick<Profile, 'regions' | 'levels'>) => !profile ||
+  ((profile.levels.length === 0 || levelDecision(j.role, profile.levels).include) &&
+   (profile.regions.length === 0 || locationMatches(j.location, profile.regions)));
+
+const pickConfirmCandidates = (rows: Scored[], terms: SearchTerms | null, n: number, profile?: Pick<Profile, 'regions' | 'levels'>): string[] => {
+  const lane = (j: Scored) => (terms ? laneScore(relevanceText(j, terms), terms) : 0);
   const tier = (j: Scored) => (terms ? relevanceTier(relevanceText(j, terms), terms) : 0);
   return rows
-    .filter((j) => !j.gate && !j.listingGone)
-    .sort((a, b) => tier(b) - tier(a) || rel(b) - rel(a) || b.prescreen - a.prescreen)
+    .filter((j) => !j.gate && !j.listingGone && inProfileScope(j, profile) && (!terms || tier(j) > 0 || lane(j) > 0 || j.confirm === 'fit'))
+    .sort((a, b) => tier(b) - tier(a) || lane(b) - lane(a) || b.prescreen - a.prescreen)
     .slice(0, n)
     .map((j) => j.url);
 };
@@ -166,9 +176,7 @@ export const applyQueue = (rows: Scored[], verdicts: Record<string, Verdict>, te
   const tier = (j: Scored) => (active ? relevanceTier(relevanceText(j, terms), terms) : 0);
   const rel = (j: Scored) => (active ? relevanceScore(relevanceText(j, terms), terms) : 0);
   const ai = (j: Scored) => (j.aiConfirm === 'fit' ? 2 : j.aiConfirm === 'maybe' ? 1 : 0);
-  const inScope = (j: Scored) => !profile ||
-    ((profile.levels.length === 0 || levelDecision(j.role, profile.levels).include) &&
-     (profile.regions.length === 0 || locationMatches(j.location, profile.regions)));
+  const inScope = (j: Scored) => inProfileScope(j, profile);
   return rows
     .filter((j) => verdicts[j.url] || (!j.gate && !j.listingGone && j.aiConfirm !== 'skip' && inScope(j) &&
       (active ? tier(j) > 0 || ai(j) > 0 : j.confirm !== 'skip')))
@@ -512,7 +520,7 @@ export const useStore = create<State>()(persist((set, get) => ({
           set({ searchTerms: terms });
         }
       }
-      const cand = pickConfirmCandidates(get().scored, terms, 24);
+      const cand = pickConfirmCandidates(get().scored, terms, 24, get().profile);
       if (cand.length && get().modelUp !== false) {
         bump(0.8);
         try {

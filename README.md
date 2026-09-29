@@ -12,7 +12,7 @@ dominate US enterprise employers), evaluates each role against your résumé, ta
 cover letter, and tracks every application.
 
 > **Status:** Phases 0–7, 5.5, 7.7, 7.8, 8b, 8a, 8c, 8e + 8f **complete**, **Phase 10 L0–L5 shipped** —
-> **Jobdar CLI `1.65.0`** + **app `1.27.0`** + **desktop `0.5.0`** — the desktop app now installs like any
+> **Jobdar CLI `1.65.1`** + **app `1.27.1`** + **desktop `0.5.1`** — the desktop app now installs like any
 > other app: download, open, and **one click sets up the free private AI (no terminal)**. Bilingual core; **six live-verified
 > scanner providers** (Workday, iCIMS, Greenhouse, Lever, Ashby + an opt-in JSON-LD reader) plus an opt-in
 > **USAJobs** federal aggregator (BYO free key); level + region
@@ -39,10 +39,10 @@ No terminal, no account, no API key. About 15 minutes the first time, most of it
 
    | Your computer | File |
    |---|---|
-   | Mac with Apple Silicon (M1 or later) | `Jobdar-beta-0.5.0-mac-arm64.zip` |
-   | Mac with Intel | `Jobdar-beta-0.5.0-mac-x64.zip` |
-   | Windows PC | `Jobdar-beta-0.5.0-win-x64.exe` |
-   | Windows on ARM | `Jobdar-beta-0.5.0-win-arm64.exe` |
+   | Mac with Apple Silicon (M1 or later) | `Jobdar-beta-0.5.1-mac-arm64.zip` |
+   | Mac with Intel | `Jobdar-beta-0.5.1-mac-x64.zip` |
+   | Windows PC | `Jobdar-beta-0.5.1-win-x64.exe` |
+   | Windows on ARM | `Jobdar-beta-0.5.1-win-arm64.exe` |
 
 2. **Install it.**
    - **Mac:** double-click the zip, drag **Jobdar** into **Applications**, and open it. The beta isn't

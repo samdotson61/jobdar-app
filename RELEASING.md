@@ -96,19 +96,43 @@ node prepare-winc.mjs     # cross-compile winc from the winc-jobdar branch (WINC
                           # anything that isn't a -jobdar.N build (master can't `serve --eval`)
 npx electron . --smoke    # dev-tree self-test: engine + GUI + API through one port + the bundled winc
                           # runs + /health reports the managed AI, with screenshots
-npm run dist:all          # clean → vendor → winc → GUI export → all six installers (mac arm64/x64,
-                          # win x64/arm64) → prune ALL unpacked bundles (dist-build = distributables
-                          # only; any stray Jobdar.app on indexed disk duplicates in Spotlight)
+npm run dist:all          # clean → vendor → winc → GUI export → THIS machine's installers (0.5.1:
+                          # the Mac builds the two Mac zips, the Windows PC the two .exe + two .zip)
+                          # → prune ALL unpacked bundles (dist-build = distributables only; any stray
+                          # Jobdar.app on indexed disk duplicates in Spotlight)
 npm run smoke:packed      # smoke the PACKAGED app (macOS or Windows, 0.4.1) — unzips the native zip into the temp dir
                           # (Spotlight-invisible), runs --smoke, cleans up
+npm run smoke:installer   # WINDOWS, before uploading any .exe (0.5.1): silent install → the installed
+                          # app's --smoke → silent uninstall → nothing left. Refuses if Jobdar is
+                          # already installed (pass --over-existing to test an upgrade on purpose)
 npm run install:mac       # optional: install the canonical /Applications/Jobdar.app for THIS Mac
                           # (registers it with LaunchServices; the one you double-click)
 ```
 
-Artifacts land in `apps/desktop/dist-build/` (gitignored). **Publish them as a GitHub release**
-(first one: `desktop-v0.4.0`, 2026-09-29) — tag `desktop-v<desktop version>` on the pushed commit that
-built them, marked pre-release while builds are unsigned, with the four installers + two portable
-Windows zips (not the `.blockmap`s) and their SHA-256s in the notes:
+**Windows installers are built on Windows — never on the Mac (0.5.1).** electron-builder can't run
+Windows programs on a Mac, so it rebuilds the NSIS uninstaller with a JS reader, and the first
+`desktop-v0.5.0` upload's failed NSIS's integrity check on real Windows ("Installer integrity check has
+failed"): Jobdar could be neither uninstalled nor upgraded. `after-pack.cjs` now refuses a Windows build
+off Windows, and `installer.nsh` makes every later installer install over a version whose uninstaller
+fails instead of aborting.
+
+Artifacts land in `apps/desktop/dist-build/` (gitignored). **Publish ONE GitHub release built by both
+machines** from the same pushed commit — tag `desktop-v<desktop version>` on its FULL sha, pre-release
+while builds are unsigned, with the two Mac zips + two Windows installers + two portable Windows zips
+(not the `.blockmap`s) and all six SHA-256s in the notes. Whichever machine goes first creates it as a
+**draft** (invisible to the public); the other uploads its files, adds its checksums, and publishes:
+
+```bash
+# first machine (e.g. the Windows PC, after smoke:packed + smoke:installer pass)
+gh release create desktop-v0.5.1 --target "$(git rev-parse HEAD)" --prerelease --draft \
+  --title "Jobdar Desktop 0.5.1 (beta)" --notes-file notes.md dist-build/*.exe dist-build/*.zip
+# second machine (the Mac, after smoke:packed) — same commit
+shasum -a 256 dist-build/*.zip                                   # add these to the notes
+gh release upload desktop-v0.5.1 dist-build/*.zip
+gh release edit desktop-v0.5.1 --notes-file notes.md --draft=false
+```
+
+(The first public release, `desktop-v0.4.0` on 2026-09-29, was created in one step:)
 
 ```bash
 cd apps/desktop/dist-build && shasum -a 256 *.zip *.exe        # paste into the notes

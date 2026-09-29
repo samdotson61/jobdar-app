@@ -1,6 +1,6 @@
 {
   "name": "jobdar-desktop",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "private": true,
   "description": "Jobdar Desktop (beta) — the full local job-search engine + the app GUI in one double-clickable window, for Mac and Windows beta testers.",
   "main": "main.cjs",
@@ -8,15 +8,16 @@
     "build-gui": "node build-gui.mjs",
     "start": "electron .",
     "smoke": "electron . --smoke",
-    "dist:mac": "electron-builder --mac zip",
-    "dist:win": "electron-builder --win nsis zip",
-    "dist": "electron-builder --mac zip --win nsis zip",
+    "dist:mac": "node dist-native.mjs",
+    "dist:win": "node dist-native.mjs",
+    "dist": "node dist-native.mjs",
     "prepare-engine": "node prepare-engine.mjs",
     "clean": "node clean.mjs",
-    "dist:all": "npm run clean && npm run prepare-engine && npm run prepare-winc && npm run build-gui && electron-builder --mac zip && electron-builder --mac zip --x64 && electron-builder --win nsis zip --x64 && electron-builder --win nsis zip && node prune-unpacked.mjs",
+    "dist:all": "npm run clean && npm run prepare-engine && npm run prepare-winc && npm run build-gui && node dist-native.mjs && node prune-unpacked.mjs",
     "install:mac": "node install-mac.mjs",
     "smoke:packed": "node smoke-packed.mjs",
-    "prepare-winc": "node prepare-winc.mjs"
+    "prepare-winc": "node prepare-winc.mjs",
+    "smoke:installer": "node smoke-installer.mjs"
   },
   "dependencies": {
     "jobdar": "file:vendor/jobdar-engine.tgz",
@@ -65,7 +66,8 @@
     },
     "nsis": {
       "oneClick": true,
-      "perMachine": false
+      "perMachine": false,
+      "include": "installer.nsh"
     },
     "afterPack": "./after-pack.cjs",
     "extraResources": [
