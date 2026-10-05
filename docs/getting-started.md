@@ -53,6 +53,17 @@ Watch the 📡 radar sweep as boards report in — the tally counts the roles th
 see fresh roles from your region's employers, filtered to your level and area. Add or change
 employers any time with `jobdar seed --region <region> --write`.
 
+A full scan reads every page of every board, so it takes a few minutes (about four for the Midwest
+list). To add an employer yourself, put its careers address in `config/portals.yml` — Workday, iCIMS,
+Greenhouse, Lever, Ashby and UKG boards are recognized from the address alone. Two kinds of site live
+on the employer's own web address and need one extra line saying what they are:
+
+```yaml
+- company: Medpace
+  careers_url: https://careers.medpace.com/jobs
+  provider: jibe        # or: jsonld
+```
+
 ### Optional: add USAJobs (federal jobs)
 
 USAJobs is the U.S. government's official jobs site — a large, public, entry-friendly source (many roles

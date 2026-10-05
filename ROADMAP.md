@@ -7,7 +7,7 @@
 > fit against your résumé, **tailors** an ATS-friendly CV/cover letter, and **tracks** every application —
 > with your data kept **local**, processed by a **private on-device model by default** or your own cloud API.
 >
-> **Status:** Phases 0–7, **5.5, 7.7, 7.8, 8b, 8a, 8c, 8e and 8f** complete + **Phase 10 L0–L5 shipped** — **Jobdar CLI `1.67.1`** / app `1.28.1` / desktop `0.5.1` (9.1 serve façade, security/correctness hardening, 9.3 intent search + tunable region/level/résumé controls + BM25-lite relevance, 9.4 winc-suggest ATS discovery, a search-speed pass, region-timezone ranking, a fit-only Search tab, honest résumé status, docx/pdf résumé upload, résumé-seeded profile, a blank-start app, a target-salary selector, persisted state after first use, a documented known-gaps list, a `jobdar doctor` poppler check, `POST /profile` persistence, a first-run onboarding screen, an eval-calibration pass, an **eval-feedback loop** (thumbs → `jobdar calibrate --feedback`), **batch Apply scoring**, a **USAJobs** opt-in provider, npm ship-prep, + a **"Need visa sponsorship" toggle**, + **web-native parity** (AsyncStorage persistence, native résumé upload, a backend-down banner, list pagination, honest signal labels), + **Phase 10 L0–L5: the fully-local iPhone app** (the whole pipeline runs **on the phone** — on-device backend over a CLI-format file store, native scanning, an in-app model manager, llama.rn eval/tailor/outreach on the winc eval profile, docx/txt résumé parse — no Mac, no serve), + **batch eval + the radar sweep everywhere** (`eval --next N`, 5/10/15… capped at 50; 📡 honest radar progress on every long-running verb — scan, prescreen, eval live+batch, tailor, outreach drafts, calibrate, PDF render — determinate bars with measured ETAs, a bouncing sweep with true elapsed for open-ended model calls, and a report-location footer after every eval), + **rename-resilience** (`jobdar doctor` now verifies the global `jobdar`/`jd` PATH links resolve into this checkout — a dangling link after a folder move/rename gets named, with the fix — and `scripts/after-move.sh` refreshes everything that bakes the absolute path: npm links, native build caches, CocoaPods), + **a batched-by-default `prescreen`** (per-host politeness lanes — sequential+spaced within a host, up to 8 hosts at once, progressive pipeline writes; `--serial` opts out), + **the 2026-08-28 eval-integrity pass** (**measured v2 eval prompt** — strict-at-both-ends ratings, defined criteria, job location wired in; Apply inflation 44%→10% on the labeled real-JD bench with core agreement up and the Research band alive for the first time — plus band-derives-from-score enforcement, `eval_source` provenance, résumé-blind refusal on every entry point, temp-0 pinned in code, the legacy holistic eval path removed, an honest running-hot distribution warning, and an employer-not-verified scope line on every report), + **listing liveness** (`jobdar recheck` + scan-side live/gone stamping — a dead posting drops its Apply badge honestly; the audit found 25% of the real Apply band was no longer posted; **1.60.0 verify-before-present**: tui/dashboard/report auto-verify any Apply/Research row without a same-day board check before showing it — eval marks dead boards gone at JD-fetch time, and `POST /recheck {stale:true}` gives front-ends the same cheap gate), + **the CLI feedback funnel** (`jobdar feedback --good|--bad` → the calibration ledger; `calibrate` finally runnable out of the box via a bundled starter set), + **the beta loop** (the app's thumbs now ask **"Would you apply?"** with per-band derived agreement + `jobdar report`/`GET /report` = the shareable PII-free session artifact), + **Jobdar Desktop beta 0.1.0** (`apps/desktop/` Electron shell — the real serve engine in-process + the exported web GUI on one origin via the new `serve --gui`; Mac arm64/x64 zips + Windows x64/arm64 installers, smoke-verified packed; tester guide [docs/desktop-beta.md](docs/desktop-beta.md)), + **the 1.57 calm-down** (Apply verdict cards collapse behind "Why this score ▾" with the would-apply thumbs promoted beside the verdict and a band-colored edge stripe; one primary action + quiet utilities; Search scope chips fold behind a live summary line; desktop build made idempotent + portable — stable `vendor/jobdar-engine.tgz`, one-command bootstrap, `npm run dist:all`, launch-anywhere verified), + **1.65: entry-level roles are never filtered out, and an offline GeoNames place table places job locations the state/metro rules couldn't (foreign ones leave a US search)**, + **the 1.64 layman-install pass** (driven end to end as two first-time users from a downloaded zip: the desktop app **bundles the winc-jobdar runtime** — one-click private-AI setup with real download progress, the AI starts and stops with the app, no terminal; the Mac bundle is properly sealed (it had failed `codesign --verify`); PDF/DOCX résumés parse with no system tools; honest AI-not-ready states instead of silent scoring failures; the no-degree path and level choices now reach the scorer; the Jobfaro-era compat shims removed as announced)). Bilingual core; **eight live-verified scanner
+> **Status:** Phases 0–7, **5.5, 7.7, 7.8, 8b, 8a, 8c, 8e and 8f** complete + **Phase 10 L0–L5 shipped** — **Jobdar CLI `1.67.2`** / app `1.28.2` / desktop `0.5.1` (9.1 serve façade, security/correctness hardening, 9.3 intent search + tunable region/level/résumé controls + BM25-lite relevance, 9.4 winc-suggest ATS discovery, a search-speed pass, region-timezone ranking, a fit-only Search tab, honest résumé status, docx/pdf résumé upload, résumé-seeded profile, a blank-start app, a target-salary selector, persisted state after first use, a documented known-gaps list, a `jobdar doctor` poppler check, `POST /profile` persistence, a first-run onboarding screen, an eval-calibration pass, an **eval-feedback loop** (thumbs → `jobdar calibrate --feedback`), **batch Apply scoring**, a **USAJobs** opt-in provider, npm ship-prep, + a **"Need visa sponsorship" toggle**, + **web-native parity** (AsyncStorage persistence, native résumé upload, a backend-down banner, list pagination, honest signal labels), + **Phase 10 L0–L5: the fully-local iPhone app** (the whole pipeline runs **on the phone** — on-device backend over a CLI-format file store, native scanning, an in-app model manager, llama.rn eval/tailor/outreach on the winc eval profile, docx/txt résumé parse — no Mac, no serve), + **batch eval + the radar sweep everywhere** (`eval --next N`, 5/10/15… capped at 50; 📡 honest radar progress on every long-running verb — scan, prescreen, eval live+batch, tailor, outreach drafts, calibrate, PDF render — determinate bars with measured ETAs, a bouncing sweep with true elapsed for open-ended model calls, and a report-location footer after every eval), + **rename-resilience** (`jobdar doctor` now verifies the global `jobdar`/`jd` PATH links resolve into this checkout — a dangling link after a folder move/rename gets named, with the fix — and `scripts/after-move.sh` refreshes everything that bakes the absolute path: npm links, native build caches, CocoaPods), + **a batched-by-default `prescreen`** (per-host politeness lanes — sequential+spaced within a host, up to 8 hosts at once, progressive pipeline writes; `--serial` opts out), + **the 2026-08-28 eval-integrity pass** (**measured v2 eval prompt** — strict-at-both-ends ratings, defined criteria, job location wired in; Apply inflation 44%→10% on the labeled real-JD bench with core agreement up and the Research band alive for the first time — plus band-derives-from-score enforcement, `eval_source` provenance, résumé-blind refusal on every entry point, temp-0 pinned in code, the legacy holistic eval path removed, an honest running-hot distribution warning, and an employer-not-verified scope line on every report), + **listing liveness** (`jobdar recheck` + scan-side live/gone stamping — a dead posting drops its Apply badge honestly; the audit found 25% of the real Apply band was no longer posted; **1.60.0 verify-before-present**: tui/dashboard/report auto-verify any Apply/Research row without a same-day board check before showing it — eval marks dead boards gone at JD-fetch time, and `POST /recheck {stale:true}` gives front-ends the same cheap gate), + **the CLI feedback funnel** (`jobdar feedback --good|--bad` → the calibration ledger; `calibrate` finally runnable out of the box via a bundled starter set), + **the beta loop** (the app's thumbs now ask **"Would you apply?"** with per-band derived agreement + `jobdar report`/`GET /report` = the shareable PII-free session artifact), + **Jobdar Desktop beta 0.1.0** (`apps/desktop/` Electron shell — the real serve engine in-process + the exported web GUI on one origin via the new `serve --gui`; Mac arm64/x64 zips + Windows x64/arm64 installers, smoke-verified packed; tester guide [docs/desktop-beta.md](docs/desktop-beta.md)), + **the 1.57 calm-down** (Apply verdict cards collapse behind "Why this score ▾" with the would-apply thumbs promoted beside the verdict and a band-colored edge stripe; one primary action + quiet utilities; Search scope chips fold behind a live summary line; desktop build made idempotent + portable — stable `vendor/jobdar-engine.tgz`, one-command bootstrap, `npm run dist:all`, launch-anywhere verified), + **1.65: entry-level roles are never filtered out, and an offline GeoNames place table places job locations the state/metro rules couldn't (foreign ones leave a US search)**, + **the 1.64 layman-install pass** (driven end to end as two first-time users from a downloaded zip: the desktop app **bundles the winc-jobdar runtime** — one-click private-AI setup with real download progress, the AI starts and stops with the app, no terminal; the Mac bundle is properly sealed (it had failed `codesign --verify`); PDF/DOCX résumés parse with no system tools; honest AI-not-ready states instead of silent scoring failures; the no-degree path and level choices now reach the scorer; the Jobfaro-era compat shims removed as announced)). Bilingual core; **eight live-verified scanner
 > providers** (Greenhouse, Workday, iCIMS, Lever, Ashby, UKG + opt-in JSON-LD and Jibe readers), all with
 > eval-time JD fetch, plus the opt-in **USAJobs** aggregator (BYO free key; not yet live-verified); level + region toggles; the `jobdar init` wizard; the full
 > **discover→prescreen→evaluate→track→build pipeline** — `scan` finds + filters (it never scores),
@@ -34,12 +34,25 @@
 
 ## Known gaps & current limitations
 
-Current as of v1.67.1 — tracked deliberately so they aren't mistaken for bugs. The app-side items are elaborated in
+Current as of v1.67.2 — tracked deliberately so they aren't mistaken for bugs. The app-side items are elaborated in
 [docs/phase9-architecture.md](docs/phase9-architecture.md#known-gaps--current-limitations). *(Resolved since
 v1.40.x: onboarding shipped 1.41; `POST /profile` shipped 1.41; the `jobdar doctor` poppler check shipped
 1.41; USAJobs opt-in provider shipped 1.43; native persistence via AsyncStorage shipped 1.45 and moved to
 the on-device file store — fully serve-free — in 1.47.)*
 
+- **The desktop download carries the engine it was built with.** Desktop `0.5.1` ships engine 1.65.1,
+  so the scanner fixes since then (Workday boards read past 40 roles, honest Greenhouse dates, the
+  repaired catalog, the UKG and Jibe providers — 1.66.0–1.67.2) reach desktop users with the next
+  desktop build, not before. The CLI and a source install have them now. *(Needs a desktop release —
+  Windows built on Windows, Mac on the Mac.)*
+- **Very large boards are read in part.** `jobdar scan` reads up to 2,000 postings from one Workday
+  board, newest first; the desktop gives each board 9 seconds; a phone takes the newest 200 per board
+  and keeps at most 3,000 never-opened roles. Ten catalog boards hold more than 2,000 postings
+  (Lowe's has about 12,600), so their older roles are out of reach and the board history records their
+  arrivals but not their closures. *(By design on the phone; open on the server side.)*
+- **Employer hiring-pattern readings are not shown yet.** The board history they depend on started
+  accumulating on 2026-10-05 (Phase 7.9); a reading needs weeks of it. Until then nothing is displayed —
+  no reading beats a wrong one.
 - **State persists per-device; no cross-machine sync.** Web persists to localStorage; native persists to
   the **on-device file store** (CLI-identical TSV/JSON formats — files are the source of truth since
   1.47) — blank first boot, saved after first use — and in Mac-serve mode identity/résumé are also
@@ -56,11 +69,11 @@ the on-device file store — fully serve-free — in 1.47.)*
   pdf.js when the host ships it — the desktop app does, so desktop users on Mac and Windows need nothing.
   A Linux/Windows **CLI** without poppler gets an honest "no PDF reader" (doctor-checked);
   scanned/image-only PDFs have no embedded text anywhere. *(Host dependency, CLI only.)*
-- **The desktop beta is unsigned, and its Windows builds are unverified on hardware.** Mac builds are
-  ad-hoc sealed (valid signature) but not Developer ID–signed or notarized, so first launch needs the
-  one-time System Settings → **Open Anyway** step; Windows shows SmartScreen. Every desktop flow was
-  drive-tested on macOS (Apple Silicon) only — the Windows installers are built and contain the bundled
-  winc, but have not been run on a real PC. *(Needs the Apple Developer account + a Windows test pass.)*
+- **The desktop beta is unsigned.** Mac builds are ad-hoc sealed (valid signature) but not Developer
+  ID–signed or notarized, so first launch needs the one-time System Settings → **Open Anyway** step;
+  Windows shows SmartScreen. The desktop flows were drive-tested on macOS (Apple Silicon) and, since
+  1.64.2, on a real Windows PC (install → run → uninstall round trip since 0.5.1).
+  *(Needs the Apple Developer account + a Windows signing certificate.)*
 - **Discovery is keyless ATS-probing, not an aggregator.** `jobdar discover` has winc name companies and
   probes Greenhouse/Lever/Ashby/Workday slugs — it finds companies whose ATS handle is guessable, not every
   posting on the internet. **USAJobs** (opt-in, BYO free key, dormant without one) shipped in 1.43 but is
@@ -98,7 +111,7 @@ the levels you selected.
 
 **Region is toggle-able too.** Jobdar is US-focused and **defaults to the Midwest**, but a built-in region
 selector adapts the company seeds, location filters, and search to wherever you are — **Midwest, Northeast,
-Southeast, Southwest, West, or nationwide** (plus custom). Midwest was seeded first (48 employers); Southeast (14) and Southwest (6) followed in June, and **Northeast (21) + West (25) landed in 1.63.2 (2026-09-25)** — every entry live-verified through the real provider code; catalog = 114.
+Southeast, Southwest, West, or nationwide** (plus custom). Midwest was seeded first (48 employers); Southeast (13) and Southwest (6) followed in June, and **Northeast (21) + West (25) landed in 1.63.2 (2026-09-25)** — every entry live-verified through the real provider code; catalog = 113 (re-verified 2026-10-05: four boards repointed, Medpace and Genesco restored through new providers, HCA Healthcare removed).
 
 **Local data, pluggable processing.** Your résumé and history stay **local at rest** — on your machine
 (CLI) or in your browser (web app). The model that does the thinking is **swappable**: a lightweight
@@ -218,6 +231,7 @@ tailoring, `pipeline`'s eval step) use the configured **inference backend** — 
 - [Phase 7 — Quality, dashboard, polish, release](#phase-7--quality-dashboard-polish-release)
 - [Phase 7.7 — Apply-likelihood: the prescreen gate + the outreach engine](#phase-77--apply-likelihood-the-prescreen-gate--the-outreach-engine)
 - [Phase 7.8 — Deterministic eval-precision primitives (pay, dates, dedup)](#phase-78--deterministic-eval-precision-primitives-pay-dates-dedup)
+- [Phase 7.9 — Employer hiring behaviour (the board ledger)](#phase-79--employer-hiring-behaviour-the-board-ledger)
 - [Phase 8 — Pluggable inference (8b on-device via winc.cpp FIRST, then 8a BYO-key auto-eval)](#phase-8--pluggable-inference-8b-on-device-via-winccpp-first-then-8a-byo-key-auto-eval)
 - [Phase 8c — Document understanding (PDFs in, structured data out)](#phase-8c--document-understanding-pdfs-in-structured-data-out)
 - [Phase 8d — Offer evaluation](#phase-8d--offer-evaluation)
@@ -522,6 +536,30 @@ duplicate roles reaching the user — with pure code.
 Cincinnati BSA $56.8–72.5k below); the study's known dups (Kettering "PM Oper Excellence" ×2; two
 identical-pay Cincinnati PMs) collapse to one row each with no distinct-role loss; a "Mar 2025–Present"
 résumé no longer reads as future. All offline, no model, no network.
+
+---
+
+## Phase 7.9 — Employer hiring behaviour (the board ledger)
+
+**Goal:** tell a job seeker whether an employer is actually hiring, from evidence. A single posting
+reveals almost nothing about whether it is real — the same ad is posted for a funded vacancy, a
+talent pool, a frozen role and a formality. What can be observed from outside is how an employer's
+whole board behaves over time. Jobdar never labels a posting "ghost"; it states what the board's own
+history shows, or says nothing.
+
+| Step | What | Status |
+|---|---|---|
+| 7.9.1 ✅ | **True posting dates.** Greenhouse dated by `first_published` (edit dates made year-old roles look fresh); Workday list text ("Posted 6 Days Ago", "30+") resolved in the ledger. | 1.66.1 |
+| 7.9.2 ✅ | **The board ledger** (`lib/board_ledger_pure.mjs`): one row per posting ever seen on a board — appeared, disappeared, came back. Only a complete look at a board can close a posting; a posting missing from one look is restored, not counted as a repost. | 1.66.0 |
+| 7.9.3 ✅ | **Daily baseline scan** (`scripts/baseline-scan.mjs`, `.github/workflows/baseline-scan.yml`): every catalog board, unfiltered, once a day, stored on the `baseline-data` branch. Public boards in, one data branch out — nothing about any user. | 1.66.0 |
+| 7.9.4 | **Per-employer measures** from 4–6 weeks of history: typical time a role stays open (per role family), roles closed per month against roles open, repost rate, standing (always-open) roles. Thresholds tuned on the data, not guessed. | after history accrues |
+| 7.9.5 | **Readings in the apps** — display only, never a filter: *active* ("roles here usually close in about 5 weeks; open 12 days"), *standing*, *lingering*, *reposted*, *quiet board*, or nothing when history is thin. Shipped as a small per-employer summary file; a phone never downloads the ledger. EN + ES, with a tooltip. | after 7.9.4 |
+| 7.9.6 | **A user's own scans feed their own ledger**, so employers outside the catalog earn a reading too. | after 7.9.5 |
+| 7.9.7 | **Public-record signals per employer** (hand-checked name mapping for the catalog): wage-and-hour cases, workplace-safety records, nursing-home staffing and turnover, mass-layoff notices. | candidate |
+
+**What it cannot see:** a posting that closed was not necessarily filled; a pre-selected internal
+candidate is invisible; there is no ground truth to test against beyond the boards' own dates and a
+user's recorded outcomes.
 
 ---
 

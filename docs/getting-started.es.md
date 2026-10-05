@@ -46,6 +46,18 @@ Mira el barrido de radar 📡 mientras los portales van respondiendo — el recu
 de verdad aterrizan. Verás puestos nuevos de los empleadores de tu región, filtrados a tu nivel y
 zona. Agrega o cambia empleadores cuando quieras con `jobdar seed --region <región> --write`.
 
+Un escaneo completo lee todas las páginas de cada portal, así que tarda unos minutos (unos cuatro para
+la lista del Medio Oeste). Para agregar un empleador por tu cuenta, pon su dirección de empleos en
+`config/portals.yml` — los portales de Workday, iCIMS, Greenhouse, Lever, Ashby y UKG se reconocen solo
+por la dirección. Dos tipos de sitio viven en la dirección web propia del empleador y necesitan una
+línea más que diga qué son:
+
+```yaml
+- company: Medpace
+  careers_url: https://careers.medpace.com/jobs
+  provider: jibe        # o: jsonld
+```
+
 ### Opcional: agregar USAJobs (empleos federales)
 
 USAJobs es el sitio oficial de empleos del gobierno de EE. UU. — una fuente grande, pública y accesible

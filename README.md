@@ -12,7 +12,7 @@ dominate US enterprise employers), evaluates each role against your résumé, ta
 cover letter, and tracks every application.
 
 > **Status:** Phases 0–7, 5.5, 7.7, 7.8, 8b, 8a, 8c, 8e + 8f **complete**, **Phase 10 L0–L5 shipped** —
-> **Jobdar CLI `1.67.1`** + **app `1.28.1`** + **desktop `0.5.1`** — the desktop app now installs like any
+> **Jobdar CLI `1.67.2`** + **app `1.28.2`** + **desktop `0.5.1`** — the desktop app now installs like any
 > other app: download, open, and **one click sets up the free private AI (no terminal)**. Bilingual core; **eight live-verified
 > scanner providers** (Workday, iCIMS, Greenhouse, Lever, Ashby, UKG + opt-in JSON-LD and Jibe readers) plus an opt-in
 > **USAJobs** federal aggregator (BYO free key); level + region
@@ -24,7 +24,9 @@ cover letter, and tracks every application.
 > status (`a` in the TUI or `jobdar tracker --set`),
 > `jobdar outreach` finds the **warm contact** and keeps follow-ups polite by construction, and `jobdar pdf`
 > builds the tailored ATS résumé; a scrollable cursor-driven `jobdar tui` workspace + a web dashboard with
-> analytics; freshness tracking (`posted` / `first_seen`, `scan --prune`). And the **iPhone app now runs
+> analytics; freshness tracking (`posted` / `first_seen`, `scan --prune`); and a daily scan of every
+> catalog board that keeps a public history of when postings appear and disappear — the groundwork for
+> employer hiring-pattern readings (ROADMAP Phase 7.9; nothing is shown in the apps yet). And the **iPhone app now runs
 > the whole pipeline fully on the phone** — native scanning, on-device eval/tailor/outreach via llama.rn,
 > an in-app model manager — **no Mac, no server. TestFlight has not started yet** (it waits on the App
 > Store Connect record — Phase 10 L6). Remaining for the

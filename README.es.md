@@ -14,7 +14,7 @@ puesto frente a tu currículum, adapta un CV y una carta de presentación compat
 registra cada postulación.
 
 > **Estado:** Fases 0–7, 5.5, 7.7, 7.8, 8b, 8a, 8c, 8e + 8f **completas**, **Fase 10 L0–L5 entregada** —
-> **Jobdar CLI `1.67.1`** + **app `1.28.1`** + **escritorio `0.5.1`** — la app de escritorio ahora se instala
+> **Jobdar CLI `1.67.2`** + **app `1.28.2`** + **escritorio `0.5.1`** — la app de escritorio ahora se instala
 > como cualquier otra: descárgala, ábrela y **un clic configura la IA privada y gratuita (sin terminal)**.
 > Núcleo bilingüe; **ocho escáneres
 > verificados en vivo** (Workday, iCIMS, Greenhouse, Lever, Ashby, UKG + lectores opcionales de JSON-LD y Jibe) más un
@@ -28,7 +28,10 @@ registra cada postulación.
 > estado (`a` en la TUI o `jobdar tracker --set`), `jobdar outreach` encuentra
 > el **contacto cálido** y mantiene los seguimientos corteses por construcción, y `jobdar pdf` construye el
 > currículum ATS adaptado; una TUI desplazable con cursor + un panel web con analíticas; frescura
-> (`posted` / `first_seen`, `scan --prune`). Y la **app de iPhone ya ejecuta toda la tubería
+> (`posted` / `first_seen`, `scan --prune`); y un escaneo diario de todos los portales del catálogo que
+> guarda un historial público de cuándo aparecen y desaparecen las publicaciones — la base para las
+> lecturas del patrón de contratación de cada empleador (ROADMAP Fase 7.9; aún no se muestra nada en
+> las apps). Y la **app de iPhone ya ejecuta toda la tubería
 > completamente en el teléfono** — escaneo nativo, evaluación/adaptación/contacto en el dispositivo vía
 > llama.rn, un gestor de modelos integrado — **sin Mac, sin servidor. TestFlight aún no ha empezado**
 > (espera el registro en App Store Connect — Fase 10 L6). Pendiente para el 1.0 de la CLI: publicar en npm + marketplace, y luego una beta cerrada.

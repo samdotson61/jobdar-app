@@ -4,6 +4,24 @@ All notable changes to Jobdar are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and Jobdar adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.67.2] — 2026-10-05
+
+**Documentation brought into line with 1.66.0–1.67.1.** No code change. App `1.28.2`; desktop stays
+`0.5.1`; 195 tests.
+
+- **ROADMAP:** new **Phase 7.9 — Employer hiring behaviour (the board ledger)** records what shipped
+  (true posting dates, the ledger, the daily baseline scan) and what follows (per-employer measures,
+  readings in the apps, public-record signals). **Known gaps** gains three entries — the desktop
+  download carries the engine it was built with (0.5.1 = engine 1.65.1); very large boards are read in
+  part (2,000 / 9 seconds / 200 on a phone); hiring-pattern readings are not shown yet — and drops the
+  stale claim that Windows desktop builds were never run on a real PC. Catalog counts corrected (113).
+- **Getting started (EN + ES):** how long a full scan takes now that boards are read whole, and how to
+  add an employer by hand, including the one extra line (`provider: jibe` / `jsonld`) for sites on an
+  employer's own address.
+- **`modes/scan.md` (EN + ES):** the provider list said Lever and Ashby were still to come; it now lists
+  all nine and notes that a board not read to its end is left out of the "no longer posted" check.
+- **README (EN + ES):** the status paragraph mentions the daily board history.
+
 ## [1.67.1] — 2026-10-05
 
 **Four faults found by driving the real product end to end** — a fresh home through `init`, a live

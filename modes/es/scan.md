@@ -16,9 +16,14 @@ razonas sobre los resultados normalizados.
 - Cada proveedor exporta `{ id, detect, fetch }`. `detect()` no usa red; `fetch()` devuelve
   `{ title, url, company, location, postedOn }` normalizado por HTTPS con una lista blanca de
   hosts.
-- Proveedores: **Greenhouse** (referencia), **Workday** e **iCIMS** (todos incluidos). Workday:
-  usa `provider: workday` y opcionalmente `site:`. iCIMS analiza el HTML público de las páginas
-  de empleo (JSON-LD primero); añade `--playwright` para sitios con mucho JS. Lever/Ashby después.
+- Proveedores: **Greenhouse** (referencia), **Workday**, **iCIMS**, **Lever**, **Ashby** y
+  **UKG/UltiPro** se detectan por la URL de empleos; **JSON-LD** y **Jibe** leen sitios en el
+  dominio propio del empleador y requieren `provider: jsonld` / `provider: jibe` explícito;
+  **USAJobs** es opcional con una clave gratuita. Workday: `site:` opcional. iCIMS analiza el HTML
+  público de las páginas de empleo (JSON-LD primero); añade `--playwright` para sitios con mucho JS.
+- Un portal grande se lee página por página (Workday hasta 2,000 publicaciones). Un portal que no se
+  leyó hasta el final queda fuera de la verificación de «ya no está publicado» — que un puesto falte
+  en una lista incompleta no prueba nada.
 - `jobdar scan --dry-run` resuelve un proveedor por portal e imprime un resumen **sin llamadas de
   red** — úsalo para revisar la configuración.
 

@@ -14,9 +14,13 @@ and reason over the normalized results.
 - Portals live in `config/portals.yml`: `company`, `careers_url`, optional `provider` / `site`.
 - Each provider exports `{ id, detect, fetch }`. `detect()` is network-free; `fetch()` returns
   normalized `{ title, url, company, location, postedOn }` over HTTPS with a host allowlist.
-- Providers: **Greenhouse** (reference), **Workday**, and **iCIMS** (all shipped). Workday: set
-  `provider: workday` + optional `site:`. iCIMS parses public career-page HTML (JSON-LD first);
-  add `--playwright` for JS-rendered sites. Lever/Ashby follow.
+- Providers: **Greenhouse** (reference), **Workday**, **iCIMS**, **Lever**, **Ashby** and
+  **UKG/UltiPro** are detected from the careers URL; **JSON-LD** and **Jibe** read sites on an
+  employer's own domain and need an explicit `provider: jsonld` / `provider: jibe`; **USAJobs** is
+  opt-in with a free key. Workday: optional `site:`. iCIMS parses public career-page HTML (JSON-LD
+  first); add `--playwright` for JS-rendered sites.
+- A big board is read page by page (Workday up to 2,000 postings). A board that was not read to its
+  end is left out of the "no longer posted" check — a role missing from a cut-off list proves nothing.
 - `jobdar scan --dry-run` resolves a provider per portal and prints a summary with **no network
   calls** — use it to check configuration.
 
