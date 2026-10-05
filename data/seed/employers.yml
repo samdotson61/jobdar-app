@@ -83,11 +83,21 @@ employers:
     region: southeast
     metro: "Nashville, TN"
     sector: health-tech
+  - company: "Medpace"
+    careers_url: "https://careers.medpace.com/jobs"
+    provider: jibe
+    region: midwest
+    metro: "Cincinnati, OH"
+    sector: health-tech
+  - company: "Genesco"
+    careers_url: "https://recruiting.ultipro.com/GEN1014GENES/JobBoard/8ee2a2dc-7b3b-419a-83f9-f26ded918f47"
+    region: southeast
+    metro: "Nashville, TN"
+    sector: retail
   # Re-verified 2026-10-05: Avant, Tempus and Qualifacts moved from Greenhouse to Workday (repointed
-  # above); Kohl's moved Workday shards (wd1 → wd504, repointed below). Removed until a provider can
-  # read them: Medpace (iCIMS behind a Jibe front end — public feed at careers.medpace.com/api/jobs),
-  # Genesco (UKG/UltiPro — public feed at recruiting.ultipro.com/GEN1014GENES/JobBoard/…) and
-  # HCA Healthcare (own site, refuses automated readers).
+  # above); Kohl's moved Workday shards (wd1 → wd504, repointed below); Medpace put a Jibe site in
+  # front of its iCIMS board and Genesco moved to UKG/UltiPro (both read by providers added in
+  # 1.67.0). HCA Healthcare was removed — its own careers site refuses automated readers.
 
   # Smaller & midsize Midwest employers — less applicant competition, local/regional roots
   # (added 2026-06-05; each live-verified to return public postings, identity confirmed by job location).

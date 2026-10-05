@@ -26,10 +26,13 @@ import lever from './lever.mjs'
 import ashby from './ashby.mjs'
 import jsonld from './jsonld.mjs'
 import usajobs from './usajobs.mjs'
+import ultipro from './ultipro.mjs'
+import jibe from './jibe.mjs'
 
-// Register providers here as they land. `jsonld` is opt-in (detect requires `provider: jsonld`);
+// Register providers here as they land. `jsonld` and `jibe` are opt-in (detect requires an explicit
+// `provider:` — both live on the employer's own domain, so no URL pattern identifies them);
 // `usajobs` is opt-in too — it only detects data/www.usajobs.gov portals and stays dormant without a key.
-const REGISTRY = [workday, greenhouse, icims, lever, ashby, jsonld, usajobs]
+const REGISTRY = [workday, greenhouse, icims, lever, ashby, ultipro, jsonld, jibe, usajobs]
 
 export function allProviders() {
   return REGISTRY.slice()

@@ -4,6 +4,28 @@ All notable changes to Jobdar are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and Jobdar adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.67.0] — 2026-10-05
+
+**Two new scanner providers bring Medpace and Genesco back.** App `1.28.0`; desktop stays `0.5.1`;
+195 tests.
+
+- **UKG / UltiPro (`providers/ultipro.mjs`).** Reads the public job boards on
+  `recruiting.ultipro.com/{tenant}/JobBoard/{id}` through the same JSON the board's own page uses —
+  newest first, paged — and pulls a role's description from the posting its detail page embeds.
+  Detected by URL like the other hosted boards; requests are pinned to UKG's recruiting hosts.
+- **Jibe (`providers/jibe.mjs`, opt-in: `provider: jibe`).** Jibe is a branded careers site an employer
+  places in front of its applicant system, after which the system's own search page refuses outside
+  readers (Medpace's iCIMS search now answers with a script that bounces to the Jibe site). The Jibe
+  site's feed is read instead, US roles only, and each role is listed under the applicant system's job
+  URL when the feed names one Jobdar already reads — so the description still comes through the iCIMS
+  provider. Like the JSON-LD reader it lives on the employer's own domain, so it is never auto-detected
+  and its requests are pinned to that one host. Its feed carries every role's full description (about
+  17 KB a role), so the phone's 200-posting board limit matters most here.
+- **Catalog: 113 employers.** Medpace (326 US roles) and Genesco (20) are back, re-verified live
+  including one job description each. HCA Healthcare stays out — its careers site refuses automated
+  readers and no public board for it was found.
+- Both providers honour `ctx.maxPostings` and mark a board they did not read to its end `incomplete`.
+
 ## [1.66.1] — 2026-10-05
 
 **Honest Greenhouse dates, a repaired catalog, and size limits for scanning on a phone.** App `1.27.3`;

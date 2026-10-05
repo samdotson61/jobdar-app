@@ -108,6 +108,21 @@ export const SEED_EMPLOYERS = [
   "sector": "health-tech"
  },
  {
+  "company": "Medpace",
+  "careers_url": "https://careers.medpace.com/jobs",
+  "provider": "jibe",
+  "region": "midwest",
+  "metro": "Cincinnati, OH",
+  "sector": "health-tech"
+ },
+ {
+  "company": "Genesco",
+  "careers_url": "https://recruiting.ultipro.com/GEN1014GENES/JobBoard/8ee2a2dc-7b3b-419a-83f9-f26ded918f47",
+  "region": "southeast",
+  "metro": "Nashville, TN",
+  "sector": "retail"
+ },
+ {
   "company": "84.51°",
   "careers_url": "https://job-boards.greenhouse.io/8451",
   "region": "midwest",

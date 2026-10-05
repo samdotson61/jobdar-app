@@ -27,8 +27,9 @@ stay on your machine. The network surface is small and each piece of it is locke
 
 - **Per-provider host allowlists.** Greenhouse `boards-api.greenhouse.io` / `job-boards.greenhouse.io`,
   Workday `*.wd{N}.myworkdayjobs.com`, iCIMS `*.icims.com`, Lever `api.lever.co` / `jobs.lever.co`,
-  Ashby `api.ashbyhq.com` / `jobs.ashbyhq.com`, USAJobs `data.usajobs.gov`. The opt-in JSON-LD reader's
-  allowlist is the portal's **own** host, which is why the next two guards exist.
+  Ashby `api.ashbyhq.com` / `jobs.ashbyhq.com`, UKG `recruiting{N}.ultipro.com`, USAJobs
+  `data.usajobs.gov`. The opt-in JSON-LD and Jibe readers' allowlist is the portal's **own** host,
+  which is why the next two guards exist.
 - **Private-range block, by name and by address.** IP literals in loopback, RFC 1918, link-local (incl.
   the cloud metadata address), CGNAT (`100.64.0.0/10`), multicast and IPv4-mapped IPv6 (dotted **and**
   hex) are refused. On Node (CLI, `jobdar serve`, the desktop app, the scanner proxy) the hostname is
