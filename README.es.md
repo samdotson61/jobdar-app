@@ -14,7 +14,7 @@ puesto frente a tu currículum, adapta un CV y una carta de presentación compat
 registra cada postulación.
 
 > **Estado:** Fases 0–7, 5.5, 7.7, 7.8, 8b, 8a, 8c, 8e + 8f **completas**, **Fase 10 L0–L5 entregada** —
-> **Jobdar CLI `1.65.1`** + **app `1.27.1`** + **escritorio `0.5.1`** — la app de escritorio ahora se instala
+> **Jobdar CLI `1.66.0`** + **app `1.27.2`** + **escritorio `0.5.1`** — la app de escritorio ahora se instala
 > como cualquier otra: descárgala, ábrela y **un clic configura la IA privada y gratuita (sin terminal)**.
 > Núcleo bilingüe; **seis escáneres
 > verificados en vivo** (Workday, iCIMS, Greenhouse, Lever, Ashby + un lector JSON-LD opcional) más un

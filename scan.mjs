@@ -101,7 +101,9 @@ export async function runScan(argv = []) {
     radar.label(portal.company)
     try {
       const jobs = await hit.provider.fetch(hit.match, ctx)
-      for (const j of jobs) if (j && j.url) allSeen.push(j.url)
+      // A board that was not read to its end (jobs.incomplete — page cap or a failed page) can't vouch
+      // for absence, so it stays out of the liveness marker: its rows keep their last-known state.
+      if (!jobs.incomplete) for (const j of jobs) if (j && j.url) allSeen.push(j.url)
       const lvl = filterByLevel(jobs, levels)
       const loc = filterByLocation(lvl.kept, regions, { userMetro: profile.location })
       for (const j of loc.kept) allKept.push(j)

@@ -183,7 +183,8 @@ export async function localCall(path: string, method: 'GET' | 'POST', body: any)
         if (!hit) return;
         resolved++;
         try {
-          const jobs = await hit.provider.fetch(hit.match, {});
+          // budgetMs: big Workday boards page for up to a minute; on-device the scan takes each board's newest postings within the budget.
+          const jobs = await hit.provider.fetch(hit.match, { budgetMs: 9000 });
           const lvl = filterByLevel(jobs, levels);
           const loc = filterByLocation(lvl.kept, regions, { userMetro: profile.location });
           for (const j of loc.kept) kept.push(j);

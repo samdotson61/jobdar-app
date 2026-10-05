@@ -23,6 +23,8 @@ const COMMON_SITES = ['External', 'External_Career_Site', 'careers', 'Careers', 
 const PAGE_LIMIT = 20
 const MAX_PAGES = 100 // safety bound (~2000 postings); explicit `site:` recommended for big tenants
 const PAGE_DELAY_MS = 150 // polite pacing between paginated requests (Phase 2.5)
+const PAGE_RETRY_MS = 1000 // pause before the one retry of a failed page
+const RESULT_WINDOW = PAGE_LIMIT * MAX_PAGES // the most postings one listing can yield (2000)
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -81,25 +83,54 @@ export function normalize(posting, base, site, company) {
   }
 }
 
-async function fetchSite(match, site, maxPages = MAX_PAGES) {
+// Many tenants report `total` on the FIRST page only and 0 on every later one (verified live
+// 2026-10-05: Salesforce 1513 → 0 → 0). Trusting that later zero ended paging at 40 postings on 34 of
+// the catalog's 45 Workday boards — so a zero after the first page is ignored and the first total stands.
+// `deadline` (ms epoch, from ctx.budgetMs) is for interactive scans: when it passes, paging stops and
+// the postings gathered so far are returned (the list is newest-first) instead of the caller timing
+// out and losing the whole board.
+// Reading every page means ~75 requests on a big board, and one of them failing (a 502, a stalled
+// socket — 3 of 45 boards on the first full run) must not throw away the pages already read: a page
+// past the first is retried once, then paging stops with what it has. The first page still throws —
+// the site probe in fetch() depends on that.
+// Whenever the board was NOT read to its end (budget, failed page, MAX_PAGES), the returned array
+// carries `incomplete = true`, so callers that reason from ABSENCE (liveness, the board ledger) know
+// a missing posting proves nothing.
+async function fetchSite(match, site, maxPages = MAX_PAGES, deadline = Infinity) {
   const base = `https://${match.tenant}.${match.shard}.myworkdayjobs.com`
   const endpoint = `${base}/wday/cxs/${match.tenant}/${site}/jobs`
   const out = []
+  const getPage = (offset) => postJson(endpoint, { appliedFacets: {}, limit: PAGE_LIMIT, offset, searchText: '' }, { hostAllowlist: HOST_ALLOWLIST })
   let offset = 0
   let total = Infinity
+  let done = false
   for (let page = 0; page < maxPages; page++) {
-    const data = await postJson(
-      endpoint,
-      { appliedFacets: {}, limit: PAGE_LIMIT, offset, searchText: '' },
-      { hostAllowlist: HOST_ALLOWLIST }
-    )
+    let data
+    try {
+      data = await getPage(offset)
+    } catch (err) {
+      if (page === 0) throw err
+      await sleep(PAGE_RETRY_MS)
+      try {
+        data = await getPage(offset)
+      } catch {
+        break
+      }
+    }
     const postings = Array.isArray(data && data.jobPostings) ? data.jobPostings : []
-    if (typeof data?.total === 'number') total = data.total
+    if (typeof data?.total === 'number' && !(page > 0 && data.total === 0)) total = data.total
     for (const p of postings) out.push(normalize(p, base, site, match.company))
     offset += PAGE_LIMIT
-    if (postings.length === 0 || offset >= total) break
+    if (postings.length === 0 || offset >= total) {
+      done = true
+      break
+    }
+    if (Date.now() >= deadline) break
     await sleep(PAGE_DELAY_MS)
   }
+  // Some tenants also cap the reported `total` itself at 2000 (Trinity Health, live 2026-10-05), so a
+  // board that "ends" exactly at the window is treated as cut off too.
+  if (!done || out.length >= RESULT_WINDOW) out.incomplete = true
   return out
 }
 
@@ -123,12 +154,13 @@ const workday = {
   // first that returns postings (a wrong name 404s or returns empty, costing one request).
   async fetch(match, ctx = {}) {
     const maxPages = ctx.maxPages || MAX_PAGES
+    const deadline = Number(ctx.budgetMs) > 0 ? Date.now() + Number(ctx.budgetMs) : Infinity
     const sites = match.site ? [match.site] : COMMON_SITES
     let firstOk = null
     let lastErr
     for (const site of sites) {
       try {
-        const jobs = await fetchSite(match, site, maxPages)
+        const jobs = await fetchSite(match, site, maxPages, deadline)
         if (match.site || jobs.length > 0) return jobs
         if (!firstOk) firstOk = jobs
       } catch (err) {

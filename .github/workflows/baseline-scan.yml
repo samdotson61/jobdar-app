@@ -1,0 +1,49 @@
+name: Baseline scan
+
+# Once a day, look at every employer board in the shipped catalog and fold what is posted into the
+# board ledger on the `baseline-data` branch (ledger.tsv / boards.tsv / runs.tsv). That history —
+# when each posting appeared, disappeared, or came back — is what lets Jobdar describe how an
+# employer actually hires. Public boards in, one data branch out; no user data is involved.
+
+on:
+  schedule:
+    - cron: '17 9 * * *' # 09:17 UTC — early morning across the US, off the top of the hour
+  workflow_dispatch:
+
+permissions:
+  contents: write # pushes the data branch only
+
+concurrency:
+  group: baseline-scan
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund
+      - name: Open the data branch (created on the first run)
+        run: |
+          if git fetch --depth=1 origin baseline-data:baseline-data 2>/dev/null; then
+            git worktree add baseline baseline-data
+          else
+            git worktree add --orphan -b baseline-data baseline
+          fi
+      - run: node scripts/baseline-scan.mjs --out baseline
+      - name: Save the ledger
+        working-directory: baseline
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add ledger.tsv boards.tsv runs.tsv
+          if git diff --cached --quiet; then
+            echo "no change"
+          else
+            git commit -m "baseline $(date -u +%F)"
+            git push origin baseline-data
+          fi

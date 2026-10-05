@@ -4,6 +4,40 @@ All notable changes to Jobdar are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and Jobdar adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.66.0] — 2026-10-05
+
+**Workday boards are read past the first 40 roles, and Jobdar starts keeping a history of every catalog
+board.** App `1.27.2`; desktop stays `0.5.1` (it picks this engine up at its next build); 190 tests.
+
+- **A Workday scan stopped at 40 postings on most boards.** Many Workday sites report the total number
+  of openings on the first page only and `0` on every page after it; the scanner read that zero as "no
+  more" and stopped after two pages. Measured on the shipped catalog: 34 of 45 Workday boards returned
+  exactly 40 roles — Salesforce lists 1,513. A zero after the first page is now ignored.
+  - `jobdar scan` reads every page (up to the existing 2,000-posting bound). A full-catalog scan takes
+    about 10 minutes now, because those boards are really being read.
+  - The desktop and phone scans give each board a 9-second budget (`ctx.budgetMs`) and keep the newest
+    postings gathered in that time — 240 from Salesforce instead of 40 — so the desktop's 12-second
+    per-board cut-off never drops a big board whole.
+  - One failed page deep in a long board (a 502, a stalled connection) is retried once, then paging stops
+    with the pages already read instead of losing the board.
+  - A board that was not read to its end is returned with `incomplete = true`, and `jobdar scan` leaves
+    such a board out of the "no longer posted" check — a role missing from a cut-off list proves nothing.
+- **The board ledger and the daily baseline scan (new).** `lib/board_ledger_pure.mjs` keeps one row per
+  posting ever seen on a board: when it appeared, when it disappeared, and whether it came back. That
+  history is what lets an employer's own hiring pattern be measured — how long its roles stay open, how
+  many close a month, how often a closed role is reposted. `scripts/baseline-scan.mjs` reads every
+  employer in the catalog, unfiltered, and `.github/workflows/baseline-scan.yml` runs it once a day and
+  stores the result on the `baseline-data` branch (`ledger.tsv`, `boards.tsv`, `runs.tsv`). Only public
+  job boards are read; nothing about any user is involved. Nothing is shown in the apps yet — the
+  history has to accumulate first.
+  - A posting is closed only by a complete look at its board: a failed, cut-off, or suddenly-half-size
+    listing adds what it saw and closes nothing. A posting missing from a single look is restored without
+    being counted as a repost.
+  - First full run: 114 boards, 48,964 open postings.
+- **Known, not fixed here:** nine catalog boards exceed the 2,000-posting bound (their history records
+  arrivals but not closures), and seven catalog entries no longer answer (Avant, Tempus, Medpace,
+  Qualifacts, Genesco, HCA Healthcare, Kohl's).
+
 ## [1.65.1] — 2026-09-29
 
 **Mechanically sound Windows releases, and the AI reads the right roles.** App `1.27.1`, desktop `0.5.1`;

@@ -29,6 +29,7 @@ import { renderDashboard, analyze } from './lib/commands/dashboard.mjs'
 import { renderTui, pipelineView } from './lib/commands/tui.mjs'
 import { mergeScanned, recordEval, serializePipeline, parsePipeline, band, bandConflict, isEvaluated, isTracked, setStatus, pruneScanned, PIPELINE_COLS, recordPrescreen, pendingQueue, roleKey, resolveAlias, recordListingChecks, markListingsFromScan } from './lib/evaluations.mjs'
 import { classifyFetchError, staleActionable, verifyBeforePresent } from './lib/liveness.mjs'
+import { advanceLedger, observationStatus, postedDay, parseTsv, serializeTsv, mergeRuns, LEDGER_COLS, TRUNCATION_CAP } from './lib/board_ledger_pure.mjs'
 import { recheckTargets } from './lib/commands/recheck.mjs'
 import { extractYearsRequired, extractDegreeGate, extractGates, screenDecision, prescreenRole, freshnessPoints, reasonLine, blendSalary, extractCredential, extractField, cvHasField, cvHasCredential, isHardIdentity, extractSponsorship } from './lib/prescreen.mjs'
 import { extractPay, bandVsTarget, formatPay, paySummary, parseSalaryText, SALARY_TOLERANCE, SALARY_FLOOR } from './lib/salary.mjs'
@@ -146,6 +147,40 @@ test('workday: POST pagination accumulates across pages and normalizes postings'
     assert.equal(jobs[0].url, 'https://acme.wd5.myworkdayjobs.com/External/job/r0') // {base}/{site}{externalPath}
     assert.equal(jobs[0].location, 'Indianapolis, IN')
     assert.equal(jobs[0].company, 'Acme')
+  } finally {
+    globalThis.fetch = realFetch
+  }
+})
+
+test('workday: a zero total after the first page does not end paging; a time budget returns what was gathered', async () => {
+  const realFetch = globalThis.fetch
+  const page = (start, n, total) => ({ total, jobPostings: Array.from({ length: n }, (_, i) => ({ title: `Role ${start + i}`, externalPath: `/job/r${start + i}` })) })
+  // the tenant shape that capped scans at 40: total on page one, 0 afterwards
+  globalThis.fetch = async (url, opts) => {
+    const offset = JSON.parse(opts.body).offset
+    await new Promise((r) => setTimeout(r, 5)) // a request takes time — the budget test needs the clock to move
+    return { ok: true, status: 200, json: async () => (offset === 0 ? page(0, 20, 65) : offset < 60 ? page(offset, 20, 0) : page(offset, 5, 0)) }
+  }
+  try {
+    const match = workday.detect({ company: 'Acme', careers_url: 'https://acme.wd5.myworkdayjobs.com/en-US/External' })
+    assert.equal((await workday.fetch(match)).length, 65)
+    // an already-spent budget still returns the first page rather than nothing
+    assert.ok(!(await workday.fetch(match)).incomplete) // read to the end
+    const partial = await workday.fetch(match, { budgetMs: 1 })
+    assert.equal(partial.length, 20)
+    assert.equal(partial[0].title, 'Role 0')
+    assert.equal(partial.incomplete, true)
+    // a page that fails twice ends paging with the pages already read — the board is not lost
+    let calls = 0
+    globalThis.fetch = async (url, opts) => {
+      const offset = JSON.parse(opts.body).offset
+      if (offset === 40) { calls++; return { ok: false, status: 502, json: async () => ({}) } }
+      return { ok: true, status: 200, json: async () => (offset === 0 ? page(0, 20, 65) : page(offset, 20, 0)) }
+    }
+    const cut = await workday.fetch(match)
+    assert.equal(cut.length, 40)
+    assert.equal(cut.incomplete, true)
+    assert.equal(calls, 2) // tried, retried once
   } finally {
     globalThis.fetch = realFetch
   }
@@ -2749,6 +2784,91 @@ test('1.65.1 desktop build: Windows installers are refused off Windows (Mac-buil
   for (const s of ['dist', 'dist:win', 'dist:mac']) assert.equal(pkg.scripts[s], 'node dist-native.mjs', s)
   assert.match(pkg.scripts['dist:all'], /dist-native\.mjs/)
   assert.ok(!/--win/.test(pkg.scripts['dist:all']), 'dist:all never cross-builds Windows')
+})
+
+// ——— Board ledger (the baseline scan's memory of every employer board) ———
+const ledgerObs = (jobs, extra = {}) => ({ board: 'https://b.example/acme', employer: 'Acme', provider: 'greenhouse', ok: true, jobs, ...extra })
+const ledgerJobs = (n, from = 0) => Array.from({ length: n }, (_, i) => ({ url: `https://b.example/acme/${from + i}`, title: `Role ${from + i}`, location: 'Dayton, OH' }))
+
+test('board ledger: a posting closes only on a complete look, dated between the two looks', () => {
+  let s = advanceLedger({ rows: [], boards: [] }, [ledgerObs(ledgerJobs(3))], '2026-10-01')
+  assert.equal(s.totals.added, 3)
+  assert.equal(s.rows.every((r) => r.first_seen === '2026-10-01' && !r.gone_on && !r.last_seen), true)
+  // a failed look closes nothing
+  s = advanceLedger(s, [ledgerObs([], { ok: false, error: 'HTTP 503 ' })], '2026-10-02')
+  assert.equal(s.totals.closed, 0)
+  assert.equal(s.runs[0].status, 'failed')
+  // role 0 is absent from the next complete look → closed, last seen at the previous complete look
+  s = advanceLedger(s, [ledgerObs(ledgerJobs(2, 1))], '2026-10-03')
+  const gone = s.rows.find((r) => r.url.endsWith('/0'))
+  assert.equal(gone.gone_on, '2026-10-03')
+  assert.equal(gone.last_seen, '2026-10-01')
+  assert.equal(s.boards[0].last_ok, '2026-10-03')
+})
+
+test('board ledger: a returning posting is reopened and counted, never re-added', () => {
+  let s = advanceLedger({ rows: [], boards: [] }, [ledgerObs(ledgerJobs(2))], '2026-10-01')
+  s = advanceLedger(s, [ledgerObs(ledgerJobs(1))], '2026-10-02')
+  s = advanceLedger(s, [ledgerObs(ledgerJobs(1))], '2026-10-03') // still absent on a second look → a real closure
+  s = advanceLedger(s, [ledgerObs(ledgerJobs(2))], '2026-10-09')
+  assert.equal(s.rows.length, 2)
+  const back = s.rows.find((r) => r.url.endsWith('/1'))
+  assert.equal(back.gone_on, '')
+  assert.equal(back.reopens, '1')
+  assert.equal(back.first_seen, '2026-10-01')
+})
+
+test('board ledger: missing from ONE look is a paging blip — restored, not counted as a repost', () => {
+  let s = advanceLedger({ rows: [], boards: [] }, [ledgerObs(ledgerJobs(2))], '2026-10-01')
+  s = advanceLedger(s, [ledgerObs(ledgerJobs(1))], '2026-10-02')
+  assert.equal(s.rows.find((r) => r.url.endsWith('/1')).gone_on, '2026-10-02') // provisional
+  s = advanceLedger(s, [ledgerObs(ledgerJobs(2))], '2026-10-03')
+  const back = s.rows.find((r) => r.url.endsWith('/1'))
+  assert.equal(back.gone_on, '')
+  assert.equal(back.reopens, '')
+  assert.equal(s.totals.reopened, 0)
+})
+
+test('board ledger: a truncated or suspiciously short listing never closes anything', () => {
+  assert.equal(observationStatus({ ok: true, count: TRUNCATION_CAP }), 'partial')
+  assert.equal(observationStatus({ ok: true, count: 4, prevCount: 40 }), 'partial')
+  assert.equal(observationStatus({ ok: true, count: 30, prevCount: 40 }), 'ok')
+  assert.equal(observationStatus({ ok: false, count: 0 }), 'failed')
+  assert.equal(observationStatus({ ok: true, count: 30, prevCount: 30, incomplete: true }), 'partial')
+  let s = advanceLedger({ rows: [], boards: [] }, [ledgerObs(ledgerJobs(20))], '2026-10-01')
+  s = advanceLedger(s, [ledgerObs([...ledgerJobs(3), ...ledgerJobs(1, 99)])], '2026-10-02')
+  assert.equal(s.runs[0].status, 'partial')
+  assert.equal(s.totals.closed, 0)
+  assert.equal(s.totals.added, 1) // what a partial look DID see still counts
+  assert.equal(s.boards[0].last_ok, '2026-10-01')
+  // …but a second look that is just as short is believed: the board really shrank
+  s = advanceLedger(s, [ledgerObs([...ledgerJobs(3), ...ledgerJobs(1, 99)])], '2026-10-03')
+  assert.equal(s.runs[0].status, 'ok')
+  assert.equal(s.totals.closed, 17)
+  assert.equal(s.rows.find((r) => r.url.endsWith('/5')).last_seen, '2026-10-01')
+})
+
+test('board ledger: posting dates — ISO passes through, Workday text resolves, "30+" stays a bound', () => {
+  assert.equal(postedDay('2026-06-01T08:00:00Z', '2026-10-05'), '2026-06-01')
+  assert.equal(postedDay('Posted Today', '2026-10-05'), '2026-10-05')
+  assert.equal(postedDay('Posted Yesterday', '2026-10-05'), '2026-10-04')
+  assert.equal(postedDay('Posted 6 Days Ago', '2026-10-05'), '2026-09-29')
+  assert.equal(postedDay('Posted 30+ Days Ago', '2026-10-05'), '<2026-09-05')
+  assert.equal(postedDay(null, '2026-10-05'), '')
+  // a later exact date replaces a bound; a bound never replaces an exact date
+  let s = advanceLedger({ rows: [], boards: [] }, [ledgerObs([{ url: 'u1', title: 'A', postedOn: 'Posted 30+ Days Ago' }, { url: 'u2', title: 'B', postedOn: '2026-08-01' }])], '2026-10-05')
+  s = advanceLedger(s, [ledgerObs([{ url: 'u1', title: 'A', postedOn: '2026-07-04' }, { url: 'u2', title: 'B', postedOn: 'Posted 30+ Days Ago' }])], '2026-10-06')
+  assert.equal(s.rows.find((r) => r.url === 'u1').posted, '2026-07-04')
+  assert.equal(s.rows.find((r) => r.url === 'u2').posted, '2026-08-01')
+})
+
+test('board ledger: TSV round-trips and a same-day re-run replaces its own log lines', () => {
+  const s = advanceLedger({ rows: [], boards: [] }, [ledgerObs([{ url: 'u1', title: 'Tab\there', location: 'X' }])], '2026-10-01')
+  const back = parseTsv(serializeTsv(s.rows, LEDGER_COLS), LEDGER_COLS)
+  assert.equal(back.length, 1)
+  assert.equal(back[0].title, 'Tab here')
+  const merged = mergeRuns(mergeRuns([], s.runs), s.runs)
+  assert.equal(merged.length, 1)
 })
 
 let passed = 0
