@@ -12,7 +12,7 @@ import { EventEmitter } from 'node:events'
 import { getStrings, listKeys, getT } from './lib/i18n.mjs'
 import { globalCommandStatus } from './doctor.mjs'
 import { PROFILE_DEFAULTS, SUPPORTED_LANGUAGES, paths, ROOT as PKG_ROOT, atomicWrite } from './lib/config.mjs'
-import { resolveProvider, providerIds } from './providers/_contract.mjs'
+import { resolveProvider, providerIds, capNewest } from './providers/_contract.mjs'
 import greenhouse, { parseJobUrl as parseGhJobUrl } from './providers/greenhouse.mjs'
 import workday, { HOST_ALLOWLIST as WORKDAY_HOSTS, parseWorkdayUrl, parseWorkdayJobUrl } from './providers/workday.mjs'
 import icims, { HOST_ALLOWLIST as ICIMS_HOSTS, parseJobPostingsFromHtml } from './providers/icims.mjs'
@@ -27,7 +27,7 @@ import { selectEmployers, toPortals, defaultPortalsForRegions } from './lib/seed
 import { parseResumeText } from './lib/resume.mjs'
 import { renderDashboard, analyze } from './lib/commands/dashboard.mjs'
 import { renderTui, pipelineView } from './lib/commands/tui.mjs'
-import { mergeScanned, recordEval, serializePipeline, parsePipeline, band, bandConflict, isEvaluated, isTracked, setStatus, pruneScanned, PIPELINE_COLS, recordPrescreen, pendingQueue, roleKey, resolveAlias, recordListingChecks, markListingsFromScan } from './lib/evaluations.mjs'
+import { mergeScanned, recordEval, serializePipeline, parsePipeline, band, bandConflict, isEvaluated, isTracked, setStatus, pruneScanned, PIPELINE_COLS, recordPrescreen, pendingQueue, roleKey, resolveAlias, recordListingChecks, markListingsFromScan, capScanned } from './lib/evaluations.mjs'
 import { classifyFetchError, staleActionable, verifyBeforePresent } from './lib/liveness.mjs'
 import { advanceLedger, observationStatus, postedDay, parseTsv, serializeTsv, mergeRuns, LEDGER_COLS, TRUNCATION_CAP } from './lib/board_ledger_pure.mjs'
 import { recheckTargets } from './lib/commands/recheck.mjs'
@@ -181,6 +181,17 @@ test('workday: a zero total after the first page does not end paging; a time bud
     assert.equal(cut.length, 40)
     assert.equal(cut.incomplete, true)
     assert.equal(calls, 2) // tried, retried once
+    // a size limit (the phone's) stops asking once it has that many
+    let asked = 0
+    globalThis.fetch = async (url, opts) => {
+      asked++
+      const offset = JSON.parse(opts.body).offset
+      return { ok: true, status: 200, json: async () => page(offset, 20, offset === 0 ? 500 : 0) }
+    }
+    const capped = await workday.fetch(match, { maxPostings: 40 })
+    assert.equal(capped.length, 40)
+    assert.equal(asked, 2)
+    assert.equal(capped.incomplete, true)
   } finally {
     globalThis.fetch = realFetch
   }
@@ -2786,6 +2797,57 @@ test('1.65.1 desktop build: Windows installers are refused off Windows (Mac-buil
   assert.ok(!/--win/.test(pkg.scripts['dist:all']), 'dist:all never cross-builds Windows')
 })
 
+test('greenhouse: a posting is dated by first_published, not by its last edit', async () => {
+  const realFetch = globalThis.fetch
+  globalThis.fetch = async () => ({ ok: true, status: 200, json: async () => ({ jobs: [
+    { title: 'A', absolute_url: 'https://job-boards.greenhouse.io/acme/jobs/1', location: { name: 'Omaha, NE' }, first_published: '2025-05-01T10:00:00-04:00', updated_at: '2026-10-01T10:00:00-04:00' },
+    { title: 'B', absolute_url: 'https://job-boards.greenhouse.io/acme/jobs/2', location: { name: 'Omaha, NE' }, updated_at: '2026-09-20T10:00:00-04:00' },
+  ] }) })
+  try {
+    const jobs = await greenhouse.fetch(greenhouse.detect({ company: 'Acme', careers_url: 'https://job-boards.greenhouse.io/acme' }))
+    assert.equal(jobs[0].postedOn.slice(0, 10), '2025-05-01')
+    assert.equal(jobs[1].postedOn.slice(0, 10), '2026-09-20') // no first_published → the edit date is all there is
+  } finally {
+    globalThis.fetch = realFetch
+  }
+})
+
+test('capNewest: a board over the size limit keeps its newest postings and is marked incomplete', () => {
+  const dated = [{ url: 'a', postedOn: '2026-01-01' }, { url: 'b', postedOn: '2026-10-01T08:00:00Z' }, { url: 'c', postedOn: '2026-06-01' }]
+  const out = capNewest(dated, 2)
+  assert.deepEqual(out.map((j) => j.url), ['b', 'c'])
+  assert.equal(out.incomplete, true)
+  assert.equal(capNewest(dated, 5), dated) // under the limit → untouched
+  const undated = [{ url: 'x', postedOn: 'Posted Today' }, { url: 'y', postedOn: 'Posted 3 Days Ago' }, { url: 'z' }]
+  assert.deepEqual(capNewest(undated, 2).map((j) => j.url), ['x', 'y']) // no real dates → the board's own order
+})
+
+test('capScanned: the saved list is bounded — unseen roles go first, then an even share per employer; your work is never dropped', () => {
+  const row = (company, n, extra = {}) => ({ company, role: `R${n}`, url: `https://x/${company}/${n}`, status: 'scanned', score: '', first_seen: '2026-10-01', prescreen: '', screen_reason: '', aliases: '', ...extra })
+  const acme = Array.from({ length: 6 }, (_, i) => row('Acme', i))
+  const bolt = Array.from({ length: 2 }, (_, i) => row('Bolt', i))
+  const old = row('Gone', 0, { first_seen: '2026-08-01' })
+  const mine = [row('Gone', 1, { status: 'evaluated', score: '4.2' }), row('Gone', 2, { status: 'applied', score: '4.5' })]
+  const all = [...acme, ...bolt, old, ...mine]
+  assert.equal(capScanned(all, 9).dropped, 0) // 9 untouched → at the limit, nothing goes
+  const active = new Set([...acme, ...bolt].map((r) => r.url))
+  // one over: the role no board showed this scan is the one to go
+  const a = capScanned(all, 8, active)
+  assert.equal(a.dropped, 1)
+  assert.ok(!a.rows.includes(old))
+  // boards alone exceed the limit: each employer keeps an even share, a prescreen fit first, a screened role last
+  acme[5].prescreen = '82'
+  acme[0].prescreen = '0'
+  acme[0].screen_reason = 'years: "7+ years"'
+  const b = capScanned(all, 4, active)
+  const kept = b.rows.filter((r) => r.status === 'scanned').map((r) => `${r.company}${r.role}`)
+  assert.deepEqual(kept.sort(), ['AcmeR1', 'AcmeR5', 'BoltR0', 'BoltR1'])
+  assert.equal(b.rows.filter((r) => r.status !== 'scanned').length, 2) // evaluated + applied untouched
+  // stable: the kept rows survive a later scan that re-finds the dropped ones as new
+  const again = capScanned([...b.rows, row('Acme', 2, { first_seen: '2026-10-02' }), row('Acme', 3, { first_seen: '2026-10-02' })], 4, active)
+  assert.deepEqual(again.rows.filter((r) => r.status === 'scanned').map((r) => `${r.company}${r.role}`).sort(), ['AcmeR1', 'AcmeR5', 'BoltR0', 'BoltR1'])
+})
+
 // ——— Board ledger (the baseline scan's memory of every employer board) ———
 const ledgerObs = (jobs, extra = {}) => ({ board: 'https://b.example/acme', employer: 'Acme', provider: 'greenhouse', ok: true, jobs, ...extra })
 const ledgerJobs = (n, from = 0) => Array.from({ length: n }, (_, i) => ({ url: `https://b.example/acme/${from + i}`, title: `Role ${from + i}`, location: 'Dayton, OH' }))
@@ -2860,6 +2922,10 @@ test('board ledger: posting dates — ISO passes through, Workday text resolves,
   s = advanceLedger(s, [ledgerObs([{ url: 'u1', title: 'A', postedOn: '2026-07-04' }, { url: 'u2', title: 'B', postedOn: 'Posted 30+ Days Ago' }])], '2026-10-06')
   assert.equal(s.rows.find((r) => r.url === 'u1').posted, '2026-07-04')
   assert.equal(s.rows.find((r) => r.url === 'u2').posted, '2026-08-01')
+  // between two exact dates the earlier stands (a refreshed posting is not a newer one)
+  s = advanceLedger(s, [ledgerObs([{ url: 'u1', title: 'A', postedOn: '2026-09-30' }, { url: 'u2', title: 'B', postedOn: '2025-12-01' }])], '2026-10-07')
+  assert.equal(s.rows.find((r) => r.url === 'u1').posted, '2026-07-04')
+  assert.equal(s.rows.find((r) => r.url === 'u2').posted, '2025-12-01')
 })
 
 test('board ledger: TSV round-trips and a same-day re-run replaces its own log lines', () => {

@@ -56,6 +56,20 @@ export function resolveProvider(portal) {
   return null
 }
 
+// Keep at most `max` postings from one board — the size limit a phone scan runs under
+// (ctx.maxPostings; paged providers also stop requesting once they have that many). Newest first when
+// every posting carries a real date; otherwise the board's own order stands (Workday lists newest
+// first already). A trimmed list is marked `incomplete`: what was left out is unseen, not gone.
+export function capNewest(jobs, max) {
+  const n = Number(max)
+  if (!Array.isArray(jobs) || !(n > 0) || jobs.length <= n) return jobs
+  const dated = (j) => /^\d{4}-\d{2}-\d{2}/.test(String((j && j.postedOn) || ''))
+  const ordered = jobs.every(dated) ? jobs.slice().sort((a, b) => String(b.postedOn).localeCompare(String(a.postedOn))) : jobs
+  const out = ordered.slice(0, n)
+  out.incomplete = true
+  return out
+}
+
 // Fetch one role's full JD for the model's `eval`, via whichever provider owns the URL. Returns a Desc
 // ({ title, location, description }) or null if no provider matches or it can't be fetched.
 export async function fetchJobDescription(url, ctx = {}) {

@@ -96,7 +96,8 @@ export function normalize(posting, base, site, company) {
 // Whenever the board was NOT read to its end (budget, failed page, MAX_PAGES), the returned array
 // carries `incomplete = true`, so callers that reason from ABSENCE (liveness, the board ledger) know
 // a missing posting proves nothing.
-async function fetchSite(match, site, maxPages = MAX_PAGES, deadline = Infinity) {
+// `limit` (ctx.maxPostings) stops paging once that many postings are in hand — the phone's size limit.
+async function fetchSite(match, site, maxPages = MAX_PAGES, deadline = Infinity, limit = Infinity) {
   const base = `https://${match.tenant}.${match.shard}.myworkdayjobs.com`
   const endpoint = `${base}/wday/cxs/${match.tenant}/${site}/jobs`
   const out = []
@@ -125,7 +126,7 @@ async function fetchSite(match, site, maxPages = MAX_PAGES, deadline = Infinity)
       done = true
       break
     }
-    if (Date.now() >= deadline) break
+    if (Date.now() >= deadline || out.length >= limit) break
     await sleep(PAGE_DELAY_MS)
   }
   // Some tenants also cap the reported `total` itself at 2000 (Trinity Health, live 2026-10-05), so a
@@ -155,12 +156,13 @@ const workday = {
   async fetch(match, ctx = {}) {
     const maxPages = ctx.maxPages || MAX_PAGES
     const deadline = Number(ctx.budgetMs) > 0 ? Date.now() + Number(ctx.budgetMs) : Infinity
+    const limit = Number(ctx.maxPostings) > 0 ? Number(ctx.maxPostings) : Infinity
     const sites = match.site ? [match.site] : COMMON_SITES
     let firstOk = null
     let lastErr
     for (const site of sites) {
       try {
-        const jobs = await fetchSite(match, site, maxPages, deadline)
+        const jobs = await fetchSite(match, site, maxPages, deadline, limit)
         if (match.site || jobs.length > 0) return jobs
         if (!firstOk) firstOk = jobs
       } catch (err) {

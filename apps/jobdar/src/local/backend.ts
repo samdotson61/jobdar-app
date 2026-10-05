@@ -6,19 +6,27 @@
 // @ts-ignore — the engine is plain JS
 import {
   resolveProvider, fetchJobDescription, filterByLevel, filterByLocation,
-  mergeScanned, recordPrescreen, recordEval, parsePipeline, serializePipeline, bandConflict,
+  mergeScanned, capScanned, recordPrescreen, recordEval, parsePipeline, serializePipeline, bandConflict,
   recordListingChecks, checkListing, isEvaluated, isTracked, thumbFromWouldApply,
   prescreenRole, reasonLine, paySummary, relevanceScore, expandQueryTerms,
   prepEval, buildVerdict, evalSystemFor, EVAL_JSON_SCHEMA,
   TAILOR_SYSTEM, buildTailorUser, TAILOR_JSON_SCHEMA, parseEvalJson, coverIsComplete, fillSignature, assembleTailoredCv, directiveBlock,
   OUTREACH_SYSTEM, buildOutreachUser, OUTREACH_JSON_SCHEMA, lintDraft, canContact, canFollowup, LINKEDIN_NOTE_MAX,
-  SEED_EMPLOYERS, seedToPortals, stripTags, decodeEntities,
+  SEED_EMPLOYERS, seedToPortals, stripTags, decodeEntities, capNewest,
 } from '@jobdar/engine';
 import { unzipSync, strFromU8 } from 'fflate';
 import { readText, writeText, readJson, writeJson, FILES } from './files';
 import { installedTier, completionJson, llmAvailable } from './llm';
 
 const today = () => new Date().toISOString().slice(0, 10);
+
+// The most postings a phone takes from one board per scan. Measured on the shipped catalog (2026-10-05,
+// 103 boards, 48,964 postings): the median board has 201 postings, so half the catalog is still read
+// whole; a Midwest scan drops from ~790 requests to ~200 and the saved list from ~8,800 rows to ~2,300.
+const BOARD_CAP = 200;
+// The most never-opened roles a phone keeps. Every action re-reads the saved list, and nothing else
+// on the device ever removes a role — without a bound the list grows with every scan.
+const LIST_CAP = 3000;
 
 // ---- profile (the device's equivalent of config/profile.yml; CLI key names on purpose) ----
 type LocalProfile = {
@@ -177,14 +185,17 @@ export async function localCall(path: string, method: 'GET' | 'POST', body: any)
         await writeJson(FILES.portals, portals);
       }
       const kept: any[] = [];
+      const seenUrls = new Set<string>();
       let excludedLevel = 0, excludedRegion = 0, resolved = 0;
       await pool(portals, 4, async (portal) => {
         const hit = resolveProvider(portal);
         if (!hit) return;
         resolved++;
         try {
-          // budgetMs: big Workday boards page for up to a minute; on-device the scan takes each board's newest postings within the budget.
-          const jobs = await hit.provider.fetch(hit.match, { budgetMs: 9000 });
+          // On-device a board is limited to its newest BOARD_CAP postings (paged boards stop asking once they
+          // have them); budgetMs is the backstop on a slow connection — the board hands back what it has.
+          const jobs = capNewest(await hit.provider.fetch(hit.match, { budgetMs: 9000, maxPostings: BOARD_CAP }), BOARD_CAP);
+          for (const j of jobs) if (j && j.url) seenUrls.add(j.url);
           const lvl = filterByLevel(jobs, levels);
           const loc = filterByLocation(lvl.kept, regions, { userMetro: profile.location });
           for (const j of loc.kept) kept.push(j);
@@ -192,7 +203,9 @@ export async function localCall(path: string, method: 'GET' | 'POST', body: any)
           excludedRegion += loc.excluded;
         } catch { /* one slow/broken board never kills the scan */ }
       });
-      const rows = mergeScanned(await readPipe(), kept, today());
+      // The saved list is bounded: past LIST_CAP untouched roles, ones no board showed this scan go first,
+      // then every employer keeps an even share. Evaluated and tracked roles are never dropped.
+      const { rows } = capScanned(mergeScanned(await readPipe(), kept, today()), LIST_CAP, seenUrls);
       await writePipe(rows);
       return { ok: true, found: kept.length, excludedLevel, excludedRegion, portals: resolved, rows };
     }

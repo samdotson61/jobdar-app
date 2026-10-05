@@ -4,6 +4,30 @@ All notable changes to Jobdar are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and Jobdar adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.66.1] — 2026-10-05
+
+**Honest Greenhouse dates, a repaired catalog, and size limits for scanning on a phone.** App `1.27.3`;
+desktop stays `0.5.1`; 193 tests.
+
+- **Greenhouse roles are dated by when they were first published.** The scanner preferred `updated_at`,
+  which moves on any edit and on board-wide refreshes — every one of Hudl's 36 roles had been "updated"
+  within 11 days, though some were first published 504 days earlier, so year-old postings ranked as
+  fresh. `first_published` now wins; the edit date is used only when it is all a board gives. The board
+  ledger keeps the earliest date it has seen for a posting, so its first day of entries corrects itself.
+- **Catalog repairs (111 employers).** Avant, Tempus and Qualifacts moved from Greenhouse to Workday and
+  Kohl's moved Workday servers — all four repointed and re-verified live. Medpace, Genesco and HCA
+  Healthcare were removed: none has a board a current provider can read (Medpace and Genesco publish
+  feeds a future provider could use; HCA's site refuses automated readers).
+- **A phone takes at most 200 postings from one board** (`ctx.maxPostings` + `capNewest`). Workday and
+  iCIMS stop requesting pages once they have them; a board with real dates keeps its newest. Measured on
+  the catalog: the median board has 201 postings, so half are still read whole, while a Midwest scan
+  drops from about 790 requests to about 200. The desktop keeps its 9-second budget and `jobdar scan`
+  still reads everything.
+- **A phone keeps at most 3,000 never-opened roles** (`capScanned`). Nothing on the device ever removed
+  a discovered role, so the saved list grew with every scan. Past the limit, roles no board showed this
+  scan go first (oldest first); if what the boards list right now is still over the limit, every
+  employer keeps an even share, a prescreen fit first. Evaluated and tracked roles are never dropped.
+
 ## [1.66.0] — 2026-10-05
 
 **Workday boards are read past the first 40 roles, and Jobdar starts keeping a history of every catalog

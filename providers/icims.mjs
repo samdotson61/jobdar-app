@@ -128,11 +128,12 @@ export function parseJobPostingsFromHtml(html, base, company) {
   return dedupe(parseDomRows(html, company), base)
 }
 
-async function fetchViaHtml(match) {
+// `limit` (ctx.maxPostings) stops paging once that many postings are in hand — the phone's size limit.
+async function fetchViaHtml(match, limit = Infinity) {
   const base = `https://${match.host}`
   const all = []
   const seen = new Set()
-  for (let pr = 0; pr < MAX_PAGES; pr++) {
+  for (let pr = 0; pr < MAX_PAGES && all.length < limit; pr++) {
     let html
     try {
       html = await fetchText(searchUrl(match.host, pr), { hostAllowlist: HOST_ALLOWLIST })
@@ -206,7 +207,7 @@ const icims = {
   // Default zero-token HTML/JSON-LD path. If it finds nothing (likely a JS-rendered widget) and
   // rendering is enabled (`--playwright`), fall back to Playwright. Otherwise return what we have.
   async fetch(match, ctx = {}) {
-    const jobs = await fetchViaHtml(match)
+    const jobs = await fetchViaHtml(match, Number(ctx.maxPostings) > 0 ? Number(ctx.maxPostings) : Infinity)
     if (jobs.length > 0) return jobs
     if (ctx.render) return fetchViaPlaywright(match)
     return jobs

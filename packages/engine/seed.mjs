@@ -81,7 +81,7 @@ export const SEED_EMPLOYERS = [
  },
  {
   "company": "Avant",
-  "careers_url": "https://job-boards.greenhouse.io/avant",
+  "careers_url": "https://avant.wd503.myworkdayjobs.com/External_Careers",
   "region": "midwest",
   "metro": "Chicago, IL",
   "sector": "fintech"
@@ -95,38 +95,17 @@ export const SEED_EMPLOYERS = [
  },
  {
   "company": "Tempus",
-  "careers_url": "https://job-boards.greenhouse.io/tempus",
+  "careers_url": "https://tempus.wd5.myworkdayjobs.com/Tempus_Careers",
   "region": "midwest",
   "metro": "Chicago, IL",
   "sector": "health-tech"
  },
  {
-  "company": "Medpace",
-  "careers_url": "https://job-boards.greenhouse.io/medpace",
-  "region": "midwest",
-  "metro": "Cincinnati, OH",
-  "sector": "health-tech"
- },
- {
   "company": "Qualifacts",
-  "careers_url": "https://job-boards.greenhouse.io/qualifacts",
+  "careers_url": "https://qualifacts.wd5.myworkdayjobs.com/Qualifacts_External_Careers",
   "region": "southeast",
   "metro": "Nashville, TN",
   "sector": "health-tech"
- },
- {
-  "company": "Genesco",
-  "careers_url": "https://careers-genesco.icims.com/jobs/search",
-  "region": "southeast",
-  "metro": "Nashville, TN",
-  "sector": "retail"
- },
- {
-  "company": "HCA Healthcare",
-  "careers_url": "https://hca.wd5.myworkdayjobs.com/HCAHospitals",
-  "region": "southeast",
-  "metro": "Nashville, TN",
-  "sector": "healthcare"
  },
  {
   "company": "84.51°",
@@ -298,7 +277,7 @@ export const SEED_EMPLOYERS = [
  },
  {
   "company": "Kohl's",
-  "careers_url": "https://kohls.wd1.myworkdayjobs.com/kohlscareers",
+  "careers_url": "https://kohls.wd504.myworkdayjobs.com/kohlscareers",
   "region": "midwest",
   "metro": "Menomonee Falls, WI",
   "sector": "retail"

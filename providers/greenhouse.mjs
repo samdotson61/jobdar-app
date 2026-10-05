@@ -68,7 +68,10 @@ const greenhouse = {
       url: j.absolute_url,
       company: match.company,
       location: (j.location && j.location.name) || '',
-      postedOn: j.updated_at || j.first_published || null,
+      // first_published is when the role went up; updated_at moves on any edit — and on board-wide
+      // refreshes (live 2026-10-05: all 36 Hudl roles "updated" within 11 days, first published up to
+      // 504 days ago), which made year-old postings rank as fresh.
+      postedOn: j.first_published || j.updated_at || null,
     }))
   },
 
