@@ -101,7 +101,14 @@ async function fetchSite(match, site, maxPages = MAX_PAGES, deadline = Infinity,
   const base = `https://${match.tenant}.${match.shard}.myworkdayjobs.com`
   const endpoint = `${base}/wday/cxs/${match.tenant}/${site}/jobs`
   const out = []
-  const getPage = (offset) => postJson(endpoint, { appliedFacets: {}, limit: PAGE_LIMIT, offset, searchText: '' }, { hostAllowlist: HOST_ALLOWLIST })
+  // Under a budget no single request may outlive it: with a dozen boards loading at once a page can
+  // take seconds, and one slow page after the budget pushed a board past the desktop's 12 s cut-off,
+  // losing all of it (Cleveland Clinic, intermittently). A request is given only the time that is left.
+  const getPage = (offset) => {
+    const opts = { hostAllowlist: HOST_ALLOWLIST }
+    if (deadline !== Infinity) opts.timeoutMs = Math.max(1000, deadline - Date.now())
+    return postJson(endpoint, { appliedFacets: {}, limit: PAGE_LIMIT, offset, searchText: '' }, opts)
+  }
   let offset = 0
   let total = Infinity
   let done = false
@@ -111,6 +118,7 @@ async function fetchSite(match, site, maxPages = MAX_PAGES, deadline = Infinity,
       data = await getPage(offset)
     } catch (err) {
       if (page === 0) throw err
+      if (Date.now() + PAGE_RETRY_MS >= deadline) break // no time left to retry — keep what was read
       await sleep(PAGE_RETRY_MS)
       try {
         data = await getPage(offset)
@@ -120,7 +128,9 @@ async function fetchSite(match, site, maxPages = MAX_PAGES, deadline = Infinity,
     }
     const postings = Array.isArray(data && data.jobPostings) ? data.jobPostings : []
     if (typeof data?.total === 'number' && !(page > 0 && data.total === 0)) total = data.total
-    for (const p of postings) out.push(normalize(p, base, site, match.company))
+    // Big boards carry the odd placeholder entry with no title and no path (5 across the Midwest
+    // catalog once boards were read whole) — it would save as a blank role linking to the board itself.
+    for (const p of postings) if (p && p.title && p.externalPath) out.push(normalize(p, base, site, match.company))
     offset += PAGE_LIMIT
     if (postings.length === 0 || offset >= total) {
       done = true

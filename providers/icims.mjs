@@ -129,10 +129,16 @@ export function parseJobPostingsFromHtml(html, base, company) {
 }
 
 // `limit` (ctx.maxPostings) stops paging once that many postings are in hand — the phone's size limit.
-async function fetchViaHtml(match, limit = Infinity) {
+// `deadline` (ms epoch, from ctx.budgetMs) is for interactive scans: a long board (Benedictine: 608
+// postings, 13 s) ran past the desktop's 12 s per-board cut-off and was dropped whole; with a budget
+// it hands back the pages read so far. Only a page that comes back empty means the board was read to
+// its end — any other stop (budget, limit, failed page, MAX_PAGES) marks the list `incomplete`, so
+// callers that reason from absence know a missing posting proves nothing.
+async function fetchViaHtml(match, limit = Infinity, deadline = Infinity) {
   const base = `https://${match.host}`
   const all = []
   const seen = new Set()
+  let done = false
   for (let pr = 0; pr < MAX_PAGES && all.length < limit; pr++) {
     let html
     try {
@@ -147,10 +153,15 @@ async function fetchViaHtml(match, limit = Infinity) {
       seen.add(k)
       return true
     })
-    if (fresh.length === 0) break
+    if (fresh.length === 0) {
+      done = true
+      break
+    }
     all.push(...fresh)
+    if (Date.now() >= deadline) break
     await sleep(PAGE_DELAY_MS)
   }
+  if (!done && all.length > 0) all.incomplete = true
   return all
 }
 
@@ -207,7 +218,11 @@ const icims = {
   // Default zero-token HTML/JSON-LD path. If it finds nothing (likely a JS-rendered widget) and
   // rendering is enabled (`--playwright`), fall back to Playwright. Otherwise return what we have.
   async fetch(match, ctx = {}) {
-    const jobs = await fetchViaHtml(match, Number(ctx.maxPostings) > 0 ? Number(ctx.maxPostings) : Infinity)
+    const jobs = await fetchViaHtml(
+      match,
+      Number(ctx.maxPostings) > 0 ? Number(ctx.maxPostings) : Infinity,
+      Number(ctx.budgetMs) > 0 ? Date.now() + Number(ctx.budgetMs) : Infinity
+    )
     if (jobs.length > 0) return jobs
     if (ctx.render) return fetchViaPlaywright(match)
     return jobs

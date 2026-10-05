@@ -63,9 +63,14 @@ const greenhouse = {
     const url = `https://boards-api.greenhouse.io/v1/boards/${encodeURIComponent(match.token)}/jobs`
     const data = await fetchJson(url, { hostAllowlist: API_HOST_ALLOWLIST })
     const jobs = Array.isArray(data && data.jobs) ? data.jobs : []
+    // Some boards publish each role under the employer's own site (jamf.com/…?gh_jid=123). That URL
+    // names no board, so the JD fetch had no route — 25 of a Midwest scan's Greenhouse roles could
+    // never be prescreened or scored. Those roles are listed under Greenhouse's own job URL instead,
+    // which redirects a person to the same employer page (verified live 2026-10-05).
+    const jobUrl = (j) => (parseJobUrl(j.absolute_url) || !j.id ? j.absolute_url : `https://job-boards.greenhouse.io/${encodeURIComponent(match.token)}/jobs/${j.id}`)
     return jobs.map((j) => ({
       title: j.title,
-      url: j.absolute_url,
+      url: jobUrl(j),
       company: match.company,
       location: (j.location && j.location.name) || '',
       // first_published is when the role went up; updated_at moves on any edit — and on board-wide

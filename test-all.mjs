@@ -168,6 +168,12 @@ test('workday: a zero total after the first page does not end paging; a time bud
     assert.equal((await workday.fetch(match)).length, 65)
     // an already-spent budget still returns the first page rather than nothing
     assert.ok(!(await workday.fetch(match)).incomplete) // read to the end
+    // a placeholder entry (no title, no path) is not a role
+    const withBlank = globalThis.fetch
+    globalThis.fetch = async () => ({ ok: true, status: 200, json: async () => ({ total: 3, jobPostings: [{ title: 'Real', externalPath: '/job/r1' }, { bulletFields: [] }, { title: '', externalPath: '' }] }) })
+    const real = await workday.fetch(match)
+    assert.deepEqual(real.map((j) => j.title), ['Real'])
+    globalThis.fetch = withBlank
     const partial = await workday.fetch(match, { budgetMs: 1 })
     assert.equal(partial.length, 20)
     assert.equal(partial[0].title, 'Role 0')
@@ -281,6 +287,20 @@ test('icims: registered; HTML pagination dedupes and stops on an empty page', as
   try {
     const jobs = await icims.fetch({ host: 'careers-acmehealth.icims.com', company: 'Acme Health' })
     assert.equal(jobs.length, 2)
+    assert.ok(!jobs.incomplete) // an empty page = read to the end
+    // a time budget hands back the pages read so far, marked incomplete (the desktop no longer drops a long board whole)
+    const card = (n) => `<li class="iCIMS_JobCardItem"><div class="title"><a href="/jobs/${n}/role-${n}/job"><h3>Role ${n}</h3></a></div></li>`
+    globalThis.fetch = async (url) => {
+      const pr = Number(new URL(url).searchParams.get('pr'))
+      await new Promise((r) => setTimeout(r, 5))
+      return { ok: true, status: 200, text: async () => (pr < 5 ? `<html><body><ul>${card(pr * 2)}${card(pr * 2 + 1)}</ul></body></html>` : '<html></html>') }
+    }
+    const partial = await icims.fetch({ host: 'careers-acmehealth.icims.com', company: 'Acme Health' }, { budgetMs: 1 })
+    assert.equal(partial.length, 2)
+    assert.equal(partial.incomplete, true)
+    const capped = await icims.fetch({ host: 'careers-acmehealth.icims.com', company: 'Acme Health' }, { maxPostings: 4 })
+    assert.equal(capped.length, 4)
+    assert.equal(capped.incomplete, true)
   } finally {
     globalThis.fetch = realFetch
   }
@@ -2872,6 +2892,11 @@ test('greenhouse: a posting is dated by first_published, not by its last edit', 
     const jobs = await greenhouse.fetch(greenhouse.detect({ company: 'Acme', careers_url: 'https://job-boards.greenhouse.io/acme' }))
     assert.equal(jobs[0].postedOn.slice(0, 10), '2025-05-01')
     assert.equal(jobs[1].postedOn.slice(0, 10), '2026-09-20') // no first_published → the edit date is all there is
+    // a role published under the employer's own site is listed under Greenhouse's job URL, so its JD has a route
+    globalThis.fetch = async () => ({ ok: true, status: 200, json: async () => ({ jobs: [{ id: 6093747004, title: 'C', absolute_url: 'https://www.acme.com/careers/jobs/?gh_jid=6093747004', location: { name: 'Omaha, NE' } }] }) })
+    const custom = await greenhouse.fetch(greenhouse.detect({ company: 'Acme', careers_url: 'https://job-boards.greenhouse.io/acme' }))
+    assert.equal(custom[0].url, 'https://job-boards.greenhouse.io/acme/jobs/6093747004')
+    assert.deepEqual(parseGhJobUrl(custom[0].url), { token: 'acme', id: '6093747004' })
   } finally {
     globalThis.fetch = realFetch
   }

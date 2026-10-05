@@ -4,6 +4,32 @@ All notable changes to Jobdar are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and Jobdar adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.67.1] — 2026-10-05
+
+**Four faults found by driving the real product end to end** — a fresh home through `init`, a live
+48-board scan, `prescreen`, a re-scan, the `serve` API and the phone's scan path. App `1.28.1`; desktop
+stays `0.5.1`; 195 tests.
+
+- **Blank roles from Workday.** Big boards carry the odd placeholder entry with no title and no link;
+  once boards were read whole (1.66.0), five of them were saved as blank roles pointing at the board
+  itself. Entries without a title and a path are no longer roles. (`jobdar scan --prune` clears any
+  already saved.)
+- **Greenhouse roles on an employer's own web address had no description.** Boards such as Jamf,
+  Sprout Social, SpotHero and Jellyvision publish each role under their own site
+  (`jamf.com/…?gh_jid=…`), a URL that names no board — so those roles could never be prescreened or
+  scored (25 in a Midwest scan). They are now listed under Greenhouse's own job URL, which sends a
+  person to the same employer page and gives the description a route. Roles saved earlier under the old
+  address keep it.
+- **The desktop scan dropped long iCIMS boards whole.** Only Workday honoured the per-board time budget;
+  Benedictine (608 postings, 13 s) ran past the desktop's 12-second cut-off and returned nothing. iCIMS
+  now honours the budget too and hands back the pages read so far. It also marks a list `incomplete`
+  whenever it stopped for any reason but an empty page (budget, size limit, a failed page) — before, a
+  failed page ended the list silently, which the board ledger would have read as closures.
+- **A big Workday board could still be lost under load.** With a dozen boards loading at once, one slow
+  page after the budget pushed Cleveland Clinic past the cut-off in one desktop scan out of two. Under a
+  budget a request now gets only the time that is left, and a failed page is not retried when there is
+  no time to retry it. Three desktop scans in a row returned all 44 employers.
+
 ## [1.67.0] — 2026-10-05
 
 **Two new scanner providers bring Medpace and Genesco back.** App `1.28.0`; desktop stays `0.5.1`;
