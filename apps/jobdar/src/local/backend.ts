@@ -12,7 +12,7 @@ import {
   prepEval, buildVerdict, evalSystemFor, EVAL_JSON_SCHEMA,
   TAILOR_SYSTEM, buildTailorUser, TAILOR_JSON_SCHEMA, parseEvalJson, coverIsComplete, fillSignature, assembleTailoredCv, directiveBlock,
   OUTREACH_SYSTEM, buildOutreachUser, OUTREACH_JSON_SCHEMA, lintDraft, canContact, canFollowup, LINKEDIN_NOTE_MAX,
-  SEED_EMPLOYERS, seedToPortals, stripTags, decodeEntities, capNewest,
+  SEED_EMPLOYERS, portalsForScan, stripTags, decodeEntities, capNewest,
 } from '@jobdar/engine';
 import { unzipSync, strFromU8 } from 'fflate';
 import { readText, writeText, readJson, writeJson, FILES } from './files';
@@ -177,13 +177,12 @@ export async function localCall(path: string, method: 'GET' | 'POST', body: any)
       const profile = await readProfile();
       const regions: string[] = Array.isArray(p.regions) && p.regions.length ? p.regions : profile.target_regions.length ? profile.target_regions : ['nationwide'];
       const levels: string[] = Array.isArray(p.levels) && p.levels.length ? p.levels : profile.target_levels.length ? profile.target_levels : ['entry', 'mid', 'senior'];
-      let portals = await readJson<any[]>(FILES.portals, []);
-      if (!portals.length) {
-        const all = regions.includes('nationwide');
-        const employers = (SEED_EMPLOYERS as any[]).filter((e) => all || regions.includes(String(e.region || '')));
-        portals = seedToPortals(employers.length ? employers : (SEED_EMPLOYERS as any[]));
-        await writeJson(FILES.portals, portals);
-      }
+      // The boards this scan reads = the catalog for the regions ASKED FOR + any board the person added
+      // (1.67.4). The saved list used to be seeded once, for the first region searched, and read verbatim
+      // ever after — switching region later scanned the wrong employers.
+      const saved = await readJson<any[]>(FILES.portals, []);
+      const portals = portalsForScan(saved, SEED_EMPLOYERS as any[], regions);
+      if (!saved.length && portals.length) await writeJson(FILES.portals, portals);
       const kept: any[] = [];
       const seenUrls = new Set<string>();
       let excludedLevel = 0, excludedRegion = 0, resolved = 0;

@@ -29,13 +29,7 @@ export { setUsaJobsCredsSource } from '../../providers/_creds.mjs'
 // The region employer catalog (generated from data/seed/employers.yml by scripts/gen-seed.mjs —
 // parity-tested in test-all.mjs so it can't drift).
 export { SEED_EMPLOYERS } from './seed.mjs'
-// Materialize catalog entries into portal configs ({company, careers_url, provider?, site?}) — the pure
-// core of lib/seed.mjs's toPortals, mirrored here because seed.mjs is config/fs-coupled.
-export function seedToPortals(employers) {
-  return (employers || []).map((e) => {
-    const p = { company: e.company, careers_url: e.careers_url }
-    if (e.provider) p.provider = e.provider
-    if (e.site) p.site = e.site
-    return p
-  })
-}
+// Which boards a scan reads (1.67.4): the requested regions' catalog boards + the person's own.
+export * from '../../lib/portals_pure.mjs'
+// Materialize catalog entries into portal configs — kept under its old name for the app.
+export { employersToPortals as seedToPortals } from '../../lib/portals_pure.mjs'

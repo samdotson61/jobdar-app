@@ -4,10 +4,25 @@ All notable changes to Jobdar are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and Jobdar adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.67.4] — 2026-10-05
+
+**Switching region no longer scans the wrong employers.** App `1.28.4`; desktop `0.5.2` rebuilt from
+this version; 196 tests.
+
+- **The desktop and phone scanned the first region's employer list forever.** Both seeded their saved
+  board list from the catalog once — on the first scan, for that day's region — and read that list
+  verbatim ever after. Searching the West first and the Midwest later therefore scanned the West's
+  employers filtered to Midwest locations: almost nothing. Every scan now reads the catalog boards for
+  the regions asked for **plus** every board the person added themselves (`/discover`, or by hand);
+  catalog boards from other regions are left out of that scan but never deleted
+  (`lib/portals_pure.mjs` → `portalsForScan`, shared by `jobdar serve` and the on-device scan).
+  Driven live: West → Salesforce, then Midwest → 13 Hudl and 244 Medpace roles (0 before).
+
 ## [1.67.3] — 2026-10-05
 
 **Desktop 0.5.2 — the 1.66–1.67 scanner fixes reach the desktop app.** App `1.28.3`, desktop `0.5.2`
-(engine 1.67.3, winc 1.41.0-jobdar.2); 195 tests. No engine code change in this version.
+(engine 1.67.3, winc 1.41.0-jobdar.2); 195 tests. No engine code change in this version. *(0.5.2 was
+rebuilt from 1.67.4 before publication, so it also carries the region-switch fix.)*
 
 - The desktop app re-vendors the engine, so it now reads Workday boards past the first 40 roles (with
   the 9-second per-board budget), dates Greenhouse roles by first publication, carries the repaired

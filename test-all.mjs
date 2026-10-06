@@ -32,6 +32,7 @@ import { renderTui, pipelineView } from './lib/commands/tui.mjs'
 import { mergeScanned, recordEval, serializePipeline, parsePipeline, band, bandConflict, isEvaluated, isTracked, setStatus, pruneScanned, PIPELINE_COLS, recordPrescreen, pendingQueue, roleKey, resolveAlias, recordListingChecks, markListingsFromScan, capScanned } from './lib/evaluations.mjs'
 import { classifyFetchError, staleActionable, verifyBeforePresent } from './lib/liveness.mjs'
 import { advanceLedger, observationStatus, postedDay, parseTsv, serializeTsv, mergeRuns, LEDGER_COLS, TRUNCATION_CAP } from './lib/board_ledger_pure.mjs'
+import { portalsForScan, employersToPortals } from './lib/portals_pure.mjs'
 import { recheckTargets } from './lib/commands/recheck.mjs'
 import { extractYearsRequired, extractDegreeGate, extractGates, screenDecision, prescreenRole, freshnessPoints, reasonLine, blendSalary, extractCredential, extractField, cvHasField, cvHasCredential, isHardIdentity, extractSponsorship } from './lib/prescreen.mjs'
 import { extractPay, bandVsTarget, formatPay, paySummary, parseSalaryText, SALARY_TOLERANCE, SALARY_FLOOR } from './lib/salary.mjs'
@@ -2936,6 +2937,27 @@ test('capScanned: the saved list is bounded — unseen roles go first, then an e
   // stable: the kept rows survive a later scan that re-finds the dropped ones as new
   const again = capScanned([...b.rows, row('Acme', 2, { first_seen: '2026-10-02' }), row('Acme', 3, { first_seen: '2026-10-02' })], 4, active)
   assert.deepEqual(again.rows.filter((r) => r.status === 'scanned').map((r) => `${r.company}${r.role}`).sort(), ['AcmeR1', 'AcmeR5', 'BoltR0', 'BoltR1'])
+})
+
+test('portalsForScan: every scan reads the catalog for the regions ASKED FOR plus the person’s own boards (region switch, 1.67.4)', () => {
+  const employers = [
+    { company: 'Hudl', careers_url: 'https://job-boards.greenhouse.io/hudl', region: 'midwest' },
+    { company: 'Medpace', careers_url: 'https://careers.medpace.com/jobs', provider: 'jibe', region: 'midwest' },
+    { company: 'Salesforce', careers_url: 'https://salesforce.wd12.myworkdayjobs.com/External_Career_Site', region: 'west' },
+  ]
+  const own = { company: 'Local Shop', careers_url: 'https://jobs.lever.co/localshop' }
+  // first scan: West → the West catalog; saved as-is (zero-config parity)
+  const first = portalsForScan([], employers, ['west'])
+  assert.deepEqual(first.map((p) => p.company), ['Salesforce'])
+  // the person switches to the Midwest: the Midwest catalog is read, not the saved West list
+  const saved = [...first, own]
+  const second = portalsForScan(saved, employers, ['midwest'])
+  assert.deepEqual(second.map((p) => p.company), ['Hudl', 'Medpace', 'Local Shop'])
+  assert.equal(second[1].provider, 'jibe') // catalog provider/site fields carry over
+  // nationwide (or no region) = the whole catalog + own; nothing duplicated
+  assert.deepEqual(portalsForScan(saved, employers, ['nationwide']).map((p) => p.company), ['Hudl', 'Medpace', 'Salesforce', 'Local Shop'])
+  assert.equal(portalsForScan([...saved, { company: 'dup', careers_url: 'HTTPS://JOBS.LEVER.CO/localshop' }], employers, []).filter((p) => /localshop/i.test(p.careers_url)).length, 1)
+  assert.deepEqual(employersToPortals(employers)[1], { company: 'Medpace', careers_url: 'https://careers.medpace.com/jobs', provider: 'jibe' })
 })
 
 // ——— Board ledger (the baseline scan's memory of every employer board) ———
