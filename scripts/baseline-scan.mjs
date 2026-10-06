@@ -24,7 +24,7 @@ const BOARD_TIMEOUT_MS = 45 * 60 * 1000 // Lowe's is ~12,700 postings = ~640 pag
 // (Lowe's, 12,661); one that caps the report at 2,000 wraps past it and is read in facet partitions
 // instead (ctx.partition). 1,250 pages = a 25,000-posting safety bound per read.
 const BASELINE_MAX_PAGES = 1250
-const POOL = 4 // same overlap as scan.mjs — different employers' boards only
+const POOL = 2 // boards in flight at once (1.68.1: four, with partitions read four at a time, drew HTTP 429s from Workday)
 
 const withTimeout = (p, ms) =>
   Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error(`timed out after ${Math.round(ms / 1000)}s`)), ms).unref())])

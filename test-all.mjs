@@ -252,6 +252,32 @@ test('workday: a window-capped board (total reported as 2000, deep offsets wrap)
   }
 })
 
+test('workday: an HTTP 429 is retried with a pause instead of failing the board', async () => {
+  const realFetch = globalThis.fetch
+  const page = (start, n, total) => ({ total, jobPostings: Array.from({ length: n }, (_, i) => ({ title: `Role ${start + i}`, externalPath: `/job/r${start + i}` })) })
+  let hits = 0
+  let limited = 0
+  globalThis.fetch = async (url, opts) => {
+    hits++
+    const offset = JSON.parse(opts.body).offset
+    if (offset === 20 && limited < 1) { limited++; return { ok: false, status: 429, json: async () => ({}) } }
+    return { ok: true, status: 200, json: async () => (offset === 0 ? page(0, 20, 25) : page(20, 5, 25)) }
+  }
+  try {
+    const match = workday.detect({ company: 'Acme', careers_url: 'https://acme.wd5.myworkdayjobs.com/en-US/External' })
+    // exercises the real path, including the first 5 s pause — the one slow test in the suite, on purpose
+    const t0 = Date.now()
+    const jobs = await workday.fetch(match)
+    assert.equal(jobs.length, 25)
+    assert.ok(!jobs.incomplete)
+    assert.equal(limited, 1)
+    assert.ok(Date.now() - t0 >= 4500, 'paused before retrying')
+    assert.equal(hits, 3) // page 0, the 429, the retry
+  } finally {
+    globalThis.fetch = realFetch
+  }
+})
+
 const ICIMS_JSONLD_HTML = `<!doctype html><html><head>
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"JobPosting","title":"Registered Nurse","datePosted":"2026-06-01","jobLocation":{"@type":"Place","address":{"@type":"PostalAddress","addressLocality":"Indianapolis","addressRegion":"IN"}},"url":"https://careers-acmehealth.icims.com/jobs/1001/registered-nurse/job"}

@@ -29,6 +29,22 @@ const PAGE_RETRY_MS = 1000 // pause before the one retry of a failed page
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
+// Workday answers HTTP 429 when a client asks too fast (the first whole-catalog baseline on GitHub drew
+// them on two boards and cut three more short). Such a request is retried with a growing pause —
+// 5 s, 10 s, 20 s, 40 s — never past the caller's deadline. Other failures pass straight through.
+const BACKOFF_MS = [5000, 10000, 20000, 40000]
+export const isRateLimited = (err) => /HTTP 429 /.test(String((err && err.message) || ''))
+async function withBackoff(request, deadline = Infinity, pauses = BACKOFF_MS) {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await request()
+    } catch (err) {
+      if (!isRateLimited(err) || attempt >= pauses.length || Date.now() + pauses[attempt] >= deadline) throw err
+      await sleep(pauses[attempt])
+    }
+  }
+}
+
 // Parse tenant + shard (+ optional site) from a Workday careers URL:
 //   https://acme.wd5.myworkdayjobs.com/en-US/External -> { tenant:'acme', shard:'wd5', site:'External' }
 //   https://acme.wd1.myworkdayjobs.com                -> { tenant:'acme', shard:'wd1', site:null }
@@ -116,7 +132,7 @@ async function fetchSite(match, site, maxPages = MAX_PAGES, deadline = Infinity,
   const getPage = (offset) => {
     const opts = { hostAllowlist: HOST_ALLOWLIST }
     if (deadline !== Infinity) opts.timeoutMs = Math.max(1000, deadline - Date.now())
-    return postJson(endpoint, { appliedFacets: facets, limit: PAGE_LIMIT, offset, searchText: '' }, opts)
+    return withBackoff(() => postJson(endpoint, { appliedFacets: facets, limit: PAGE_LIMIT, offset, searchText: '' }, opts), deadline)
   }
   let offset = 0
   let total = Infinity
@@ -211,9 +227,10 @@ export function choosePartition(facets, window = CAPPED_TOTAL) {
 // split again on another facet. Used by the baseline scan (ctx.partition); user scans keep the plain
 // read. Returns the same array shape as fetchSite, with `partitions` = how many reads it took.
 const MAX_PARTITION_DEPTH = 2
-// Partitions of one board are read a few at a time: a store chain that caps its total (Kohl's) can only
-// be split by store — about 1,100 partitions — which one at a time took over 25 minutes.
-const PARTITION_CONCURRENCY = 4
+// Partitions of one board are read two at a time: a store chain that caps its total (Kohl's) can only
+// be split by store — 1,164 partitions — which one at a time took over 25 minutes; four at a time, with
+// four boards in flight, drew HTTP 429s from Workday on the first GitHub run (1.68.1).
+const PARTITION_CONCURRENCY = 2
 
 async function fetchPartitioned(match, site, first, maxPages, deadline) {
   const union = new Map(first.map((j) => [j.url, j]))

@@ -4,6 +4,19 @@ All notable changes to Jobdar are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and Jobdar adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.68.1] — 2026-10-06
+
+**The first whole-catalog baseline on GitHub, and what it taught.** App `1.29.1`; desktop stays `0.5.2`;
+198 tests.
+
+- The 1.68.0 reader's first scheduled run on GitHub read 107 boards complete in 12 minutes and recorded
+  the ledger's first closures (87,282 postings; 5,764 closed since the day before) — but drew **HTTP 429**
+  from Workday on two boards (Gundersen, Caterpillar) and cut three more short (Corewell, Advocate,
+  Sanford), because four boards in flight with partitions read four at a time is too fast for one client.
+- **A 429 is now retried with a growing pause** (5, 10, 20, 40 s) instead of failing the page or the
+  board; boards are read two at a time and partitions two at a time. Slower (the run should take about
+  25 minutes) and polite.
+
 ## [1.68.0] — 2026-10-06
 
 **Every catalog board is read whole by the baseline; a person's scan reads up to 5,000 postings.**
