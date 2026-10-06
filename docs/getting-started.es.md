@@ -100,7 +100,7 @@ coincidencia "cerca", penalizada levemente, nunca descartada.
 ## 5. Evaluar un puesto
 
 ```bash
-node bin/jobdar eval <url-del-puesto>    # o: eval --next para el mejor puesto pendiente
+node bin/jobdar eval <url-del-puesto>    # puntúa un puesto con tu modelo local (o: eval --next para el mejor pendiente)
 node bin/jobdar eval --next 10           # puntúa los siguientes 10 (5, 10, 15 … hasta 50) — con barra de radar
 ```
 

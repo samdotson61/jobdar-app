@@ -431,9 +431,12 @@ test('portability: package assets resolve from ROOT; user dirs follow JOBDAR_HOM
   // a checkout WITH config/profile.yml is repo-local (a self-contained unit); profile.yml is
   // gitignored, so a fresh clone (and CI) must fall back to ~/.jobdar — assert the rule, not
   // one machine's state
-  const expectedHome = existsSync(path.join(PKG_ROOT, 'config', 'profile.yml'))
-    ? PKG_ROOT
-    : path.join(homedir(), '.jobdar')
+  // (and a shell that has already relocated its home with JOBDAR_HOME is honoured, not failed — 1.67.5)
+  const expectedHome = process.env.JOBDAR_HOME
+    ? path.resolve(process.env.JOBDAR_HOME)
+    : existsSync(path.join(PKG_ROOT, 'config', 'profile.yml'))
+      ? PKG_ROOT
+      : path.join(homedir(), '.jobdar')
   assert.equal(paths.home, expectedHome)
   // JOBDAR_HOME relocates every user dir (subprocess: paths resolve at import time)
   const home = path.join(tmpdir(), 'jobdar-portability-test')

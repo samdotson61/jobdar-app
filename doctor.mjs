@@ -7,6 +7,7 @@
 
 import { existsSync, lstatSync, realpathSync, readlinkSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
+import { createRequire } from 'node:module'
 import path from 'node:path'
 import { loadProfile, paths, SUPPORTED_LANGUAGES, fileExists, ROOT } from './lib/config.mjs'
 import { getT } from './lib/i18n.mjs'
@@ -126,8 +127,12 @@ export async function runDoctor(argv = []) {
   // Résumé import/upload (1.64.0): .docx is read in-process (no `unzip`); .pdf uses `pdftotext` when present,
   // else macOS's built-in PDFKit — so only a non-Mac CLI without poppler can't read PDFs (the desktop app
   // ships its own PDF reader for Windows).
+  // The third tier, pdf.js, counts too (1.67.5): a checkout that resolves `pdfjs-dist` (the pnpm workspace
+  // hoists the desktop app's copy) reads PDFs on any OS — doctor used to warn "no PDF reader" there while
+  // `jobdar import résumé.pdf` worked.
   const hasBin = (cmd, args) => { try { execFileSync(cmd, args, { stdio: 'ignore' }); return true } catch { return false } }
-  if (process.platform === 'darwin' || hasBin('pdftotext', ['-v'])) ok(t('doctor.resume_import_ok'))
+  const hasPdfjs = () => { try { createRequire(import.meta.url).resolve('pdfjs-dist/legacy/build/pdf.mjs'); return true } catch { return false } }
+  if (process.platform === 'darwin' || hasBin('pdftotext', ['-v']) || hasPdfjs()) ok(t('doctor.resume_import_ok'))
   else warn(t('doctor.pdftotext_optional'))
 
   // Summary.

@@ -103,7 +103,7 @@ a "near" match, nudged down a little, never screened out.
 ## 5. Evaluate a role
 
 ```bash
-node bin/jobdar eval <job-url>    # or: eval --next for the best pending role
+node bin/jobdar eval <job-url>    # score one role on your local model (or: eval --next for the best pending)
 node bin/jobdar eval --next 10    # auto-score the next 10 (5, 10, 15 … any number up to 50) — radar bar included
 ```
 
@@ -128,7 +128,8 @@ runs without any. Two easy paths:
   `node bin/jobdar backend --check` verifies it end to end. `node bin/jobdar backend` shows the status
   any time.
 - **Your AI CLI:** inside Claude Code (or similar), the same actions are slash commands — `/jobdar scan`,
-  `/jobdar eval`, and a guided `/jobdar` onboarding — using that CLI's model, no extra setup.
+  `/jobdar eval`, and a guided `/jobdar` onboarding — using that CLI's model, no extra setup. (`jobdar eval
+  <url> --guide` prints the job description and the save command for that path.)
 
 **Switching fields or fresh out of school?** Turn on transferable-skills matching — `jobdar init` offers
 it (on by default for career-changer / no-degree profiles), or add `--transferable` to any `eval`. It

@@ -14,7 +14,7 @@ puesto frente a tu currículum, adapta un CV y una carta de presentación compat
 registra cada postulación.
 
 > **Estado:** Fases 0–7, 5.5, 7.7, 7.8, 8b, 8a, 8c, 8e + 8f **completas**, **Fase 10 L0–L5 entregada** —
-> **Jobdar CLI `1.67.4`** + **app `1.28.4`** + **escritorio `0.5.2`** — la app de escritorio ahora se instala
+> **Jobdar CLI `1.67.5`** + **app `1.28.5`** + **escritorio `0.5.2`** — la app de escritorio ahora se instala
 > como cualquier otra: descárgala, ábrela y **un clic configura la IA privada y gratuita (sin terminal)**.
 > Núcleo bilingüe; **ocho escáneres
 > verificados en vivo** (Workday, iCIMS, Greenhouse, Lever, Ashby, UKG + lectores opcionales de JSON-LD y Jibe) más un
@@ -137,7 +137,6 @@ jobdar eval --next 10 # puntúa automáticamente los 10 mejores pendientes (5, 1
 jobdar recheck        # verifica que los puestos puntuados sigan publicados (los retirados lo dicen — sin modelo)
 jobdar feedback <puesto> --good|--bad  # califica un veredicto; construye el conjunto local que calibra el evaluador
 jobdar report         # escribe el informe beta (flujo + calificaciones + acuerdo, sin datos personales) en data/reports/
-jobdar pipeline       # escanear -> evaluar -> registrar, de principio a fin
 jobdar tailor [empresa] # IA: resumen de CV + carta para el puesto (fundamentado, modelo local)
 jobdar pdf [empresa]  # currículum adaptado para ATS → output/ (HTML, +PDF con Playwright)
 jobdar outreach <url> # encuentra personas a quienes contactar; seguimientos corteses, aplicados

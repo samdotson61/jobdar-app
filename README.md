@@ -12,7 +12,7 @@ dominate US enterprise employers), evaluates each role against your résumé, ta
 cover letter, and tracks every application.
 
 > **Status:** Phases 0–7, 5.5, 7.7, 7.8, 8b, 8a, 8c, 8e + 8f **complete**, **Phase 10 L0–L5 shipped** —
-> **Jobdar CLI `1.67.4`** + **app `1.28.4`** + **desktop `0.5.2`** — the desktop app now installs like any
+> **Jobdar CLI `1.67.5`** + **app `1.28.5`** + **desktop `0.5.2`** — the desktop app now installs like any
 > other app: download, open, and **one click sets up the free private AI (no terminal)**. Bilingual core; **eight live-verified
 > scanner providers** (Workday, iCIMS, Greenhouse, Lever, Ashby, UKG + opt-in JSON-LD and Jibe readers) plus an opt-in
 > **USAJobs** federal aggregator (BYO free key); level + region
@@ -127,7 +127,6 @@ jobdar eval --next 10 # auto-score the 10 best pending (5, 10, 15 … up to 50) 
 jobdar recheck        # re-verify scored listings are still posted (dead ones say so — no model needed)
 jobdar feedback <role> --good|--bad  # rate a verdict; builds the local set that calibrates the evaluator
 jobdar report         # write the beta report (funnel + ratings + agreement, PII-free) to data/reports/
-jobdar pipeline       # scan -> evaluate -> track, end to end
 jobdar tailor [company] # AI: role-targeted CV summary + cover letter (grounded, local model)
 jobdar pdf [company]  # tailored ATS résumé → output/ (HTML, +PDF with Playwright)
 jobdar outreach <url> # find people to contact about a role; polite follow-ups, enforced

@@ -163,12 +163,18 @@ async function main() {
 // gitignored data/credentials.env (where `jobdar init` saves it) so the CLI's `api` backend still works.
 if (!process.env.JOBDAR_API_KEY) { const k = loadApiKey(); if (k) process.env.JOBDAR_API_KEY = k }
 
+// Exit by setting process.exitCode and letting the event loop drain — never process.exit() (1.67.5).
+// On Windows (Node 24) a hard exit right after a backend call died with "Assertion failed:
+// !(handle->flags & UV_HANDLE_CLOSING), file src\winsync.c" — the fetch keep-alive socket was still
+// closing — after every command that had just talked to the model (`backend --check`, `tailor --list`),
+// turning a successful run into a crash with a non-zero exit code. Nothing a command starts outlives it
+// (servers close, timers are unref'd), so draining is immediate.
 main()
-  // Respect a command's process.exitCode (refusals set it) — exit(0) would clobber it.
-  .then((code) => process.exit(code || process.exitCode || 0))
+  // Respect a command's process.exitCode (refusals set it) — a plain 0 would clobber it.
+  .then((code) => { process.exitCode = code || process.exitCode || 0 })
   .catch((err) => {
     // userFacing errors (e.g. a malformed profile.yml) get a clean one-line message, not a stack trace.
     if (err && err.userFacing) console.error(err.message)
     else console.error(err && err.stack ? err.stack : String(err))
-    process.exit(1)
+    process.exitCode = 1
   })

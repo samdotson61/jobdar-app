@@ -4,6 +4,35 @@ All notable changes to Jobdar are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and Jobdar adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.67.5] — 2026-10-06
+
+**Works as advertised: an audit of every command against the real product, with the local AI running.**
+App `1.28.5`; desktop stays `0.5.2` (nothing here changes the desktop app's behaviour); 196 tests.
+
+Every CLI command, the desktop backend's endpoints and the phone's scan path were driven in scratch homes
+against live boards and a live local model (winc 1.41.0-jobdar.2, Qwen3.5-4B): set-up, résumé import
+(DOCX + PDF), scan, prescreen, eval (single, `--next`, pre-confirm), tailor (+ directives), outreach
+(links, draft, log, due), pdf, feedback, report, recheck, tracker, dashboard, calibrate (82% band
+agreement on the 12-role fixture), `backend --check`. Four things were not as advertised; all fixed:
+
+- **`jobdar eval <url>` now scores the role.** With the local model running it still printed the job
+  description and instructions to run the eval in an AI CLI — a leftover from before the on-device
+  backend existed — while `eval --next 5` scored automatically. It now scores that one role on the
+  configured backend; `--guide` (or no backend) gives the old instructions.
+- **Windows: no more crash after a model call.** On Windows (Node 24) every command that had just talked
+  to the model — `backend --check`, `tailor --list` — died on exit with "Assertion failed:
+  !(handle->flags & UV_HANDLE_CLOSING)" and a non-zero exit code, after printing its successful result.
+  The CLI now sets an exit code and lets Node exit on its own instead of forcing it.
+- **`jobdar pipeline` is marked as planned.** The README listed it as "scan → evaluate → track, end to
+  end"; it is a stub that says so. The command list no longer shows it; help labels `pipeline` and
+  `update` as planned.
+- **`jobdar doctor` recognises pdf.js as a PDF reader** (a checkout that resolves `pdfjs-dist`, as the
+  desktop app does) instead of warning "no PDF reader" where `jobdar import résumé.pdf` works.
+- **The test suite passes with `JOBDAR_HOME` set in the shell.** The portability test assumed the
+  default home and failed for anyone who had relocated theirs.
+
+Not exercised: a real phone, and the installed desktop app's GUI (its backend was driven directly).
+
 ## [1.67.4] — 2026-10-05
 
 **Switching region no longer scans the wrong employers.** App `1.28.4`; desktop `0.5.2` rebuilt from
