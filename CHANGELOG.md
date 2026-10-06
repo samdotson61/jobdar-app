@@ -4,6 +4,26 @@ All notable changes to Jobdar are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and Jobdar adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.68.0] — 2026-10-06
+
+**Every catalog board is read whole by the baseline; a person's scan reads up to 5,000 postings.**
+App `1.29.0`; desktop stays `0.5.2`; 196 tests.
+
+- **Two kinds of big Workday board, both read whole by the baseline now.** A tenant that reports its
+  true total pages to any depth (Lowe's: 12,661 postings, 633 pages, read whole in one pass). A tenant
+  that reports `total` as exactly 2,000 (Trinity, Advocate, Sanford, Kohl's, AdventHealth, PNC, T-Mobile,
+  Corewell) has a real 2,000-row window — offsets past it answer with page one again — so the baseline
+  reads such a board in **facet partitions** — the facet with the fewest values that each fit the window
+  (Trinity by state: 20; Advocate by job family: 55; AdventHealth by job category: 18; PNC, T-Mobile and
+  Corewell by full/part time: 2), a partition still too big split once more (Sanford: 30), nested
+  location groups applied under their own key (Kohl's: 1,164 stores, read four at a time, 4 minutes) — and
+  unions them. Measured whole: Lowe's 12,661, Trinity 6,588, Advocate 5,227, Sanford 4,119, AdventHealth
+  4,009, Kohl's 6,103, T-Mobile 2,423, PNC 2,093, Corewell 2,049. `jobdar scan` reads up to **5,000** per board (250
+  pages; was 2,000) and stops honestly at a wrapped window instead of looping.
+- **The board ledger trusts the provider's `incomplete` flag**, not a 2,000-row size guess, to decide
+  whether a missing posting means anything.
+- The desktop and phone are unchanged (9-second budget; 200 per board).
+
 ## [1.67.5] — 2026-10-06
 
 **Works as advertised: an audit of every command against the real product, with the local AI running.**

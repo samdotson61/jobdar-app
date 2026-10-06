@@ -19,8 +19,9 @@ and reason over the normalized results.
   employer's own domain and need an explicit `provider: jsonld` / `provider: jibe`; **USAJobs** is
   opt-in with a free key. Workday: optional `site:`. iCIMS parses public career-page HTML (JSON-LD
   first); add `--playwright` for JS-rendered sites.
-- A big board is read page by page (Workday up to 2,000 postings). A board that was not read to its
-  end is left out of the "no longer posted" check — a role missing from a cut-off list proves nothing.
+- A big board is read page by page, up to 5,000 postings in one scan (the daily baseline scan on GitHub
+  reads boards whole). A board that was not read to its end is left out of the "no longer posted"
+  check — a role missing from a cut-off list proves nothing.
 - `jobdar scan --dry-run` resolves a provider per portal and prints a summary with **no network
   calls** — use it to check configuration.
 

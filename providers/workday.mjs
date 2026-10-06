@@ -21,10 +21,11 @@ export const HOST_ALLOWLIST = [/^[a-z0-9-]+\.wd\d+\.myworkdayjobs\.com$/]
 const COMMON_SITES = ['External', 'External_Career_Site', 'careers', 'Careers', 'External_Careers']
 
 const PAGE_LIMIT = 20
-const MAX_PAGES = 100 // safety bound (~2000 postings); explicit `site:` recommended for big tenants
+const MAX_PAGES = 250 // the ceiling for one scan: 5,000 postings (1.68.0; was 100 → 2,000). ctx.maxPages raises it — the
+                      // baseline scan reads whole boards. Workday pages to any depth (offset 4,000 answered live 2026-10-06).
 const PAGE_DELAY_MS = 150 // polite pacing between paginated requests (Phase 2.5)
 const PAGE_RETRY_MS = 1000 // pause before the one retry of a failed page
-const RESULT_WINDOW = PAGE_LIMIT * MAX_PAGES // the most postings one listing can yield (2000)
+
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -97,17 +98,25 @@ export function normalize(posting, base, site, company) {
 // carries `incomplete = true`, so callers that reason from ABSENCE (liveness, the board ledger) know
 // a missing posting proves nothing.
 // `limit` (ctx.maxPostings) stops paging once that many postings are in hand — the phone's size limit.
-async function fetchSite(match, site, maxPages = MAX_PAGES, deadline = Infinity, limit = Infinity) {
+// The window Workday's result list really has on tenants that report `total` as exactly 2000: offsets
+// past it answer with page one again (Trinity, live 2026-10-06), so such a board cannot be read whole by
+// paging — only by partitioning it (fetchPartitioned). Lowe's, which reports its true total (12,661),
+// pages to any depth.
+const CAPPED_TOTAL = 2000
+
+// `facets` (appliedFacets) narrows the listing to one partition of the board.
+async function fetchSite(match, site, maxPages = MAX_PAGES, deadline = Infinity, limit = Infinity, facets = {}) {
   const base = `https://${match.tenant}.${match.shard}.myworkdayjobs.com`
   const endpoint = `${base}/wday/cxs/${match.tenant}/${site}/jobs`
   const out = []
+  const seen = new Set()
   // Under a budget no single request may outlive it: with a dozen boards loading at once a page can
   // take seconds, and one slow page after the budget pushed a board past the desktop's 12 s cut-off,
   // losing all of it (Cleveland Clinic, intermittently). A request is given only the time that is left.
   const getPage = (offset) => {
     const opts = { hostAllowlist: HOST_ALLOWLIST }
     if (deadline !== Infinity) opts.timeoutMs = Math.max(1000, deadline - Date.now())
-    return postJson(endpoint, { appliedFacets: {}, limit: PAGE_LIMIT, offset, searchText: '' }, opts)
+    return postJson(endpoint, { appliedFacets: facets, limit: PAGE_LIMIT, offset, searchText: '' }, opts)
   }
   let offset = 0
   let total = Infinity
@@ -128,20 +137,139 @@ async function fetchSite(match, site, maxPages = MAX_PAGES, deadline = Infinity,
     }
     const postings = Array.isArray(data && data.jobPostings) ? data.jobPostings : []
     if (typeof data?.total === 'number' && !(page > 0 && data.total === 0)) total = data.total
+    if (page === 0) out.facets = Array.isArray(data && data.facets) ? data.facets : []
     // Big boards carry the odd placeholder entry with no title and no path (5 across the Midwest
     // catalog once boards were read whole) — it would save as a blank role linking to the board itself.
-    for (const p of postings) if (p && p.title && p.externalPath) out.push(normalize(p, base, site, match.company))
+    let fresh = 0
+    for (const p of postings) {
+      if (!(p && p.title && p.externalPath)) continue
+      const job = normalize(p, base, site, match.company)
+      if (seen.has(job.url)) continue // a repeated page = the window wrapped (see CAPPED_TOTAL)
+      seen.add(job.url)
+      out.push(job)
+      fresh++
+    }
     offset += PAGE_LIMIT
-    if (postings.length === 0 || offset >= total) {
+    // A short page proves the end. A `total` of exactly 2000 is a reporting cap on some tenants, not the
+    // size, so it does not end paging by itself — but a page that adds nothing new means the window
+    // wrapped, and the board is cut off there.
+    if (postings.length === 0 || postings.length < PAGE_LIMIT || (offset >= total && total !== CAPPED_TOTAL)) {
       done = true
       break
     }
+    if (fresh === 0) break
     if (Date.now() >= deadline || out.length >= limit) break
     await sleep(PAGE_DELAY_MS)
   }
-  // Some tenants also cap the reported `total` itself at 2000 (Trinity Health, live 2026-10-05), so a
-  // board that "ends" exactly at the window is treated as cut off too.
-  if (!done || out.length >= RESULT_WINDOW) out.incomplete = true
+  out.total = total
+  if (!done || out.length >= PAGE_LIMIT * maxPages) out.incomplete = true
+  return out
+}
+
+// Facet values as a flat list of { param, id, count, descriptor }. A value with children but no id of
+// its own (Advocate's "State" group, Kohl's "Locations") contributes its children — applied under the
+// group's OWN facetParameter when it names one (Kohl's stores are `locations`, not `locationMainGroup`;
+// the parent key answers HTTP 400). A value with an id AND children (a state with its cities) is one
+// partition by itself — Workday applies the parent id to all of them.
+export function partitionCandidates(facets) {
+  const out = []
+  for (const f of facets || []) {
+    const walk = (vals, param) => {
+      for (const v of vals || []) {
+        if (!v) continue
+        if (v.id && typeof v.count === 'number') out.push({ param, id: v.id, count: v.count, descriptor: v.descriptor || '' })
+        else if (Array.isArray(v.values)) walk(v.values, v.facetParameter || param)
+      }
+    }
+    walk(f.values, f.facetParameter)
+  }
+  return out
+}
+
+// Pick the facet to split a board on. Pure. Preferred: a facet whose every value fits the window, with
+// the fewest values. Otherwise (Sanford: every facet has one value over 2,000) the facet with the fewest
+// oversized values, then the fewest values — its oversized values are split again on another facet.
+// Returns { param, values: [{ id, count, descriptor }], fits } or null when there is no facet at all.
+export function choosePartition(facets, window = CAPPED_TOTAL) {
+  const byParam = new Map()
+  for (const v of partitionCandidates(facets)) {
+    if (!byParam.has(v.param)) byParam.set(v.param, [])
+    byParam.get(v.param).push(v)
+  }
+  let best = null
+  for (const [param, values] of byParam) {
+    if (!values.length) continue
+    const over = values.filter((v) => v.count >= window).length
+    const cand = { param, values, fits: over === 0, over }
+    if (!best || cand.over < best.over || (cand.over === best.over && values.length < best.values.length)) best = cand
+  }
+  return best
+}
+
+// Read a board that paging cannot read whole (CAPPED_TOTAL) in partitions — one facet value at a time,
+// each under the window — and union the result. Two levels deep: a partition that is itself too big is
+// split again on another facet. Used by the baseline scan (ctx.partition); user scans keep the plain
+// read. Returns the same array shape as fetchSite, with `partitions` = how many reads it took.
+const MAX_PARTITION_DEPTH = 2
+// Partitions of one board are read a few at a time: a store chain that caps its total (Kohl's) can only
+// be split by store — about 1,100 partitions — which one at a time took over 25 minutes.
+const PARTITION_CONCURRENCY = 4
+
+async function fetchPartitioned(match, site, first, maxPages, deadline) {
+  const union = new Map(first.map((j) => [j.url, j]))
+  let incomplete = false
+  let reads = 0
+  const read = async (applied, facetsHere, depth) => {
+    const pick = choosePartition(facetsHere)
+    if (!pick) {
+      incomplete = true
+      return
+    }
+    const others = (f) => f.filter((x) => x.facetParameter !== pick.param)
+    const one = async (v) => {
+      if (v.count === 0) return
+      const facets = { ...applied, [pick.param]: [v.id] }
+      // A value that cannot fit the window is not read in full (that would wrap too): one page gives its
+      // own facets, and it is split again on one of them.
+      if (v.count >= CAPPED_TOTAL && depth < MAX_PARTITION_DEPTH) {
+        let probe
+        try {
+          probe = await fetchSite(match, site, 1, deadline, Infinity, facets)
+        } catch {
+          incomplete = true
+          return
+        }
+        reads++
+        for (const j of probe) union.set(j.url, j)
+        await read(facets, others(probe.facets || []), depth + 1)
+        return
+      }
+      let part
+      try {
+        part = await fetchSite(match, site, maxPages, deadline, Infinity, facets)
+      } catch {
+        incomplete = true
+        return
+      }
+      reads++
+      for (const j of part) union.set(j.url, j)
+      if (part.incomplete) {
+        if (depth < MAX_PARTITION_DEPTH && part.facets) await read(facets, others(part.facets), depth + 1)
+        else incomplete = true
+      }
+    }
+    const queue = pick.values.slice()
+    await Promise.all(Array.from({ length: Math.min(PARTITION_CONCURRENCY, queue.length) }, async () => {
+      while (queue.length) {
+        await one(queue.shift())
+        await sleep(PAGE_DELAY_MS)
+      }
+    }))
+  }
+  await read({}, first.facets || [], 0)
+  const out = [...union.values()]
+  out.partitions = reads
+  if (incomplete) out.incomplete = true
   return out
 }
 
@@ -172,7 +300,9 @@ const workday = {
     let lastErr
     for (const site of sites) {
       try {
-        const jobs = await fetchSite(match, site, maxPages, deadline, limit)
+        let jobs = await fetchSite(match, site, maxPages, deadline, limit)
+        // ctx.partition (the baseline scan): a board the window cut off is read in facet partitions.
+        if (ctx.partition && jobs.incomplete && jobs.total === CAPPED_TOTAL && limit === Infinity) jobs = await fetchPartitioned(match, site, jobs, maxPages, deadline)
         if (match.site || jobs.length > 0) return jobs
         if (!firstOk) firstOk = jobs
       } catch (err) {

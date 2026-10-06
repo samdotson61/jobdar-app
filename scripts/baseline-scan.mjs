@@ -19,7 +19,11 @@ import { loadEmployers, toPortals } from '../lib/seed.mjs'
 import { resolveProvider } from '../providers/_contract.mjs'
 import { LEDGER_COLS, BOARD_COLS, RUN_COLS, parseTsv, serializeTsv, advanceLedger, mergeRuns } from '../lib/board_ledger_pure.mjs'
 
-const BOARD_TIMEOUT_MS = 10 * 60 * 1000 // the largest Workday tenants page ~100 requests
+const BOARD_TIMEOUT_MS = 45 * 60 * 1000 // Lowe's is ~12,700 postings = ~640 pages; Kohl's ~1,100 store partitions
+// The baseline reads a board WHOLE (1.68.0): a tenant that reports its true total pages to any depth
+// (Lowe's, 12,661); one that caps the report at 2,000 wraps past it and is read in facet partitions
+// instead (ctx.partition). 1,250 pages = a 25,000-posting safety bound per read.
+const BASELINE_MAX_PAGES = 1250
 const POOL = 4 // same overlap as scan.mjs — different employers' boards only
 
 const withTimeout = (p, ms) =>
@@ -53,10 +57,10 @@ const scanOne = async (portal) => {
     return
   }
   try {
-    const jobs = await withTimeout(hit.provider.fetch(hit.match, { render: false, lang: 'en' }), BOARD_TIMEOUT_MS)
+    const jobs = await withTimeout(hit.provider.fetch(hit.match, { render: false, lang: 'en', maxPages: BASELINE_MAX_PAGES, partition: true }), BOARD_TIMEOUT_MS)
     const list = Array.isArray(jobs) ? jobs : []
     observations.push({ ...base, ok: true, incomplete: Boolean(list.incomplete), jobs: list })
-    console.log(`  ok   ${portal.company}: ${list.length}${list.incomplete ? ' (not read to the end)' : ''}`)
+    console.log(`  ok   ${portal.company}: ${list.length}${list.partitions ? ` (in ${list.partitions} partitions)` : ''}${list.incomplete ? ' (not read to the end)' : ''}`)
   } catch (err) {
     observations.push({ ...base, ok: false, jobs: [], error: String((err && err.message) || err) })
     console.log(`  FAIL ${portal.company}: ${String((err && err.message) || err).slice(0, 160)}`)

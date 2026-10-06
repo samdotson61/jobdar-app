@@ -12,7 +12,7 @@ dominate US enterprise employers), evaluates each role against your résumé, ta
 cover letter, and tracks every application.
 
 > **Status:** Phases 0–7, 5.5, 7.7, 7.8, 8b, 8a, 8c, 8e + 8f **complete**, **Phase 10 L0–L5 shipped** —
-> **Jobdar CLI `1.67.5`** + **app `1.28.5`** + **desktop `0.5.2`** — the desktop app now installs like any
+> **Jobdar CLI `1.68.0`** + **app `1.29.0`** + **desktop `0.5.2`** — the desktop app now installs like any
 > other app: download, open, and **one click sets up the free private AI (no terminal)**. Bilingual core; **eight live-verified
 > scanner providers** (Workday, iCIMS, Greenhouse, Lever, Ashby, UKG + opt-in JSON-LD and Jibe readers) plus an opt-in
 > **USAJobs** federal aggregator (BYO free key); level + region

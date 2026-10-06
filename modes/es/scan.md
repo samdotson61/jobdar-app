@@ -21,9 +21,9 @@ razonas sobre los resultados normalizados.
   dominio propio del empleador y requieren `provider: jsonld` / `provider: jibe` explícito;
   **USAJobs** es opcional con una clave gratuita. Workday: `site:` opcional. iCIMS analiza el HTML
   público de las páginas de empleo (JSON-LD primero); añade `--playwright` para sitios con mucho JS.
-- Un portal grande se lee página por página (Workday hasta 2,000 publicaciones). Un portal que no se
-  leyó hasta el final queda fuera de la verificación de «ya no está publicado» — que un puesto falte
-  en una lista incompleta no prueba nada.
+- Un portal grande se lee página por página, hasta 5,000 publicaciones por escaneo (el escaneo base
+  diario en GitHub lee los portales completos). Un portal que no se leyó hasta el final queda fuera de
+  la verificación de «ya no está publicado» — que un puesto falte en una lista incompleta no prueba nada.
 - `jobdar scan --dry-run` resuelve un proveedor por portal e imprime un resumen **sin llamadas de
   red** — úsalo para revisar la configuración.
 

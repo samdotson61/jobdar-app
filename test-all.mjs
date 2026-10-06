@@ -16,7 +16,7 @@ import { resolveProvider, providerIds, capNewest, fetchJobDescription } from './
 import ultipro, { parseUltiProUrl, parseUltiProJobUrl } from './providers/ultipro.mjs'
 import jibe, { jobFromJibe } from './providers/jibe.mjs'
 import greenhouse, { parseJobUrl as parseGhJobUrl } from './providers/greenhouse.mjs'
-import workday, { HOST_ALLOWLIST as WORKDAY_HOSTS, parseWorkdayUrl, parseWorkdayJobUrl } from './providers/workday.mjs'
+import workday, { HOST_ALLOWLIST as WORKDAY_HOSTS, parseWorkdayUrl, parseWorkdayJobUrl, partitionCandidates, choosePartition } from './providers/workday.mjs'
 import icims, { HOST_ALLOWLIST as ICIMS_HOSTS, parseJobPostingsFromHtml } from './providers/icims.mjs'
 import lever, { parseLeverJobUrl } from './providers/lever.mjs'
 import ashby, { parseAshbyJobUrl } from './providers/ashby.mjs'
@@ -201,6 +201,52 @@ test('workday: a zero total after the first page does not end paging; a time bud
     assert.equal(capped.length, 40)
     assert.equal(asked, 2)
     assert.equal(capped.incomplete, true)
+  } finally {
+    globalThis.fetch = realFetch
+  }
+})
+
+test('workday: a window-capped board (total reported as 2000, deep offsets wrap) stops at the wrap; the baseline reads it in facet partitions', async () => {
+  const realFetch = globalThis.fetch
+  // 50 roles; the tenant reports total=2000 and answers any offset >= 40 with page one again
+  const ALL = Array.from({ length: 50 }, (_, i) => ({ title: `Role ${i}`, externalPath: `/job/r${i}`, state: i < 30 ? 'IA' : 'MI', shift: i % 2 ? 'day' : 'night' }))
+  const facetsFor = (list) => [
+    { facetParameter: 'Location_Region_State_Province', values: [{ id: 'ia', descriptor: 'Iowa', count: list.filter((p) => p.state === 'IA').length }, { id: 'mi', descriptor: 'Michigan', count: list.filter((p) => p.state === 'MI').length }] },
+    { facetParameter: 'timeType', values: [{ id: 'd', descriptor: 'Day', count: list.filter((p) => p.shift === 'day').length }, { id: 'n', descriptor: 'Night', count: list.filter((p) => p.shift === 'night').length }] },
+    { facetParameter: 'locationMainGroup', values: [{ facetParameter: 'locations', descriptor: 'State', values: [{ id: 'g1', descriptor: 'Iowa', count: 30 }, { id: 'g2', descriptor: 'Michigan', count: 20 }] }] },
+  ]
+  let calls = 0
+  globalThis.fetch = async (url, opts) => {
+    calls++
+    const { offset, appliedFacets } = JSON.parse(opts.body)
+    let list = ALL
+    if (appliedFacets.Location_Region_State_Province) list = list.filter((p) => p.state === (appliedFacets.Location_Region_State_Province[0] === 'ia' ? 'IA' : 'MI'))
+    if (appliedFacets.timeType) list = list.filter((p) => p.shift === (appliedFacets.timeType[0] === 'd' ? 'day' : 'night'))
+    const window = Object.keys(appliedFacets).length ? list.length : 40 // unfiltered: only the first 40 are reachable
+    const off = offset >= window ? 0 : offset
+    return { ok: true, status: 200, json: async () => ({ total: Object.keys(appliedFacets).length ? list.length : 2000, facets: facetsFor(list), jobPostings: list.slice(off, off + 20) }) }
+  }
+  try {
+    const match = workday.detect({ company: 'Acme', careers_url: 'https://acme.wd5.myworkdayjobs.com/External' })
+    const plain = await workday.fetch(match, {})
+    assert.equal(plain.length, 40) // the window, once — not 5,000 repeats
+    assert.equal(plain.incomplete, true)
+    assert.equal(plain.total, 2000)
+    // the pure helpers: nested values without an id of their own contribute their children; the fewest-partition facet wins
+    const cands = partitionCandidates(plain.facets)
+    assert.deepEqual(cands.filter((c) => c.param === 'locations').map((c) => c.id), ['g1', 'g2']) // nested group → its own key
+    assert.equal(cands.filter((c) => c.param === 'locationMainGroup').length, 0)
+    assert.equal(choosePartition(plain.facets, 35).param, 'Location_Region_State_Province') // every facet fits a window of 35 with 2 values each → the first eligible one
+    assert.equal(choosePartition(plain.facets, 28).param, 'timeType') // state and location have a 30-value; only timeType (25/25) fits
+    const forced = choosePartition(plain.facets, 25) // every facet has a value of 25+ → the least-oversized one, flagged as not fitting
+    assert.equal(forced.fits, false)
+    assert.equal(forced.param, 'Location_Region_State_Province') // one oversized value (Iowa 30) — timeType has two (25, 25)
+    // the baseline: partitioned read unions every role exactly once
+    const whole = await workday.fetch(match, { partition: true, maxPages: 1250 })
+    assert.equal(whole.length, 50)
+    assert.ok(!whole.incomplete)
+    assert.ok(whole.partitions >= 2)
+    assert.equal(new Set(whole.map((j) => j.url)).size, 50)
   } finally {
     globalThis.fetch = realFetch
   }
@@ -3007,14 +3053,16 @@ test('board ledger: missing from ONE look is a paging blip — restored, not cou
 })
 
 test('board ledger: a truncated or suspiciously short listing never closes anything', () => {
-  assert.equal(observationStatus({ ok: true, count: TRUNCATION_CAP }), 'partial')
+  assert.equal(observationStatus({ ok: true, count: 2000, cap: 2000 }), 'partial') // only with a caller-supplied ceiling
+  assert.equal(observationStatus({ ok: true, count: 12661 }), 'ok') // a whole-board read is complete however big
+  assert.equal(TRUNCATION_CAP, Infinity)
   assert.equal(observationStatus({ ok: true, count: 4, prevCount: 40 }), 'partial')
   assert.equal(observationStatus({ ok: true, count: 30, prevCount: 40 }), 'ok')
   assert.equal(observationStatus({ ok: false, count: 0 }), 'failed')
   assert.equal(observationStatus({ ok: true, count: 30, prevCount: 30, incomplete: true }), 'partial')
   let s = advanceLedger({ rows: [], boards: [] }, [ledgerObs(ledgerJobs(20))], '2026-10-01')
   s = advanceLedger(s, [ledgerObs([...ledgerJobs(3), ...ledgerJobs(1, 99)])], '2026-10-02')
-  assert.equal(s.runs[0].status, 'partial')
+  assert.equal(s.runs[0].status, 'partial') // 4 after 20 = a suspiciously short read
   assert.equal(s.totals.closed, 0)
   assert.equal(s.totals.added, 1) // what a partial look DID see still counts
   assert.equal(s.boards[0].last_ok, '2026-10-01')
