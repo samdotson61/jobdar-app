@@ -4,6 +4,17 @@ All notable changes to Jobdar are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and Jobdar adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.67.3] — 2026-10-05
+
+**Desktop 0.5.2 — the 1.66–1.67 scanner fixes reach the desktop app.** App `1.28.3`, desktop `0.5.2`
+(engine 1.67.3, winc 1.41.0-jobdar.2); 195 tests. No engine code change in this version.
+
+- The desktop app re-vendors the engine, so it now reads Workday boards past the first 40 roles (with
+  the 9-second per-board budget), dates Greenhouse roles by first publication, carries the repaired
+  113-employer catalog, and reads UKG and Jibe boards. Windows installers built and smoke-tested on
+  Windows (portable zip self-test + silent install → self-test → uninstall round trip); the Mac zips
+  are built on the Mac from this same commit.
+
 ## [1.67.2] — 2026-10-05
 
 **Documentation brought into line with 1.66.0–1.67.1.** No code change. App `1.28.2`; desktop stays
