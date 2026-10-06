@@ -123,6 +123,14 @@ export const SEED_EMPLOYERS = [
   "sector": "retail"
  },
  {
+  "company": "HCA Healthcare",
+  "careers_url": "https://hcahealthcare.dejobs.org/",
+  "region": "southeast",
+  "metro": "Nashville, TN",
+  "sector": "healthcare",
+  "baseline": false
+ },
+ {
   "company": "84.51°",
   "careers_url": "https://job-boards.greenhouse.io/8451",
   "region": "midwest",

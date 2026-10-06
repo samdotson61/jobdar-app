@@ -15,6 +15,7 @@ import { PROFILE_DEFAULTS, SUPPORTED_LANGUAGES, paths, ROOT as PKG_ROOT, atomicW
 import { resolveProvider, providerIds, capNewest, fetchJobDescription } from './providers/_contract.mjs'
 import ultipro, { parseUltiProUrl, parseUltiProJobUrl } from './providers/ultipro.mjs'
 import jibe, { jobFromJibe } from './providers/jibe.mjs'
+import dejobs, { jobFromSitemapUrl, parseSitemapEntries } from './providers/dejobs.mjs'
 import greenhouse, { parseJobUrl as parseGhJobUrl } from './providers/greenhouse.mjs'
 import workday, { HOST_ALLOWLIST as WORKDAY_HOSTS, parseWorkdayUrl, parseWorkdayJobUrl, partitionCandidates, choosePartition } from './providers/workday.mjs'
 import icims, { HOST_ALLOWLIST as ICIMS_HOSTS, parseJobPostingsFromHtml } from './providers/icims.mjs'
@@ -34,7 +35,7 @@ import { classifyFetchError, staleActionable, verifyBeforePresent } from './lib/
 import { advanceLedger, observationStatus, postedDay, parseTsv, serializeTsv, mergeRuns, LEDGER_COLS, TRUNCATION_CAP } from './lib/board_ledger_pure.mjs'
 import { portalsForScan, employersToPortals } from './lib/portals_pure.mjs'
 import { recheckTargets } from './lib/commands/recheck.mjs'
-import { extractYearsRequired, extractDegreeGate, extractGates, screenDecision, prescreenRole, freshnessPoints, reasonLine, blendSalary, extractCredential, extractField, cvHasField, cvHasCredential, isHardIdentity, extractSponsorship } from './lib/prescreen.mjs'
+import { extractYearsRequired, extractDegreeGate, extractGates, screenDecision, prescreenRole, freshnessPoints, reasonLine, blendSalary, extractCredential, extractField, cvHasField, cvHasCredential, isHardIdentity, extractSponsorship, UNASSESSABLE_SCORE } from './lib/prescreen.mjs'
 import { extractPay, bandVsTarget, formatPay, paySummary, parseSalaryText, SALARY_TOLERANCE, SALARY_FLOOR } from './lib/salary.mjs'
 import { normalizeResumeDates, monthYear } from './lib/dates.mjs'
 import { decodeEntities, stripTags } from './lib/html.mjs'
@@ -690,6 +691,31 @@ test('jibe: explicit opt-in only; lists roles under the ATS URL the feed names s
   }
 })
 
+test('dejobs: a DirectEmployers microsite is read from its job sitemap — title and City, ST from the slug, no dates claimed, the phone cap honoured, no JD claimed', async () => {
+  assert.equal(resolveProvider({ company: 'HCA Healthcare', careers_url: 'https://hcahealthcare.dejobs.org/' }).provider.id, 'dejobs')
+  assert.equal(dejobs.detect({ careers_url: 'https://dejobs.org.evil.example/' }), null)
+  const j = jobFromSitemapUrl('https://hcahealthcare.dejobs.org/fort-walton-beach-fl/rn-med-surg-nights/2416D6506EA3/job/', '2026-10-05', 'HCA Healthcare')
+  assert.deepEqual(j, { title: 'RN Med Surg Nights', url: 'https://hcahealthcare.dejobs.org/fort-walton-beach-fl/rn-med-surg-nights/2416D6506EA3/job/', company: 'HCA Healthcare', location: 'Fort Walton Beach, FL', postedOn: null }) // lastmod is the sitemap's date, never claimed as posting date
+  assert.equal(jobFromSitemapUrl('https://hcahealthcare.dejobs.org/about/', '', 'X'), null)
+  const xml = '<?xml version="1.0"?><urlset><url><loc>https://acme.dejobs.org/nashville-tn/cook/A1/job/</loc><lastmod>2026-10-01</lastmod></url><url><loc>https://acme.dejobs.org/austin-tx/nurse-icu/B2/job/</loc><lastmod>2026-10-04</lastmod></url><url><loc>https://acme.dejobs.org/austin-tx/nurse-icu/B2/job/</loc><lastmod>2026-10-04</lastmod></url></urlset>'
+  assert.equal(parseSitemapEntries(xml).length, 3)
+  const realFetch = globalThis.fetch
+  globalThis.fetch = async (url) => ({ ok: true, status: 200, text: async () => (/sitemaps\/index\.xml$/.test(String(url)) ? '<sitemapindex><sitemap><loc>https://acme.dejobs.org/sitemaps/jobs_1.xml</loc></sitemap></sitemapindex>' : xml) })
+  try {
+    const match = dejobs.detect({ company: 'Acme', careers_url: 'https://acme.dejobs.org/' })
+    const jobs = await dejobs.fetch(match)
+    assert.deepEqual(jobs.map((x) => x.title), ['Cook', 'Nurse ICU']) // sitemap order, duplicate URL dropped
+    assert.equal(jobs[1].location, 'Austin, TX')
+    assert.ok(!jobs.incomplete)
+    const capped = await dejobs.fetch(match, { maxPostings: 1 })
+    assert.equal(capped.length, 1)
+    assert.equal(capped.incomplete, true)
+    assert.equal(await fetchJobDescription(jobs[0].url), null) // no description route — said honestly
+  } finally {
+    globalThis.fetch = realFetch
+  }
+})
+
 test('providers: job-URL parsing for the eval-time JD fetch', () => {
   assert.deepEqual(parseGhJobUrl('https://job-boards.greenhouse.io/enova/jobs/7977401'), { token: 'enova', id: '7977401' })
   const w = parseWorkdayJobUrl('https://nvidia.wd5.myworkdayjobs.com/External/job/US-CA/Engineer_JR123')
@@ -936,6 +962,8 @@ test('prescreen: score blends skill overlap + freshness; flags subtract; screene
   assert.equal(freshnessPoints('', '', today), 12) // unknown age → neutral
   const noJd = prescreenRole({ jdText: '', cvText: cv, posted: '2026-06-10', today, profile: {} })
   assert.ok(!noJd.screened && !noJd.jdAvailable && noJd.score > 0) // unreachable JD never screens
+  assert.equal(noJd.score, UNASSESSABLE_SCORE) // …but it ranks last: a résumé-blind neutral 30 used to put it above readable roles (1.69.0)
+  assert.ok(noJd.score < stale.score)
   const screened = prescreenRole({ jdText: 'Requires 9+ years of experience.', cvText: cv, today, profile: { target_levels: ['entry'] } })
   assert.equal(screened.score, 0)
   assert.ok(reasonLine(screened.reasons).includes('9+ years'), 'reason carries the quote')

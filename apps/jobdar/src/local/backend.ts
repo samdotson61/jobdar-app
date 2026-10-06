@@ -233,14 +233,16 @@ export async function localCall(path: string, method: 'GET' | 'POST', body: any)
       const updates: any[] = [];
       await pool(rows, 4, async (row: any) => {
         let jdText = '';
+        let noRoute = false; // the provider has no way to read a description (dejobs) — not an expired page
         try {
           const jd = await fetchJobDescription(row.url);
+          noRoute = jd === null;
           jdText = (jd && jd.description) || '';
-        } catch { /* unreachable JD → floored below, never a crash */ }
+        } catch { /* unreachable JD → floored by the gate, never a crash */ }
         const v = prescreenRole({ jdText, cvText: cv, title: row.role, posted: row.posted, firstSeen: row.first_seen, today: date, profile: prof });
         const dead = !v.screened && !v.jdAvailable;
-        const reason = v.screened ? reasonLine(v.reasons, null) : dead ? 'listing expired — can’t assess fit' : '';
-        const score = dead ? 8 : v.score;
+        const reason = v.screened ? reasonLine(v.reasons, null) : dead ? (noRoute ? 'no readable description on this board — can’t assess fit' : 'listing expired — can’t assess fit') : '';
+        const score = v.score;
         const pay = paySummary(v.pay, Number(prof.target_salary) || 0);
         const notes = v.sponsors ? 'sponsors-visa' : v.jdAvailable ? '' : undefined;
         updates.push({ url: row.url, score, reason, pay, notes });

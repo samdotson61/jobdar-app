@@ -376,7 +376,7 @@ prescreen:
   done: "Prescreen listo: {ranked} ordenados, {screened} filtrados. `jobdar eval --next` ahora sirve primero el mejor puesto."
   tally_ranked: "{count} ordenados"
   tally_screened: "{count} filtrados"
-  jd_unavailable: "descripción no disponible — puntuado solo por frescura"
+  jd_unavailable: "Descripción no disponible — no se puede evaluar, va al final"
   reason_years: "pide más experiencia que tu nivel"
   reason_clearance: "requiere una autorización de seguridad activa"
   reason_degree: "exige título (excluiste los puestos que lo requieren)"

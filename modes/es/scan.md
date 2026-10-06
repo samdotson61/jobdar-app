@@ -16,8 +16,9 @@ razonas sobre los resultados normalizados.
 - Cada proveedor exporta `{ id, detect, fetch }`. `detect()` no usa red; `fetch()` devuelve
   `{ title, url, company, location, postedOn }` normalizado por HTTPS con una lista blanca de
   hosts.
-- Proveedores: **Greenhouse** (referencia), **Workday**, **iCIMS**, **Lever**, **Ashby** y
-  **UKG/UltiPro** se detectan por la URL de empleos; **JSON-LD** y **Jibe** leen sitios en el
+- Proveedores: **Greenhouse** (referencia), **Workday**, **iCIMS**, **Lever**, **Ashby**, **UKG/UltiPro**
+  y los **micrositios de DirectEmployers** (`*.dejobs.org`, los mapas de sitio por empleador del
+  National Labor Exchange; sin descripciones) se detectan por la URL de empleos; **JSON-LD** y **Jibe** leen sitios en el
   dominio propio del empleador y requieren `provider: jsonld` / `provider: jibe` explícito;
   **USAJobs** es opcional con una clave gratuita. Workday: `site:` opcional. iCIMS analiza el HTML
   público de las páginas de empleo (JSON-LD primero); añade `--playwright` para sitios con mucho JS.

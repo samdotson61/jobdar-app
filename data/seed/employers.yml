@@ -97,7 +97,16 @@ employers:
   # Re-verified 2026-10-05: Avant, Tempus and Qualifacts moved from Greenhouse to Workday (repointed
   # above); Kohl's moved Workday shards (wd1 → wd504, repointed below); Medpace put a Jibe site in
   # front of its iCIMS board and Genesco moved to UKG/UltiPro (both read by providers added in
-  # 1.67.0). HCA Healthcare was removed — its own careers site refuses automated readers.
+  # 1.67.0). HCA Healthcare's own site sits behind an interactive bot check; since 1.69.0 it is read
+  # from its DirectEmployers / National Labor Exchange microsite (every opening, daily, by law).
+  # `baseline: false` — the Exchange licenses job seekers for their own personal search, so a person's
+  # scan reads it but the public daily baseline (which republishes what it reads) leaves it out.
+  - company: "HCA Healthcare"
+    careers_url: "https://hcahealthcare.dejobs.org/"
+    region: southeast
+    metro: "Nashville, TN"
+    sector: healthcare
+    baseline: false
 
   # Smaller & midsize Midwest employers — less applicant competition, local/regional roots
   # (added 2026-06-05; each live-verified to return public postings, identity confirmed by job location).

@@ -376,7 +376,7 @@ prescreen:
   done: "Prescreen done: {ranked} ranked, {screened} screened. `jobdar eval --next` now serves the best role first."
   tally_ranked: "{count} ranked"
   tally_screened: "{count} screened"
-  jd_unavailable: "JD unavailable — scored on freshness only"
+  jd_unavailable: "JD unavailable — can’t assess fit, ranked last"
   reason_years: "asks for more experience than your level"
   reason_clearance: "requires an active security clearance"
   reason_degree: "degree-gated (you excluded degree-required roles)"

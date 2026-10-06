@@ -4,6 +4,32 @@ All notable changes to Jobdar are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and Jobdar adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.69.0] — 2026-10-06
+
+**HCA Healthcare is back — read from the National Labor Exchange.** App `1.30.0`; desktop stays `0.5.2`;
+199 tests. Catalog: 114 employers.
+
+- **A new provider for DirectEmployers microsites (`providers/dejobs.mjs`).** Federal contractors must
+  list every opening with the National Labor Exchange, and DirectEmployers publishes each member's
+  openings on a public microsite with a standard job sitemap — `https://{employer}.dejobs.org/sitemaps/index.xml`.
+  HCA's (`hcahealthcare.dejobs.org`) lists about 17,000 openings, refreshed daily, and its robots rules
+  allow reading it: two requests read the whole board in under three seconds. The title and "City, ST"
+  are read back from each posting's address; the sitemap's dates are its own regeneration date, so no
+  posting date is claimed (the ledger's first-seen stands in).
+- **What it cannot do, said plainly:** the job pages are drawn by scripts from an API that serves only
+  the site itself, so no description can be read — HCA roles can be found, filtered and tracked, but
+  not prescreened or scored ("JD unavailable"). careers.hcahealthcare.com itself sits behind an
+  interactive bot check for people and scripts alike, which Jobdar will not try to pass.
+- **An unreadable role ranks last everywhere.** The prescreen gate gave a role with no readable
+  description a résumé-blind neutral 30 skill points, so HCA's 4,854 Southeast roles landed at 70 — above
+  every readable role at 46. The gate now floors such a role at 8 on every surface (the apps had done
+  this on their own), and the apps say which kind it is: an expired page, or a board with no description
+  route.
+- **Personal scans only.** The Exchange's terms license a job seeker's own search and forbid
+  republishing its content, so the catalog entry carries `baseline: false`: a person's `jobdar scan`
+  reads it, the public daily baseline leaves it out, and HCA earns no employer-behaviour reading. A data
+  licence from DirectEmployers would lift that.
+
 ## [1.68.1] — 2026-10-06
 
 **The first whole-catalog baseline on GitHub, and what it taught.** App `1.29.1`; desktop stays `0.5.2`;

@@ -48,8 +48,8 @@ zona. Agrega o cambia empleadores cuando quieras con `jobdar seed --region <regi
 
 Un escaneo completo lee todas las páginas de cada portal, así que tarda unos minutos (unos cuatro para
 la lista del Medio Oeste). Para agregar un empleador por tu cuenta, pon su dirección de empleos en
-`config/portals.yml` — los portales de Workday, iCIMS, Greenhouse, Lever, Ashby y UKG se reconocen solo
-por la dirección. Dos tipos de sitio viven en la dirección web propia del empleador y necesitan una
+`config/portals.yml` — los portales de Workday, iCIMS, Greenhouse, Lever, Ashby, UKG y DirectEmployers (`*.dejobs.org`) se
+reconocen solo por la dirección. Dos tipos de sitio viven en la dirección web propia del empleador y necesitan una
 línea más que diga qué son:
 
 ```yaml

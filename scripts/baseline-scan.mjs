@@ -39,7 +39,9 @@ if (typeof flags.out !== 'string' || !flags.out) {
 const outDir = path.resolve(flags.out)
 const date = typeof flags.date === 'string' ? flags.date : new Date().toISOString().slice(0, 10)
 
-let portals = toPortals(loadEmployers())
+// Boards marked `baseline: false` in the catalog (the National Labor Exchange microsites) are for a
+// person's own scan only — their terms license personal job search, not republishing (1.69.0).
+let portals = toPortals(loadEmployers().filter((e) => e.baseline !== false))
 if (typeof flags.company === 'string') portals = portals.filter((p) => (p.company || '').toLowerCase().includes(flags.company.toLowerCase()))
 if (Number(flags.limit) > 0) portals = portals.slice(0, Number(flags.limit))
 // One board = one careers URL; a catalog that lists the same URL twice is looked at once.

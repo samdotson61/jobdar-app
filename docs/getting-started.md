@@ -55,7 +55,7 @@ employers any time with `jobdar seed --region <region> --write`.
 
 A full scan reads every page of every board, so it takes a few minutes (about four for the Midwest
 list). To add an employer yourself, put its careers address in `config/portals.yml` — Workday, iCIMS,
-Greenhouse, Lever, Ashby and UKG boards are recognized from the address alone. Two kinds of site live
+Greenhouse, Lever, Ashby, UKG and DirectEmployers (`*.dejobs.org`) boards are recognized from the address alone. Two kinds of site live
 on the employer's own web address and need one extra line saying what they are:
 
 ```yaml
