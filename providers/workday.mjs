@@ -12,6 +12,7 @@
 
 import { fetchJson, postJson } from '../lib/http.mjs'
 import { stripTags, decodeEntities } from '../lib/html.mjs'
+import { parseLocation } from '../lib/regions.mjs'
 
 // SSRF guard: only Workday job hosts, any shard (wd1 / wd3 / wd5 / wd101 …), HTTPS only.
 export const HOST_ALLOWLIST = [/^[a-z0-9-]+\.wd\d+\.myworkdayjobs\.com$/]
@@ -85,6 +86,20 @@ export function parseWorkdayJobUrl(jobUrl) {
   return { tenant, shard, site: segs[0], externalPath: '/' + segs.slice(1).join('/') }
 }
 
+// Some tenants omit `locationsText` and carry "City, ST" in `bulletFields` beside the req id and a
+// "Scheduled Weekly Hours" label (Corewell: all 1,097 of its postings scanned with a blank location
+// until 1.70.0). The first field that reads as a place — a US state, remote, foreign, "N Locations" —
+// is the location; a req id (R225927, JR-12345) or a label never is. Pure.
+export function locationFromBullets(fields) {
+  for (const f of Array.isArray(fields) ? fields : []) {
+    const s = String(f || '').trim()
+    if (!s || /^[A-Z]{0,3}-?\d{3,}$/.test(s)) continue
+    const p = parseLocation(s)
+    if (p.usStates.length || p.remote || p.foreign || /\b\d+\s+locations\b/i.test(s)) return s
+  }
+  return ''
+}
+
 export function normalize(posting, base, site, company) {
   const externalPath = posting.externalPath || ''
   const sep = externalPath.startsWith('/') ? '' : '/'
@@ -95,7 +110,7 @@ export function normalize(posting, base, site, company) {
     title: posting.title || '',
     url,
     company,
-    location: posting.locationsText || '',
+    location: posting.locationsText || locationFromBullets(posting.bulletFields),
     postedOn: posting.postedOn || null,
   }
 }

@@ -286,7 +286,7 @@ export async function localCall(path: string, method: 'GET' | 'POST', body: any)
       const transferable = typeof p.transferable === 'boolean' ? p.transferable : Boolean(evalProfile.transferable_skills);
       const { gates, decision, user } = prepEval({ jd, cv, profile: evalProfile, today: today(), title, location: loc });
       const r = await completionJson({ system: evalSystemFor(transferable), user, schema: EVAL_JSON_SCHEMA, maxTokens: 1024 });
-      return buildVerdict({ text: r.text, jd, gates, decision, profile: evalProfile, transferable, model: r.model, backend: 'local-embedded', runtime: 'llama.rn' });
+      return buildVerdict({ text: r.text, jd, gates, decision, profile: evalProfile, transferable, model: r.model, backend: 'local-embedded', runtime: 'llama.rn', location: loc });
     }
 
     // Listing liveness (1.53.0) — mirrors serve /recheck: only positive board signals are recorded;

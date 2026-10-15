@@ -117,7 +117,7 @@ init:
   intro: "Unas preguntas rápidas — luego Jobdar escribe tu configuración y puedes escanear. Enter para el valor por defecto."
   q_language: "Idioma / Language:"
   q_name: "Tu nombre:"
-  q_location: "Tu área metropolitana (p. ej. Indianapolis, IN):"
+  q_location: "Tu área metropolitana (p. ej. Indianapolis, IN) — los puestos fuera de ella puntúan un poco menos:"
   q_salary: "Salario anual deseado en USD (o en blanco para omitir):"
   q_region: "¿En qué región debe enfocarse Jobdar?"
   q_levels: "¿Qué nivel de puestos?"

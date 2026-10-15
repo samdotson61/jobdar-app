@@ -117,7 +117,7 @@ init:
   intro: "A few quick questions — then Jobdar writes your config and you can scan. Press Enter for a default."
   q_language: "Language / Idioma:"
   q_name: "Your name:"
-  q_location: "Your metro (e.g. Indianapolis, IN):"
+  q_location: "Your metro (e.g. Indianapolis, IN) — roles outside it score a little lower:"
   q_salary: "Target annual salary in USD (or blank to skip):"
   q_region: "Which region should Jobdar focus on?"
   q_levels: "Which level of roles?"

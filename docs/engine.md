@@ -21,15 +21,18 @@ structure the profile fields. `cv` is the **extracted text**, never a model rewr
 `discover(portal) → Job[]` is injected (the CLI passes the provider fetch). Merges discovered roles into
 `existing` pipeline rows (URL + near-duplicate dedup). `Job` = `{ title, url, company, location, postedOn? }`.
 
-### `evaluate({ active, jd, cv?, profile?, today?, confirm?, escalate?, transferable? }) → Verdict`
+### `evaluate({ active, jd, cv?, profile?, today?, location?, confirm?, escalate?, transferable? }) → Verdict`
 The §3 pipeline: normalizeDates → extract → gate → judge (decomposed rubric, code-computed 0–5) →
-clamp (+merge pay). `confirm: true` runs the cheap pre-confirm triage first (returns
+metro penalty → clamp (+merge pay). `location` is the job's location line: a role placed outside the
+person's own metro (`profile.location`, within 60 km) loses a code-owned few tenths — `score_weights.location`
+doubled, 0.3 by default, 0 = off — before the band is read; remote, unplaceable and blank locations lose
+nothing, and the note leads with why ("0.3 off for Columbus vs Cincinnati"). `confirm: true` runs the cheap pre-confirm triage first (returns
 `{ ok: true, skipped: true, preConfirm }` if it drops the role). `escalate` is a second active backend
 used to re-score a borderline verdict. `transferable` (defaults to `profile.transferable_skills`)
 turns on transferable-skills mode: both the judge and the pre-confirm credit genuine adjacent/foundational
 skills, and the clamp stops treating an unmet "X+ years in [field]" requirement as a hard gate (hard
 credentials — license/cert/clearance — still gate). It changes *what* counts as a fit, not the bar.
-- `Verdict` = `{ ok: true, score: 0–5, band: 'apply'|'research'|'dont', recommendation, clamped, rawScore,
+- `Verdict` = `{ ok: true, score: 0–5, band: 'apply'|'research'|'dont', recommendation, clamped, rawScore, metroPenalty, metroNote,
   judgments, pay, payBand, usage, model, backend }` — or `{ ok: false, raw }` when the reply didn't parse.
 - On local backends (`active.jsonEval`: winc/ollama/llamafile) the eval uses the **guaranteed-JSON**
   endpoint (`response_format=json_schema` on `/v1/chat/completions`) by default — `ok:false` is rare and

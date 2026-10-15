@@ -13,7 +13,12 @@ inference_url: ""       # blank → the runtime's localhost default (winc 127.0.
 local_model: ""         # model id for ollama/llamafile; winc --eval auto-picks, so leave blank for winc
 eval_grammar: true      # guaranteed-JSON evals on local backends (0 parse-failures); false = prompt-parse on /v1/messages
 name: ""                # your name — stays local
-location: ""            # your metro, e.g. "Indianapolis, IN" — stays local
+location: ""            # your metro, e.g. "Indianapolis, IN" — stays local; a role outside it scores a little lower (score_weights.location)
 include_degree_required_roles: true
 transferable_skills: false  # true → credit transferable/adjacent skills (new grads, career changers); still selective
 target_salary: 0        # annual USD target (0 = unset) — stays local
+score_weights:          # location: a role outside your metro loses twice this in fit points (0.15 → 0.3 off; 0 turns it off)
+  resume: 0.7           #   resume + seniority are not read by the scorer; salary nudges the prescreen rank only
+  location: 0.15
+  seniority: 0.1
+  salary: 0.05

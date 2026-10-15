@@ -4,6 +4,38 @@ All notable changes to Jobdar are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and Jobdar adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.70.0] — 2026-10-15
+
+**A role outside your own metro scores a little lower.** App `1.31.0`; desktop stays `0.5.2`; 203 tests.
+
+- **Code's slight preference for your city.** A fit score now loses a few tenths — **0.3** by default —
+  when the role sits outside your metro: the same role in Columbus, Grand Rapids or Carmel no longer
+  ties a Cincinnati one at 5.0. Enough to break a tie in favour of the local role, never enough to move
+  a strong Apply to Don't (the penalty is capped under one band). It comes off **before** the band is
+  read, so the saved band follows it, and the verdict's note leads with why ("0.3 off for Columbus vs
+  Cincinnati"). The model judges fit, code owns the number: `lib/regions.mjs metroPenalty`, applied in
+  `buildVerdict` — the one engine behind the CLI, `serve`, the desktop and the phone.
+- **What counts as your metro.** The place table now carries coordinates (`scripts/gen-places.mjs`
+  regenerated from GeoNames on 2026-10-15), and a role within **60 km** (≈ 37 mi) of your profile
+  `location` is home — Mason, Blue Ash, Florence KY and Covington KY sit inside Cincinnati's circle;
+  Dayton, Columbus and Indianapolis outside it. A multi-site role is measured at its nearest site.
+  Nothing comes off when there is nothing to measure: a listing that says **remote** (even "Remote -
+  Columbus, OH"), "2 Locations", a bare state, a blank location, or a profile location the table
+  can't place.
+- **`score_weights.location` finally does something.** The profile has carried `location: 0.15` for
+  a long time, and no score ever read it. It is now the penalty's size, doubled into points: 0.15 →
+  0.3, 0.2 → 0.4, never above 0.5; `0` turns the penalty off. (The résumé and seniority weights are
+  still not read by the scorer; salary nudges the prescreen rank as before.)
+- **Workday postings with no location line.** Some tenants omit `locationsText` and carry "City, ST"
+  in `bulletFields` beside the req id — every one of Corewell's 1,097 postings had scanned with a blank
+  location, so nothing could ever have been measured. The provider now reads the first bullet field
+  that is a place, and `eval` takes the board's own location for a row scanned without one.
+- **Measured** on today's Technical PM run (Qwen3.5-4B local, the same résumé and profile): Medpace IT
+  Project Manager (Cincinnati) 5.0 → 5.0; Nationwide Children's Project Manager — Population Health
+  (Columbus) 5.0 → 4.7; Corewell Agile Product Owner (Grand Rapids — a row that had scanned with no
+  location and now reads "Grand Rapids, MI" from the board) 4.9 → 4.6. All three still Apply; the
+  Cincinnati role is alone at the top.
+
 ## [1.69.0] — 2026-10-06
 
 **HCA Healthcare is back — read from the National Labor Exchange.** App `1.30.0`; desktop stays `0.5.2`;
