@@ -13,13 +13,14 @@ import '../lib/http_node.mjs' // DNS-rebinding guard for the scanners (Node-only
 setUsaJobsCredsSource(loadUsaJobsCreds)
 import { parseFlags, resolveLang, readVersion } from '../lib/cli.mjs'
 
-// Commands not yet built map to the phase that delivers them (honest stubs).
+// A command not yet built answers with the phase that delivers it (an honest stub) — and stays OUT of
+// --help until it exists (1.70.1: a 1.0 help screen lists what works, not what is planned).
 const PLANNED = {
   pipeline: 'Phase 8 — use `/jobdar pipeline` in your AI CLI today',
-  update: 'npm publish (Phase 7.5) — for now: git pull && npm install',
 }
 
-const COMMAND_ORDER = ['init', 'import', 'scan', 'seed', 'prescreen', 'eval', 'recheck', 'feedback', 'report', 'pipeline', 'pdf', 'outreach', 'tracker', 'dashboard', 'tui', 'serve', 'backend', 'calibrate', 'doctor', 'update']
+const SELF_HELP = new Set(['update'])
+const COMMAND_ORDER = ['init', 'import', 'scan', 'seed', 'prescreen', 'eval', 'recheck', 'feedback', 'report', 'pdf', 'outreach', 'tracker', 'dashboard', 'tui', 'serve', 'backend', 'calibrate', 'doctor', 'update']
 
 function printHelp(t) {
   console.log(`jobdar — ${t('cli.tagline')}\n`)
@@ -47,7 +48,8 @@ async function main() {
     console.log(readVersion())
     return 0
   }
-  if (command === null || command === 'help' || flags.help || flags.h) {
+  // A command in SELF_HELP prints its own usage on --help; every other `<command> --help` gets this screen.
+  if (command === null || command === 'help' || ((flags.help || flags.h) && !SELF_HELP.has(command))) {
     printHelp(t)
     return 0
   }
@@ -146,6 +148,11 @@ async function main() {
     case 'serve': {
       const { runServe } = await import('../lib/commands/serve.mjs')
       await runServe(rest)
+      return 0
+    }
+    case 'update': {
+      const { runUpdate } = await import('../lib/commands/update.mjs')
+      await runUpdate(rest)
       return 0
     }
     default: {

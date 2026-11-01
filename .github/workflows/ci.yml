@@ -23,6 +23,7 @@ jobs:
       # The CLI path a user takes (README: clone + npm install); the root has one runtime dep.
       - run: npm install --no-audit --no-fund
       - run: npm run doctor
+      - run: npm run lint
       - run: npm test
       - run: node scan.mjs --dry-run
       # The published package must never carry local reports/data (1.63.1 caught docs/reports/ shipping).
@@ -35,9 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9
+      - uses: pnpm/action-setup@v4 # the version comes from package.json "packageManager" (1.70.1)
       - uses: actions/setup-node@v4
         with:
           node-version: 22

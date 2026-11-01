@@ -18,6 +18,7 @@ curl -fsSL https://raw.githubusercontent.com/samdotson61/jobdar-app/main/install
 ```
 
 Once `npm link` has put `jobdar` on your PATH, its short alias `jd` works too (`jd scan` ≡ `jobdar scan`); until then, `node bin/jobdar <command>` from the checkout does the same thing.
+Later, **`jobdar update`** brings the install to the newest version (`--check` only looks). The installer switches to `npm install -g jobdar` by itself once the package is on npm (the 1.0 publish).
 
 **Windows (PowerShell)**
 ```powershell

@@ -4,6 +4,41 @@ All notable changes to Jobdar are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and Jobdar adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.70.1] — 2026-11-01
+
+**Ship-prep for 1.0: `jobdar update` is real, the help screen lists only what works, and the repo's own
+tooling is in order.** App `1.31.1`; desktop stays `0.5.2`; 206 tests.
+
+- **`jobdar update` is built.** It updates by whichever route installed Jobdar: a git checkout (the
+  one-command installer, a clone) runs `git pull --ff-only` + `npm install` and refuses to pull over
+  uncommitted changes (`--force` overrides); an npm install (`npm i -g jobdar`, once published) runs
+  `npm install -g jobdar@latest`; the desktop app's vendored engine or an unpacked tarball is pointed at
+  the Releases page instead of being touched. `--check` only reports — commits behind and the version
+  waiting upstream, or the npm version — and says honestly when it cannot tell (offline, no upstream, not
+  on the registry yet). Bilingual, `lib/commands/update.mjs`.
+- **`--help` lists what exists.** The unbuilt `pipeline` command is no longer in the help screen; it still
+  answers `jobdar pipeline` with the phase that delivers it. `update` lost its "planned" label, and
+  `jobdar update --help` prints the command's own usage (the router used to answer every `<command>
+  --help` with the global screen; a command now opts into owning its help).
+- **The installers prefer npm once the package is published.** `install.sh` / `install.ps1` try
+  `npm view jobdar version` first: on the registry → `npm install -g jobdar` (PATH, `jd`, `jobdar update`
+  for free); not yet, or `JOBDAR_FROM_SOURCE=1` → the clone path that works today. Getting-started (EN +
+  ES) and the READMEs say so.
+- **The suite is split by area.** 3,260 lines of `test-all.mjs` became `test/*.test.mjs` (16 files, a
+  numeric prefix keeps the historical run order, `test/_harness.mjs` + `test/_helpers.mjs` shared).
+  `npm test` runs everything as before; `npm test -- prescreen ledger` runs a subset; `--list` names the
+  files. Every case moved verbatim — 203 before, 203 + 3 new after.
+- **Repo tooling.** `npm run lint` (`scripts/lint.mjs`) is a `node --check` syntax pass over every
+  `.mjs`, including `scripts/` which the suite never imported — wired into CI and `prepublishOnly`.
+  Dependabot (weekly, grouped: root workspace, desktop shell, GitHub Actions). An `.editorconfig` carries
+  the code shape (no formatter is run over the tree — a repo-wide reflow would collide with the other
+  sessions working it). `"packageManager": "pnpm@10.28.0"` pins pnpm; CI reads it instead of its own
+  number.
+- **Docs in lockstep.** `AGENTS.md`, `.agents/skills/README.md` and `commands/jobdar.md` were still at
+  1.69.0 — fixed. `RELEASING.md`'s lockstep list named a `package-lock.json` that does not exist (pnpm
+  workspace) and omitted the app and desktop manifests; it now matches `CLAUDE.md` and carries the grep
+  that catches a missed file.
+
 ## [1.70.0] — 2026-10-15
 
 **A role outside your own metro scores a little lower.** App `1.31.0`; desktop stays `0.5.2`; 203 tests.

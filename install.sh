@@ -15,6 +15,21 @@ if ! command -v git >/dev/null 2>&1; then
   exit 1
 fi
 
+# Once Jobdar is on npm (the 1.0 publish), the installer prefers the package: one global install puts
+# `jobdar` and `jd` on the PATH, and `jobdar update` keeps it current. Until then — or with
+# JOBDAR_FROM_SOURCE=1 — it clones the repo (the path that works today).
+if [ -z "${JOBDAR_FROM_SOURCE:-}" ] && npm view jobdar version >/dev/null 2>&1; then
+  echo "Installing the jobdar package from npm…"
+  if ! npm install -g jobdar; then
+    echo "npm install -g failed. If the error was EACCES, see https://docs.npmjs.com/resolving-eacces-permissions-errors-when-installing-packages-globally — or run with JOBDAR_FROM_SOURCE=1 to install from a checkout instead." >&2
+    exit 1
+  fi
+  jobdar doctor || true
+  if [ -t 0 ]; then jobdar init; else echo "Setup: run  jobdar init"; fi
+  echo "Done. Later: 'jobdar update' brings you to the newest version."
+  exit 0
+fi
+
 REPO="${JOBDAR_REPO:-https://github.com/samdotson61/jobdar-app.git}"
 # JOBDAR_DIR wins; plain DIR also works (it's what people naturally try); default ~/jobdar.
 DIR="${JOBDAR_DIR:-${DIR:-$HOME/jobdar}}"
@@ -34,4 +49,5 @@ if [ -t 0 ]; then
 else
   echo "Setup: run  cd \"$DIR\" && node bin/jobdar init"
 fi
-echo "Done. Tip: 'npm link' puts the 'jobdar' command (and its short alias 'jd') on your PATH."
+echo "Done. Tip: 'npm link' puts the 'jobdar' command (and its short alias 'jd') on your PATH;"
+echo "      'node bin/jobdar update' (or 'jobdar update' once linked) brings this checkout to the newest version."

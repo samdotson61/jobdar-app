@@ -7,14 +7,22 @@ npm package — it's a separate GUI over `jobdar serve`). This checklist covers 
 
 1. **Sync first.** `git fetch origin && git status -sb`. Multiple sessions work this repo; reconcile
    before you cut a release, and never reuse a version origin already published.
-2. **Version lockstep.** One bump by size (patch/minor/major) across **all** of:
-   - `package.json` + `package-lock.json`
-   - `.claude-plugin/plugin.json`
-   - `CHANGELOG.md` (new dated entry at top)
-   - `ROADMAP.md` line-10 status banner + `README.md` / `README.es.md` / `CLAUDE.md` status lines
-   A bump that touches only `package.json` is a bug.
-3. **Green tests.** `npm test` must be `0 failed`. `prepublishOnly` also runs it, so a broken suite
-   blocks `npm publish` automatically — but check first.
+2. **Version lockstep.** One bump by size (patch/minor/major) across **all** of (there is no
+   `package-lock.json` at the root — the repo is a pnpm workspace; `pnpm-lock.yaml` only changes when a
+   dependency does):
+   - `package.json` (the CLI) + `.claude-plugin/plugin.json` — same number
+   - `apps/jobdar/package.json` (the app — its own number, bumped in step with the CLI)
+   - `apps/desktop/package.json` (the desktop shell — its own number; bump it **only** when you also
+     re-vendor the engine and rebuild the installers, otherwise the CHANGELOG line says "desktop stays")
+   - `CHANGELOG.md` (new dated entry at top, naming the CLI, app and desktop numbers + the test count)
+   - the status lines: `ROADMAP.md` line 10 and its "Known gaps — Current as of" line, `README.md`,
+     `README.es.md`, `CLAUDE.md`, `AGENTS.md`, `.agents/skills/README.md`, `commands/jobdar.md`
+   A bump that touches only `package.json` is a bug. Check with
+   `grep -rn "<old version>" --include="*.md" --include="*.json" . | grep -v node_modules | grep -v CHANGELOG`.
+3. **Green tests + lint.** `npm run lint` (a syntax pass over every `.mjs`) and `npm test` must be
+   clean (`0 failed`). The cases live in `test/*.test.mjs` by area — `npm test -- prescreen ledger` runs a
+   subset while you work. `prepublishOnly` runs both, so a broken suite blocks `npm publish`
+   automatically — but check first.
 4. **Clean tarball.** `npm pack --dry-run` and confirm:
    - the new files you added are present;
    - **no** personal data — `config/profile.yml`, `data/cv.md`, `data/pipeline.tsv`,

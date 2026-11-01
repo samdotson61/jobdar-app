@@ -1,0 +1,28 @@
+# Dependency update PRs (1.70.1). The CLI has one runtime dependency (js-yaml); the rest is the pnpm
+# workspace (the Expo app + the engine package) and the npm-managed desktop shell. Weekly, grouped so
+# the apps' many small bumps arrive as one PR each — CI runs the suite on every one.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      workspace:
+        patterns: ['*']
+  - package-ecosystem: npm
+    directory: /apps/desktop
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+    groups:
+      desktop:
+        patterns: ['*']
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday

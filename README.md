@@ -12,7 +12,7 @@ dominate US enterprise employers), evaluates each role against your résumé, ta
 cover letter, and tracks every application.
 
 > **Status:** Phases 0–7, 5.5, 7.7, 7.8, 8b, 8a, 8c, 8e + 8f **complete**, **Phase 10 L0–L5 shipped** —
-> **Jobdar CLI `1.70.0`** + **app `1.31.0`** + **desktop `0.5.2`** — the desktop app now installs like any
+> **Jobdar CLI `1.70.1`** + **app `1.31.1`** + **desktop `0.5.2`** — the desktop app now installs like any
 > other app: download, open, and **one click sets up the free private AI (no terminal)**. Bilingual core; **nine live-verified
 > scanner providers** (Workday, iCIMS, Greenhouse, Lever, Ashby, UKG, DirectEmployers microsites + opt-in JSON-LD and Jibe readers) plus an opt-in
 > **USAJobs** federal aggregator (BYO free key); level + region
@@ -144,8 +144,9 @@ curl -fsSL https://raw.githubusercontent.com/samdotson61/jobdar-app/main/install
 
 Windows (PowerShell): `irm https://raw.githubusercontent.com/samdotson61/jobdar-app/main/install.ps1 | iex`.
 No installer? `git clone https://github.com/samdotson61/jobdar-app && cd jobdar-app && npm install &&
-node bin/jobdar init`. (`npm i -g jobdar` / `npx jobdar` arrive with the 1.0 npm publish —
-see [RELEASING.md](RELEASING.md).) Inside an AI CLI like Claude Code, the same actions are available as
+node bin/jobdar init`. `jobdar update` brings any install to the newest version. (`npm i -g jobdar` /
+`npx jobdar` arrive with the 1.0 npm publish — the installer switches to npm by itself then; see
+[RELEASING.md](RELEASING.md).) Inside an AI CLI like Claude Code, the same actions are available as
 the slash command `/jobdar scan`, `/jobdar eval`, and so on.
 
 New here? The **[Getting Started guide](docs/getting-started.md)** is the 5-minute path from install to
