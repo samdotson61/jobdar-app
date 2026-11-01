@@ -2,8 +2,10 @@
 
 ## Reporting a vulnerability
 
-Please email the maintainers privately rather than opening a public issue (a security contact lands
-with the org in ROADMAP Step 0.2). We aim to respond within a few business days.
+Please email **samuel.dotson@gmail.com** privately rather than opening a public issue. Say "Jobdar
+security" in the subject so it is seen quickly. We aim to respond within a few business days, and will
+credit you in the fix's CHANGELOG entry unless you ask otherwise. (A dedicated address lands with the org
+in ROADMAP Step 0.2; this one stays valid.)
 
 ## Security posture
 

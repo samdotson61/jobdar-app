@@ -4,6 +4,14 @@ All notable changes to Jobdar are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and Jobdar adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.70.2] — 2026-11-01
+
+**A real security contact.** App `1.31.2`; desktop stays `0.5.2`; 206 tests.
+
+- **`SECURITY.md` names an address.** Vulnerability reports go to samuel.dotson@gmail.com (subject
+  "Jobdar security"); the policy no longer defers the contact to the Step 0.2 org. A public npm package
+  needs a reachable reporter path before publish — this was the last placeholder in the file.
+
 ## [1.70.1] — 2026-11-01
 
 **Ship-prep for 1.0: `jobdar update` is real, the help screen lists only what works, and the repo's own
