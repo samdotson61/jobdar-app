@@ -7,9 +7,9 @@ import { band as engineBand, BANDS as ENGINE_BANDS } from '@jobdar/engine';
 export type Lang = 'en' | 'es';
 export type Band = 'apply' | 'research' | 'dont';
 
-export interface Profile { name: string; language: Lang; regions: string[]; levels: string[]; transferable: boolean; sponsorship: boolean; salary: number; noDegree?: boolean }
+export interface Profile { name: string; language: Lang; regions: string[]; levels: string[]; transferable: boolean; sponsorship: boolean; salary: number; noDegree?: boolean; metros?: string[] }
 export interface Job { company: string; role: string; url: string; location: string; postedOn?: string; jd: string }
-export interface Scored extends Job { prescreen: number; screenReason: string; gate?: string; confirm?: 'fit' | 'maybe' | 'skip'; level?: string; sponsors?: boolean; listingGone?: boolean; aiConfirm?: 'fit' | 'maybe' | 'skip'; aiReason?: string }
+export interface Scored extends Job { metro?: string; prescreen: number; screenReason: string; gate?: string; confirm?: 'fit' | 'maybe' | 'skip'; level?: string; sponsors?: boolean; listingGone?: boolean; aiConfirm?: 'fit' | 'maybe' | 'skip'; aiReason?: string }
 export interface Criterion { key: string; weight: number; judgment: 'strong' | 'partial' | 'none'; evidence: string }
 export interface Verdict { score: number; band: Band; criteria: Criterion[]; pay: string; clamped?: string }
 export interface Tailored { summary: string; coverLetter: string; keywords: string[] }
@@ -92,6 +92,7 @@ const STR: Record<Lang, Dict> = {
     'followup.reason.duplicate_person': 'you already logged this person for this role', 'followup.reason.role_cap': 'you’ve reached the 2-contact limit for this role',
     'followup.lint.too_long': 'too long for a LinkedIn note', 'followup.lint.placeholder': 'has a [placeholder] left in it', 'followup.lint.missing_name': 'doesn’t use the recipient’s name',
     'followup.lint.self_greeting': 'greets you instead of the recipient', 'followup.lint.empty': 'the draft came back empty',
+    'common.metros': 'Cities (optional)', 'metros.placeholder': 'Cincinnati, OH; Chicago, IL', 'metros.hint': 'Separate cities with ; — when set, the search covers roles within ~37 miles of any of them (remote included) instead of the whole region.', 'metros.bad': 'Can\'t place: {bad} — write each as "City, ST"',
     'common.region': 'Regions', 'common.level': 'Level', 'common.salary': 'Target salary', 'salary.any': 'Any', 'common.lang': 'Idioma: ES',
     'region.midwest': 'Midwest', 'region.northeast': 'Northeast', 'region.southeast': 'Southeast',
     'region.southwest': 'Southwest', 'region.west': 'West', 'region.nationwide': 'Nationwide',
@@ -171,6 +172,7 @@ const STR: Record<Lang, Dict> = {
     'followup.reason.duplicate_person': 'ya registraste a esta persona para este puesto', 'followup.reason.role_cap': 'llegaste al límite de 2 contactos para este puesto',
     'followup.lint.too_long': 'demasiado larga para una nota de LinkedIn', 'followup.lint.placeholder': 'le queda un [marcador] sin llenar', 'followup.lint.missing_name': 'no usa el nombre del destinatario',
     'followup.lint.self_greeting': 'te saluda a ti en vez de al destinatario', 'followup.lint.empty': 'el borrador llegó vacío',
+    'common.metros': 'Ciudades (opcional)', 'metros.placeholder': 'Cincinnati, OH; Chicago, IL', 'metros.hint': 'Separa las ciudades con ; — si las indicas, la búsqueda cubre puestos a ~60 km de cualquiera de ellas (incluidos remotos) en lugar de toda la región.', 'metros.bad': 'No se puede ubicar: {bad} — escribe cada una como "Ciudad, ST"',
     'common.region': 'Regiones', 'common.level': 'Nivel', 'common.salary': 'Salario objetivo', 'salary.any': 'Cualquiera', 'common.lang': 'Language: EN',
     'region.midwest': 'Medio Oeste', 'region.northeast': 'Noreste', 'region.southeast': 'Sureste',
     'region.southwest': 'Suroeste', 'region.west': 'Oeste', 'region.nationwide': 'Todo EE. UU.',

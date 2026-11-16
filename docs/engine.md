@@ -33,7 +33,7 @@ turns on transferable-skills mode: both the judge and the pre-confirm credit gen
 skills, and the clamp stops treating an unmet "X+ years in [field]" requirement as a hard gate (hard
 credentials — license/cert/clearance — still gate). It changes *what* counts as a fit, not the bar.
 - `Verdict` = `{ ok: true, score: 0–5, band: 'apply'|'research'|'dont', recommendation, clamped, rawScore, metroPenalty, metroNote,
-  judgments, pay, payBand, usage, model, backend }` — or `{ ok: false, raw }` when the reply didn't parse.
+  judgments, pay, payBand, usage, model, backend, capped, unmet }` (`capped`: an Apply held at Research for two or more `unmet` requirements, 1.71.0) — or `{ ok: false, raw, cause }` when the reply didn't parse (`cause.kind`: `empty` | `truncated` | `no_grammar` | `not_json`, 1.71.0).
 - On local backends (`active.jsonEval`: winc/ollama/llamafile) the eval uses the **guaranteed-JSON**
   endpoint (`response_format=json_schema` on `/v1/chat/completions`) by default — `ok:false` is rare and
   it degrades to `/v1/messages` parse on error. Opt out with `profile.eval_grammar: false`. The Anthropic

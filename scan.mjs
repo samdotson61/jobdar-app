@@ -5,14 +5,16 @@
 // Run directly:  node scan.mjs [--dry-run] [--lang en|es]
 // Or via the CLI: jobdar scan [--dry-run]
 
-import { loadProfile, loadPortals, loadUsaJobsCreds } from './lib/config.mjs'
+import { loadProfile, loadPortals, loadUsaJobsCreds, LEVELS, REGIONS } from './lib/config.mjs'
 import { setUsaJobsCredsSource } from './providers/_creds.mjs'
 setUsaJobsCredsSource(loadUsaJobsCreds) // key-gated providers read creds through the fs-free seam
 import { getT } from './lib/i18n.mjs'
-import { parseFlags, resolveLang, isDirectRun } from './lib/cli.mjs'
+import { parseFlags, resolveLang, isDirectRun, splitList, unknownTokens } from './lib/cli.mjs'
 import { resolveProvider } from './providers/_contract.mjs'
 import { filterByLevel } from './lib/levels.mjs'
-import { filterByLocation } from './lib/regions.mjs'
+import { filterByLocation, targetMetrosOf } from './lib/regions.mjs'
+import { withCatalogMetro } from './lib/portals_pure.mjs'
+import { loadEmployers } from './lib/seed.mjs'
 import { upsertScanned, prunePipeline, upsertListingsFromScan } from './lib/evaluations.mjs'
 import { createRadar } from './lib/progress.mjs'
 import { color, symbol, heading } from './lib/ui.mjs'
@@ -27,12 +29,16 @@ export async function runScan(argv = []) {
   const t = getT(lang)
   const dryRun = Boolean(flags['dry-run'] || flags.n)
   const ctx = { render: Boolean(flags.playwright || process.env.JOBDAR_PLAYWRIGHT), lang }
-  const levels = flags.levels
-    ? String(flags.levels).split(',').map((s) => s.trim()).filter(Boolean)
-    : profile.target_levels
-  const regions = flags.regions
-    ? String(flags.regions).split(',').map((s) => s.trim()).filter(Boolean)
-    : profile.target_regions
+  const levels = flags.levels ? splitList(flags.levels) : profile.target_levels
+  const regions = flags.regions ? splitList(flags.regions) : profile.target_regions
+  for (const [flag, list, known] of [['--levels', flags.levels ? levels : [], LEVELS], ['--regions', flags.regions ? regions : [], REGIONS]]) {
+    const bad = unknownTokens(list, known)
+    if (bad.length) {
+      console.error(color.red(t('common.bad_list', { flag, bad: bad.join(', '), known: known.join(', ') })))
+      process.exitCode = 1
+      return { portals: 0, jobs: 0 }
+    }
+  }
 
   heading(dryRun ? t('scan.dry_run_title') : t('scan.title'))
   console.log(
@@ -45,7 +51,9 @@ export async function runScan(argv = []) {
     )
   )
 
-  let portals = loadPortals()
+  // 1.71.0: portals.yml written before this version has no `metro`; fill it from the catalog by URL.
+  let portals = withCatalogMetro(loadPortals(), loadEmployers())
+  const targetMetros = targetMetrosOf(profile)
   const companyFilter = typeof flags.company === 'string' ? flags.company.toLowerCase() : null
   if (companyFilter) portals = portals.filter((p) => (p.company || '').toLowerCase().includes(companyFilter))
   console.log(t('scan.portals_count', { count: portals.length }))
@@ -105,12 +113,20 @@ export async function runScan(argv = []) {
       // for absence, so it stays out of the liveness marker: its rows keep their last-known state.
       if (!jobs.incomplete) for (const j of jobs) if (j && j.url) allSeen.push(j.url)
       const lvl = filterByLevel(jobs, levels)
-      const loc = filterByLocation(lvl.kept, regions, { userMetro: profile.location })
+      const loc = filterByLocation(lvl.kept, regions, { userMetro: profile.location, targetMetros, fallbackMetro: portal.metro })
       for (const j of loc.kept) allKept.push(j)
       total += loc.kept.length
       excludedLevel += lvl.excluded
       excludedRegion += loc.excluded
-      say(`  ${symbol.ok()} ${t('scan.found_for', { company: portal.company, count: loc.kept.length })}`)
+      // 1.71.0: say what the BOARD listed as well as what survived the filters — "0 role(s)" used to read
+      // the same for an empty/moved board and for a live board with nothing at your level/region.
+      const listed = jobs.length
+      const line = listed === 0
+        ? t('scan.found_none_listed', { company: portal.company })
+        : loc.kept.length === listed
+          ? t('scan.found_for', { company: portal.company, count: listed })
+          : t('scan.found_filtered', { company: portal.company, count: loc.kept.length, listed, level: lvl.excluded, region: loc.excluded })
+      say(`  ${listed === 0 ? symbol.warn() : symbol.ok()} ${line}`)
       radar.tick('roles', loc.kept.length)
     } catch (err) {
       say(`  ${symbol.fail()} ${t('scan.error_for', { company: portal.company, error: err.message })}`)

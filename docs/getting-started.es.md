@@ -46,6 +46,15 @@ Mira el barrido de radar 📡 mientras los portales van respondiendo — el recu
 de verdad aterrizan. Verás puestos nuevos de los empleadores de tu región, filtrados a tu nivel y
 zona. Agrega o cambia empleadores cuando quieras con `jobdar seed --region <región> --write`.
 
+¿Buscas en más de una ciudad? Indícalas a `init` en lugar de una región — cada una como "Ciudad, ST",
+separadas por `;`:
+
+```bash
+node bin/jobdar init --metros "Cincinnati, OH; Chicago, IL; New York, NY"
+```
+Jobdar escanea entonces los empleadores del catálogo cercanos a esas ciudades y conserva los puestos a
+unos 60 km de cualquiera de ellas (también los remotos).
+
 Un escaneo completo lee todas las páginas de cada portal, así que tarda unos minutos (unos cuatro para
 la lista del Medio Oeste). Para agregar un empleador por tu cuenta, pon su dirección de empleos en
 `config/portals.yml` — los portales de Workday, iCIMS, Greenhouse, Lever, Ashby, UKG y DirectEmployers (`*.dejobs.org`) se

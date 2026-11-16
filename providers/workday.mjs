@@ -34,6 +34,7 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 // them on two boards and cut three more short). Such a request is retried with a growing pause —
 // 5 s, 10 s, 20 s, 40 s — never past the caller's deadline. Other failures pass straight through.
 const BACKOFF_MS = [5000, 10000, 20000, 40000]
+const JOB_BACKOFF_MS = [5000, 15000] // one job page at eval time: a short wait, then give up and say why (1.71.0)
 export const isRateLimited = (err) => /HTTP 429 /.test(String((err && err.message) || ''))
 async function withBackoff(request, deadline = Infinity, pauses = BACKOFF_MS) {
   for (let attempt = 0; ; attempt++) {
@@ -352,14 +353,30 @@ const workday = {
     const p = parseWorkdayJobUrl(jobUrl)
     if (!p) return null
     const url = `https://${p.tenant}.${p.shard}.myworkdayjobs.com/wday/cxs/${p.tenant}/${p.site}${p.externalPath}`
-    const data = await fetchJson(url, { hostAllowlist: HOST_ALLOWLIST })
+    // 1.71.0: a 429 is retried after 5 s, then 15 s (the list path already backed off; the job page didn't,
+    // so a run of evals against one tenant skipped every role once Workday started throttling).
+    const data = await withBackoff(() => fetchJson(url, { hostAllowlist: HOST_ALLOWLIST }), Infinity, JOB_BACKOFF_MS)
     const info = (data && data.jobPostingInfo) || {}
     return {
       title: info.title || '',
-      location: info.location || '',
+      location: jobLocations(info),
       description: info.jobDescription ? stripTags(decodeEntities(info.jobDescription)) : '',
     }
   },
+}
+
+// The job page's locations: primary + additionalLocations, "; "-joined, de-duplicated (1.71.0). The list
+// page says only "4 Locations" for a multi-site posting; this is what replaces it after eval. Entries may
+// be strings or { descriptor } objects. Pure.
+export function jobLocations(info = {}) {
+  const out = []
+  const add = (v) => {
+    const s = String((v && typeof v === 'object' ? v.descriptor || v.name : v) || '').trim()
+    if (s && !out.includes(s)) out.push(s)
+  }
+  add(info.location)
+  for (const v of Array.isArray(info.additionalLocations) ? info.additionalLocations : []) add(v)
+  return out.join('; ')
 }
 
 export default workday

@@ -53,6 +53,15 @@ Watch the 📡 radar sweep as boards report in — the tally counts the roles th
 see fresh roles from your region's employers, filtered to your level and area. Add or change
 employers any time with `jobdar seed --region <region> --write`.
 
+Looking in more than one city? Give them to `init` instead of a region — each as "City, ST",
+separated by `;`:
+
+```bash
+node bin/jobdar init --metros "Cincinnati, OH; Chicago, IL; New York, NY"
+```
+Jobdar then scans the catalog employers near any of those cities and keeps roles within about 37 miles
+of any of them (remote roles too).
+
 A full scan reads every page of every board, so it takes a few minutes (about four for the Midwest
 list). To add an employer yourself, put its careers address in `config/portals.yml` — Workday, iCIMS,
 Greenhouse, Lever, Ashby, UKG and DirectEmployers (`*.dejobs.org`) boards are recognized from the address alone. Two kinds of site live

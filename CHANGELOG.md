@@ -4,6 +4,102 @@ All notable changes to Jobdar are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and Jobdar adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.71.0] — 2026-11-16
+
+**Search several cities at once; eval keeps what it computes; fixes from the three-city run (2026-11-13).**
+App `1.32.0`; desktop stays `0.5.2` until it is rebuilt from this version; 217 tests.
+
+### Several cities
+- **`target_metros`** in the profile — a list of "City, ST" (`jobdar init --metros "Cincinnati, OH;
+  Chicago, IL; New York, NY"`, or the new *Cities* field beside the region chips in the desktop and
+  phone apps). Empty means exactly the 1.70.0 behaviour. When set:
+  - the boards a scan reads are the catalog employers whose metro lies within 60 km of **any** target
+    city, across regions (`seed`, `init`, `serve /scan` and the on-device scan all share
+    `lib/portals_pure.mjs employersNearMetros`);
+  - a role is kept when **any** place it names is within 60 km of any target city; remote roles are
+    kept; a bare state is kept only if it holds a target; "4 Locations" stays a lenient keep;
+  - the metro penalty measures against the **nearest** target city, so a Chicago role isn't docked for
+    a Cincinnati résumé when Chicago is a target.
+  - `seed` with no `--metro`/`--region` follows the profile's cities; a city the place table can't
+    place is refused by name instead of silently matching nothing.
+- **Campus names are placed through the board's catalog metro.** "Burnet Campus", "MOB - 3430
+  Burnet", "NYP/Weill Cornell Medical Center" name no city, so they couldn't be filtered by metro or
+  take the metro penalty. Each scanned row now carries its board's catalog `metro` (new `metro` column,
+  appended — older pipeline files read it as blank; older `portals.yml` files pick it up from the
+  catalog by URL). It is used **only** to measure a location that names no place and isn't remote; the
+  row still shows the board's own text.
+- **"New York, NY" now places.** The place table only knew "New York City", so the usual spelling
+  placed nowhere — NYC roles escaped the 1.70.0 metro penalty entirely. "NYC" places anywhere; "New
+  York" only in a location's city slot (first segment, or first after a `;`), so "Rochester, New York"
+  stays Rochester while "Boston, MA; New York, New York" lists both — four target-city roles at Datadog
+  and Ramp had been dropped for exactly that.
+- **"N Locations" gives way to the real list.** Workday list pages say "4 Locations" for a multi-site
+  posting; eval now reads the job page's primary **and** additional locations ("Pittsburgh, PA;
+  Chicago, IL; Phoenix, AZ; Tampa, FL") and saves them on the row (a location that already names a
+  place is never replaced). The penalty is taken against the nearest listed city.
+
+### Evaluator output
+- **Two missed requirements hold an Apply at Research.** The model now lists each hard requirement
+  the résumé misses (`required.unmet`, quoted from the JD; an empty list when none, and never items the
+  JD calls preferred, a plus or nice to have). An Apply verdict naming **two or more** is held at
+  Research (top of the band, 3.9) and its note leads with them: "Research, not Apply — misses 2 stated
+  requirements: …". **One miss stays Apply** — a single gap is often worth applying through. Hard
+  clamps to Don't are unchanged, and a reply without the list counts as none (the count is never
+  guessed from prose). The CLI line says "held at Research — N unmet requirements". This changes the
+  rubric prompt (a recalibration event): calibration band agreement went from **82% to 100%** (11/11,
+  twice), with the years-shortfall and logistics cases now landing in Research as labeled.
+- **Pay is saved.** Eval computed the stated pay band and printed it, then dropped it — only prescreen
+  ever wrote the column, so a role scored without a prescreen never showed pay (blank on all 177 rows
+  of the three-city run; 78 had printed it). Every save path now stores it — `eval <url>`, `eval
+  --next`, the Batches path, `serve /eval/save`, the desktop/phone save — and a blank never overwrites
+  a stored band.
+- **The whole note is kept.** The stored recommendation was cut at 200 characters, usually mid-word and
+  often right before the blocker ("The primary barrier"). It now keeps up to 1,000 characters with
+  whitespace flattened. (No list view displays the model's note, so no layout changed.)
+- **A skipped eval says why.** "model reply didn't parse" now names the cause — an empty reply, a reply
+  cut off at the output limit (`finish_reason=length`), the guaranteed-JSON call failing (its error is
+  kept instead of silently retrying in free text), or a complete reply that isn't the expected JSON —
+  and says the role is left pending. A JD that couldn't be fetched prints the fetch error (an HTTP 429
+  read as "couldn't fetch the JD" before).
+- **A throttled Workday job page is retried.** Scanning already backed off on HTTP 429; the eval-time
+  job-page fetch didn't, so once Workday started throttling, every role from that employer was
+  skipped. It now waits 5 s, then 15 s, before giving up with the reason.
+- **Degree waivers past a long field list are read.** Medpace's "Bachelor's degree in Information
+  Technology, Computer Science, Business Administration, or related field (or equivalent experience)"
+  put the waiver ~105 characters after "Bachelor's"; the gate looked 90 characters ahead, read a hard
+  "required" degree, told the model so, and the model clamped two roles to Don't on a degree the JD
+  waives. The gate now reads the whole clause (to the next `;`, sentence break or newline) on both
+  sides — and a waiver in a *neighbouring* sentence no longer softens a hard requirement. Both Medpace
+  roles now score 3.7 Research on 10 of 10 runs; calibration band agreement unchanged at 82%.
+
+### CLI
+- **Comma lists typed in PowerShell work.** An unquoted `--levels entry,mid` reached Jobdar as "entry
+  mid" (PowerShell's array → the npm shim's space-join) and `init` wrote one invalid level. Every list
+  flag — `scan --levels/--regions`, `init --levels`, `seed --region/--sector` — splits on commas and
+  spaces, and an unknown value exits 1 naming it; nothing invalid is written to `profile.yml`.
+  `--metro`/`--metros` split on `;`.
+- **`import --write` keeps your levels.** It replaced the levels you chose with one guessed from the
+  résumé (entry + mid became "mid"), which also changed the level-fit input of every later eval. The
+  résumé's guess now only fills an empty choice; a second import changes nothing.
+- **The scan line says what the board listed.** "Relativity: 0 role(s)" read the same for a moved
+  board and a live one with nothing at your level. Now: "0 role(s) — the board listed 395; 196 outside
+  your level(s), 199 outside your region(s)", or "the board listed 0 roles — it may have moved or be
+  empty".
+
+### Catalog
+- **Advocate Health** moved Workday shards (wd5 → wd115; the old endpoint answers HTTP 410) —
+  repointed; the baseline reads it whole again (5,363 postings in 55 partitions).
+- **Ten anchor employers added**, each live-verified through the real provider on 2026-11-16 —
+  Cincinnati: Western & Southern (iCIMS), Great American Insurance, St. Elizabeth Healthcare; Chicago:
+  Abbott (reads the 2,000-posting window; the baseline's partitions read it whole), Allstate, Northern
+  Trust, Motorola Solutions; New York: AIG, Pfizer, Mastercard (Workday). A three-city search now reads
+  42 boards (was 32). Twenty-two more candidates run on platforms no provider reads yet (Oracle Cloud
+  HCM ×7, Phenom ×3, Avature ×3, Eightfold ×2, others) and five refuse automated readers — recorded in
+  ROADMAP 5.5.5 as provider demand, not added.
+- **Relativity, Cameo, Kalderos** re-verified: Relativity and Cameo are live (their "0 role(s)" was the
+  level/region filter); Kalderos's own careers page still embeds the same board, which lists no
+  openings today.
+
 ## [1.70.0] — 2026-10-15
 
 **A role outside your own metro scores a little lower.** App `1.31.0`; desktop stays `0.5.2`; 203 tests.

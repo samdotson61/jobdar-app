@@ -258,7 +258,7 @@ export const SEED_EMPLOYERS = [
  },
  {
   "company": "Advocate Health",
-  "careers_url": "https://aah.wd5.myworkdayjobs.com/External",
+  "careers_url": "https://aah.wd115.myworkdayjobs.com/External",
   "region": "midwest",
   "metro": "Chicago, IL",
   "sector": "healthcare"
@@ -360,6 +360,55 @@ export const SEED_EMPLOYERS = [
   "region": "midwest",
   "metro": "St. Paul, MN",
   "sector": "healthcare"
+ },
+ {
+  "company": "Western & Southern",
+  "careers_url": "https://careers-westernsouthern.icims.com/jobs/search",
+  "region": "midwest",
+  "metro": "Cincinnati, OH",
+  "sector": "insurance"
+ },
+ {
+  "company": "Great American Insurance",
+  "careers_url": "https://gaig.wd1.myworkdayjobs.com/GAIG_External",
+  "region": "midwest",
+  "metro": "Cincinnati, OH",
+  "sector": "insurance"
+ },
+ {
+  "company": "St. Elizabeth Healthcare",
+  "careers_url": "https://stelizabeth.wd115.myworkdayjobs.com/StElizabethExternalCareerSite",
+  "region": "midwest",
+  "metro": "Cincinnati, OH",
+  "sector": "healthcare"
+ },
+ {
+  "company": "Abbott",
+  "careers_url": "https://abbott.wd5.myworkdayjobs.com/abbottcareers",
+  "region": "midwest",
+  "metro": "Chicago, IL",
+  "sector": "healthcare"
+ },
+ {
+  "company": "Allstate",
+  "careers_url": "https://allstate.wd5.myworkdayjobs.com/allstate_careers",
+  "region": "midwest",
+  "metro": "Chicago, IL",
+  "sector": "insurance"
+ },
+ {
+  "company": "Northern Trust",
+  "careers_url": "https://ntrs.wd1.myworkdayjobs.com/northerntrust",
+  "region": "midwest",
+  "metro": "Chicago, IL",
+  "sector": "finance"
+ },
+ {
+  "company": "Motorola Solutions",
+  "careers_url": "https://motorolasolutions.wd5.myworkdayjobs.com/Careers",
+  "region": "midwest",
+  "metro": "Chicago, IL",
+  "sector": "manufacturing"
  },
  {
   "company": "Vanderbilt University Medical Center",
@@ -626,6 +675,27 @@ export const SEED_EMPLOYERS = [
   "region": "northeast",
   "metro": "Cambridge, MA",
   "sector": "biotech"
+ },
+ {
+  "company": "AIG",
+  "careers_url": "https://aig.wd1.myworkdayjobs.com/aig",
+  "region": "northeast",
+  "metro": "New York, NY",
+  "sector": "insurance"
+ },
+ {
+  "company": "Pfizer",
+  "careers_url": "https://pfizer.wd1.myworkdayjobs.com/PfizerCareers",
+  "region": "northeast",
+  "metro": "New York, NY",
+  "sector": "pharma"
+ },
+ {
+  "company": "Mastercard",
+  "careers_url": "https://mastercard.wd1.myworkdayjobs.com/CorporateCareers",
+  "region": "northeast",
+  "metro": "New York, NY",
+  "sector": "finance"
  },
  {
   "company": "Airbnb",

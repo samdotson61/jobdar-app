@@ -5,7 +5,7 @@
 // device except the scanners fetching PUBLIC job boards and the one-time model download.
 // @ts-ignore — the engine is plain JS
 import {
-  resolveProvider, fetchJobDescription, filterByLevel, filterByLocation,
+  resolveProvider, fetchJobDescription, filterByLevel, filterByLocation, targetMetrosOf,
   mergeScanned, capScanned, recordPrescreen, recordEval, parsePipeline, serializePipeline, bandConflict,
   recordListingChecks, checkListing, isEvaluated, isTracked, thumbFromWouldApply,
   prescreenRole, reasonLine, paySummary, relevanceScore, expandQueryTerms,
@@ -32,6 +32,7 @@ const LIST_CAP = 3000;
 type LocalProfile = {
   name: string; language: string; location: string;
   target_regions: string[]; target_levels: string[]; tuning_profile: string;
+  target_metros?: string[]; // 1.71.0: "City, ST" list; empty = search by region
   transferable_skills: boolean; needs_sponsorship: boolean; target_salary: number;
 };
 const PROFILE_FALLBACK: LocalProfile = {
@@ -131,6 +132,7 @@ export async function localCall(path: string, method: 'GET' | 'POST', body: any)
       if (typeof p.location === 'string') patch.location = p.location.slice(0, 120);
       if (Array.isArray(p.target_regions)) patch.target_regions = p.target_regions.filter((r: any) => typeof r === 'string').slice(0, 8);
       if (Array.isArray(p.target_levels)) patch.target_levels = p.target_levels.filter((l: any) => ['entry', 'mid', 'senior'].includes(l));
+      if (Array.isArray(p.target_metros)) patch.target_metros = p.target_metros.filter((m: any) => typeof m === 'string' && m.trim()).map((m: string) => m.trim().slice(0, 80)).slice(0, 8);
       if (p.target_salary != null && Number.isFinite(Number(p.target_salary))) patch.target_salary = Number(p.target_salary);
       if (typeof p.transferable_skills === 'boolean') patch.transferable_skills = p.transferable_skills;
       if (typeof p.needs_sponsorship === 'boolean') patch.needs_sponsorship = p.needs_sponsorship;
@@ -181,12 +183,14 @@ export async function localCall(path: string, method: 'GET' | 'POST', body: any)
       // (1.67.4). The saved list used to be seeded once, for the first region searched, and read verbatim
       // ever after — switching region later scanned the wrong employers.
       const saved = await readJson<any[]>(FILES.portals, []);
-      const portals = portalsForScan(saved, SEED_EMPLOYERS as any[], regions);
+      // 1.71.0: target cities (the request's, else the profile's) pick boards near them across regions.
+      const metros: string[] = Array.isArray(p.metros) ? p.metros.map(String).filter(Boolean) : targetMetrosOf(profile);
+      const portals = portalsForScan(saved, SEED_EMPLOYERS as any[], regions, metros);
       if (!saved.length && portals.length) await writeJson(FILES.portals, portals);
       const kept: any[] = [];
       const seenUrls = new Set<string>();
       let excludedLevel = 0, excludedRegion = 0, resolved = 0;
-      await pool(portals, 4, async (portal) => {
+      await pool(portals as any[], 4, async (portal: any) => {
         const hit = resolveProvider(portal);
         if (!hit) return;
         resolved++;
@@ -196,7 +200,7 @@ export async function localCall(path: string, method: 'GET' | 'POST', body: any)
           const jobs = capNewest(await hit.provider.fetch(hit.match, { budgetMs: 9000, maxPostings: BOARD_CAP }), BOARD_CAP);
           for (const j of jobs) if (j && j.url) seenUrls.add(j.url);
           const lvl = filterByLevel(jobs, levels);
-          const loc = filterByLocation(lvl.kept, regions, { userMetro: profile.location });
+          const loc = filterByLocation(lvl.kept, regions, { userMetro: profile.location, targetMetros: metros, fallbackMetro: portal.metro });
           for (const j of loc.kept) kept.push(j);
           excludedLevel += lvl.excluded;
           excludedRegion += loc.excluded;
@@ -317,7 +321,7 @@ export async function localCall(path: string, method: 'GET' | 'POST', body: any)
       const { derived, conflict } = bandConflict(Number(p.score), p.band);
       if (conflict) return { ok: false, status: 400, error: `band "${p.band}" contradicts score ${p.score} (derives to "${derived}")` };
       const source = p.source === 'engine' ? 'engine' : 'manual';
-      const rows = recordEval(await readPipe(), { url: p.url, score: p.score, band: derived, recommendation: p.recommendation, company: p.company, role: p.role, location: p.location, source }, today());
+      const rows = recordEval(await readPipe(), { url: p.url, score: p.score, band: derived, recommendation: p.recommendation, pay: typeof p.pay === 'string' ? p.pay : '', company: p.company, role: p.role, location: p.location, source }, today());
       await writePipe(rows);
       return { ok: true };
     }

@@ -34,6 +34,10 @@ import { mergeScanned, recordEval, serializePipeline, parsePipeline, band, bandC
 import { classifyFetchError, staleActionable, verifyBeforePresent } from './lib/liveness.mjs'
 import { advanceLedger, observationStatus, postedDay, parseTsv, serializeTsv, mergeRuns, LEDGER_COLS, TRUNCATION_CAP } from './lib/board_ledger_pure.mjs'
 import { portalsForScan, employersToPortals } from './lib/portals_pure.mjs'
+import { employersNearMetros, withCatalogMetro } from './lib/portals_pure.mjs'
+import { measuredLocation, nearestMetro, placeMetros, targetMetrosOf } from './lib/regions.mjs'
+import { jobLocations } from './providers/workday.mjs'
+import { isVagueLocation } from './lib/pipeline_pure.mjs'
 import { recheckTargets } from './lib/commands/recheck.mjs'
 import { extractYearsRequired, extractDegreeGate, extractGates, screenDecision, prescreenRole, freshnessPoints, reasonLine, blendSalary, extractCredential, extractField, cvHasField, cvHasCredential, isHardIdentity, extractSponsorship, UNASSESSABLE_SCORE } from './lib/prescreen.mjs'
 import { extractPay, bandVsTarget, formatPay, paySummary, parseSalaryText, SALARY_TOLERANCE, SALARY_FLOOR } from './lib/salary.mjs'
@@ -56,7 +60,8 @@ import { extractText, isExtractable, structureCv } from './lib/docparse.mjs'
 import { importDocument, evaluate as engineEvaluate, recordVerdict, advanceStatus, buildCv, ENGINE_VERSION, tailor as engineTailor } from './lib/engine.mjs'
 import { coverIsComplete, assembleTailoredCv, TAILOR_JSON_SCHEMA, buildTailorUser, directiveBlock, TAILOR_SYSTEM, fillSignature } from './lib/tailor.mjs'
 import { effectiveDirectives, contentHash, recordVariant } from './lib/customize_store.mjs'
-import { parsePreConfirm, isBorderline, evalSystemFor, preConfirmSystemFor } from './lib/eval_engine.mjs'
+import { parsePreConfirm, isBorderline, evalSystemFor, preConfirmSystemFor, unparsedCause, researchCap, unmetRequirements, EVAL_JSON_SCHEMA, EVAL_SYSTEM } from './lib/eval_engine.mjs'
+import { splitList, unknownTokens } from './lib/cli.mjs'
 import { resolvePay, socForTitle, loadWages, loadSocMap } from './lib/pay.mjs'
 import { parseNextCount, reportFooterLines, distributionWarning, markGoneIfDead, NEXT_MAX } from './lib/commands/eval.mjs'
 import { findRoleMatches } from './lib/commands/tailor.mjs'
@@ -2282,7 +2287,7 @@ test('sponsorship: recordPrescreen notes — set, explicit-clear, and preserve-o
   assert.equal(cleared[0].notes, '')
   // pipeline round-trip carries the new column; a legacy file without it parses to ''
   const tsv = serializePipeline(set1)
-  assert.ok(tsv.split('\n')[0].endsWith('\tnotes\teval_source\tlisting_state\tchecked'))
+  assert.ok(tsv.split('\n')[0].endsWith('\tnotes\teval_source\tlisting_state\tchecked\tmetro')) // metro: 1.71.0
 })
 
 test('phase10: engine seed.mjs is in lockstep with data/seed/employers.yml (regen: node scripts/gen-seed.mjs)', async () => {
@@ -2294,7 +2299,7 @@ test('phase10: engine seed.mjs is in lockstep with data/seed/employers.yml (rege
 
 test('phase10: pure pipeline + outreach splits — parsePipeline round-trips; fs shells re-export unchanged', async () => {
   const pure = await import('./lib/pipeline_pure.mjs')
-  const rows = [{ company: 'A', role: 'R', url: 'https://a.test/1', location: 'X', score: '', band: '', recommendation: '', status: 'scanned', posted: '', first_seen: '2026-07-08', updated: '2026-07-08', prescreen: '', screen_reason: '', pay: '', aliases: '', notes: '', eval_source: '', listing_state: '', checked: '' }]
+  const rows = [{ company: 'A', role: 'R', url: 'https://a.test/1', location: 'X', score: '', band: '', recommendation: '', status: 'scanned', posted: '', first_seen: '2026-07-08', updated: '2026-07-08', prescreen: '', screen_reason: '', pay: '', aliases: '', notes: '', eval_source: '', listing_state: '', checked: '', metro: '' }]
   assert.deepEqual(pure.parsePipeline(pure.serializePipeline(rows)), rows) // pure round-trip
   // legacy text without the notes column parses with notes ''
   const legacy = 'company\trole\turl\nA\tR\thttps://a.test/1'
@@ -3242,6 +3247,233 @@ test('workday: a posting with no locationsText reads its "City, ST" from bulletF
   const corewell = normalizeWorkday({ title: 'Agile Product Owner', externalPath: '/job/Grand-Rapids-MI/Agile-Product-Owner_R225927', bulletFields: ['Grand Rapids, MI', 'R225927', 'Scheduled Weekly Hours'] }, 'https://spectrumhealth.wd5.myworkdayjobs.com', 'CorewellHealthCareers', 'Corewell')
   assert.equal(corewell.location, 'Grand Rapids, MI')
   assert.equal(normalizeWorkday({ title: 'x', externalPath: '/job/a', locationsText: 'Indianapolis, IN', bulletFields: ['Columbus, OH'] }, 'https://a.wd5.myworkdayjobs.com', 'S', 'A').location, 'Indianapolis, IN') // locationsText still wins
+})
+
+test('1.71.0 eval keeps pay: a role scored with no prior prescreen gets its pay band; a blank pay never erases one', () => {
+  const v = buildVerdict({ text: JSON.stringify({ required: { candidate_meets_all: true }, skills: { rating: 'strong' }, experience: { rating: 'good' }, level_fit: { rating: 'good' }, logistics: { rating: 'good' }, education: { rating: 'good' }, recommendation: 'Fits.' }), jd: 'The base salary range for this role is $140,000 - $166,000.', profile: { target_salary: 100000 } })
+  assert.ok(v.ok && v.pay, 'buildVerdict computes pay')
+  let rows = recordEval([], { url: 'u', score: v.score, band: v.band, recommendation: v.recommendation, pay: v.pay, source: 'engine' }, '2026-11-16')
+  assert.equal(rows[0].pay, v.pay)
+  rows = recordEval(rows, { url: 'u', score: v.score, band: v.band, recommendation: v.recommendation, pay: '', source: 'engine' }, '2026-11-17')
+  assert.equal(rows[0].pay, v.pay, 're-eval with no pay keeps the stored band')
+  assert.equal(parsePipeline(serializePipeline(rows))[0].pay, v.pay, 'round-trips through the TSV')
+})
+
+test('1.71.0 eval note is stored whole (up to 1,000 chars, whitespace flattened) — no more mid-word cut at 200', () => {
+  const long = 'The candidate is a strong match on delivery and stakeholder work. '.repeat(5) + 'The primary barrier is the required 8+ years of PM tenure.\n\tApply only if that is flexible.'
+  const v = buildVerdict({ text: JSON.stringify({ required: { candidate_meets_all: true }, skills: { rating: 'good' }, experience: { rating: 'good' }, level_fit: { rating: 'good' }, logistics: { rating: 'good' }, education: { rating: 'good' }, recommendation: long }), jd: 'x' })
+  assert.ok(v.recommendation.endsWith('Apply only if that is flexible.'), v.recommendation.slice(-60))
+  assert.ok(!/[\t\n]/.test(v.recommendation))
+  const huge = buildVerdict({ text: JSON.stringify({ required: { candidate_meets_all: true }, recommendation: 'a'.repeat(5000) }), jd: 'x' })
+  assert.equal(huge.recommendation.length, 1000)
+})
+
+test('1.71.0 an unparsed eval says why — empty, truncated at the cap, grammar call failed, or not JSON', () => {
+  const cut = buildVerdict({ text: '{"required":{"candidate_meets_all":true},"skills":{"rating":"go', stop: 'length', jd: 'x' })
+  assert.equal(cut.ok, false)
+  assert.equal(cut.cause.kind, 'truncated')
+  assert.equal(buildVerdict({ text: '', stop: 'stop', jd: 'x' }).cause.kind, 'empty')
+  assert.equal(buildVerdict({ text: 'I think this candidate is great', stop: 'end_turn', jd: 'x' }).cause.kind, 'not_json')
+  const g = unparsedCause({ text: 'prose', stop: 'stop', grammarError: 'local backend HTTP 400 — the request exceeds the available context size' })
+  assert.deepEqual([g.kind, /context size/.test(g.detail)], ['no_grammar', true])
+  assert.equal(unparsedCause({ text: '{"a":', stop: 'max_tokens' }).kind, 'truncated')
+  for (const lang of ['en', 'es']) for (const k of ['empty', 'truncated', 'no_grammar', 'not_json']) assert.ok(getStrings(lang).eval.unparsed_cause[k], `${lang} eval.unparsed_cause.${k}`)
+})
+
+test('1.71.0 list flags split on commas AND spaces (PowerShell re-joins `entry,mid` as "entry mid"); --metro splits on ;', () => {
+  assert.deepEqual(splitList('entry,mid'), ['entry', 'mid'])
+  assert.deepEqual(splitList('entry mid'), ['entry', 'mid'])
+  assert.deepEqual(splitList(' Midwest , northeast  west'), ['midwest', 'northeast', 'west'])
+  assert.deepEqual(splitList(['entry', 'mid']), ['entry', 'mid'])
+  assert.deepEqual(splitList(true), [])
+  assert.deepEqual(splitList('Cincinnati, OH; Chicago, IL;New York, NY', { sep: ';', keepCase: true }), ['Cincinnati, OH', 'Chicago, IL', 'New York, NY'])
+  assert.deepEqual(unknownTokens(['entry', 'bogus', 'MID'], ['entry', 'mid', 'senior']), ['bogus'])
+})
+
+test('1.71.0 init: unquoted `--levels entry mid` writes two levels; `--levels bogus` exits non-zero naming it and writes nothing', () => {
+  const home = mkdtempSync(path.join(tmpdir(), 'jobdar-lvl-'))
+  try {
+    const env = { ...process.env, JOBDAR_HOME: home }
+    const ok = spawnSync(process.execPath, [path.join(PKG_ROOT, 'bin', 'jobdar'), 'init', '--yes', '--levels', 'entry mid', '--region', 'midwest', '--inference', 'local'], { env, encoding: 'utf8' })
+    assert.equal(ok.status, 0, ok.stderr)
+    const prof = readFileSync(path.join(home, 'config', 'profile.yml'), 'utf8')
+    assert.match(prof, /target_levels:\s*\n\s*- entry\n\s*- mid\n/)
+    rmSync(path.join(home, 'config', 'profile.yml'))
+    const bad = spawnSync(process.execPath, [path.join(PKG_ROOT, 'bin', 'jobdar'), 'init', '--yes', '--levels', 'bogus', '--region', 'midwest', '--inference', 'local'], { env, encoding: 'utf8' })
+    assert.notEqual(bad.status, 0)
+    assert.match(bad.stderr, /bogus/)
+    assert.ok(!existsSync(path.join(home, 'config', 'profile.yml')), 'nothing written')
+  } finally {
+    rmSync(home, { recursive: true, force: true })
+  }
+})
+
+test('1.71.0 degree gate reads the waiver to the end of the clause — a long field list no longer hides "(or equivalent experience)"', () => {
+  const medpace = "We improve future project delivery. Qualifications Required: Bachelor's degree in Information Technology, Computer Science, Business Administration, or related field (or equivalent experience); 3+ years of experience managing IT or software development projects;"
+  assert.equal(extractDegreeGate(medpace).gate, 'unclear')
+  assert.equal(extractDegreeGate("Required: Bachelor's degree in Nursing. Equivalent experience is not accepted for licensure reasons and this sentence is long.").gate, 'yes', 'a waiver in a LATER sentence does not soften a hard requirement')
+  assert.equal(extractDegreeGate("Bachelor's degree required; 5 years of experience. Equivalent experience considered for the travel requirement").gate, 'yes', 'clause ends at the semicolon')
+  assert.equal(extractDegreeGate("Bachelor's degree or equivalent experience required").gate, 'unclear')
+})
+
+test('1.71.0 import keeps the levels the person saved — the résumé guess only fills an empty choice (entry+mid stayed "mid")', async () => {
+  const home = mkdtempSync(path.join(tmpdir(), 'jobdar-imp-'))
+  try {
+    mkdirSync(path.join(home, 'config'), { recursive: true })
+    writeFileSync(path.join(home, 'config', 'profile.yml'), 'language: en\ntarget_levels:\n  - entry\n  - mid\ninference: local\ninference_url: http://127.0.0.1:9\n')
+    const cv = path.join(home, 'cv.txt')
+    writeFileSync(cv, 'Pat Example\nCincinnati, OH\nSenior Program Manager, Acme, 2015 – Present\nLed delivery for 12 years.\n')
+    const env = { ...process.env, JOBDAR_HOME: home }
+    const run = () => spawnSync(process.execPath, [path.join(PKG_ROOT, 'bin', 'jobdar'), 'import', cv, '--write'], { env, encoding: 'utf8' })
+    const r1 = run()
+    assert.equal(r1.status, 0, r1.stderr + r1.stdout)
+    const after1 = readFileSync(path.join(home, 'config', 'profile.yml'), 'utf8')
+    assert.match(after1, /target_levels:\s*\n\s*- entry\n\s*- mid\n/)
+    run()
+    assert.equal(readFileSync(path.join(home, 'config', 'profile.yml'), 'utf8'), after1, 'second import changes nothing')
+  } finally {
+    rmSync(home, { recursive: true, force: true })
+  }
+})
+
+test('1.71.0 "New York, NY" places (the table only knew "New York City"); "Rochester, New York" stays Rochester', () => {
+  assert.deepEqual(placesIn('New York, NY').map((p) => p.st), ['NY'])
+  assert.ok(nearestMetro('New York, NY', ['New York, NY']).km < 1)
+  assert.equal(nearestMetro('NYC', ['New York, NY']).tier, 'near')
+  assert.deepEqual(placesIn('Rochester, New York').map((p) => p.name), ['rochester'])
+  assert.equal(nearestMetro('Rochester, New York', ['New York, NY']).tier, 'far')
+  // each `;`-separated location has its own city slot (Datadog, Ramp: three-city run roles dropped before)
+  assert.deepEqual(placesIn('Boston, Massachusetts, USA; New York, New York, USA').map((p) => p.name), ['boston', 'new york city'])
+  assert.ok(locationMatches('Remote (US); Remote (Canada); San Francisco, CA; New York, NY (HQ); Toronto, ON', ['midwest'], { targetMetros: ['New York, NY'] }))
+  assert.deepEqual(placesIn('Albany | New York').map((p) => p.name), ['albany'], '`|` does not open a new city slot')
+  assert.equal(placeMetros(['Cincinnati, OH', 'Chicago, IL', 'New York, NY']).length, 3)
+})
+
+test('1.71.0 campus-only locations measure as the board\'s catalog metro; remote and real cities are left alone', () => {
+  assert.equal(measuredLocation('Burnet Campus', 'Cincinnati, OH'), 'Cincinnati, OH (Burnet Campus)')
+  assert.equal(measuredLocation('MOB - 3430 Burnet', 'Cincinnati, OH'), 'Cincinnati, OH (MOB - 3430 Burnet)')
+  assert.equal(measuredLocation('NYP/Weill Cornell Medical Center', 'New York, NY'), 'New York, NY (NYP/Weill Cornell Medical Center)')
+  assert.equal(measuredLocation('', 'Cincinnati, OH'), 'Cincinnati, OH')
+  assert.equal(measuredLocation('Remote', 'Cincinnati, OH'), 'Remote')
+  assert.equal(measuredLocation('Columbus, OH', 'Cincinnati, OH'), 'Columbus, OH', 'a real city keeps that city')
+  assert.equal(measuredLocation('4 Locations', 'Cincinnati, OH'), '4 Locations', 'a multi-site posting is not "at" the home metro')
+  assert.equal(measuredLocation('Burnet Campus', ''), 'Burnet Campus', 'own boards have no catalog metro')
+  // the metro penalty: Burnet resolves to Cincinnati (home for a Cincinnati profile; away for Columbus); Remote never docked
+  const cin = { location: 'Cincinnati, OH' }
+  const cbus = { location: 'Columbus, OH' }
+  assert.equal(metroPenalty({ location: measuredLocation('Burnet Campus', 'Cincinnati, OH'), profile: cin }).tier, 'home')
+  assert.equal(metroPenalty({ location: measuredLocation('Burnet Campus', 'Cincinnati, OH'), profile: cbus }).tier, 'away')
+  assert.equal(metroPenalty({ location: measuredLocation('Remote', 'Cincinnati, OH'), profile: cbus }).tier, 'remote')
+  // filterByLocation stamps the board metro onto kept jobs and measures with it
+  const f = filterByLocation([{ location: 'Liberty Campus', url: 'a' }, { location: 'Dallas, TX', url: 'b' }], ['midwest'], { fallbackMetro: 'Cincinnati, OH', targetMetros: ['Cincinnati, OH'] })
+  assert.deepEqual(f.kept.map((j) => [j.url, j.metro, j.location]), [['a', 'Cincinnati, OH', 'Liberty Campus']])
+  // scanned rows carry the metro column; legacy portals pick it up from the catalog by URL
+  const rows = mergeScanned([], f.kept.map((j) => ({ ...j, company: 'CCHMC', title: 'PM' })), '2026-11-16')
+  assert.equal(rows[0].metro, 'Cincinnati, OH')
+  assert.deepEqual(withCatalogMetro([{ careers_url: 'https://X/a' }, { careers_url: 'https://y', metro: 'Mine, OH' }], [{ careers_url: 'https://x/a', metro: 'Cincinnati, OH' }]).map((p) => p.metro), ['Cincinnati, OH', 'Mine, OH'])
+})
+
+test('1.71.0 "N Locations" gives way to the job page\'s real list; a Chicago target takes no penalty on a multi-site role', () => {
+  assert.equal(jobLocations({ location: 'Pittsburgh, PA', additionalLocations: ['Chicago, IL', 'Phoenix, AZ', { descriptor: 'Tampa, FL' }, 'Chicago, IL'] }), 'Pittsburgh, PA; Chicago, IL; Phoenix, AZ; Tampa, FL')
+  assert.equal(jobLocations({ location: 'Cincinnati, OH' }), 'Cincinnati, OH')
+  assert.ok(isVagueLocation('4 Locations') && isVagueLocation('') && !isVagueLocation('Chicago, IL'))
+  let rows = mergeScanned([], [{ company: 'PNC', title: 'Program Manager III', url: 'u', location: '4 Locations' }], '2026-11-16')
+  rows = recordEval(rows, { url: 'u', score: 4, band: 'apply', location: 'Pittsburgh, PA; Chicago, IL; Phoenix, AZ; Tampa, FL', source: 'engine' }, '2026-11-16')
+  assert.equal(rows[0].location, 'Pittsburgh, PA; Chicago, IL; Phoenix, AZ; Tampa, FL')
+  rows = recordEval(rows, { url: 'u', score: 4, band: 'apply', location: 'Somewhere Else, TX', source: 'engine' }, '2026-11-17')
+  assert.equal(rows[0].location, 'Pittsburgh, PA; Chicago, IL; Phoenix, AZ; Tampa, FL', 'a placed location is never replaced')
+  assert.equal(metroPenalty({ location: rows[0].location, profile: { location: 'Chicago, IL' } }).tier, 'home')
+})
+
+test('1.71.0 target_metros: boards near any target across regions, roles within 60 km of any target, nearest target for the penalty; empty = 1.70.0', () => {
+  const T = ['Cincinnati, OH', 'Chicago, IL', 'New York, NY']
+  const cat = [
+    { company: 'Cin', careers_url: 'https://c', region: 'midwest', metro: 'Cincinnati, OH' },
+    { company: 'Chi', careers_url: 'https://h', region: 'midwest', metro: 'Chicago, IL' },
+    { company: 'Nyc', careers_url: 'https://n', region: 'northeast', metro: 'New York, NY' },
+    { company: 'Cle', careers_url: 'https://l', region: 'midwest', metro: 'Cleveland, OH' },
+    { company: 'Bos', careers_url: 'https://b', region: 'northeast', metro: 'Boston, MA' },
+  ]
+  assert.deepEqual(employersNearMetros(cat, T).map((e) => e.company), ['Cin', 'Chi', 'Nyc'])
+  assert.deepEqual(portalsForScan([], cat, ['midwest'], T).map((p) => p.company), ['Cin', 'Chi', 'Nyc'])
+  assert.deepEqual(portalsForScan([], cat, ['midwest'], []).map((p) => p.company), ['Cin', 'Chi', 'Cle'], 'empty metros = region selection exactly')
+  assert.deepEqual(portalsForScan([], cat, ['midwest']), portalsForScan([], cat, ['midwest'], []))
+  assert.equal(portalsForScan([], cat, ['midwest'], T)[0].metro, 'Cincinnati, OH', 'portals carry the catalog metro')
+  const keep = (loc) => locationMatches(loc, ['midwest'], { targetMetros: T })
+  assert.ok(keep('Jersey City, NJ') && keep('Evanston, IL') && keep('Covington, KY') && keep('Remote') && keep('4 Locations'))
+  assert.ok(!keep('Cleveland, OH') && !keep('Boston, MA') && !keep('Rochester, New York'))
+  assert.ok(keep('Pittsburgh, PA; Chicago, IL'), 'any listed city near any target')
+  assert.ok(keep('Illinois') && !keep('Texas'), 'a bare state only if it holds a target')
+  assert.ok(locationMatches('Boston, MA', ['northeast'], { targetMetros: [] }), 'empty targets fall back to regions')
+  const prof = { location: 'Cincinnati, OH', target_metros: T }
+  assert.equal(metroPenalty({ location: 'Chicago, IL', profile: prof }).tier, 'home')
+  assert.equal(metroPenalty({ location: 'Brooklyn, NY', profile: prof }).tier, 'home')
+  assert.equal(metroPenalty({ location: 'Cleveland, OH', profile: prof }).note, '0.3 off for Cleveland vs Cincinnati')
+  assert.equal(metroPenalty({ location: 'Chicago, IL', profile: { location: 'Cincinnati, OH' } }).tier, 'away', 'no targets = 1.70.0')
+  assert.deepEqual(targetMetrosOf({ target_metros: 'Cincinnati, OH; Chicago, IL' }), ['Cincinnati, OH', 'Chicago, IL'])
+  assert.deepEqual(targetMetrosOf({}), [])
+})
+
+test('1.71.0 init --metros writes target_metros and seeds the boards near them; an unplaceable city is refused by name', () => {
+  const home = mkdtempSync(path.join(tmpdir(), 'jobdar-metro-'))
+  try {
+    const env = { ...process.env, JOBDAR_HOME: home }
+    const run = (metros) => spawnSync(process.execPath, [path.join(PKG_ROOT, 'bin', 'jobdar'), 'init', '--yes', '--levels', 'entry,mid', '--region', 'midwest', '--inference', 'local', '--metros', metros], { env, encoding: 'utf8' })
+    const ok = run('Cincinnati, OH; Chicago, IL; New York, NY')
+    assert.equal(ok.status, 0, ok.stderr)
+    const prof = readFileSync(path.join(home, 'config', 'profile.yml'), 'utf8')
+    assert.match(prof, /target_metros:\s*\n\s*- Cincinnati, OH\n\s*- Chicago, IL\n\s*- New York, NY\n/)
+    const portals = readFileSync(path.join(home, 'config', 'portals.yml'), 'utf8')
+    assert.match(portals, /metro: New York, NY/)
+    assert.match(portals, /metro: Chicago, IL/)
+    assert.doesNotMatch(portals, /metro: Cleveland, OH/)
+    const bad = run('Cincinnati, OH; Atlantis, ZZ')
+    assert.notEqual(bad.status, 0)
+    assert.match(bad.stderr, /Atlantis/)
+  } finally {
+    rmSync(home, { recursive: true, force: true })
+  }
+})
+
+test('1.71.0 workday fetchJob: a 429 on the job page is retried (5 s) and the job page lists every location', async () => {
+  const realFetch = globalThis.fetch
+  let calls = 0
+  globalThis.fetch = async () => {
+    calls++
+    if (calls === 1) return { ok: false, status: 429, json: async () => ({}), text: async () => '' }
+    return { ok: true, status: 200, json: async () => ({ jobPostingInfo: { title: 'Project Manager III, Linga', location: 'FL - Naples (34103)', additionalLocations: ['PA - Pittsburgh', 'TX - Dallas'], jobDescription: '<p>Lead projects.</p>' } }) }
+  }
+  try {
+    const d = await workday.fetchJob('https://pnc.wd5.myworkdayjobs.com/External/job/FL---Naples-34103/Project-Manager-III--Linga_R233337-1')
+    assert.equal(calls, 2)
+    assert.equal(d.location, 'FL - Naples (34103); PA - Pittsburgh; TX - Dallas')
+    assert.match(d.description, /Lead projects/)
+  } finally {
+    globalThis.fetch = realFetch
+  }
+})
+
+test('1.71.0 Research cap: an Apply naming TWO or more unmet requirements is held at Research (note leads with them); one miss stays Apply', () => {
+  // as real replies do, the note quotes the missed requirement (a years count never hard-clamps — 1.41.x)
+  const j = (unmet, meets = !unmet.length) => JSON.stringify({ required: { candidate_meets_all: meets, unmet, note: unmet.join('; ') }, skills: { rating: 'strong' }, experience: { rating: 'strong' }, level_fit: { rating: 'strong' }, logistics: { rating: 'strong' }, education: { rating: 'strong' }, recommendation: 'Strong overlap with the delivery work.' })
+  const none = buildVerdict({ text: j([]), jd: 'x' })
+  assert.equal(none.band, 'apply')
+  const one = buildVerdict({ text: j(['5–8 years of relevant business experience']), jd: 'x' })
+  assert.deepEqual([one.band, one.capped], ['apply', false], 'one miss is fine')
+  const two = buildVerdict({ text: j(['8+ years of PM tenure', 'payments industry experience']), jd: 'x' })
+  assert.deepEqual([two.band, two.capped, two.score], ['research', true, 3.9])
+  assert.match(two.recommendation, /^Research, not Apply — misses 2 stated requirements: “8\+ years of PM tenure”; “payments industry experience”\. Strong overlap/)
+  assert.equal(two.rawScore, 5, 'rawScore stays the model number')
+  // duplicates and blanks don't count; a missing list counts as none (never guessed from prose)
+  assert.deepEqual(unmetRequirements({ required: { unmet: ['A', ' a ', '', null, 'B'] } }), ['A', 'B'])
+  assert.deepEqual(unmetRequirements({ required: { candidate_meets_all: false, note: 'misses X and Y' } }), [])
+  // never touches Research/Don't or a hard clamp
+  assert.equal(researchCap({ score: 3.7, band: 'research', clamped: false, judgments: { required: { unmet: ['a', 'b', 'c'] } } }).band, 'research')
+  assert.equal(researchCap({ score: 3.4, band: 'dont', clamped: true, judgments: { required: { unmet: ['a', 'b'] } } }).band, 'dont')
+  // the schema REQUIRES the list (so grammar-constrained replies always carry it) and the prompt asks for it
+  assert.deepEqual(EVAL_JSON_SCHEMA.schema.properties.required.required, ['candidate_meets_all', 'unmet'])
+  assert.match(EVAL_SYSTEM, /"unmet":\[\]/)
+  assert.ok(getStrings('en').eval.auto_capped && getStrings('es').eval.auto_capped)
 })
 
 let passed = 0

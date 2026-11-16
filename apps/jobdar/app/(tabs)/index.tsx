@@ -4,9 +4,9 @@ import * as DocumentPicker from 'expo-document-picker';
 import { File as FsFile } from 'expo-file-system';
 import { router } from 'expo-router';
 import { backendMode } from '@/src/serve';
-import { useStore } from '@/src/store';
+import { useStore, inScopeLocation } from '@/src/store';
 import { t, type Lang } from '@/src/engine';
-import { relevanceScore, relevanceTier, relevanceText, levelDecision, locationMatches, regionPriority, parseSalaryText } from '@jobdar/engine';
+import { relevanceScore, relevanceTier, relevanceText, levelDecision, regionPriority, parseSalaryText, placeMetros } from '@jobdar/engine';
 import { Btn, C, Card, Field, H, Pill, Sub, confirmColor } from '@/src/ui';
 import { AiBanner } from '@/src/AiBanner';
 
@@ -36,6 +36,30 @@ function SalaryInput({ lang, value, onSet }: { lang: Lang; value: number; onSet:
   );
 }
 
+// 1.71.0: optional target cities, ';'-separated ("City, ST" each). Saved only when every city places,
+// so a typo can't silently narrow the search to nothing; the hint names what couldn't be placed.
+function MetrosInput({ lang, value, onSet }: { lang: Lang; value: string[]; onSet: (m: string[]) => void }) {
+  const [txt, setTxt] = useState((value || []).join('; '));
+  const list = txt.split(';').map((x) => x.trim()).filter(Boolean);
+  const bad = list.filter((m) => !placeMetros([m]).length);
+  return (
+    <View>
+      <Field
+        placeholder={t(lang, 'metros.placeholder')}
+        value={txt}
+        onChangeText={(x: string) => {
+          setTxt(x);
+          const next = x.split(';').map((y) => y.trim()).filter(Boolean);
+          if (next.every((m) => placeMetros([m]).length)) onSet(next);
+        }}
+      />
+      <Text style={{ color: bad.length ? C.warn : C.dim, fontSize: 11, marginTop: 2 }}>
+        {bad.length ? t(lang, 'metros.bad', { bad: bad.join('; ') }) : t(lang, 'metros.hint')}
+      </Text>
+    </View>
+  );
+}
+
 export default function Search() {
   const profile = useStore((s) => s.profile);
   const scored = useStore((s) => s.scored);
@@ -47,7 +71,7 @@ export default function Search() {
   const resumeFile = useStore((s) => s.resumeFile);
   const onboarded = useStore((s) => s.onboarded);
   const savedProfileName = useStore((s) => s.savedProfileName);
-  const { uploadResume, runSearch, discover, toggleTransferable, toggleSponsorship, toggleNoDegree, toggleRegion, toggleLevel, setSalary, setIntent, setOnboarded, continueAsSaved, hydrate } = useStore.getState();
+  const { uploadResume, runSearch, discover, toggleTransferable, toggleSponsorship, toggleNoDegree, toggleRegion, toggleLevel, setSalary, setMetros, setIntent, setOnboarded, continueAsSaved, hydrate } = useStore.getState();
   const lang = profile.language;
   const [msg, setMsg] = useState('');
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -70,8 +94,7 @@ export default function Search() {
     // Honor the selected region + level live (the same engine filters the scan uses), so tuning the scope
     // narrows the list instantly; the next "Find matching roles" re-scans to pull in more for that scope.
     rows = rows.filter((j) =>
-      (profile.levels.length === 0 || levelDecision(j.role, profile.levels).include) &&
-      (profile.regions.length === 0 || locationMatches(j.location, profile.regions)));
+      (profile.levels.length === 0 || levelDecision(j.role, profile.levels).include) && inScopeLocation(j, profile));
     if (active && terms?.fromResume) {
       // Résumé-mode default view shows ONLY plausible rows: real title relevance, or winc's fit/maybe.
       // AI-skips stay one tap away under the Skip filter WITH their reasons (honest, not hidden) —
@@ -121,7 +144,7 @@ export default function Search() {
       fitRank(b) - fitRank(a) ||
       b.prescreen - a.prescreen);
     return out;
-  }, [scored, query, sortBy, filter, terms, profile.regions, profile.levels]);
+  }, [scored, query, sortBy, filter, terms, profile.regions, profile.levels, profile.metros]);
 
   const onUpload = async () => {
     try {
@@ -197,6 +220,8 @@ export default function Search() {
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 2 }}>
             {REGION_OPTS.map((r) => (<Chip key={r} label={t(lang, `region.${r}`)} active={profile.regions.includes(r)} on={() => toggleRegion(r)} color={C.tint} />))}
           </View>
+          <Text style={{ color: C.dim, fontSize: 12, marginTop: 6 }}>{t(lang, 'common.metros')}</Text>
+          <MetrosInput lang={lang} value={profile.metros || []} onSet={setMetros} />
           <Text style={{ color: C.dim, fontSize: 12, marginTop: 6 }}>{t(lang, 'common.level')}</Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 2 }}>
             {LEVEL_OPTS.map((l) => (<Chip key={l} label={t(lang, `level.${l}`)} active={profile.levels.includes(l)} on={() => toggleLevel(l)} color={C.tint} />))}
@@ -272,6 +297,8 @@ export default function Search() {
             <Chip key={r} label={t(lang, `region.${r}`)} active={profile.regions.includes(r)} on={() => toggleRegion(r)} color={C.tint} />
           ))}
         </View>
+        <Text style={{ color: C.dim, fontSize: 12, marginTop: 6 }}>{t(lang, 'common.metros')}</Text>
+        <MetrosInput lang={lang} value={profile.metros || []} onSet={setMetros} />
         <Text style={{ color: C.dim, fontSize: 12, marginTop: 6 }}>{t(lang, 'common.level')}</Text>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', marginTop: 2 }}>
           {LEVEL_OPTS.map((l) => (

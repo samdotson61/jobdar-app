@@ -6,7 +6,7 @@ import {
 } from './engine';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { backendMode, serveGet, servePost, serveHealth } from './serve';
-import { regionForLocation, termsFromResume, relevanceScore, relevanceTier, relevanceText, laneScore, levelDecision, locationMatches, SUBCRITERIA } from '@jobdar/engine';
+import { regionForLocation, termsFromResume, relevanceScore, relevanceTier, relevanceText, laneScore, levelDecision, locationMatches, measuredLocation, SUBCRITERIA } from '@jobdar/engine';
 
 // The app holds NO engine logic — it renders what `jobdar serve` (the real CLI + winc) returns. Every
 // action is a thin call to serve; `@jobdar/engine` is used only for derived UI (band colors, cadence labels).
@@ -52,6 +52,7 @@ interface State {
   toggleTransferable: () => void;
   toggleSponsorship: () => void;       // "I need visa sponsorship" — re-gates the list (explicit-no roles screen out)
   toggleNoDegree: () => void;          // 1.64.0: the no_degree path (degree asks = a stretch, never a wall) — persisted as tuning_profile
+  setMetros: (m: string[]) => void;   // 1.71.0 target cities ("City, ST"); [] = search by region
   toggleRegion: (r: string) => void;   // tune the search scope — re-scans on the next "Find matching roles"
   toggleLevel: (l: string) => void;
   setSalary: (n: number) => void;      // preferred target salary (0 = any) — nudges prescreen rank + pay band
@@ -149,11 +150,15 @@ const WEIGHTS: Record<string, number> = (() => {
 // AI may read fewer than n; each read it skips is one it would have spent saying "not your lane".
 // The Search tab's live region/level filter, as one predicate (1.65.1) — the Apply queue and the AI's triage
 // shortlist use it too, so neither spends effort on a role the person can't see.
-const inProfileScope = (j: Scored, profile?: Pick<Profile, 'regions' | 'levels'>) => !profile ||
-  ((profile.levels.length === 0 || levelDecision(j.role, profile.levels).include) &&
-   (profile.regions.length === 0 || locationMatches(j.location, profile.regions)));
+// 1.71.0: target cities (when set) replace the region test, measured with the board's catalog metro.
+export const inScopeLocation = (j: { location: string; metro?: string }, profile: Pick<Profile, 'regions' | 'metros'>) =>
+  (profile.metros && profile.metros.length)
+    ? locationMatches(measuredLocation(j.location, j.metro || ''), profile.regions, { targetMetros: profile.metros })
+    : (profile.regions.length === 0 || locationMatches(measuredLocation(j.location, j.metro || ''), profile.regions));
+const inProfileScope = (j: Scored, profile?: Pick<Profile, 'regions' | 'levels' | 'metros'>) => !profile ||
+  ((profile.levels.length === 0 || levelDecision(j.role, profile.levels).include) && inScopeLocation(j, profile));
 
-const pickConfirmCandidates = (rows: Scored[], terms: SearchTerms | null, n: number, profile?: Pick<Profile, 'regions' | 'levels'>): string[] => {
+const pickConfirmCandidates = (rows: Scored[], terms: SearchTerms | null, n: number, profile?: Pick<Profile, 'regions' | 'levels' | 'metros'>): string[] => {
   const lane = (j: Scored) => (terms ? laneScore(relevanceText(j, terms), terms) : 0);
   const tier = (j: Scored) => (terms ? relevanceTier(relevanceText(j, terms), terms) : 0);
   return rows
@@ -171,7 +176,7 @@ const pickConfirmCandidates = (rows: Scored[], terms: SearchTerms | null, n: num
 // nor rows outside the chosen regions/levels (the same live filter Search applies — a Midwest search's
 // Apply list held a warehouse job in Poland). A role already scored stays (its verdict is the person's
 // work). Order: AI verdict, relevance, prescreen.
-export const applyQueue = (rows: Scored[], verdicts: Record<string, Verdict>, terms: SearchTerms | null, profile?: Pick<Profile, 'regions' | 'levels'>): Scored[] => {
+export const applyQueue = (rows: Scored[], verdicts: Record<string, Verdict>, terms: SearchTerms | null, profile?: Pick<Profile, 'regions' | 'levels' | 'metros'>): Scored[] => {
   const active = !!terms && (((terms.keywords?.length ?? 0) > 0) || ((terms.titles?.length ?? 0) > 0));
   const tier = (j: Scored) => (active ? relevanceTier(relevanceText(j, terms), terms) : 0);
   const rel = (j: Scored) => (active ? relevanceScore(relevanceText(j, terms), terms) : 0);
@@ -185,7 +190,7 @@ export const applyQueue = (rows: Scored[], verdicts: Record<string, Verdict>, te
 
 // Map a real pipeline.tsv row (from serve) → the app's Scored shape the Search tab renders.
 const rowToScored = (r: any): Scored => ({
-  company: r.company, role: r.role, url: r.url, location: r.location, postedOn: r.posted, jd: '',
+  company: r.company, role: r.role, url: r.url, location: r.location, metro: r.metro || undefined, postedOn: r.posted, jd: '',
   prescreen: num(r.prescreen),
   screenReason: r.screen_reason
     ? r.screen_reason
@@ -213,7 +218,8 @@ const verdictFromServe = (v: any): Verdict => ({
     evidence: (v.judgments && v.judgments[k] && v.judgments[k].evidence) || '',
   })),
   pay: typeof v.pay === 'string' ? v.pay : '—',
-  clamped: v.clamped ? v.recommendation || 'hard gate' : undefined,
+  // 1.71.0: an Apply held at Research for 2+ unmet requirements shows its reason the same way a clamp does.
+  clamped: v.clamped ? v.recommendation || 'hard gate' : v.capped ? v.recommendation || 'held at Research' : undefined,
 });
 
 export const useStore = create<State>()(persist((set, get) => ({
@@ -267,6 +273,10 @@ export const useStore = create<State>()(persist((set, get) => ({
   // roles" re-scans with the new scope (lastScope mismatch forces it), and the visible list filters live.
   // 1.64.0: each change is also saved to the profile the engine's evaluator reads — before, only
   // sponsorship was, so a first-run user's level choice never reached the scorer.
+  setMetros: (m) => {
+    set((s) => ({ profile: { ...s.profile, metros: (m || []).map((x) => String(x).trim()).filter(Boolean).slice(0, 8) } }));
+    get().saveProfileToCli();
+  },
   toggleRegion: (r) => {
     set((s) => {
       const has = s.profile.regions.includes(r);
@@ -293,7 +303,7 @@ export const useStore = create<State>()(persist((set, get) => ({
     const p = get().profile;
     servePost('/profile', {
       name: p.name, language: p.language,
-      target_regions: p.regions, target_levels: p.levels,
+      target_regions: p.regions, target_levels: p.levels, target_metros: p.metros || [],
       target_salary: p.salary, transferable_skills: p.transferable, needs_sponsorship: p.sponsorship,
       // Only once known (résumé-detected or toggled) — never clobber a CLI user's own tuning choice.
       ...(typeof p.noDegree === 'boolean' ? { tuning_profile: p.noDegree ? 'no_degree' : 'new_grad' } : {}),
@@ -336,7 +346,7 @@ export const useStore = create<State>()(persist((set, get) => ({
         if (levelDefaulted) newProfile.levels = ['entry'];
         // No college degree, stated on the résumé → the no_degree path (unless the user already chose).
         if (!s0.noDegreeUserSet && typeof f.noDegree === 'boolean') newProfile.noDegree = f.noDegree;
-        const scopeSig = (p: any) => `${[...p.regions].sort().join(',')}|${[...p.levels].sort().join(',')}`;
+        const scopeSig = (p: any) => `${[...p.regions].sort().join(',')}|${[...p.levels].sort().join(',')}|${[...(p.metros || [])].sort().join(';')}`;
         const scopeChanged = scopeSig(newProfile) !== scopeSig(s0.profile);
         // A DIFFERENT résumé invalidates every fit score judged against the old one — keeping them
         // would be exactly the false confidence the evaluator work exists to prevent. Drop the
@@ -360,7 +370,7 @@ export const useStore = create<State>()(persist((set, get) => ({
         bump(0.35);
         // If the résumé moved the region/level, re-scan so the roles match the new profile (not the old one).
         if (scopeChanged) {
-          const sr = await servePost('/scan', { levels: newProfile.levels, regions: newProfile.regions });
+          const sr = await servePost('/scan', { levels: newProfile.levels, regions: newProfile.regions, metros: newProfile.metros || [] });
           if (sr && sr.ok !== false && Array.isArray(sr.rows)) set({ scored: rowsToScored(sr.rows) });
           set({ lastScope: scopeSig(newProfile) });
         }
@@ -438,6 +448,7 @@ export const useStore = create<State>()(persist((set, get) => ({
             language: prof.language || s.profile.language,
             regions: Array.isArray(prof.target_regions) ? prof.target_regions : s.profile.regions,
             levels: Array.isArray(prof.target_levels) ? prof.target_levels : s.profile.levels,
+            metros: Array.isArray(prof.target_metros) ? prof.target_metros : (s.profile.metros || []),
             transferable: Boolean(prof.transferable_skills),
             sponsorship: Boolean(prof.needs_sponsorship),
             ...(prof.tuning_profile ? { noDegree: prof.tuning_profile === 'no_degree' } : {}),
@@ -460,7 +471,7 @@ export const useStore = create<State>()(persist((set, get) => ({
     const intent = get().intent.trim();
     const prevIntent = get().lastIntent;
     const intentChanged = intent !== prevIntent;
-    const scopeSig = `${[...get().profile.regions].sort().join(',')}|${[...get().profile.levels].sort().join(',')}`;
+    const scopeSig = `${[...get().profile.regions].sort().join(',')}|${[...get().profile.levels].sort().join(',')}|${[...(get().profile.metros || [])].sort().join(';')}`;
     const scopeChanged = scopeSig !== get().lastScope;
     set({ busy: 'scan', progress: 0.04 });
     const stopTick = startTicker(set, get);
@@ -490,7 +501,7 @@ export const useStore = create<State>()(persist((set, get) => ({
         // Blank profile → search broadly (nationwide, all levels) rather than the server's saved config.
         const levels = terms && terms.level ? [terms.level] : (get().profile.levels.length ? get().profile.levels : ['entry', 'mid', 'senior']);
         const regions = terms && terms.regions && terms.regions.length ? terms.regions : (get().profile.regions.length ? get().profile.regions : ['nationwide']);
-        const sr = await servePost('/scan', { levels, regions });
+        const sr = await servePost('/scan', { levels, regions, metros: get().profile.metros || [] });
         if (sr && sr.ok !== false && Array.isArray(sr.rows)) set({ scored: rowsToScored(sr.rows) });
       }
       bump(0.45);
@@ -614,7 +625,7 @@ export const useStore = create<State>()(persist((set, get) => ({
         set((s) => ({ verdicts: { ...s.verdicts, [url]: verdictFromServe(v) } }));
         const row = get().scored.find((r) => r.url === url);
         // source: 'engine' — this verdict came from the gated decomposed engine via /evaluate (provenance, 1.52.0).
-        await servePost('/eval/save', { url, score: v.score, band: v.band, recommendation: v.recommendation, company: row && row.company, role: row && row.role, location: row && row.location, source: 'engine' });
+        await servePost('/eval/save', { url, score: v.score, band: v.band, recommendation: v.recommendation, pay: v.pay, company: row && row.company, role: row && row.role, location: row && row.location, source: 'engine' });
       }
     } catch {
       /* surfaced as no verdict; backend may be down */

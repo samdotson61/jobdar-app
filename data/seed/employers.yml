@@ -68,6 +68,7 @@ employers:
     region: midwest
     metro: "Chicago, IL"
     sector: fintech
+  # re-verified 2026-11-16: live (395 listed) — the 2026-11-13 "0 role(s)" was every posting outside entry/mid + region
   - company: "Relativity"
     careers_url: "https://job-boards.greenhouse.io/relativity"
     region: midwest
@@ -160,11 +161,13 @@ employers:
     region: midwest
     metro: "Chicago, IL"
     sector: data
+  # re-verified 2026-11-16: live (1 listed, senior) — "0 role(s)" was the level filter, not a moved board
   - company: "Cameo"
     careers_url: "https://job-boards.greenhouse.io/cameo"
     region: midwest
     metro: "Chicago, IL"
     sector: consumer
+  # re-verified 2026-11-16: kalderos.com/careers still embeds this Greenhouse board; it lists 0 openings today (empty, not moved)
   - company: "Kalderos"
     careers_url: "https://job-boards.greenhouse.io/kalderos"
     region: midwest
@@ -204,8 +207,10 @@ employers:
     region: midwest
     metro: "Livonia, MI"
     sector: healthcare
+  # re-verified 2026-11-16: moved Workday shard wd5 → wd115 (the old CXS endpoint answers HTTP 410);
+  # careers.advocatehealth.org links the new tenant
   - company: "Advocate Health"
-    careers_url: "https://aah.wd5.myworkdayjobs.com/External"
+    careers_url: "https://aah.wd115.myworkdayjobs.com/External"
     region: midwest
     metro: "Chicago, IL"
     sector: healthcare
@@ -279,6 +284,51 @@ employers:
     region: midwest
     metro: "St. Paul, MN"
     sector: healthcare
+
+  # Three-city run follow-up (2026-11-16): Cincinnati + Chicago anchors, each live-verified through the
+  # real provider. Workday counts include postings outside the home metro (the location filter handles it).
+  # verified 2026-11-16: icims, 115 postings
+  - company: "Western & Southern"
+    careers_url: "https://careers-westernsouthern.icims.com/jobs/search"
+    region: midwest
+    metro: "Cincinnati, OH"
+    sector: insurance
+  # verified 2026-11-16: workday, 178 postings
+  - company: "Great American Insurance"
+    careers_url: "https://gaig.wd1.myworkdayjobs.com/GAIG_External"
+    region: midwest
+    metro: "Cincinnati, OH"
+    sector: insurance
+  # verified 2026-11-16: workday, 376 postings
+  - company: "St. Elizabeth Healthcare"
+    careers_url: "https://stelizabeth.wd115.myworkdayjobs.com/StElizabethExternalCareerSite"
+    region: midwest
+    metro: "Cincinnati, OH"
+    sector: healthcare
+  # verified 2026-11-16: workday, 1997 postings, wraps at 2000 (incomplete=true)
+  - company: "Abbott"
+    careers_url: "https://abbott.wd5.myworkdayjobs.com/abbottcareers"
+    region: midwest
+    metro: "Chicago, IL"
+    sector: healthcare
+  # verified 2026-11-16: workday, 406 postings
+  - company: "Allstate"
+    careers_url: "https://allstate.wd5.myworkdayjobs.com/allstate_careers"
+    region: midwest
+    metro: "Chicago, IL"
+    sector: insurance
+  # verified 2026-11-16: workday, 647 postings
+  - company: "Northern Trust"
+    careers_url: "https://ntrs.wd1.myworkdayjobs.com/northerntrust"
+    region: midwest
+    metro: "Chicago, IL"
+    sector: finance
+  # verified 2026-11-16: workday, 869 postings
+  - company: "Motorola Solutions"
+    careers_url: "https://motorolasolutions.wd5.myworkdayjobs.com/Careers"
+    region: midwest
+    metro: "Chicago, IL"
+    sector: manufacturing
 
   # --- Southeast (health systems + large employers on Workday / iCIMS) — live-verified 2026-06-05 ---
   - company: "Vanderbilt University Medical Center"
@@ -476,6 +526,26 @@ employers:
     region: northeast
     metro: "Cambridge, MA"
     sector: biotech
+
+  # Three-city run follow-up (2026-11-16): New York anchors, live-verified through the real provider.
+  # verified 2026-11-16: workday, 406 postings
+  - company: "AIG"
+    careers_url: "https://aig.wd1.myworkdayjobs.com/aig"
+    region: northeast
+    metro: "New York, NY"
+    sector: insurance
+  # verified 2026-11-16: workday, 682 postings
+  - company: "Pfizer"
+    careers_url: "https://pfizer.wd1.myworkdayjobs.com/PfizerCareers"
+    region: northeast
+    metro: "New York, NY"
+    sector: pharma
+  # verified 2026-11-16: workday, 829 postings
+  - company: "Mastercard"
+    careers_url: "https://mastercard.wd1.myworkdayjobs.com/CorporateCareers"
+    region: northeast
+    metro: "New York, NY"
+    sector: finance
 
   # --- West (Bay Area / Seattle / Portland / LA / Denver) — live-verified 2026-09-25 (each URL returned public postings through the real provider) ---
   - company: "Airbnb"
