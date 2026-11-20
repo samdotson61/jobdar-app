@@ -224,6 +224,7 @@ export const SEED_EMPLOYERS = [
  {
   "company": "OhioHealth",
   "careers_url": "https://ohiohealth.wd5.myworkdayjobs.com/OhioHealthJobs",
+  "nlx": "https://ohiohealth.dejobs.org/",
   "region": "midwest",
   "metro": "Columbus, OH",
   "sector": "healthcare"
@@ -420,6 +421,7 @@ export const SEED_EMPLOYERS = [
  {
   "company": "Ochsner Health",
   "careers_url": "https://ochsner.wd1.myworkdayjobs.com/Ochsner",
+  "nlx": "https://ochsner.dejobs.org/",
   "region": "southeast",
   "metro": "New Orleans, LA",
   "sector": "healthcare"
@@ -525,6 +527,7 @@ export const SEED_EMPLOYERS = [
  {
   "company": "Banner Health",
   "careers_url": "https://bannerhealth.wd108.myworkdayjobs.com/Careers",
+  "nlx": "https://bannerhealth.dejobs.org/",
   "region": "southwest",
   "metro": "Phoenix, AZ",
   "sector": "healthcare"
@@ -637,6 +640,7 @@ export const SEED_EMPLOYERS = [
  {
   "company": "Highmark Health",
   "careers_url": "https://highmarkhealth.wd1.myworkdayjobs.com/highmark",
+  "nlx": "https://highmarkhealth.dejobs.org/",
   "region": "northeast",
   "metro": "Pittsburgh, PA",
   "sector": "healthcare"
@@ -658,6 +662,7 @@ export const SEED_EMPLOYERS = [
  {
   "company": "M&T Bank",
   "careers_url": "https://mtb.wd5.myworkdayjobs.com/MTB",
+  "nlx": "https://mtb.dejobs.org/",
   "region": "northeast",
   "metro": "Buffalo, NY",
   "sector": "banking"
@@ -686,6 +691,7 @@ export const SEED_EMPLOYERS = [
  {
   "company": "Pfizer",
   "careers_url": "https://pfizer.wd1.myworkdayjobs.com/PfizerCareers",
+  "nlx": "https://pfizer.dejobs.org/",
   "region": "northeast",
   "metro": "New York, NY",
   "sector": "pharma"
@@ -693,6 +699,7 @@ export const SEED_EMPLOYERS = [
  {
   "company": "Mastercard",
   "careers_url": "https://mastercard.wd1.myworkdayjobs.com/CorporateCareers",
+  "nlx": "https://mastercard.dejobs.org/",
   "region": "northeast",
   "metro": "New York, NY",
   "sector": "finance"

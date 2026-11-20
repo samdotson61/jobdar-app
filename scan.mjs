@@ -11,6 +11,7 @@ setUsaJobsCredsSource(loadUsaJobsCreds) // key-gated providers read creds throug
 import { getT } from './lib/i18n.mjs'
 import { parseFlags, resolveLang, isDirectRun, splitList, unknownTokens } from './lib/cli.mjs'
 import { resolveProvider } from './providers/_contract.mjs'
+import { isHumanCheck } from './lib/http.mjs'
 import { filterByLevel } from './lib/levels.mjs'
 import { filterByLocation, targetMetrosOf } from './lib/regions.mjs'
 import { withCatalogMetro } from './lib/portals_pure.mjs'
@@ -126,10 +127,13 @@ export async function runScan(argv = []) {
         : loc.kept.length === listed
           ? t('scan.found_for', { company: portal.company, count: listed })
           : t('scan.found_filtered', { company: portal.company, count: loc.kept.length, listed, level: lvl.excluded, region: loc.excluded })
-      say(`  ${listed === 0 ? symbol.warn() : symbol.ok()} ${line}`)
+      // 1.72.0: say where the roles came from when Workday asked for a human check.
+      const note = jobs.via === 'nlx' ? ' ' + color.dim(t('scan.via_nlx')) : jobs.blocked ? ' ' + color.dim(t('scan.blocked_partway')) : ''
+      say(`  ${listed === 0 ? symbol.warn() : symbol.ok()} ${line}${note}`)
       radar.tick('roles', loc.kept.length)
     } catch (err) {
-      say(`  ${symbol.fail()} ${t('scan.error_for', { company: portal.company, error: err.message })}`)
+      const error = isHumanCheck(err) ? t('scan.human_check') : err.message
+      say(`  ${symbol.fail()} ${t('scan.error_for', { company: portal.company, error })}`)
       radar.tick('failed')
     }
   }

@@ -4,6 +4,62 @@ All notable changes to Jobdar are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and Jobdar adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.72.0] — 2026-11-20
+
+**Workday's human check: stop at it, read Workday's own job sitemap, and fall back to the National
+Labor Exchange for a person's search.** App `1.33.0`; desktop stays `0.5.2` until it is rebuilt from
+this version; 223 tests.
+
+### What changed at Workday
+Since 2026-11-16 most Workday shards (wd1, wd5, wd12, wd108; wd115 intermittently) answer automated
+readers with a Cloudflare **human check** — HTTP 429 with `cf-mitigated: challenge` and a "verify you
+are human" page — on job lists, job pages and job sitemaps alike, from GitHub's runners and from a home
+connection. It is not a rate limit: eight requests four seconds apart were all refused, and the daily
+baseline was refused on its very first Workday request every day since (35–46 of 123 boards failed,
+runs grew from ~25 minutes to ~1 h 45 min of back-off). The check is intermittent, so some requests are
+answered. **Jobdar does not get past a human check** and never presents itself as a person or a browser.
+
+### Stop at a human check
+- `lib/http.mjs` marks such a refusal (`err.humanCheck`, `isHumanCheck(err)`; the message ends "(the
+  site asked for a human check)"). Workday never retries one — not the list, not a job page at eval, not
+  the 429 back-off (which stays for real rate limits).
+- A refusal part-way through a listing keeps what was read (marked incomplete, so nothing is closed)
+  and asks the board nothing more; a board read in partitions stops every partition still waiting.
+- `jobdar scan` says it in words (EN + ES): "the board asked for a human check, and Jobdar does not get
+  past those — its roles will come back when the employer lifts it".
+
+### The daily baseline reads Workday's own job sitemap
+- Every Workday tenant's `robots.txt` offers crawlers `/{site}/siteMap.xml`. The baseline now asks for
+  it first: where the tenant lists every posting there, the whole board is **one request** (Lowe's: 13,091
+  postings in one file, where the listing takes ~650 requests). A human check on it ends the board for the
+  day — no listing request after it. No sitemap → the listing, as before.
+- A sitemap may close postings only when (1) its size is at least 85% of the board's last complete read
+  and (2) at least 75% of the postings on record appear in it by the same URL (`sitemapMatchesRecord`).
+  Some tenants publish a short sample (Trinity Health: 100 of ~6,700) — that only ADDS. URLs are rebuilt
+  with the catalog's site spelling, so they are the listing's URLs exactly (Integrity Express: 20 of 20
+  matched on record, nothing closed). Titles and places are read back from the URL (approximate — the
+  ledger keeps the title a posting was first seen with); there are no posting dates.
+- The run log says which boards came from the sitemap, which stopped at a human check, and why a
+  sitemap was taken as additions only.
+
+### A person's search falls back to the National Labor Exchange
+- New optional catalog field **`nlx:`** — the employer's National Labor Exchange microsite. Seven Workday
+  employers have one: OhioHealth (~1,085 openings), Ochsner Health (~1,832), Banner Health (~1,755),
+  Highmark Health (~7,082), M&T Bank (~928), Pfizer (~455 US) and Mastercard (~1,391).
+- When the Workday board refuses the first request, or refuses part-way with fewer roles than the
+  Exchange lists, a person's scan reads the Exchange listing instead — one list per board, never both.
+  CLI, `serve` (desktop) and the phone all get it (it lives in the Workday provider). The scan line says
+  so; those roles carry no readable description, so they can be tracked but not scored (as HCA's since
+  1.69.0). Older `portals.yml` files pick `nlx` up from the catalog by URL.
+- **The public baseline never reads the Exchange** — it licenses personal job search, not
+  republishing.
+
+### Known gap
+- Workday boards have gaps in their history from 2026-11-16: gaps, not false closures (a board that was
+  not read closes nothing). Lifting the check is Workday's call; the route open to Jobdar is Cloudflare's
+  verified-bot / signed-agent programme. Docs: ROADMAP known gaps, troubleshooting (a new row), getting
+  started (EN + ES) on `nlx:`.
+
 ## [1.71.0] — 2026-11-16
 
 **Search several cities at once; eval keeps what it computes; fixes from the three-city run (2026-11-13).**

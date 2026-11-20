@@ -10,9 +10,10 @@
 // Mirrors the greenhouse.mjs { id, detect, fetch } shape. detect() is network-free; fetch()
 // reuses lib/http.mjs (HTTPS-only, host allowlist, redirect:'error').
 
-import { fetchJson, postJson } from '../lib/http.mjs'
+import { fetchJson, postJson, fetchText, isHumanCheck } from '../lib/http.mjs'
 import { stripTags, decodeEntities } from '../lib/html.mjs'
-import { parseLocation } from '../lib/regions.mjs'
+import { parseLocation, STATE_CODES } from '../lib/regions.mjs'
+import dejobs from './dejobs.mjs'
 
 // SSRF guard: only Workday job hosts, any shard (wd1 / wd3 / wd5 / wd101 …), HTTPS only.
 export const HOST_ALLOWLIST = [/^[a-z0-9-]+\.wd\d+\.myworkdayjobs\.com$/]
@@ -33,9 +34,11 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 // Workday answers HTTP 429 when a client asks too fast (the first whole-catalog baseline on GitHub drew
 // them on two boards and cut three more short). Such a request is retried with a growing pause —
 // 5 s, 10 s, 20 s, 40 s — never past the caller's deadline. Other failures pass straight through.
+// A 429 that is a Cloudflare HUMAN CHECK (1.72.0 — on most Workday shards since 2026-11-16) is not a rate
+// limit and is never retried: it is the site declining automated readers, and Jobdar stops there.
 const BACKOFF_MS = [5000, 10000, 20000, 40000]
 const JOB_BACKOFF_MS = [5000, 15000] // one job page at eval time: a short wait, then give up and say why (1.71.0)
-export const isRateLimited = (err) => /HTTP 429 /.test(String((err && err.message) || ''))
+export const isRateLimited = (err) => !isHumanCheck(err) && /HTTP 429 /.test(String((err && err.message) || ''))
 async function withBackoff(request, deadline = Infinity, pauses = BACKOFF_MS) {
   for (let attempt = 0; ; attempt++) {
     try {
@@ -159,11 +162,17 @@ async function fetchSite(match, site, maxPages = MAX_PAGES, deadline = Infinity,
       data = await getPage(offset)
     } catch (err) {
       if (page === 0) throw err
+      // A human check part-way through: keep what was read and ask this board nothing more (1.72.0).
+      if (isHumanCheck(err)) {
+        out.blocked = true
+        break
+      }
       if (Date.now() + PAGE_RETRY_MS >= deadline) break // no time left to retry — keep what was read
       await sleep(PAGE_RETRY_MS)
       try {
         data = await getPage(offset)
-      } catch {
+      } catch (again) {
+        if (isHumanCheck(again)) out.blocked = true
         break
       }
     }
@@ -252,7 +261,15 @@ async function fetchPartitioned(match, site, first, maxPages, deadline) {
   const union = new Map(first.map((j) => [j.url, j]))
   let incomplete = false
   let reads = 0
+  // One human check anywhere stops every partition still waiting (1.72.0) — Advocate's 55 and Kohl's
+  // 1,164 partitions each sat through four rounds of 429 back-off on the GitHub runs of 2026-11-16..19.
+  let blocked = false
+  const stop = (err) => {
+    incomplete = true
+    if (isHumanCheck(err)) blocked = true
+  }
   const read = async (applied, facetsHere, depth) => {
+    if (blocked) return
     const pick = choosePartition(facetsHere)
     if (!pick) {
       incomplete = true
@@ -268,8 +285,8 @@ async function fetchPartitioned(match, site, first, maxPages, deadline) {
         let probe
         try {
           probe = await fetchSite(match, site, 1, deadline, Infinity, facets)
-        } catch {
-          incomplete = true
+        } catch (err) {
+          stop(err)
           return
         }
         reads++
@@ -280,30 +297,145 @@ async function fetchPartitioned(match, site, first, maxPages, deadline) {
       let part
       try {
         part = await fetchSite(match, site, maxPages, deadline, Infinity, facets)
-      } catch {
-        incomplete = true
+      } catch (err) {
+        stop(err)
         return
       }
       reads++
       for (const j of part) union.set(j.url, j)
+      if (part.blocked) blocked = true
       if (part.incomplete) {
+        if (blocked) {
+          incomplete = true
+          return
+        }
         if (depth < MAX_PARTITION_DEPTH && part.facets) await read(facets, others(part.facets), depth + 1)
         else incomplete = true
       }
     }
     const queue = pick.values.slice()
     await Promise.all(Array.from({ length: Math.min(PARTITION_CONCURRENCY, queue.length) }, async () => {
-      while (queue.length) {
+      while (queue.length && !blocked) {
         await one(queue.shift())
         await sleep(PAGE_DELAY_MS)
       }
     }))
+    if (blocked && queue.length) incomplete = true
   }
   await read({}, first.facets || [], 0)
   const out = [...union.values()]
   out.partitions = reads
   if (incomplete) out.incomplete = true
+  if (blocked) out.blocked = true
   return out
+}
+
+// ── Workday's own job sitemap (1.72.0) ────────────────────────────────────────────────────────────────
+// Every Workday tenant's robots.txt offers crawlers `Sitemap: {base}/{site}/siteMap.xml` beside
+// `Allow: /{site}/`. On a tenant that publishes every posting there, one request lists the whole board
+// (Lowe's: 13,091 postings in one ~4 MB file, where the listing takes ~650 requests); on others it is a
+// short sample (Trinity Health: 100 of ~6,700). So the baseline treats a sitemap as the whole board only
+// when its size is close to the board's last complete read (ctx.expectCount); otherwise what it lists is
+// only ADDED, never used to close anything. A sitemap carries no posting dates and no descriptions.
+const SITEMAP_COMPLETE_SHARE = 0.85 // at least this share of the last complete read = the whole board
+const SITEMAP_MAX_FILES = 20 // a sitemap index (none seen yet) is followed this far, on the same host only
+
+const safeDecode = (s) => {
+  try {
+    return decodeURIComponent(s)
+  } catch {
+    return s
+  }
+}
+
+// "Part-Time---Receiver-Stocker---Flexible_JR-02662339" → "Part Time - Receiver Stocker - Flexible". The
+// slug drops punctuation, so this is an approximation of the board's title (the ledger keeps the title a
+// posting was FIRST seen with — a listing read's, wherever it had one). Pure.
+export function titleFromSlug(seg) {
+  const s = safeDecode(String(seg || ''))
+    .replace(/_[A-Za-z0-9-]*\d[A-Za-z0-9-]*$/, '') // the requisition id after the last underscore
+    .replace(/---/g, '\u0000')
+    .replace(/-+/g, ' ')
+    .replace(/\u0000/g, ' - ')
+  return s.replace(/\s+/g, ' ').trim()
+}
+
+// "Hutto-TX-2670" → "Hutto, TX 2670"; "US-OH-Cincinnati" → "Cincinnati, OH"; "Remote" → "Remote". Pure.
+export function locationFromSlug(seg) {
+  const tokens = safeDecode(String(seg || '')).split('-').filter(Boolean)
+  if (!tokens.length) return ''
+  if (tokens.length >= 3 && /^(US|USA)$/i.test(tokens[0]) && STATE_CODES.has(tokens[1].toUpperCase())) {
+    return `${tokens.slice(2).join(' ')}, ${tokens[1].toUpperCase()}`
+  }
+  const i = tokens.findIndex((t, k) => k > 0 && STATE_CODES.has(t))
+  if (i > 0) return `${tokens.slice(0, i).join(' ')}, ${tokens.slice(i).join(' ')}`
+  return tokens.join(' ')
+}
+
+// One sitemap <loc> → the discovery Job shape, or null for anything that is not one of this site's job
+// pages. The URL is rebuilt with the catalog's own `site` spelling, so it is the SAME url a listing read
+// builds (normalize) and the board ledger sees one posting, not two. Pure.
+export function jobFromWorkdayUrl(loc, base, site, company) {
+  const raw = String(loc || '').trim() // entities are decoded once, by sitemapLocs
+  const prefix = `${base}/${site}/job/`
+  if (raw.slice(0, prefix.length).toLowerCase() !== prefix.toLowerCase()) return null
+  const rest = raw.slice(prefix.length)
+  const segs = rest.split('/').filter(Boolean)
+  if (!segs.length) return null
+  return {
+    title: titleFromSlug(segs[segs.length - 1]),
+    url: `${prefix}${rest}`,
+    company,
+    location: segs.length > 1 ? locationFromSlug(segs[0]) : '',
+    postedOn: null,
+  }
+}
+
+const sitemapLocs = (xml) => [...String(xml || '').matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => decodeEntities(m[1].trim()))
+
+async function fetchSitemap(match, site) {
+  const base = `https://${match.tenant}.${match.shard}.myworkdayjobs.com`
+  const opts = { hostAllowlist: HOST_ALLOWLIST, timeoutMs: 60000, headers: { accept: 'application/xml,text/xml,*/*' } }
+  const first = await fetchText(`${base}/${site}/siteMap.xml`, opts)
+  let files = [first]
+  if (/<sitemapindex/i.test(first)) {
+    files = []
+    for (const child of sitemapLocs(first).filter((u) => u.startsWith(`${base}/`)).slice(0, SITEMAP_MAX_FILES)) files.push(await fetchText(child, opts))
+  }
+  const out = []
+  const seen = new Set()
+  for (const xml of files) {
+    for (const loc of sitemapLocs(xml)) {
+      const job = jobFromWorkdayUrl(loc, base, site, match.company)
+      if (!job || seen.has(job.url)) continue
+      seen.add(job.url)
+      out.push(job)
+    }
+  }
+  out.fromSitemap = true
+  return out
+}
+
+// A listing read that stopped short, topped up with what the sitemap listed (never the other way: a
+// complete listing read is the truth, and a sitemap can lag). Pure.
+export function withSitemapJobs(jobs, fromMap) {
+  if (!fromMap || !fromMap.length || !jobs.incomplete) return jobs
+  const have = new Set(jobs.map((j) => j.url))
+  const out = jobs.slice()
+  for (const j of fromMap) if (!have.has(j.url)) out.push(j)
+  for (const k of ['incomplete', 'partitions', 'blocked', 'total']) if (jobs[k] !== undefined) out[k] = jobs[k]
+  return out
+}
+
+// A person's scan of a board that asked for a human check reads the employer's National Labor Exchange
+// listing instead, when the catalog names one (`nlx:`). Never the public baseline: the Exchange licenses
+// personal job search, not republishing (the HCA ruling, 1.69.0). Its job pages carry no description.
+async function fetchNlx(match, ctx, cause) {
+  const hit = dejobs.detect({ company: match.company, careers_url: match.nlx })
+  if (!hit) throw cause
+  const jobs = await dejobs.fetch(hit, ctx)
+  jobs.via = 'nlx'
+  return jobs
 }
 
 const workday = {
@@ -319,6 +451,7 @@ const workday = {
       shard: parsed.shard,
       site: portal.site || parsed.site || null, // explicit portal.site wins
       company: portal.company || parsed.tenant,
+      nlx: portal.nlx || null, // the employer's National Labor Exchange listing (1.72.0), for a person's scan
     }
   },
 
@@ -328,6 +461,20 @@ const workday = {
     const maxPages = ctx.maxPages || MAX_PAGES
     const deadline = Number(ctx.budgetMs) > 0 ? Date.now() + Number(ctx.budgetMs) : Infinity
     const limit = Number(ctx.maxPostings) > 0 ? Number(ctx.maxPostings) : Infinity
+    // ctx.sitemap (the baseline scan, 1.72.0): Workday's own job sitemap first — one request for the whole
+    // board where the tenant publishes every posting there. A human check on it ends the board for the
+    // day; no sitemap (or an unreadable one) falls through to the listing, as before.
+    let fromMap = null
+    if (ctx.sitemap && match.site) {
+      try {
+        fromMap = await fetchSitemap(match, match.site)
+        const expect = Number(ctx.expectCount) || 0
+        if (expect > 0 && fromMap.length >= expect * SITEMAP_COMPLETE_SHARE) return fromMap
+      } catch (err) {
+        if (isHumanCheck(err)) throw err
+        fromMap = null
+      }
+    }
     const sites = match.site ? [match.site] : COMMON_SITES
     let firstOk = null
     let lastErr
@@ -335,11 +482,30 @@ const workday = {
       try {
         let jobs = await fetchSite(match, site, maxPages, deadline, limit)
         // ctx.partition (the baseline scan): a board the window cut off is read in facet partitions.
-        if (ctx.partition && jobs.incomplete && jobs.total === CAPPED_TOTAL && limit === Infinity) jobs = await fetchPartitioned(match, site, jobs, maxPages, deadline)
+        if (ctx.partition && jobs.incomplete && !jobs.blocked && jobs.total === CAPPED_TOTAL && limit === Infinity) jobs = await fetchPartitioned(match, site, jobs, maxPages, deadline)
+        jobs = withSitemapJobs(jobs, fromMap)
+        // Refused part-way (Pfizer: 20 of ~1,000 on 2026-11-20): a person's scan takes the employer's Labor
+        // Exchange listing instead when it holds more — one list per board, never both (no duplicates).
+        if (jobs.blocked && match.nlx && !ctx.baseline) {
+          const alt = await fetchNlx(match, ctx, null).catch(() => null)
+          if (alt && alt.length > jobs.length) return alt
+        }
         if (match.site || jobs.length > 0) return jobs
         if (!firstOk) firstOk = jobs
       } catch (err) {
         lastErr = err
+        if (isHumanCheck(err)) {
+          // A short sitemap read still ADDS what it listed today — marked incomplete, so it closes nothing.
+          if (fromMap && fromMap.length) {
+            const part = fromMap.slice()
+            part.fromSitemap = true
+            part.incomplete = true
+            part.blocked = true
+            return part
+          }
+          if (match.nlx && !ctx.baseline) return fetchNlx(match, ctx, err)
+          throw err
+        }
         if (!/HTTP 40\d/.test(err.message)) throw err // only keep probing past "not found"
       }
     }

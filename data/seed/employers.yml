@@ -1,6 +1,9 @@
 # Jobdar — region-aware employer catalog (Phase 5). Seeded Midwest-first; other regions fill in
 # over time. Each entry: company, careers_url (provider auto-detected), region, metro, sector.
 # `jobdar seed --region <r> [--write]` materializes matching entries into config/portals.yml.
+# Optional `nlx:` (1.72.0) = the employer's National Labor Exchange listing ({slug}.dejobs.org). A person's
+# scan reads it when the Workday board asks for a human check; the public baseline never does (the
+# Exchange licenses personal job search, not republishing).
 # Entries were live-verified to return public postings on the date noted in each section (2026-06-05 /
 # 2026-06-09 / 2026-09-25 — Northeast and West added 2026-09-25).
 employers:
@@ -184,6 +187,7 @@ employers:
     sector: healthcare
   - company: "OhioHealth"
     careers_url: "https://ohiohealth.wd5.myworkdayjobs.com/OhioHealthJobs"
+    nlx: "https://ohiohealth.dejobs.org/"
     region: midwest
     metro: "Columbus, OH"
     sector: healthcare
@@ -338,6 +342,7 @@ employers:
     sector: healthcare
   - company: "Ochsner Health"
     careers_url: "https://ochsner.wd1.myworkdayjobs.com/Ochsner"
+    nlx: "https://ochsner.dejobs.org/"
     region: southeast
     metro: "New Orleans, LA"
     sector: healthcare
@@ -416,6 +421,7 @@ employers:
     sector: insurance
   - company: "Banner Health"
     careers_url: "https://bannerhealth.wd108.myworkdayjobs.com/Careers"
+    nlx: "https://bannerhealth.dejobs.org/"
     region: southwest
     metro: "Phoenix, AZ"
     sector: healthcare
@@ -498,6 +504,7 @@ employers:
     sector: banking
   - company: "Highmark Health"
     careers_url: "https://highmarkhealth.wd1.myworkdayjobs.com/highmark"
+    nlx: "https://highmarkhealth.dejobs.org/"
     region: northeast
     metro: "Pittsburgh, PA"
     sector: healthcare
@@ -513,6 +520,7 @@ employers:
     sector: insurance
   - company: "M&T Bank"
     careers_url: "https://mtb.wd5.myworkdayjobs.com/MTB"
+    nlx: "https://mtb.dejobs.org/"
     region: northeast
     metro: "Buffalo, NY"
     sector: banking
@@ -537,12 +545,14 @@ employers:
   # verified 2026-11-16: workday, 682 postings
   - company: "Pfizer"
     careers_url: "https://pfizer.wd1.myworkdayjobs.com/PfizerCareers"
+    nlx: "https://pfizer.dejobs.org/"
     region: northeast
     metro: "New York, NY"
     sector: pharma
   # verified 2026-11-16: workday, 829 postings
   - company: "Mastercard"
     careers_url: "https://mastercard.wd1.myworkdayjobs.com/CorporateCareers"
+    nlx: "https://mastercard.dejobs.org/"
     region: northeast
     metro: "New York, NY"
     sector: finance

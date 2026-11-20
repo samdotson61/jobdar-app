@@ -17,7 +17,8 @@ import path from 'node:path'
 import { parseFlags } from '../lib/cli.mjs'
 import { loadEmployers, toPortals } from '../lib/seed.mjs'
 import { resolveProvider } from '../providers/_contract.mjs'
-import { LEDGER_COLS, BOARD_COLS, RUN_COLS, parseTsv, serializeTsv, advanceLedger, mergeRuns } from '../lib/board_ledger_pure.mjs'
+import { isHumanCheck } from '../lib/http.mjs'
+import { LEDGER_COLS, BOARD_COLS, RUN_COLS, parseTsv, serializeTsv, advanceLedger, mergeRuns, sitemapMatchesRecord } from '../lib/board_ledger_pure.mjs'
 
 const BOARD_TIMEOUT_MS = 45 * 60 * 1000 // Lowe's is ~12,700 postings = ~640 pages; Kohl's ~1,100 store partitions
 // The baseline reads a board WHOLE (1.68.0): a tenant that reports its true total pages to any depth
@@ -47,6 +48,27 @@ if (Number(flags.limit) > 0) portals = portals.slice(0, Number(flags.limit))
 // One board = one careers URL; a catalog that lists the same URL twice is looked at once.
 portals = [...new Map(portals.map((p) => [p.careers_url, p])).values()]
 
+const ledgerFile = path.join(outDir, 'ledger.tsv')
+const boardsFile = path.join(outDir, 'boards.tsv')
+const runsFile = path.join(outDir, 'runs.tsv')
+const ledgerBefore = readTsv(ledgerFile, LEDGER_COLS)
+const boardsBefore = readTsv(boardsFile, BOARD_COLS)
+
+// A Workday sitemap (1.72.0) is taken as the whole board only when (1) its size is close to the board's
+// last COMPLETE read (boards.tsv — the provider checks this) and (2) it lists the postings already on
+// record by the same URLs (sitemapMatchesRecord, checked below). Otherwise it only adds.
+const lastComplete = new Map(boardsBefore.map((b) => [b.board, b]))
+const expectCountFor = (board) => {
+  const b = lastComplete.get(board)
+  return b && b.last_ok ? Number(b.last_count) || 0 : 0
+}
+const openOnRecord = new Map()
+for (const r of ledgerBefore) {
+  if (r.gone_on) continue
+  if (!openOnRecord.has(r.board)) openOnRecord.set(r.board, new Set())
+  openOnRecord.get(r.board).add(r.url)
+}
+
 console.log(`baseline scan ${date}: ${portals.length} board(s)`)
 const observations = []
 const queue = portals.slice()
@@ -59,23 +81,31 @@ const scanOne = async (portal) => {
     return
   }
   try {
-    const jobs = await withTimeout(hit.provider.fetch(hit.match, { render: false, lang: 'en', maxPages: BASELINE_MAX_PAGES, partition: true }), BOARD_TIMEOUT_MS)
+    // baseline: true keeps the National Labor Exchange fallback out (it licenses personal search, not
+    // republishing); sitemap: true reads a Workday board from its own job sitemap first (1.72.0).
+    const ctx = { render: false, lang: 'en', maxPages: BASELINE_MAX_PAGES, partition: true, sitemap: true, baseline: true, expectCount: expectCountFor(portal.careers_url) }
+    const jobs = await withTimeout(hit.provider.fetch(hit.match, ctx), BOARD_TIMEOUT_MS)
     const list = Array.isArray(jobs) ? jobs : []
+    let mismatch = false
+    if (list.fromSitemap && !list.incomplete && !sitemapMatchesRecord(list, openOnRecord.get(portal.careers_url))) {
+      list.incomplete = true
+      mismatch = true
+    }
     observations.push({ ...base, ok: true, incomplete: Boolean(list.incomplete), jobs: list })
-    console.log(`  ok   ${portal.company}: ${list.length}${list.partitions ? ` (in ${list.partitions} partitions)` : ''}${list.incomplete ? ' (not read to the end)' : ''}`)
+    const how = [list.fromSitemap ? "from Workday's sitemap" : '', mismatch ? 'sitemap does not match the postings on record — added only' : '', list.partitions ? `in ${list.partitions} partitions` : '', list.blocked ? 'stopped at a human check' : '', list.incomplete ? 'not read to the end' : '']
+    console.log(`  ok   ${portal.company}: ${list.length}${how.filter(Boolean).map((s) => ` (${s})`).join('')}`)
   } catch (err) {
-    observations.push({ ...base, ok: false, jobs: [], error: String((err && err.message) || err) })
-    console.log(`  FAIL ${portal.company}: ${String((err && err.message) || err).slice(0, 160)}`)
+    // A human check fails the board at once (no back-off) and says so; the ledger closes nothing for it.
+    const msg = isHumanCheck(err) ? `the board asked for a human check — not read today (${String(err.message).replace(/ \(the site asked for a human check\)$/, '')})` : String((err && err.message) || err)
+    observations.push({ ...base, ok: false, jobs: [], error: msg })
+    console.log(`  FAIL ${portal.company}: ${msg.slice(0, 160)}`)
   }
 }
 await Promise.all(Array.from({ length: Math.min(POOL, queue.length) }, async () => {
   while (queue.length) await scanOne(queue.shift())
 }))
 
-const ledgerFile = path.join(outDir, 'ledger.tsv')
-const boardsFile = path.join(outDir, 'boards.tsv')
-const runsFile = path.join(outDir, 'runs.tsv')
-const next = advanceLedger({ rows: readTsv(ledgerFile, LEDGER_COLS), boards: readTsv(boardsFile, BOARD_COLS) }, observations, date)
+const next = advanceLedger({ rows: ledgerBefore, boards: boardsBefore }, observations, date)
 // Stable order, so the stored files differ day to day only where the boards did.
 next.rows.sort((a, b) => a.board.localeCompare(b.board) || a.first_seen.localeCompare(b.first_seen) || a.url.localeCompare(b.url))
 next.boards.sort((a, b) => a.board.localeCompare(b.board))

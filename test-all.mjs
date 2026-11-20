@@ -32,11 +32,12 @@ import { renderDashboard, analyze } from './lib/commands/dashboard.mjs'
 import { renderTui, pipelineView } from './lib/commands/tui.mjs'
 import { mergeScanned, recordEval, serializePipeline, parsePipeline, band, bandConflict, isEvaluated, isTracked, setStatus, pruneScanned, PIPELINE_COLS, recordPrescreen, pendingQueue, roleKey, resolveAlias, recordListingChecks, markListingsFromScan, capScanned } from './lib/evaluations.mjs'
 import { classifyFetchError, staleActionable, verifyBeforePresent } from './lib/liveness.mjs'
-import { advanceLedger, observationStatus, postedDay, parseTsv, serializeTsv, mergeRuns, LEDGER_COLS, TRUNCATION_CAP } from './lib/board_ledger_pure.mjs'
+import { advanceLedger, observationStatus, postedDay, parseTsv, serializeTsv, mergeRuns, LEDGER_COLS, TRUNCATION_CAP, sitemapMatchesRecord } from './lib/board_ledger_pure.mjs'
 import { portalsForScan, employersToPortals } from './lib/portals_pure.mjs'
 import { employersNearMetros, withCatalogMetro } from './lib/portals_pure.mjs'
 import { measuredLocation, nearestMetro, placeMetros, targetMetrosOf } from './lib/regions.mjs'
-import { jobLocations } from './providers/workday.mjs'
+import { jobLocations, titleFromSlug, locationFromSlug, jobFromWorkdayUrl, withSitemapJobs } from './providers/workday.mjs'
+import { isHumanCheck } from './lib/http.mjs'
 import { isVagueLocation } from './lib/pipeline_pure.mjs'
 import { recheckTargets } from './lib/commands/recheck.mjs'
 import { extractYearsRequired, extractDegreeGate, extractGates, screenDecision, prescreenRole, freshnessPoints, reasonLine, blendSalary, extractCredential, extractField, cvHasField, cvHasCredential, isHardIdentity, extractSponsorship, UNASSESSABLE_SCORE } from './lib/prescreen.mjs'
@@ -3474,6 +3475,184 @@ test('1.71.0 Research cap: an Apply naming TWO or more unmet requirements is hel
   assert.deepEqual(EVAL_JSON_SCHEMA.schema.properties.required.required, ['candidate_meets_all', 'unmet'])
   assert.match(EVAL_SYSTEM, /"unmet":\[\]/)
   assert.ok(getStrings('en').eval.auto_capped && getStrings('es').eval.auto_capped)
+})
+
+// ── 1.72.0: Workday's human check, Workday's own job sitemap, the National Labor Exchange fallback ──
+const humanCheck = (status = 429) => ({ ok: false, status, headers: { get: (k) => (String(k).toLowerCase() === 'cf-mitigated' ? 'challenge' : null) }, json: async () => ({}), text: async () => '<!DOCTYPE html><html>verify you are human</html>' })
+const okJson = (body) => ({ ok: true, status: 200, headers: { get: () => null }, json: async () => body, text: async () => JSON.stringify(body) })
+const okText = (text) => ({ ok: true, status: 200, headers: { get: () => null }, json: async () => JSON.parse(text), text: async () => text })
+const wdPage = (n, from = 0, total = n, facets) => ({ total, facets, jobPostings: Array.from({ length: n }, (_, i) => ({ title: `Role ${from + i}`, externalPath: `/job/Cincinnati-OH/Role-${from + i}_R${1000 + from + i}`, locationsText: 'Cincinnati, OH' })) })
+const withFetch = async (impl, fn) => {
+  const real = globalThis.fetch
+  globalThis.fetch = impl
+  try {
+    return await fn()
+  } finally {
+    globalThis.fetch = real
+  }
+}
+const rejection = (p) => p.then(() => null, (e) => e)
+
+test('1.72.0 a Cloudflare human check is marked on the error and never retried; a plain 429 is not one', async () => {
+  let calls = 0
+  await withFetch(async () => { calls++; return humanCheck() }, async () => {
+    const err = await rejection(workday.fetchJob('https://pnc.wd5.myworkdayjobs.com/External/job/PA---Pittsburgh/Project-Manager_R1'))
+    assert.ok(isHumanCheck(err), 'marked')
+    assert.equal(err.status, 429)
+    assert.match(err.message, /^HTTP 429 for https:\/\/pnc\.wd5\.myworkdayjobs\.com\/.* \(the site asked for a human check\)$/)
+    assert.equal(calls, 1, 'no back-off: waiting does not lift a human check')
+  })
+  assert.equal(isHumanCheck(new Error('HTTP 429 for https://x.wd5.myworkdayjobs.com/a')), false)
+  // the scan says it in words, EN + ES
+  assert.match(getT('en')('scan.human_check'), /human check/)
+  assert.match(getT('es')('scan.human_check'), /verificación/)
+  assert.ok(getT('en')('scan.via_nlx') && getT('es')('scan.via_nlx') && getT('en')('scan.blocked_partway') && getT('es')('scan.blocked_partway'))
+})
+
+test("1.72.0 a Workday board that asks for a human check: a person's scan reads the employer's Labor Exchange listing; the baseline never does", async () => {
+  const portal = { company: 'OhioHealth', careers_url: 'https://ohiohealth.wd5.myworkdayjobs.com/OhioHealthJobs', nlx: 'https://ohiohealth.dejobs.org/' }
+  const hit = resolveProvider(portal)
+  assert.equal(hit.provider.id, 'workday')
+  assert.equal(hit.match.nlx, portal.nlx)
+  const seen = []
+  const impl = async (url) => {
+    seen.push(String(url))
+    if (/myworkdayjobs\.com/.test(url)) return humanCheck()
+    if (/\/sitemaps\/index\.xml$/.test(url)) return okText('<sitemapindex><sitemap><loc>https://ohiohealth.dejobs.org/sitemaps/jobs_1.xml</loc></sitemap></sitemapindex>')
+    if (/\/sitemaps\/jobs_1\.xml$/.test(url)) return okText('<urlset><url><loc>https://ohiohealth.dejobs.org/columbus-oh/staff-rn-emergency-department/7D9077E7046746BF8416A75B8427450B/job/</loc></url></urlset>')
+    throw new Error('unexpected request ' + url)
+  }
+  await withFetch(impl, async () => {
+    const jobs = await workday.fetch(hit.match, {})
+    assert.equal(jobs.via, 'nlx')
+    assert.deepEqual(jobs.map((j) => [j.location, j.company]), [['Columbus, OH', 'OhioHealth']])
+    assert.match(jobs[0].url, /^https:\/\/ohiohealth\.dejobs\.org\//)
+    assert.equal(seen.filter((u) => /myworkdayjobs/.test(u)).length, 1, 'one Workday request, then the Exchange')
+  })
+  seen.length = 0
+  await withFetch(impl, async () => {
+    assert.ok(isHumanCheck(await rejection(workday.fetch(hit.match, { baseline: true }))), 'the public baseline never reads the Exchange')
+    assert.equal(seen.length, 1)
+  })
+  await withFetch(impl, async () => {
+    assert.ok(isHumanCheck(await rejection(workday.fetch({ ...hit.match, nlx: null }, {}))), 'no listing named: the human check is the answer')
+  })
+})
+
+test('1.72.0 a human check part-way through a Workday listing keeps what was read and asks nothing more', async () => {
+  const { match } = resolveProvider({ company: 'Fifth Third Bank', careers_url: 'https://fifththird.wd5.myworkdayjobs.com/53careers' })
+  let calls = 0
+  await withFetch(async () => { calls++; return calls === 1 ? okJson(wdPage(20, 0, 60)) : humanCheck() }, async () => {
+    const jobs = await workday.fetch(match, {})
+    assert.equal(jobs.length, 20)
+    assert.equal(jobs.incomplete, true, 'absence proves nothing')
+    assert.equal(jobs.blocked, true)
+    assert.equal(calls, 2, 'no retry of the refused page')
+  })
+  // refused part-way with a Labor Exchange listing named: a person's scan takes the longer list (never both)
+  const nlxMap = (n) => '<urlset>' + Array.from({ length: n }, (_, i) => `<url><loc>https://fifththird.dejobs.org/cincinnati-oh/banker-${i}/${String(i).padStart(32, 'A')}/job/</loc></url>`).join('') + '</urlset>'
+  for (const [n, via, len] of [[25, 'nlx', 25], [3, undefined, 20]]) {
+    let wd = 0
+    const jobs = await withFetch(async (url) => {
+      if (/myworkdayjobs/.test(url)) return ++wd === 1 ? okJson(wdPage(20, 0, 60)) : humanCheck()
+      if (/index\.xml$/.test(url)) return okText('<sitemapindex><sitemap><loc>https://fifththird.dejobs.org/sitemaps/jobs_1.xml</loc></sitemap></sitemapindex>')
+      return okText(nlxMap(n))
+    }, () => workday.fetch({ ...match, nlx: 'https://fifththird.dejobs.org/' }, {}))
+    assert.deepEqual([jobs.via, jobs.length], [via, len])
+  }
+  // a board read in partitions stops every partition still waiting at the first human check
+  calls = 0
+  const facets = [{ facetParameter: 'locations', values: ['a', 'b', 'c', 'd', 'e', 'f'].map((id) => ({ id, count: 400, descriptor: id })) }]
+  await withFetch(async () => { calls++; return calls <= 2 ? okJson(wdPage(20, 0, 2000, facets)) : humanCheck() }, async () => {
+    const jobs = await workday.fetch(match, { partition: true, maxPages: 1250 })
+    assert.equal(jobs.blocked, true)
+    assert.equal(jobs.incomplete, true)
+    assert.equal(jobs.length, 20)
+    assert.ok(calls <= 4, `stopped at the first refusals (${calls} requests, 6 partitions)`)
+  })
+})
+
+test("1.72.0 the baseline reads a Workday board from Workday's own job sitemap when it is the whole board — never trusts a short one", async () => {
+  const { match } = resolveProvider({ company: "Lowe's", careers_url: 'https://lowes.wd5.myworkdayjobs.com/LWS_External_CS' })
+  const map = '<?xml version="1.0"?><urlset>' +
+    '<url><loc>https://lowes.wd5.myworkdayjobs.com/lws_external_cs/job/Hutto-TX-2670/Full-Time---Sales-Associate---Plumbing_JR-02709393</loc><xhtml:link rel="alternate" hreflang="en-US" href="https://lowes.wd5.myworkdayjobs.com/en-US/LWS_External_CS/job/x"/></url>' +
+    '<url><loc>https://lowes.wd5.myworkdayjobs.com/LWS_External_CS/job/US-OH-Cincinnati/Store-Manager_JR-1</loc></url>' +
+    '<url><loc>https://lowes.wd5.myworkdayjobs.com/LWS_External_CS/job/Remote/Data-Analyst--Pricing_JR-2</loc></url>' +
+    '<url><loc>https://lowes.wd5.myworkdayjobs.com/LWS_External_CS/introduceYourself</loc></url></urlset>'
+  const seen = []
+  const run = (impl, ctx) => withFetch(async (url) => { seen.push(String(url)); return impl(String(url)) }, () => workday.fetch(match, { partition: true, sitemap: true, baseline: true, ...ctx }))
+  const sitemapOk = (url) => (/siteMap\.xml$/.test(url) ? okText(map) : null)
+  // the whole board in one request
+  let jobs = await run((u) => sitemapOk(u) || humanCheck(), { expectCount: 3 })
+  assert.equal(seen.length, 1)
+  assert.equal(seen[0], 'https://lowes.wd5.myworkdayjobs.com/LWS_External_CS/siteMap.xml')
+  assert.equal(jobs.fromSitemap, true)
+  assert.equal(jobs.incomplete, undefined, 'a complete read — it may close postings')
+  assert.deepEqual(jobs.map((j) => [j.title, j.location]), [['Full Time - Sales Associate - Plumbing', 'Hutto, TX 2670'], ['Store Manager', 'Cincinnati, OH'], ['Data Analyst Pricing', 'Remote']])
+  assert.equal(jobs[0].url, 'https://lowes.wd5.myworkdayjobs.com/LWS_External_CS/job/Hutto-TX-2670/Full-Time---Sales-Associate---Plumbing_JR-02709393', "rebuilt with the catalog's site spelling = the listing's url")
+  assert.equal(jobs[0].url, normalizeWorkday({ title: 'x', externalPath: '/job/Hutto-TX-2670/Full-Time---Sales-Associate---Plumbing_JR-02709393' }, 'https://lowes.wd5.myworkdayjobs.com', 'LWS_External_CS', "Lowe's").url)
+  // a short sitemap (Trinity: 100 of ~6,700) → the listing is read; a complete listing wins outright
+  seen.length = 0
+  jobs = await run((u) => sitemapOk(u) || okJson(wdPage(2)), { expectCount: 6700 })
+  assert.equal(seen.length, 2)
+  assert.deepEqual(jobs.map((j) => j.title), ['Role 0', 'Role 1'])
+  // …and when the listing asks for a human check, the short sitemap only ADDS (incomplete: closes nothing)
+  jobs = await run((u) => sitemapOk(u) || humanCheck(), { expectCount: 6700 })
+  assert.equal(jobs.length, 3)
+  assert.deepEqual([jobs.incomplete, jobs.blocked, jobs.fromSitemap], [true, true, true])
+  // no previous complete read to compare with → never taken as the whole board
+  jobs = await run((u) => sitemapOk(u) || humanCheck(), { expectCount: 0 })
+  assert.equal(jobs.incomplete, true)
+  // a human check on the sitemap itself ends the board for the day: no listing request after it
+  seen.length = 0
+  assert.ok(isHumanCheck(await rejection(run(() => humanCheck(), { expectCount: 3 }))))
+  assert.equal(seen.length, 1)
+  // no sitemap (404) → the listing, as before
+  seen.length = 0
+  jobs = await run((u) => (/siteMap\.xml$/.test(u) ? { ok: false, status: 404, headers: { get: () => null }, text: async () => '' } : okJson(wdPage(1))), { expectCount: 3 })
+  assert.deepEqual([seen.length, jobs.length, jobs.fromSitemap], [2, 1, undefined])
+  // a person's scan (no ctx.sitemap) never asks for the sitemap
+  seen.length = 0
+  await withFetch(async (url) => { seen.push(String(url)); return okJson(wdPage(1)) }, () => workday.fetch(match, {}))
+  assert.equal(seen.some((u) => /siteMap/.test(u)), false)
+})
+
+test('1.72.0 Workday sitemap slugs read back as titles and places; a listing read is topped up only when it stopped short', () => {
+  assert.equal(titleFromSlug('Part-Time---Receiver-Stocker---Flexible_JR-02662339'), 'Part Time - Receiver Stocker - Flexible')
+  assert.equal(titleFromSlug('Registered-Nurse%2C-ICU_R12345'), 'Registered Nurse, ICU')
+  assert.equal(titleFromSlug('Data_Analyst'), 'Data_Analyst', 'an underscore word with no digits is not a requisition id')
+  assert.equal(locationFromSlug('Hutto-TX-2670'), 'Hutto, TX 2670')
+  assert.equal(locationFromSlug('Fort-Wayne-IN'), 'Fort Wayne, IN')
+  assert.equal(locationFromSlug('US-OH-Cincinnati'), 'Cincinnati, OH')
+  assert.equal(locationFromSlug('Alexandria-LA-XDT-3510'), 'Alexandria, LA XDT 3510')
+  assert.equal(locationFromSlug('Remote'), 'Remote')
+  assert.deepEqual(parseLocation(locationFromSlug('Hutto-TX-2670')).usStates, ['TX'])
+  assert.equal(jobFromWorkdayUrl('https://x.wd5.myworkdayjobs.com/Other/job/A/B_R1', 'https://x.wd5.myworkdayjobs.com', 'Site', 'X'), null, "another site's job is not this board's")
+  const full = [{ url: 'a' }, { url: 'b' }]
+  assert.equal(withSitemapJobs(full, [{ url: 'c' }]), full, 'a complete listing read is the truth')
+  const short = Object.assign([{ url: 'a' }], { incomplete: true, blocked: true, total: 2000 })
+  const topped = withSitemapJobs(short, [{ url: 'a' }, { url: 'c' }])
+  assert.deepEqual([topped.map((j) => j.url), topped.incomplete, topped.blocked, topped.total], [['a', 'c'], true, true, 2000])
+  // a sitemap may close postings only when it lists the ones on record by the same URLs (75%+)
+  const onRecord = new Set(['u1', 'u2', 'u3', 'u4'])
+  assert.equal(sitemapMatchesRecord([{ url: 'u1' }, { url: 'u2' }, { url: 'u3' }, { url: 'new' }], onRecord), true)
+  assert.equal(sitemapMatchesRecord([{ url: 'U1' }, { url: 'U2' }, { url: 'U3' }, { url: 'U4' }], onRecord), false, 'another URL spelling would close everything on record')
+  assert.equal(sitemapMatchesRecord([{ url: 'u1' }], new Set()), false, 'nothing on record: nothing to vouch for it')
+})
+
+test('1.72.0 the catalog names a Labor Exchange listing for seven Workday employers, and it travels to every scan surface', () => {
+  const withNlx = selectEmployers({ regions: ['nationwide'] }).filter((e) => e.nlx)
+  assert.deepEqual(withNlx.map((e) => e.company).sort(), ['Banner Health', 'Highmark Health', 'M&T Bank', 'Mastercard', 'Ochsner Health', 'OhioHealth', 'Pfizer'])
+  for (const e of withNlx) {
+    assert.ok(parseWorkdayUrl(e.careers_url), `${e.company} is a Workday board`)
+    assert.ok(dejobs.detect({ careers_url: e.nlx }), `${e.company} nlx is a Labor Exchange microsite`)
+    assert.notEqual(e.baseline, false, 'the Workday board itself stays in the baseline')
+    assert.equal(toPortals([e])[0].nlx, e.nlx)
+    assert.equal(employersToPortals([e])[0].nlx, e.nlx)
+  }
+  // a portals.yml written before 1.72.0 gets the listing from the catalog by URL; a saved one is never overwritten
+  const [old, mine] = withCatalogMetro([{ careers_url: 'https://ohiohealth.wd5.myworkdayjobs.com/OhioHealthJobs' }, { careers_url: 'https://y.wd1.myworkdayjobs.com/s', nlx: 'https://mine.dejobs.org/' }], [{ careers_url: 'https://ohiohealth.wd5.myworkdayjobs.com/OhioHealthJobs', nlx: 'https://ohiohealth.dejobs.org/', metro: 'Columbus, OH' }, { careers_url: 'https://y.wd1.myworkdayjobs.com/s', nlx: 'https://other.dejobs.org/' }])
+  assert.deepEqual([old.nlx, old.metro, mine.nlx], ['https://ohiohealth.dejobs.org/', 'Columbus, OH', 'https://mine.dejobs.org/'])
 })
 
 let passed = 0
