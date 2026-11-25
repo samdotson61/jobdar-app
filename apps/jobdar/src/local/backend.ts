@@ -9,7 +9,7 @@ import {
   mergeScanned, capScanned, recordPrescreen, recordEval, parsePipeline, serializePipeline, bandConflict,
   recordListingChecks, checkListing, isEvaluated, isTracked, thumbFromWouldApply,
   prescreenRole, reasonLine, paySummary, relevanceScore, expandQueryTerms,
-  prepEval, buildVerdict, evalSystemFor, EVAL_JSON_SCHEMA,
+  prepEval, buildVerdict, evalSystemFor, EVAL_JSON_SCHEMA, FIELD_SYSTEM, FIELD_JSON_SCHEMA, parseFieldReply,
   TAILOR_SYSTEM, buildTailorUser, TAILOR_JSON_SCHEMA, parseEvalJson, coverIsComplete, fillSignature, assembleTailoredCv, directiveBlock,
   OUTREACH_SYSTEM, buildOutreachUser, OUTREACH_JSON_SCHEMA, lintDraft, canContact, canFollowup, LINKEDIN_NOTE_MAX,
   SEED_EMPLOYERS, portalsForScan, stripTags, decodeEntities, capNewest,
@@ -288,9 +288,23 @@ export async function localCall(path: string, method: 'GET' | 'POST', body: any)
       // returns a confident-but-meaningless Apply. Refuse honestly instead.
       if (!String(cv).trim()) return { ok: true, skipped: true, score: null, band: '', recommendation: 'No résumé on file — upload one first so fit can be judged against your real experience.' };
       const transferable = typeof p.transferable === 'boolean' ? p.transferable : Boolean(evalProfile.transferable_skills);
-      const { gates, decision, user } = prepEval({ jd, cv, profile: evalProfile, today: today(), title, location: loc });
+      const { gates, decision, user, jobs, fieldUser } = prepEval({ jd, cv, profile: evalProfile, today: today(), title, location: loc });
       const r = await completionJson({ system: evalSystemFor(transferable), user, schema: EVAL_JSON_SCHEMA, maxTokens: 1024 });
-      return buildVerdict({ text: r.text, jd, gates, decision, profile: evalProfile, transferable, model: r.model, backend: 'local-embedded', runtime: 'llama.rn', location: loc });
+      // 1.73.0: the field question (which résumé jobs count toward the years ask) — a failure leaves the
+      // verdict as it was and is reported on it, never dropped.
+      let fieldJobs: number[] | null = null;
+      let fieldError = '';
+      if (fieldUser) {
+        try {
+          const f = await completionJson({ system: FIELD_SYSTEM, user: fieldUser, schema: FIELD_JSON_SCHEMA, maxTokens: 160 });
+          fieldJobs = parseFieldReply(f.text, jobs);
+          if (!fieldJobs) fieldError = 'field question: reply was not the expected JSON';
+        } catch (e: any) {
+          fieldError = `field question: ${String((e && e.message) || e).slice(0, 200)}`;
+        }
+      }
+      const v: any = buildVerdict({ text: r.text, jd, gates, decision, profile: evalProfile, transferable, model: r.model, backend: 'local-embedded', runtime: 'llama.rn', location: loc, jobs, fieldJobs });
+      return fieldError && v.ok ? { ...v, fieldError } : v;
     }
 
     // Listing liveness (1.53.0) — mirrors serve /recheck: only positive board signals are recorded;

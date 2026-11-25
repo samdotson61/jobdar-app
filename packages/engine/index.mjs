@@ -15,6 +15,7 @@ export * from '../../lib/cv_render.mjs'
 export * from '../../lib/prescreen.mjs'
 export * from '../../lib/inference.mjs'
 export * from '../../lib/eval_engine.mjs'
+export * from '../../lib/experience.mjs'
 export * from '../../lib/tailor.mjs'
 export * from '../../lib/search.mjs'
 // Phase 10 (fully-local apps): the pure pipeline logic, the pure outreach rules/drafting, and the

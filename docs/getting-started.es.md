@@ -119,6 +119,13 @@ Cada evaluación — individual o por lote — termina indicándote **dónde est
 (interactivo), `jobdar dashboard` (web) — más la línea de alcance honesto: las puntuaciones comparan
 el **texto del anuncio** con tu currículum; el empleador en sí no se verifica.
 
+**Los años de experiencia se cuentan en el campo, no en total.** Cuando un anuncio pide "3+ años
+gestionando proyectos de TI", Jobdar mide cada empleo de tu currículum por sus propias fechas, le
+pregunta al modelo cuáles de esos empleos hicieron ese tipo de trabajo y suma solo esos — los proyectos
+y los estudios nunca cuentan. Si te faltan años, la parte de experiencia de la puntuación queda en
+*parcial* y la nota lo dice primero, p. ej. "1 yr 8 mo of this kind of work on the résumé vs 3+ years
+asked". Pon fechas claras en cada empleo ("abr 2021 – may 2022") para que Jobdar pueda medirlo.
+
 Dos comandos mantienen los veredictos honestos con el tiempo:
 
 ```bash

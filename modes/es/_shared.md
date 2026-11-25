@@ -66,6 +66,13 @@ experiencia** (p. ej. "8+ años" frente a un objetivo inicial, vía `YEARS_CEILI
 motivo citado en la fila — así una alta coincidencia de palabras clave no puede colar un puesto
 fuera de nivel en tu cola. Tú haces la lectura con matices de lo que sobrevive.
 
+**Cuenta los años en el campo, no en total.** Un "3+ años de experiencia gestionando proyectos" en una
+oferta significa tres años haciendo ese tipo de trabajo. Cuenta solo los empleos del currículum cuyas
+propias líneas muestran ese trabajo, suma sus fechas (los solapes una vez) y nunca tomes un total que el
+currículum afirme por sí mismo ("más de cinco años en TI"). Los proyectos y los estudios no son años de
+experiencia. La evaluación automática hace exactamente esto en código (`lib/experience.mjs`): mide los
+empleos, pregunta cuáles cuentan y deja la experiencia en parcial cuando el total no alcanza.
+
 Tu trabajo es la lectura con matices de lo que sobrevivió:
 
 - **Clasifica cada nivel seleccionado por mérito — sin penalización.** Si la persona activó `senior`,

@@ -4,6 +4,65 @@ All notable changes to Jobdar are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and Jobdar adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.73.0] — 2026-11-24
+
+**Years of experience are counted in the field, not overall.** App `1.34.0`; desktop stays `0.5.2`
+until it is rebuilt from this version; 228 tests.
+
+### Why
+A posting's "3+ years of experience managing IT projects" means three years doing that kind of work.
+The evaluator was handed the years ask and the whole résumé and left to count, so it took a summary
+line ("more than five years in enterprise environments") or every date on the page, and an IT
+administrator with about a year and a half of project work read as a fit for 3+-year project-manager
+roles.
+
+### What changed
+- **Code measures each job on the résumé from its own dates** (`lib/experience.mjs`, `resumeJobs`):
+  title, start, end and months, with the job's own lines. Only jobs under a work-history heading count
+  when the résumé has one; projects, education and coursework never count as years (they still earn
+  skills credit in the eval). English and Spanish month names and headings; "Present"/"actualidad"
+  resolve to today; year-only ranges take mid-year ("2019 – 2021" = 24 months).
+- **A separate short question names which jobs count** (`FIELD_SYSTEM`, `pickFieldJobs`): it gets the
+  JD's years line (widened from prescreen's short quote to the field it names), the start of the
+  posting, and each job with what was done there, and answers `{"work": …, "field_jobs": [n…]}`. It
+  runs only when the JD states a years ask and the résumé has dated jobs.
+- **Code sums the chosen jobs** (overlaps merged, rounded down) and compares them with the ask. Short →
+  the experience rating is held at *partial* (never raised, never pushed lower), the miss joins the
+  stated-requirements list (so a second miss still means Research), and the note leads with the figure:
+  "1 yr 8 mo of this kind of work on the résumé vs 3+ years asked". Enough → the model's own miss for
+  that ask is dropped (code owns the count); other misses, and other years asks, stay. A hard clamp
+  keeps its reason first and the figure follows it.
+- The verdict carries `fieldYears {years, months, asked, short, jobs}`. If the field question fails or
+  answers in something other than the JSON, the verdict is exactly what it was before 1.73.0 and says so
+  (`fieldError`, printed by `eval --next`) — never dropped silently.
+- Every surface: CLI single and `--next` evals, the Batches path (the field question runs live while
+  preparing), `serve`'s `/evaluate`, and the phone app's on-device eval (`apps/jobdar`, app 1.34.0).
+  `@jobdar/engine` now exports `lib/experience.mjs`.
+- **The eval prompt is unchanged, byte for byte.** No recalibration of the 1.52.0 bench was needed.
+- **`jobdar calibrate` finds its starter set on Windows.** It looked for `/C:/…` (a URL path, not a
+  file path), so the bundled set never loaded there (CI runs on Ubuntu and never saw it).
+
+### Measured (2026-11-24, 26 live Cincinnati roles, qwen3.5-4b on winc, one résumé)
+- **First design rejected:** asking for `field_jobs` inside the main eval reply, with a line telling the
+  model that Jobdar checks the years itself, made the model stop checking requirements: unmet lists
+  emptied, degree and domain clamps vanished, 9 of 26 roles jumped to Apply (several to 5.0), and it
+  counted every job as field work.
+- **Field-question wording:** a "be strict, adjacent work does not count" version answered "no job
+  counts" for 11 of 13 years asks (including "2+ years in IT or Information Security" against three IT
+  jobs). The shipped balanced version got 9 of 11 clear cases right. Its two misses: it counted three
+  non-manager jobs as "management positions", and it missed product-owner work as "a software
+  development environment". A third version adding a rule about positions did worse.
+- **The cap:** a "weak" tier for under half the ask took a Systems Engineer role (2+ years of Windows
+  Server, which the résumé has) from Research to Don't over its secondary "1+ years of web hosting",
+  so a shortfall holds experience at *partial* only. A years gap never sinks a role on its own (the
+  1.41.x rule).
+- **Old vs new on the same server:** no band changes; the four roles whose asks the résumé falls short
+  of moved 5.0 → 4.3 with the figure in the note; the rest scored identically. Run to run, the same
+  unchanged code scored 6 of 26 roles differently after a server restart (IT Support 5.0 → 3.4, an
+  infrastructure manager 3.5 → 1.8). Compare old and new only within one server session.
+- Starter calibration set: 91% band agreement before and after. Its résumés carry no dated jobs, so
+  the field check never applies there.
+
 ## [1.72.0] — 2026-11-20
 
 **Workday's human check: stop at it, read Workday's own job sitemap, and fall back to the National

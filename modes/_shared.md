@@ -67,6 +67,13 @@ additionally **screens an explicit over-experience ask** (e.g. "8+ years" agains
 `YEARS_CEILING`) and keeps the quoted reason on the row — so a high keyword overlap can't float an
 out-of-level role into your queue. You do the nuanced read on what survives.
 
+**Count years in the field, not overall.** A JD's "3+ years of experience managing projects" means three
+years doing that kind of work. Count only the résumé jobs whose own lines show that work, add their
+dates (overlaps once), and never take a total the résumé claims for itself ("more than five years in
+IT"). Projects and school are not years of experience. The automated eval does exactly this in code
+(`lib/experience.mjs`): it measures the jobs, asks which count, and holds the experience rating at
+partial when the total falls short.
+
 Your job is the nuanced read on what survived:
 
 - **Rank every selected level on merit — no penalty.** If the user opted into `senior`, senior

@@ -61,6 +61,7 @@ import { extractText, isExtractable, structureCv } from './lib/docparse.mjs'
 import { importDocument, evaluate as engineEvaluate, recordVerdict, advanceStatus, buildCv, ENGINE_VERSION, tailor as engineTailor } from './lib/engine.mjs'
 import { coverIsComplete, assembleTailoredCv, TAILOR_JSON_SCHEMA, buildTailorUser, directiveBlock, TAILOR_SYSTEM, fillSignature } from './lib/tailor.mjs'
 import { effectiveDirectives, contentHash, recordVariant } from './lib/customize_store.mjs'
+import { resumeJobs, jobsBlock, fieldMonths, toYears, formatMonths, isYearsOnly, buildFieldUser, yearsAskLine, parseFieldReply, FIELD_SYSTEM, FIELD_JSON_SCHEMA } from './lib/experience.mjs'
 import { parsePreConfirm, isBorderline, evalSystemFor, preConfirmSystemFor, unparsedCause, researchCap, unmetRequirements, EVAL_JSON_SCHEMA, EVAL_SYSTEM } from './lib/eval_engine.mjs'
 import { splitList, unknownTokens } from './lib/cli.mjs'
 import { resolvePay, socForTitle, loadWages, loadSocMap } from './lib/pay.mjs'
@@ -3653,6 +3654,158 @@ test('1.72.0 the catalog names a Labor Exchange listing for seven Workday employ
   // a portals.yml written before 1.72.0 gets the listing from the catalog by URL; a saved one is never overwritten
   const [old, mine] = withCatalogMetro([{ careers_url: 'https://ohiohealth.wd5.myworkdayjobs.com/OhioHealthJobs' }, { careers_url: 'https://y.wd1.myworkdayjobs.com/s', nlx: 'https://mine.dejobs.org/' }], [{ careers_url: 'https://ohiohealth.wd5.myworkdayjobs.com/OhioHealthJobs', nlx: 'https://ohiohealth.dejobs.org/', metro: 'Columbus, OH' }, { careers_url: 'https://y.wd1.myworkdayjobs.com/s', nlx: 'https://other.dejobs.org/' }])
   assert.deepEqual([old.nlx, old.metro, mine.nlx], ['https://ohiohealth.dejobs.org/', 'Columbus, OH', 'https://mine.dejobs.org/'])
+})
+
+// ── 1.73.0: years IN THE FIELD — code measures each résumé job, a separate question names which count ──
+const CV173 = [
+  '# Pat Doe',
+  'IT administrator with more than five years in enterprise environments.',
+  '## PROFESSIONAL EXPERIENCE',
+  'IT Services Administrator | Hy-Tek  |  Apr 2025 – Present',
+  'Led the Windows 11 migration across nine sites.',
+  'Served as product owner for a .NET service.',
+  'Systems Administrator | Matthews  |  May 2022 – Nov 2024',
+  'Promoted from IT Service Technician',
+  'Administered Windows Server and Active Directory.',
+  'L1/L2 Site Support Specialist | P&G  |  Apr 2021 – May 2022',
+  'Wrote troubleshooting procedures for 500+ users.',
+  'PRODUCT & ENGINEERING PROJECTS',
+  'Jobdar — job-search tool  |  2026 – Present',
+  'EDUCATION & CERTIFICATIONS',
+  'Computer Science Coursework — NKU, 2019 – 2021',
+].join('\n')
+
+test('1.73.0 résumé jobs are measured from their own dates, with their own lines; projects and education never count', () => {
+  const jobs = resumeJobs(CV173, '2026-11-24')
+  assert.deepEqual(jobs.map((j) => [j.n, j.title, formatMonths(j.months)]), [
+    [1, 'IT Services Administrator | Hy-Tek', '1 yr 8 mo'],
+    [2, 'Systems Administrator | Matthews', '2 yrs 7 mo'],
+    [3, 'L1/L2 Site Support Specialist | P&G', '1 yr 2 mo'],
+  ])
+  assert.equal(jobs[0].details, 'Led the Windows 11 migration across nine sites. Served as product owner for a .NET service.')
+  assert.equal(jobs[2].details, 'Wrote troubleshooting procedures for 500+ users.', 'a job’s lines stop at the next heading')
+  assert.match(jobsBlock(jobs), /^1\. IT Services Administrator \| Hy-Tek — Apr 2025 to Nov 2026 \(1 yr 8 mo\)$/m)
+  // overlaps merge (May 2022 is in both jobs 2 and 3), so a promotion or a hand-off month counts once
+  assert.equal(fieldMonths(jobs, [2, 3]), 31 + 14 - 1)
+  assert.equal(toYears(fieldMonths(jobs, [1])), 1.6)
+  assert.deepEqual([toYears(36), toYears(35), toYears(0)], [3, 2.9, 0], 'rounded DOWN — never credited past the dates')
+  // no work heading → every dated line outside projects/education; dates on their own line take the line above
+  assert.deepEqual(resumeJobs('Analyst, Acme\nJan 2020 - Mar 2021\nEDUCATION\nBS, 2016 – 2020', '2026-11-24').map((j) => [j.title, j.months]), [['Analyst, Acme', 15]])
+  // Spanish résumés: month names, "actualidad", the EXPERIENCIA heading; year-only ranges take mid-year
+  assert.deepEqual(resumeJobs('EXPERIENCIA\nAnalista | Acme | ene 2020 – actualidad\nAuxiliar | Beta | 2017 - 2019', '2026-11-24').map((j) => j.months), [83, 24])
+  // prose with years and numbers is not a job
+  assert.deepEqual(resumeJobs('## EXPERIENCE\nCut install time 75% across 2019 users in Windows 10 to 11.', '2026-11-24'), [])
+  assert.equal(jobsBlock([]), '')
+})
+
+test('1.73.0 the field question: the requirement line, the role, and each job with what was done there — asked only when it applies', () => {
+  const jd = 'IT Project Manager\nLead projects across sites.\nRequirements:\n3+ years of experience managing IT or software development projects.\nBachelor’s degree.'
+  const gates = { years: { years: 3, quote: '3+ years of experience' } }
+  const jobs = resumeJobs(CV173, '2026-11-24')
+  const u = buildFieldUser({ jd, gates, jobs })
+  assert.match(u, /^REQUIREMENT: 3\+ years of experience managing IT or software development projects\n/)
+  assert.match(u, /THE ROLE \(start of the posting\):\nIT Project Manager Lead projects/)
+  assert.match(u, /1\. IT Services Administrator \| Hy-Tek — Apr 2025 to Nov 2026 \(1 yr 8 mo\)\n {3}What they did: Led the Windows 11 migration/)
+  assert.doesNotMatch(u, /Jobdar — job-search tool|NKU/, 'projects and school are not offered as jobs')
+  assert.equal(buildFieldUser({ jd, gates: {}, jobs }), null, 'no years ask → no question')
+  assert.equal(buildFieldUser({ jd, gates, jobs: [] }), null, 'no dated jobs → no question')
+  // the requirement line: from the ask to its line end, or to the next years ask on boards that flatten bullets
+  assert.equal(yearsAskLine('Bachelor in X 5+ years of experience in IT 3+ years of experience in Azure', '5+ years of experience'), '5+ years of experience in IT')
+  assert.equal(yearsAskLine('nothing here', '4 years experience'), '4 years experience')
+  // the reply: work first, then numbers; junk numbers dropped; not-JSON → null (never read as "none count")
+  assert.deepEqual(parseFieldReply('{"work":"managing IT projects","field_jobs":[1, "2", 9, 0]}', jobs), [1, 2])
+  assert.deepEqual(parseFieldReply('{"work":"x","field_jobs":[]}', jobs), [])
+  assert.equal(parseFieldReply('I think job 1', jobs), null)
+  assert.equal(parseFieldReply('{"work":"x"}', jobs), null)
+  assert.deepEqual(FIELD_JSON_SCHEMA.schema.required, ['work', 'field_jobs'])
+  assert.match(FIELD_SYSTEM, /Projects and school are not jobs and never count/)
+})
+
+test('1.73.0 code sums the chosen jobs and holds experience to what the dates support — at most partial, never a cliff', () => {
+  const jobs = resumeJobs(CV173, '2026-11-24')
+  const gates = { years: { years: 3, quote: '3+ years of experience' } }
+  const reply = (unmet = [], experience = 'strong') => JSON.stringify({ required: { candidate_meets_all: !unmet.length, unmet, note: unmet.join('; ') }, skills: { rating: 'strong' }, experience: { rating: experience }, level_fit: { rating: 'strong' }, logistics: { rating: 'strong' }, education: { rating: 'strong' }, recommendation: 'Led a nine-site migration.' })
+  // the résumé claims "more than five years"; only job 1 was project work → 1.6 yrs vs 3+ → experience capped at partial
+  const short = buildVerdict({ text: reply(), jd: 'x', gates, jobs, fieldJobs: [1] })
+  assert.deepEqual(short.fieldYears, { years: 1.6, months: 20, asked: 3, short: true, jobs: [1] })
+  assert.equal(short.judgments.experience.rating, 'partial')
+  assert.equal(short.rawScore, 5, 'rawScore stays the model-only number')
+  assert.equal(short.score, 4.3)
+  assert.match(short.recommendation, /^1 yr 8 mo of this kind of work on the résumé vs 3\+ years asked\. Led a nine-site/)
+  assert.deepEqual(short.unmet, ['3+ years of this kind of work (the résumé shows 1 yr 8 mo)'], 'code adds the years miss the model left out')
+  // no job counts → still partial at most (the field question can be wrong; a years gap never cliffs a role)
+  const zero = buildVerdict({ text: reply(), jd: 'x', gates, jobs, fieldJobs: [] })
+  assert.deepEqual([zero.fieldYears.years, zero.judgments.experience.rating, zero.score], [0, 'partial', 4.3])
+  assert.match(zero.recommendation, /^none of this kind of work on the résumé vs 3\+ years asked/)
+  assert.equal(buildVerdict({ text: reply([], 'weak'), jd: 'x', gates, jobs, fieldJobs: [1] }).judgments.experience.rating, 'weak', 'a lower model rating is never raised')
+  // the model's own line for this ask is kept (not duplicated); a second miss → the Research cap
+  const two = buildVerdict({ text: reply(['3+ years managing IT projects', 'payments industry experience']), jd: 'x', gates, jobs, fieldJobs: [1] })
+  assert.deepEqual([two.band, two.capped, two.unmet], ['research', true, ['3+ years managing IT projects', 'payments industry experience']])
+  // enough field years → the model's own miss for THIS ask is dropped (code owns the count); other misses,
+  // and a different years ask ("7+ years of support"), stay
+  const met = buildVerdict({ text: reply(['3+ years managing IT projects', '7+ years of user support', 'payments industry experience']), jd: 'x', gates, jobs, fieldJobs: [1, 2, 3] })
+  assert.deepEqual([met.fieldYears.short, met.unmet, met.judgments.experience.rating], [false, ['7+ years of user support', 'payments industry experience'], 'strong'])
+  assert.match(met.recommendation, /misses 2 stated requirements: “7\+ years of user support”; “payments industry experience”\. 5 yrs 4 mo of this kind of work on the résumé vs 3\+ years asked\./)
+  assert.deepEqual([isYearsOnly('3+ years of PM experience'), isYearsOnly('2 years as a licensed RN'), isYearsOnly('PMP certification')], [true, false, false])
+  // a hard clamp keeps its reason first and the measured figure rides after it
+  const clamped = buildVerdict({ text: reply(['Bachelor’s degree in IT or Business']), jd: 'x', gates, jobs, fieldJobs: [1] })
+  assert.equal(clamped.clamped, true)
+  assert.match(clamped.recommendation, /^requirements: “Bachelor’s degree in IT or Business”\. 1 yr 8 mo of this kind of work on the résumé vs 3\+ years asked$/)
+})
+
+test('1.73.0 the field check stays out of the way: no years ask, no dated jobs, or no answer — and the eval prompt is unchanged', () => {
+  const jobs = resumeJobs(CV173, '2026-11-24')
+  const text = JSON.stringify({ required: { candidate_meets_all: true, unmet: [], note: '' }, skills: { rating: 'strong' }, experience: { rating: 'strong' }, level_fit: { rating: 'strong' }, logistics: { rating: 'strong' }, education: { rating: 'strong' }, recommendation: 'Fit.' })
+  for (const [gates, js, picked] of [[{}, jobs, [1]], [{ years: { years: 3 } }, jobs, null], [{ years: { years: 3 } }, [], [1]]]) {
+    const v = buildVerdict({ text, jd: 'x', gates, jobs: js, fieldJobs: picked })
+    assert.deepEqual([v.fieldYears, v.score, v.recommendation], [null, 5, 'Fit.'])
+  }
+  // the benched eval prompt carries no trace of the field question (it is its own call)
+  const { user, jobs: pj, fieldUser } = prepEval({ jd: 'Requires 3+ years of experience managing IT projects.', cv: CV173, profile: {}, today: '2026-11-24' })
+  assert.equal(pj.length, 3)
+  assert.match(fieldUser, /^REQUIREMENT: 3\+ years of experience managing IT projects/)
+  assert.doesNotMatch(user + EVAL_SYSTEM + JSON.stringify(EVAL_JSON_SCHEMA), /field_jobs|RÉSUMÉ JOBS|What they did/)
+})
+
+test('1.73.0 evalRole asks the field question as its own call; a failed or garbled answer leaves the verdict as before and says so', async () => {
+  const evalReply = JSON.stringify({ required: { candidate_meets_all: true, unmet: [], note: '' }, ...ALL('strong'), recommendation: 'strong match' })
+  const serve = (fieldReply, { failField = false } = {}) => new Promise((resolve) => {
+    const seen = []
+    const server = http.createServer((req, res) => {
+      let body = ''
+      req.on('data', (c) => (body += c))
+      req.on('end', () => {
+        const j = JSON.parse(body || '{}')
+        const isField = String(j.system || '').includes('checking a candidate’s work history')
+        seen.push(isField ? 'field' : 'eval')
+        if (isField && failField) { res.writeHead(500); res.end('boom'); return }
+        res.writeHead(200, { 'content-type': 'application/json' })
+        res.end(JSON.stringify({ model: 'mock', content: [{ type: 'text', text: isField ? fieldReply : evalReply }], usage: { input_tokens: 10, output_tokens: 5 } }))
+      })
+    })
+    server.listen(0, '127.0.0.1', () => resolve({ url: `http://127.0.0.1:${server.address().port}`, seen, close: () => new Promise((r) => server.close(r)) }))
+  })
+  const jd = 'IT Project Manager. Requires 3+ years of experience managing IT projects.'
+  const m = await serve('{"work":"managing IT projects","field_jobs":[1]}')
+  const v = await evalRole({ active: { kind: 'local', protocol: 'messages', baseUrl: m.url }, jd, cv: CV173, profile: {}, today: '2026-11-24' })
+  assert.deepEqual(m.seen, ['eval', 'field'])
+  assert.deepEqual([v.score, v.fieldYears.years, v.judgments.experience.rating, v.fieldError], [4.3, 1.6, 'partial', undefined])
+  await m.close()
+  const bad = await serve('job one, I think')
+  const vb = await evalRole({ active: { kind: 'local', protocol: 'messages', baseUrl: bad.url }, jd, cv: CV173, profile: {}, today: '2026-11-24' })
+  assert.deepEqual([vb.score, vb.fieldYears], [5, null])
+  assert.match(vb.fieldError, /^field question: reply was not the expected JSON/)
+  await bad.close()
+  const down = await serve('', { failField: true })
+  const vd = await evalRole({ active: { kind: 'local', protocol: 'messages', baseUrl: down.url }, jd, cv: CV173, profile: {}, today: '2026-11-24' })
+  assert.deepEqual([vd.ok, vd.score, vd.fieldYears], [true, 5, null])
+  assert.match(vd.fieldError, /^field question: /)
+  await down.close()
+  // no years ask → one call only
+  const one = await serve('{"work":"x","field_jobs":[]}')
+  await evalRole({ active: { kind: 'local', protocol: 'messages', baseUrl: one.url }, jd: 'IT Project Manager. Lead projects.', cv: CV173, profile: {}, today: '2026-11-24' })
+  assert.deepEqual(one.seen, ['eval'])
+  await one.close()
 })
 
 let passed = 0

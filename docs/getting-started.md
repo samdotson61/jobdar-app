@@ -123,6 +123,13 @@ in your jobdar home) and how to view it: `jobdar tracker` (table), `jobdar tui` 
 `jobdar dashboard` (web) — plus the honest scope line: scores judge the **listing text** against your
 résumé; the employer itself isn't verified.
 
+**Years of experience are counted in the field, not overall.** When a posting asks for "3+ years
+managing IT projects", Jobdar measures each job on your résumé from its own dates, asks the model which
+of those jobs did that kind of work, and adds up only those — projects and school never count. If you
+come up short, the experience part of the score is held at *partial* and the note says so first, e.g.
+"1 yr 8 mo of this kind of work on the résumé vs 3+ years asked". Put clear dates on every job
+("Apr 2021 – May 2022") so Jobdar can measure it.
+
 Two follow-ups keep the verdicts honest over time:
 
 ```bash
