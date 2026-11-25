@@ -73,6 +73,12 @@ currículum afirme por sí mismo ("más de cinco años en TI"). Los proyectos y 
 experiencia. La evaluación automática hace exactamente esto en código (`lib/experience.mjs`): mide los
 empleos, pregunta cuáles cuentan y deja la experiencia en parcial cuando el total no alcanza.
 
+**Un título dispensado no es un requisito no cumplido.** Cuando la propia línea de título de la oferta
+dice "o experiencia equivalente" (o "en lugar de"), un título en otro campo — o ninguno, con la
+experiencia — no incumple los requisitos y nunca lleva a un No. Califica el ajuste en el criterio de
+estudios y sigue. La evaluación automática lo aplica en código a los anuncios en inglés
+(`degreeWaiverCheck` en `lib/eval_engine.mjs`).
+
 Tu trabajo es la lectura con matices de lo que sobrevivió:
 
 - **Clasifica cada nivel seleccionado por mérito — sin penalización.** Si la persona activó `senior`,

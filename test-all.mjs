@@ -62,7 +62,7 @@ import { importDocument, evaluate as engineEvaluate, recordVerdict, advanceStatu
 import { coverIsComplete, assembleTailoredCv, TAILOR_JSON_SCHEMA, buildTailorUser, directiveBlock, TAILOR_SYSTEM, fillSignature } from './lib/tailor.mjs'
 import { effectiveDirectives, contentHash, recordVariant } from './lib/customize_store.mjs'
 import { resumeJobs, jobsBlock, fieldMonths, toYears, formatMonths, isYearsOnly, buildFieldUser, yearsAskLine, parseFieldReply, FIELD_SYSTEM, FIELD_JSON_SCHEMA } from './lib/experience.mjs'
-import { parsePreConfirm, isBorderline, evalSystemFor, preConfirmSystemFor, unparsedCause, researchCap, unmetRequirements, EVAL_JSON_SCHEMA, EVAL_SYSTEM } from './lib/eval_engine.mjs'
+import { parsePreConfirm, isBorderline, evalSystemFor, preConfirmSystemFor, unparsedCause, researchCap, unmetRequirements, isDegreeOnly, degreeWaiverCheck, EVAL_JSON_SCHEMA, EVAL_SYSTEM } from './lib/eval_engine.mjs'
 import { splitList, unknownTokens } from './lib/cli.mjs'
 import { resolvePay, socForTitle, loadWages, loadSocMap } from './lib/pay.mjs'
 import { parseNextCount, reportFooterLines, distributionWarning, markGoneIfDead, NEXT_MAX } from './lib/commands/eval.mjs'
@@ -3806,6 +3806,54 @@ test('1.73.0 evalRole asks the field question as its own call; a failed or garbl
   await evalRole({ active: { kind: 'local', protocol: 'messages', baseUrl: one.url }, jd: 'IT Project Manager. Lead projects.', cv: CV173, profile: {}, today: '2026-11-24' })
   assert.deepEqual(one.seen, ['eval'])
   await one.close()
+})
+
+// 1.74.0 — a degree ask the JD itself waives ("or equivalent experience") is not a missed requirement.
+const JD174 = "Software Project Manager. Qualifications Required: Bachelor's degree in Information Technology, Computer Science, Business Administration, or related field (or equivalent experience); 3+ years of experience managing IT or software development projects; Strong understanding of SDLC."
+const reply174 = (required) => JSON.stringify({
+  required,
+  skills: { rating: 'good', evidence: '' }, experience: { rating: 'partial', evidence: '' }, level_fit: { rating: 'good', evidence: '' },
+  logistics: { rating: 'strong', evidence: '' }, education: { rating: 'partial', evidence: '' }, recommendation: 'Worth a look.',
+})
+test('1.74.0 prescreen marks a waived degree ask; a hard or unread one is not marked', () => {
+  const g = extractDegreeGate(JD174)
+  assert.deepEqual([g.gate, g.waived], ['unclear', true])
+  assert.equal(extractDegreeGate('Bachelor’s degree required in CS.').waived, undefined)
+  assert.equal(extractDegreeGate("Required: Bachelor's degree in Nursing. Equivalent experience is not accepted for licensure reasons and this sentence is long.").waived, undefined)
+  assert.equal(extractDegreeGate('Bachelor’s degree in a related field preferred.').waived, undefined)
+})
+test('1.74.0 degree-only lines: the major, the BA, the waiver text — but not a line that also names experience or a license', () => {
+  assert.equal(isDegreeOnly("Bachelor's degree in Information Technology, Computer Science, Business Administration, or related field"), true)
+  assert.equal(isDegreeOnly('Candidate has a BA in Anthropology and CS coursework, but lacks the specific major required by the JD.'), true)
+  assert.equal(isDegreeOnly('Bachelor of Science in Nursing (or equivalent experience)'), true)
+  assert.equal(isDegreeOnly("Bachelor's degree and prior eClinical experience"), false)
+  assert.equal(isDegreeOnly('Active RN license and a BSN'), false)
+  assert.equal(isDegreeOnly('3+ years managing IT projects'), false)
+  assert.equal(isDegreeOnly('Basic understanding of databases'), false)
+})
+test('1.74.0 a waived degree ask no longer clamps to Don’t; any other miss still does, and a hard degree ask is untouched', () => {
+  const gates = extractGates(JD174)
+  const failing = { candidate_meets_all: false, note: 'Candidate has a BA in Anthropology and CS coursework, but lacks the specific major required by the JD.' }
+  // the Medpace shape: degree + years listed, model says fails → was Don't (3.4c); now unclamped, degree line gone
+  const v = buildVerdict({ text: reply174({ ...failing, unmet: ["Bachelor's degree in Information Technology, Computer Science, Business Administration, or related field", '3+ years of experience managing IT or software development projects'] }), jd: JD174, gates })
+  assert.equal(v.clamped, false)
+  assert.equal(v.degreeWaived, true)
+  assert.deepEqual(v.unmet, ['3+ years of experience managing IT or software development projects'])
+  assert.match(v.recommendation, /^the posting accepts equivalent experience in place of its degree ask\. Worth a look\./)
+  // no unmet list, a degree-only note → passes too
+  const n = buildVerdict({ text: reply174({ ...failing, unmet: [] }), jd: JD174, gates })
+  assert.equal(n.clamped, false)
+  // another real miss alongside the degree → the clamp stands (on the model's note), the degree line still drops
+  const o = buildVerdict({ text: reply174({ candidate_meets_all: false, note: 'Lacks eClinical/eCOA experience.', unmet: ["Bachelor's degree in IT or related field", 'prior eClinical/eCOA project experience'] }), jd: JD174, gates })
+  assert.equal(o.clamped, true)
+  assert.deepEqual(o.unmet, ['prior eClinical/eCOA project experience'])
+  // a hard degree ask (no waiver) → exactly as before
+  const hardJd = "Required: Bachelor's degree in Nursing. Equivalent experience is not accepted for licensure reasons and this sentence is long."
+  const h = buildVerdict({ text: reply174({ ...failing, unmet: ["Bachelor's degree in Nursing"] }), jd: hardJd, gates: extractGates(hardJd) })
+  assert.deepEqual([h.clamped, h.degreeWaived, h.unmet], [true, false, ["Bachelor's degree in Nursing"]])
+  // a model that already says the candidate meets everything → nothing to change
+  const ok = degreeWaiverCheck({ judgments: JSON.parse(reply174({ candidate_meets_all: true, note: '', unmet: [] })), gates })
+  assert.equal(ok.applied, false)
 })
 
 let passed = 0

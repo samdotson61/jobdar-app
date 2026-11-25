@@ -74,6 +74,11 @@ IT"). Projects and school are not years of experience. The automated eval does e
 (`lib/experience.mjs`): it measures the jobs, asks which count, and holds the experience rating at
 partial when the total falls short.
 
+**A waived degree is not a missed requirement.** When the JD's own degree line says "or equivalent
+experience" (or "in lieu of"), a degree in another field — or none, with the experience — does not
+fail the requirements and never drives a Don't. Rate the match on the education criterion and move
+on. The automated eval enforces this in code (`degreeWaiverCheck` in `lib/eval_engine.mjs`).
+
 Your job is the nuanced read on what survived:
 
 - **Rank every selected level on merit — no penalty.** If the user opted into `senior`, senior

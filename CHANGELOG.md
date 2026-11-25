@@ -4,6 +4,43 @@ All notable changes to Jobdar are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and Jobdar adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.74.0] — 2026-11-25
+
+**A degree ask the posting itself waives is no longer a missed requirement.** App `1.35.0`; desktop
+stays `0.5.2` until it is rebuilt from this version; 231 tests.
+
+### Why
+Medpace's IT Project Manager and Software Project Manager postings ask for "Bachelor's degree in
+Information Technology, Computer Science, Business Administration, or related field (or equivalent
+experience)". Prescreen already read the waiver (1.71.0) and told the model the degree requirement was
+"unclear", but the model still listed the degree as unmet and answered that the candidate fails the
+requirements ("lacks the specific major required by the JD"), and the clamp took both 3.5s to Don't.
+
+### What changed
+- **Prescreen marks a waived degree ask** (`extractDegreeGate` → `waived: true`) when the degree's own
+  clause says "or equivalent", "equivalent … experience" or "in lieu of". A hard ask, a waiver in a
+  neighbouring sentence, and a "preferred" degree are not marked.
+- **Code drops the degree from the requirements when the JD waives it** (`degreeWaiverCheck`,
+  `lib/eval_engine.mjs`): degree-only lines leave the unmet list (so they no longer count toward the
+  two-miss Research cap), and if the model's requirements fail was only the degree plus years asks
+  (which never clamp, the 1.41.x rule), it passes. A line that names the degree with something else
+  ("Bachelor's degree and prior eClinical experience") is kept, and any other real miss still clamps.
+  The note leads with "the posting accepts equivalent experience in place of its degree ask"; the
+  verdict carries `degreeWaived`.
+- Ratings are untouched: the education criterion still scores the major as the model judged it. The
+  eval prompt is unchanged, byte for byte. Every surface (CLI, Batches, `serve`, the phone app) gets it
+  through `buildVerdict`.
+
+### Measured (2026-11-25, the same 26 Cincinnati roles, qwen3.5-4b on winc, 1.73.0 vs 1.74.0 on one server)
+- Medpace IT Project Manager and Software Project Manager: 3.4 Don't (clamped) → 3.5 Research; the
+  degree line is gone from both unmet lists.
+- Medpace BSA – Imaging ("Bachelor's Degree in Computer Science, Business Administration, or related
+  area", no waiver) stays clamped, as it should. eClinical Project Manager (degree + eClinical
+  experience in one line) stays clamped.
+- Three other roles scored differently between the two runs, but their raw scores (computed before
+  this check runs) moved and their unmet lists were identical: model drift, not this change. Drift
+  shows up even within one server session.
+
 ## [1.73.0] — 2026-11-24
 
 **Years of experience are counted in the field, not overall.** App `1.34.0`; desktop stays `0.5.2`
